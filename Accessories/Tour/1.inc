@@ -1,49 +1,35 @@
 
 [LoadActions]
-ActionList1=Start0 | Wait 1500 | Start1 | Wait 1500 | Start2 | Wait 750 | NextPage
+ActionList1=Start0 | Wait 2000 | Start1 | Wait 1000 | NextPage
 
-[Tween2:M]
+[Tween:M]
 Measure=Script
 ScriptFile=#@#LuaTween/Main.lua
 TweenGroup=Tweenable
-Tween0=Single | Variable | TweenNode1 | 0 | 1 | 1500
-Tween1=Single | Variable | TweenNode2 | 0 | 1 | 500
-Tween2=Single | Variable | TweenNode3 | 0 | 1 | 750
+Tween0=Single | Variable | TweenNode1 | 0 | 1 | 1700
+Tween1=Single | Variable | TweenNode2 | 0 | 1 | 750
 Optional0=Easing InOutExpo
-Optional2=Easing InOutExpo
+Optional1=Easing InOutExpo
 UpdateDivider=1
+
+[Set.string:S]
+Container=ContentContainer
 
 ; ---------------------------------------------------------------------------- ;
 ;                                   Contenet                                   ;
 ; ---------------------------------------------------------------------------- ;
 
-[Polygon]
-Meter=
-[ContentContainer]
-Meter=
-[Title]
-Meter=
-[Logo]
-Meter=
-
-[Polygon2]
-Meter=Shape
-X=(#SCREENAREAWIDTH#/2)
-Y=(#SCREENAREAHEIGHT#/2)
+[SpinImage]
+MEter=Image
+X=(#Sec.W#/2-256*#Sec.S#*#TweenNode1#/2+415.5*#Sec.S#*#TweenNode2#)
+Y=(#Sec.H#/2-256*#Sec.S#*#TweenNode1#/2-109*#Sec.S#*#TweenNode2#)
+W=((256*#TweenNode1#-206*#TweenNode2#)*#Sec.S#)
+H=((256*#TweenNode1#-206*#TweenNode2#)*#Sec.S#)
 DynamicVariables=1
 Group=Tweenable
-Shape=Rectangle (-(#Sec.O#+100*#TweenNode3#)/2),(-(#Sec.O#-100*#TweenNode3#)/2),(#Sec.O#+100*#TweenNode3#),(#Sec.O#-100*#TweenNode3#),(#Set.R#*#TweenNode3#) | StrokeWidth (4*#TweenNode2#-4*#TweenNode3#) | Rotate (45*(1-#TweenNode3#)) | Scale (#TweenNode1#),(#TweenNode1#) | Fill Color #set.Pri_Color# | Stroke LinearGradient This
-This=180 | 204,28,21 ; 0.0 | 255,112,15 ; 1.0
+Container=ContentContainer
+TransformationMatrix=(Cos(Rad(#TweenNode1#*360)));(-Sin(Rad(#TweenNode1#*360)));(Sin(Rad(#TweenNode1#*360)));(Cos(Rad(#TweenNode1#*360)));(([#CURRENTSECTION#:W]*0.5+[#CURRENTSECTION#:X])-([#CURRENTSECTION#:W]*0.5+[#CURRENTSECTION#:X])*Cos(Rad(#TweenNode1#*360))-([#CURRENTSECTION#:H]*0.5+[#CURRENTSECTION#:Y])*Sin(Rad(#TweenNode1#*360)));(([#CURRENTSECTION#:H]*0.5+[#CURRENTSECTION#:Y])+([#CURRENTSECTION#:W]*0.5+[#CURRENTSECTION#:X])*Sin(Rad(#TweenNode1#*360))-([#CURRENTSECTION#:H]*0.5+[#CURRENTSECTION#:Y])*Cos(Rad(#TweenNode1#*360)))
+ImageName=#@#Images\Logo256.png
 
-[Title2]
-Meter=String
-Text=JaxCore3
-X=r
-Y=r
-FontSize=(80)
-FontFace=Poppins SemiBold
-StringAlign=CenterCenter
-Group=Tweenable
-InlineSetting=GradientColor | 180 | 204,28,21,(255*#TweenNode1#-255*#TweenNode3#) ; 0.0 | 255,112,15,(255*#TweenNode1#-255*#TweenNode3#) ; 1.0
-MeterStyle=Set.String:S
-TransformationMatrix=#TweenNode1#;0;0;#TweenNode1#;((1-#TweenNode1#)*([#CURRENTSECTION#:X]+[#CURRENTSECTION#:W]/2));((1-#TweenNode1#)*([#CURRENTSECTION#:Y]+[#CURRENTSECTION#:H]/2))
+[Logo]
+Meter=
