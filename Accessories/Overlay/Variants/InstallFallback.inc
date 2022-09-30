@@ -1,32 +1,13 @@
 [Rainmeter]
-OnUnfocusAction=[!UpdateMeasure UnloadHandler]
 Update=-1
 
 [Variables]
 @includeVars=#@#Vars.inc
-@includeSkinVars=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
-Sec.P=20
-Sec.ResultSize=30
-Process.Result_Count=0
 
 [mActions]
 Measure=Plugin
 Plugin=ActionTimer
-ActionList1=Wait 200 | StartInput
-ActionList2=Deactivate
-ActionList3=Deactivate
-StartInput=[!CommandMeasure p.InputText "ExecuteBatch 1"]
-Start0=[!CommandMeasure mTween "Start(0)"]
-Rewind0=[!CommandMeasure mTween "Rewind(0)"]
-Deactivate=[!DeactivateConfig]
-DynamicVariables=1
-
-[UnloadHandler]
-Measure=Calc
-Formula=0
-IfCondition=UnloadHandler = 1
-IfTrueAction=[!CommandMeasure mActions "Execute 2"]
-IfConditionMode=1
+ActionList1=Wait 200
 
 [p.FrostedGlass]
 Measure=Plugin
@@ -52,7 +33,7 @@ Meter=String
 W=(#Set.W#+#Set.WinB#)
 H=(#Set.H#+#Set.WinB#)
 SolidColor=0,0,0,150
-Leftmouseupaction=[!CommandMeasure mActions "Execute 2"]
+Leftmouseupaction=[!DeactivateConfig]
 MouseActionCursor=0
 
 [Title]
@@ -62,6 +43,7 @@ Y=(#Set.H#/2)
 W=(#Set.W#)
 StringAlign=CenterCenter
 Text=Installer not working? Click me
+FontSize=20
 Leftmouseupaction=["https://wiki.jaxcore.app/getting-started/faqs/jaxcore-faqs#in-app-installer"]
 MouseOverAction=[!SetOption #CURRENTSECTION# InlineSetting "Underline"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# InlineSetting ""][!UpdateMeter #CURRENTSECTION#][!Redraw]
