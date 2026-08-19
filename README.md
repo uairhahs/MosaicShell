@@ -1,7 +1,11 @@
 # MosaicShell
 
-> A modular desktop shell built from composable surfaces.
-> Forked from [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore) (archived Nov 22, 2024).
+> _Your desktop, composed._
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/uairhahs/MosaicShell/master/.github/docs/MosaicShell.png" alt="MosaicShell" width="120" height="120" />
+  <br />
+</p>
 
 <p align="center">
   <img alt="Version" src="https://img.shields.io/github/v/tag/uairhahs/MosaicShell?label=Version&style=for-the-badge" />
@@ -14,9 +18,11 @@
 
 ## About
 
-MosaicShell is a configurable desktop shell for Windows built from independent, composable modules and widgets, utilities, and automation tools that share a consistent configuration layer.
+MosaicShell is a modular desktop layer for widgets, utilities, and workflows. Arrange the pieces, tune the surface, and build an environment that fits the way you work.
 
 The central hub provides quick access to settings, module management, and updates across the entire ecosystem. Each module can be installed, configured, and updated independently without affecting the others.
+
+Forked from [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore), archived November 2024.
 
 ---
 
