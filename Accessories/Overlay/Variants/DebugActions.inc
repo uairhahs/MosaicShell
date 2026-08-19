@@ -1,4 +1,4 @@
-[Rainmeter]
+ÿş[Rainmeter]
 Update=-1
 
 [Variables]

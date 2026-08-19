@@ -318,10 +318,10 @@ function coords-interp {
 
 <#
 Standard extraction
-.\S-Hub\shp-extractor.ps1 "C:\Users\Jax\AppData\Roaming\JaxCore\CoreData\S-Hub\Exports\Test{}.shp"
+.\S-Hub\shp-extractor.ps1 "C:\Users\Jax\AppData\Roaming\MosaicShell\CoreData\S-Hub\Exports\Test{}.shp"
 
 Test flow
-.\S-Hub\shp-extractor.ps1 "C:\Users\Jax\AppData\Roaming\JaxCore\CoreData\S-Hub\Exports\Test{}.shp" -extracted -nomove
+.\S-Hub\shp-extractor.ps1 "C:\Users\Jax\AppData\Roaming\MosaicShell\CoreData\S-Hub\Exports\Test{}.shp" -extracted -nomove
 #>
 
 Write-Info "SHPEXTRACTOR REF: Experimental v1.9"
@@ -401,7 +401,7 @@ if (!$o_noExtract) {
     $confirmation = Read-Host "Do you want to create a system restore point? (y/n)"
     if ($confirmation -match '^y$') {
         Write-Task "Generating system restore point"
-        Checkpoint-Computer -Description "JaxCore SHP installation"
+        Checkpoint-Computer -Description "MosaicShell SHP installation"
         Write-Done
     }
 }
@@ -409,14 +409,14 @@ Write-Info "Please select the themes and modules that you want to import."
 $o_toImport = Read-Host @"
 A - Import all
 R - Rainmeter skins
-C - JaxCore modules
+C - MosaicShell modules
 W - Windows visual style
 D - BetterDiscord theme
 S - Spicetify theme
 F - Firefox custom css
 T - Droptop theme
 
-Input example: "RCW" (To import Rainmeter, JaxCore and Windows Visual Styles only)
+Input example: "RCW" (To import Rainmeter, MosaicShell and Windows Visual Styles only)
 Input example: "A" (To import all available themes)
 
 Selection
@@ -466,14 +466,14 @@ debug "RainmeterSkinsPath: $s_RMSkinFolder"
 debug "ScreenAreaSizes: $w x $h"
 debug "WinInfo: Windows $WinVer Build $WinBuild"
 # ---------------------------------------------------------------------------- #
-#                             Rainmeter and JaxCore                            #
+#                             Rainmeter and MosaicShell                            #
 # ---------------------------------------------------------------------------- #
 if ((($SHPData.Tags -contains 'Rainmeter') -or ($SHPData.Data.CoreModules.Count -gt 0)) -and ('R', 'C', 'A' | ? { $o_toImport -contains $_ })) {
 
-    Write-Info "Rainmeter / JaxCore layout found in package"
-    # ------------------------ Get JaxCore module details ------------------------ #
+    Write-Info "Rainmeter / MosaicShell layout found in package"
+    # ------------------------ Get MosaicShell module details ------------------------ #
     Write-Task "Reading remote ModuleDetails.ini"
-    $ModuleDetails = Get-RemoteIniContent 'https://raw.githubusercontent.com/Jax-Core/JaxCore/main/S-Hub/ModuleDetails.ini'
+    $ModuleDetails = Get-RemoteIniContent 'https://raw.githubusercontent.com/uairhahs/MosaicShell/main/S-Hub/ModuleDetails.ini'
 
     $tagged_modules = $ModuleDetails.SHubPreferences.TaggedModules
     $custom_userimages = @{}
@@ -485,7 +485,7 @@ if ((($SHPData.Tags -contains 'Rainmeter') -or ($SHPData.Data.CoreModules.Count 
         }
         $custom_userimages[$k] = $ha
     }
-    $jaxcore_modules = $ModuleDetails.Keys | Where-Object {$_ -notmatch "Setup|Version|JaxCore|JaxCoreDLCs|CustomUserImages|SHubPreferences"}
+    $mosaic_modules = $ModuleDetails.Keys | Where-Object {$_ -notmatch "Setup|Version|MosaicShell|MosaicShellDLCs|CustomUserImages|SHubPreferences"}
     $exclude_plugins = $ModuleDetails.Version.Keys
     $s_RMINIFile_filterpattern = $ModuleDetails.SHubPreferences.SectionFilterPattern
     Write-Done
@@ -529,7 +529,7 @@ if ((($SHPData.Tags -contains 'Rainmeter') -or ($SHPData.Data.CoreModules.Count 
         Write-Task "Getting current Rainmeter layout"
         $RMINI = Get-IniContent $s_RMINIFile
         Write-Done
-        # ------------------------------ JaxCore updater ----------------------------- #
+        # ------------------------------ MosaicShell updater ----------------------------- #
         Write-Task "Setting activeness of presistent skins"
         foreach ($section in $preserve_sections) {
             if ($RMINI[$section].Active -eq '1') {
@@ -604,13 +604,13 @@ if (($SHPData.Tags -contains 'Rainmeter') -and ('R', 'A' | ? { $o_toImport -cont
     }
 }
 # ---------------------------------------------------------------------------- #
-#                                    JaxCore                                   #
+#                                 MosaicShell                                   #
 # ---------------------------------------------------------------------------- #
 if (($SHPData.Data.CoreModules -contains 'Droptop') -and (!('T', 'A' | ? { $o_toImport -contains $_ }) -or (!(Test-Path "$s_RMSkinFolder\Droptop")))) {
     $SHPData.Data.CoreModules.Remove('Droptop')
 }
 if (($SHPData.Data.CoreModules.Count -gt 0) -and ('C', 'A' | ? { $o_toImport -contains $_ })) {
-    Write-Info "JaxCore modules found in package"
+    Write-Info "MosaicShell modules found in package"
     if (!$o_noMove) {
 
         $o_InstallModule = @()
@@ -626,8 +626,8 @@ if (($SHPData.Data.CoreModules.Count -gt 0) -and ('C', 'A' | ? { $o_toImport -co
             $o_FromSHUB = $true
             $o_Force = $true
             $o_Location = Split-Path $s_RMSettingsFolder
-            Write-Divider "JaxCore Installer"
-            iwr -useb 'https://raw.githubusercontent.com/Jax-Core/JaxCore/master/CoreInstaller.ps1' | iex
+            Write-Divider "MosaicShell Installer"
+            iwr -useb 'https://raw.githubusercontent.com/uairhahs/MosaicShell/master/CoreInstaller.ps1' | iex
             Write-Divider "Install End"
         }
 
@@ -658,8 +658,8 @@ if (($SHPData.Data.CoreModules.Count -gt 0) -and ('C', 'A' | ? { $o_toImport -co
             
             if ($dlcFound -eq $null -or $dlcFound -eq $true) {
                 debug "Importing variables files back to $m"
-                Get-ChildItem -Path "$s_cache_location\Rainmeter\JaxCore\$m" -Recurse -File | ForEach-Object {
-                    $i_foundLocation = $_.FullName -replace "^$([regex]::Escape("$s_cache_location\Rainmeter\JaxCore\"))"
+                Get-ChildItem -Path "$s_cache_location\Rainmeter\MosaicShell\$m" -Recurse -File | ForEach-Object {
+                    $i_foundLocation = $_.FullName -replace "^$([regex]::Escape("$s_cache_location\Rainmeter\MosaicShell\"))"
                     $i_savelocation = $_.FullName
                     $i_targetlocation = "$s_RMSkinFolder\$i_foundLocation"
                     if (Test-Path "$i_targetlocation") {
@@ -705,7 +705,7 @@ if (($SHPData.Tags -contains 'Spicetify') -and ('S', 'A' | ? { $o_toImport -cont
         $confirmation = Read-Host 'Install Spicetify (https://spicetify.app/) to customize Spotify? (y/n)'
         if ($confirmation -match '^y$') {
             Write-Divider "Spicetify Installer"
-            iwr -useb 'https://raw.githubusercontent.com/Jax-Core/JaxCore/main/S-Hub/shp-spicetify.ps1' | iex
+            iwr -useb 'https://raw.githubusercontent.com/uairhahs/MosaicShell/main/S-Hub/shp-spicetify.ps1' | iex
             Write-Divider "Install End"
 
             Write-Divider "Spicetify Init"

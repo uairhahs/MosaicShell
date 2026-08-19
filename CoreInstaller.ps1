@@ -256,8 +256,8 @@ Active=0
 
 "@
     Write-Done
-    If (Test-Path "$env:APPDATA\JaxCore\InstalledComponents\") {
-        Get-ChildItem -Path "$env:APPDATA\JaxCore\" -Recurse | Remove-Item -Recurse
+    If (Test-Path "$env:APPDATA\MosaicShell\InstalledComponents\") {
+        Get-ChildItem -Path "$env:APPDATA\MosaicShell\" -Recurse | Remove-Item -Recurse
     }
 }
 
@@ -270,7 +270,7 @@ Active=0
 # $s - Installer options set by developer
 # $o_InstallModule - Module to install
 ## $o_Version - Version to get (Number ONLY)
-# $o_FromCore - If installation is invoked via JaxCore
+# $o_FromCore - If installation is invoked via MosaicShell
 # $o_FromSHUB - If installation is invoked via S-Hub
 # $o_Force - Overwrite existing files
 # $o_ExtInstall - Run .rmskin
@@ -278,7 +278,7 @@ Active=0
 ## $o_Location - Where to install Core, or where the Rainmeter folder is 
 ## $o_NoPostActions - Whether to do additional things after installation
 # ------------------------------ Default values ------------------------------ #
-if (!($o_InstallModule)) {$o_InstallModule = "JaxCore"}
+if (!($o_InstallModule)) {$o_InstallModule = "MosaicShell"}
 if (!($o_FromCore)) {$o_FromCore = $false}
 if (!($o_FromSHUB)) {$o_FromSHUB = $false}
 if (!($o_Force)) {$o_Force = $false}
@@ -293,7 +293,7 @@ if (!($o_PromptBestOption)) {
 # ---------------------------- Installer variables --------------------------- #
 $s_InstallIsBatch = [bool]($o_InstallModule.Count -gt '1')
 $s_rootDrive = (Get-WmiObject Win32_OperatingSystem).SystemDrive
-$s_rootFolderName = "JaxCoreCache"
+$s_rootFolderName = "MosaicShellCache"
 $s_root = "$($s_rootDrive)\$s_rootFolderName"
 $s_unpacked = "$s_root\Unpacked"
 # Declare global scope installer variables
@@ -318,7 +318,7 @@ if (!($o_Location)) {
     # ---------------------------- Installer variables --------------------------- #
     $s_RMSettingsFolder = "$env:APPDATA\Rainmeter\"
     $s_RMINIFile = "$($s_RMSettingsFolder)Rainmeter.ini"
-    $s_RMSkinFolder = "$env:APPDATA\JaxCore\InstalledComponents\"
+    $s_RMSkinFolder = "$env:APPDATA\MosaicShell\InstalledComponents\"
     # --------------------------- Check if RM installed -------------------------- #
 
     $RMEXEloc = "$($s_RMSettingsFolder)Rainmeter.exe"
@@ -333,7 +333,7 @@ if (!($o_Location)) {
             $s_RMSkinFolder = $Ini["Rainmeter"]["SkinPath"]
             $hwa = $Ini["Rainmeter"]["HardwareAcceleration"]
             if (($hwa -eq $null) -and ($o_PromptBestOption -eq $true)) {
-                Write-Info "JaxCore recommends that the HardwareAcceleration option for Rainmeter to be turned on. "
+                Write-Info "MosaicShell recommends that the HardwareAcceleration option for Rainmeter to be turned on. "
                 $confirmation = Read-Host "Turn on? (y/n)"
                 if ($confirmation -match '^y$') {
                     $Ini["Rainmeter"]["HardwareAcceleration"] = "1"
@@ -351,7 +351,7 @@ if (!($o_Location)) {
         if ($o_InstallModule -match '/') {
             $s_LargeModuleName = $o_InstallModule.Split('/')[1]
         } else {
-            $s_LargeModuleName = 'JaxCore'
+            $s_LargeModuleName = 'MosaicShell'
         }
         Write-Host "$s_LargeModuleName is not installed on your device:`n1 - Quick install (Recommended)`n2 - Install as Rainmeter application`n3 - Install at a custom location`n"
         $confirmation = Read-Host "Please select your desired installation by entering 1-3"
@@ -359,14 +359,14 @@ if (!($o_Location)) {
             # # ------------------------------- Quick install ------------------------------ #
             # $s_RMSettingsFolder = "$env:APPDATA\Rainmeter\"
             # $s_RMINIFile = "$($s_RMSettingsFolder)Rainmeter.ini"
-            # $s_RMSkinFolder = "$env:APPDATA\JaxCore\InstalledComponents\"
+            # $s_RMSkinFolder = "$env:APPDATA\MosaicShell\InstalledComponents\"
             # $RMEXEloc = "$s_RMSettingsFolder\Rainmeter.exe"
 
             # Download-Rainmeter "/S /RESTART=0 /PORTABLE=1 /D=$s_RMSettingsFolder"
             $RMEXEloc = "$Env:Programfiles\Rainmeter\Rainmeter.exe"
 
             Download-Rainmeter "/S /AUTOSTARTUP=1 /RESTART=0"
-            # Quick install will do a portable install once I can get JaxCore.lnk to start Rainmeter if not already running
+            # Quick install will do a portable install once I can get MosaicShell.lnk to start Rainmeter if not already running
         } elseif ($confirmation -match '2') {
             # ----------------------- Install Rainmeter application ---------------------- #
             $RMEXEloc = "$Env:Programfiles\Rainmeter\Rainmeter.exe"
@@ -378,7 +378,7 @@ if (!($o_Location)) {
 
             $s_RMSettingsFolder = "$o_Location\Rainmeter\"
             $s_RMINIFile = "$($s_RMSettingsFolder)Rainmeter.ini"
-            $s_RMSkinFolder = "$o_Location\JaxCore\InstalledComponents\"
+            $s_RMSkinFolder = "$o_Location\MosaicShell\InstalledComponents\"
             $RMEXEloc = "$s_RMSettingsFolder\Rainmeter.exe"
             
             Download-Rainmeter "/S /RESTART=0 /PORTABLE=1 /D=$s_RMSettingsFolder"
@@ -394,7 +394,7 @@ if (!($o_Location)) {
     # ---------------------------- Installer variables --------------------------- #
     $s_RMSettingsFolder = "$o_Location\Rainmeter\"
     $s_RMINIFile = "$($s_RMSettingsFolder)Rainmeter.ini"
-    $s_RMSkinFolder = "$o_Location\JaxCore\InstalledComponents\"
+    $s_RMSkinFolder = "$o_Location\MosaicShell\InstalledComponents\"
     $RMEXEloc = "$s_RMSettingsFolder\Rainmeter.exe"
     # ------- Check if Rainmeter is already installed at provided location ------- #
     If (Test-Path "$o_Location\Rainmeter\Rainmeter.exe") {
@@ -410,7 +410,7 @@ if (!($o_Location)) {
             }
             $hwa = $Ini["Rainmeter"]["HardwareAcceleration"]
             if (($hwa -eq $null) -and ($o_PromptBestOption -eq $true)) {
-                Write-Info "JaxCore recommends that the HardwareAcceleration option for Rainmeter to be turned on. "
+                Write-Info "MosaicShell recommends that the HardwareAcceleration option for Rainmeter to be turned on. "
                 $confirmation = Read-Host "Turn on? (y/n)"
                 if ($confirmation -match '^y$') {
                     $Ini["Rainmeter"]["HardwareAcceleration"] = "1"
@@ -419,7 +419,7 @@ if (!($o_Location)) {
             }
         }
     } else {
-        Write-Host "Are you sure you want to install JaxCore at " -NoNewLine; Write-Emphasized $o_Location
+        Write-Host "Are you sure you want to install MosaicShell at " -NoNewLine; Write-Emphasized $o_Location
         $confirmation = Read-Host "? (y/n)"
         if ($confirmation -match '^y$') {
             $wasRMInstalled = $false
@@ -480,8 +480,8 @@ Get-ChildItem "$s_root" | ForEach-Object {
     Remove-Item $_.FullName -Force -Recurse
 }
 # ------------------------------ Download files ------------------------------ #
-Write-Task "Getting ModuleDetails from JaxCore repository"
-$moduleDetails = Get-RemoteIniContent 'https://raw.githubusercontent.com/Jax-Core/JaxCore/main/S-Hub/ModuleDetails.ini'
+Write-Task "Getting ModuleDetails from MosaicShell repository"
+$moduleDetails = Get-RemoteIniContent 'https://raw.githubusercontent.com/uairhahs/MosaicShell/main/S-Hub/ModuleDetails.ini'
 Write-Done
 foreach ($m in $o_InstallModule) {
     debug "Processing module $m"
@@ -490,7 +490,7 @@ foreach ($m in $o_InstallModule) {
         $org = $m.Split('/')[0]
         $m = $m.Split('/')[1]
     } else {
-        $org = 'Jax-Core'
+        $org = 'uairhahs'
     }
     debug "Organization: $org"
 
@@ -506,8 +506,8 @@ foreach ($m in $o_InstallModule) {
         $22h2_downloaded = $true
 
         $outpath = "$s_root\zzzzzz.rmskin"
-        Write-Task "Downloading 22H2 media player patch from    "; Write-Emphasized "https://github.com/Jax-Core/22H2-MediaPatch/releases/download/v1/zzzzzz.rmskin"
-        Invoke-WebRequest "https://github.com/Jax-Core/22H2-MediaPatch/releases/download/v1/zzzzzz.rmskin" -outfile "$outpath" -UseBasicParsing
+        Write-Task "Downloading 22H2 media player patch from    "; Write-Emphasized "https://github.com/uairhahs/MosaicShell/releases/download/v1/zzzzzz.rmskin"
+        Invoke-WebRequest "https://github.com/uairhahs/MosaicShell/releases/download/v1/zzzzzz.rmskin" -outfile "$outpath" -UseBasicParsing
         Write-Done
     }
 
@@ -538,7 +538,7 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
             Invoke-Item $_.FullName
         }
     } else {
-        throw 'Unable to find downloaded file. Try running installer as adminstrator, or if you are installing a module within JaxCore, run Rainmeter as administrator and try again. Make sure you have no programs running that would potentially delete the downloaded file'
+        throw 'Unable to find downloaded file. Try running installer as adminstrator, or if you are installing a module within MosaicShell, run Rainmeter as administrator and try again. Make sure you have no programs running that would potentially delete the downloaded file'
     }
     Write-Done
     Write-Task "Interacting with installer UI"
@@ -567,7 +567,7 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
             Write-Done
         }
     } else {
-        throw 'Unable to find downloaded file. Try running installer as adminstrator, or if you are installing a module within JaxCore, run Rainmeter as administrator and try again. Make sure you have no programs running that would potentially delete the downloaded file'
+        throw 'Unable to find downloaded file. Try running installer as adminstrator, or if you are installing a module within MosaicShell, run Rainmeter as administrator and try again. Make sure you have no programs running that would potentially delete the downloaded file'
     }
     # ---------------------------- Start installation ---------------------------- #
     Write-Info "Starting installation..."
@@ -602,7 +602,7 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
 
             $skin_load = $Ini["rmskin"]["Load"]
             $skin_load_path = Split-Path $skin_load
-            if ($skin_name -contains '#JaxCore') {$isInstallingCore = $true} 
+            if ($skin_name -contains '#MosaicShell') {$isInstallingCore = $true} 
             $list_of_installations.Add("$skin_name") > $null
 
             debug "$skin_name $skin_ver - by $skin_auth"
@@ -673,7 +673,7 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
                         Set-IniContent $newvars $i_targetlocation
                     }
                 }
-            } elseif (($skin_name -notcontains '#JaxCore') -and !$o_FromSHUB -and $o_NoPostActions) {
+            } elseif (($skin_name -notcontains '#MosaicShell') -and !$o_FromSHUB -and $o_NoPostActions) {
                 debug "> Automatically changing scale variables (new installation)"
                 $vc = Get-WmiObject -class "Win32_VideoController"
                 $saw = $vc.CurrentHorizontalResolution
@@ -790,7 +790,7 @@ Active=1
         & "$RMEXEloc" [!DeactivateConfig $skin_load_path]
     }
     $dlcINCFile = "$s_RMSkinFolder\..\CoreData\@DLCs\InstalledDLCs.inc"
-    $isPostWebviewCore = Test-Path "$s_RMSkinFolder\#JaxCore\@Resources\CacheVars\Configurator.inc"
+    $isPostWebviewCore = Test-Path "$s_RMSkinFolder\#MosaicShell\@Resources\CacheVars\Configurator.inc"
 
     If (!($o_FromSHUB)) {
         If (!(Test-Path $dlcINCFile)) {
@@ -811,9 +811,9 @@ Active=1
                             debug "Found $i_name in installed DLCs"
                             # Preserve legacy DLC reinstall action
                             if ($isPostWebviewCore) {
-                                & "$RMEXEloc" [!WriteKeyValue Variables Sec.Page "1" "$s_RMSkinFolder\#JaxCore\@Resources\CacheVars\Supporter.inc"][!WriteKeyValue Variables Page.Complete_Reinstallation "1" "$s_RMSkinFolder\#JaxCore\@Resources\CacheVars\Supporter.inc"][!WriteKeyValue Variables Page.Reinstallation_isSingle "$([Bool]($list_of_installations.Count -eq 1))" "$s_RMSkinFolder\#JaxCore\@Resources\CacheVars\Supporter.inc"][!ActivateConfig "#JaxCore\Main" "Supporter.Ini"]
+                                & "$RMEXEloc" [!WriteKeyValue Variables Sec.Page "1" "$s_RMSkinFolder\#MosaicShell\@Resources\CacheVars\Supporter.inc"][!WriteKeyValue Variables Page.Complete_Reinstallation "1" "$s_RMSkinFolder\#MosaicShell\@Resources\CacheVars\Supporter.inc"][!WriteKeyValue Variables Page.Reinstallation_isSingle "$([Bool]($list_of_installations.Count -eq 1))" "$s_RMSkinFolder\#MosaicShell\@Resources\CacheVars\Supporter.inc"][!ActivateConfig "#MosaicShell\Main" "Supporter.Ini"]
                             } else {
-                                & "$RMEXEloc" [!WriteKeyValue Variables Sec.Page "1" "$s_RMSkinFolder\#JaxCore\@Resources\CacheVars\Supporter.inc"][!WriteKeyValue Variables Page.Complete_Reinstallation "1" "$s_RMSkinFolder\#JaxCore\@Resources\CacheVars\Supporter.inc"][!WriteKeyValue Variables Page.Reinstallation_isSingle "$([Bool]($list_of_installations.Count -eq 1))" "$s_RMSkinFolder\#JaxCore\@Resources\CacheVars\Supporter.inc"][!ActivateConfig "#JaxCore\Main" "Supporter.Ini"]
+                                & "$RMEXEloc" [!WriteKeyValue Variables Sec.Page "1" "$s_RMSkinFolder\#MosaicShell\@Resources\CacheVars\Supporter.inc"][!WriteKeyValue Variables Page.Complete_Reinstallation "1" "$s_RMSkinFolder\#MosaicShell\@Resources\CacheVars\Supporter.inc"][!WriteKeyValue Variables Page.Reinstallation_isSingle "$([Bool]($list_of_installations.Count -eq 1))" "$s_RMSkinFolder\#MosaicShell\@Resources\CacheVars\Supporter.inc"][!ActivateConfig "#MosaicShell\Main" "Supporter.Ini"]
                             }
                             Return
                         }
@@ -825,9 +825,9 @@ Active=1
         If ($s_InstallIsBatch) {
             # Preserve legacy jaxcore post acton
             If ($isPostWebviewCore) {
-                & "$RMEXEloc" [!ActivateConfig "#JaxCore\Main" "Home.Ini"]
+                & "$RMEXEloc" [!ActivateConfig "#MosaicShell\Main" "Home.Ini"]
             } else {
-                & "$RMEXEloc" [!WriteKeyValue Variables Sec.Page "1" "$s_RMSkinFolder\#JaxCore\Main\Home.ini"][!ActivateConfig "#JaxCore\Main" "Home.Ini"]
+                & "$RMEXEloc" [!WriteKeyValue Variables Sec.Page "1" "$s_RMSkinFolder\#MosaicShell\Main\Home.ini"][!ActivateConfig "#MosaicShell\Main" "Home.Ini"]
             }
         } else {
             # Preserve legacy secvar path
@@ -838,7 +838,7 @@ Active=1
                 $cachevars_configurator = 'SecVar.inc'
                 $coreini_toload = 'Settings.ini'
             }
-            & "$RMEXEloc" [!WriteKeyvalue Variables Skin.Name "$skin_name" "$s_RMSkinFolder\#JaxCore\@Resources\$cachevars_configurator"][!WriteKeyvalue Variables Skin.Set_Page Info "$s_RMSkinFolder\#JaxCore\@Resources\$cachevars_configurator"][!ActivateConfig "#JaxCore\Main" "$coreini_toload"]
+            & "$RMEXEloc" [!WriteKeyvalue Variables Skin.Name "$skin_name" "$s_RMSkinFolder\#MosaicShell\@Resources\$cachevars_configurator"][!WriteKeyvalue Variables Skin.Set_Page Info "$s_RMSkinFolder\#MosaicShell\@Resources\$cachevars_configurator"][!ActivateConfig "#MosaicShell\Main" "$coreini_toload"]
         }
     }
 }

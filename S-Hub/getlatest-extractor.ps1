@@ -3,5 +3,5 @@ param(
 )
 $ProgressPreference = 'SilentlyContinue'
 If (Test-Path "$ENV:TEMP\shp-extractor.ps1") {Remove-Item "$ENV:TEMP\shp-extractor.ps1" -Force > $null}
-iwr -useb "https://raw.githubusercontent.com/Jax-Core/JaxCore/main/S-Hub/shp-extractor.ps1" -outfile "$ENV:TEMP\shp-extractor.ps1"
+iwr -useb "https://raw.githubusercontent.com/uairhahs/MosaicShell/main/S-Hub/shp-extractor.ps1" -outfile "$ENV:TEMP\shp-extractor.ps1"
 & "$ENV:TEMP\shp-extractor.ps1" "$s_Path"

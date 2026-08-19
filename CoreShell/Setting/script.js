@@ -42,7 +42,7 @@ function changeToPage(page) {
 window.onload = function() {
 
   /* ------------------------------- Header icon ------------------------------ */
-  document.querySelector('.pageList-headerImage').setAttribute('src', 'https://raw.githubusercontent.com/Jax-Core/JaxCore/main/%40Resources/Icons/LibraryIcons/'+currentModule+'.png')
+  document.querySelector('.pageList-headerImage').setAttribute('src', 'https://raw.githubusercontent.com/uairhahs/MosaicShell/main/%40Resources/Icons/LibraryIcons/'+currentModule+'.png')
   changeToPage(currentPage);
 
   console.debug(data);

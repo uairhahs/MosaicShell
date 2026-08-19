@@ -2,7 +2,7 @@
 var currentPage = 'discover';
 
 function GoToCorePage (pageName) {
-    // RainmeterAPI.Bang('[!WriteKeyvalue Variables Skin.Name '+pageName+' "'+_resourceDir+'CacheVars\\Configurator.inc"][!WriteKeyvalue Variables Skin.Set_Page Info "'+_resourceDir+'CacheVars\\Configurator.inc"][!ActivateConfig "#JaxCore\\Main" "Settings.ini"]')
+    // RainmeterAPI.Bang('[!WriteKeyvalue Variables Skin.Name '+pageName+' "'+_resourceDir+'CacheVars\\Configurator.inc"][!WriteKeyvalue Variables Skin.Set_Page Info "'+_resourceDir+'CacheVars\\Configurator.inc"][!ActivateConfig "#MosaicShell\\Main" "Settings.ini"]')
 }
 
 function OpenCoreCtx() {
