@@ -36,13 +36,13 @@ $RMPROCESS = Get-Process 'Rainmeter' -ErrorAction SilentlyContinue
 
 If ($RMPROCESS) {
     Write-Host "Process exist"
-    & $RMPATH [!DeactivateConfig \#JaxCore\Main][!ActivateConfig \#JaxCore\Main Home.ini]
+    & $RMPATH [!DeactivateConfig \#MosaicShell\Main][!ActivateConfig \#MosaicShell\Main Home.ini]
 } else {
     Write-Host "Process not exist, starting"
     & "$RMPATH"
     Wait-ForProcess 'Rainmeter'
     Write-Host "Process started"
     Start-Sleep 1
-    & $RMPATH [!DeactivateConfig \#JaxCore\Main][!ActivateConfig \#JaxCore\Main Home.ini]
+    & $RMPATH [!DeactivateConfig \#MosaicShell\Main][!ActivateConfig \#MosaicShell\Main Home.ini]
 }
 Write-Host "Done"

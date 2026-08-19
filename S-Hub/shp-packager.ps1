@@ -8,7 +8,7 @@ $o_noSpotify        - don't package Spicetify theme?
 $o_noFirefox        - don't package Firefox profile?
 $o_noWinVS          - don't package Windows visual style?
 $o_noRainmeter      - don't package Rainmeter skins?
-$o_noCore           - don't package JaxCore modules?
+$o_noCore           - don't package MosaicShell modules?
 $o_saveLocation     - location to save generated folder structure [==Default set when running==]
 $o_saveLocationSHP  - location to export the package [==Default set when running==]
 $o_keepGenerated    - keep generated folder structure?
@@ -404,7 +404,7 @@ if (Test-Path $s_RMINIFile) {
     $Ini = $null
 } else {
     Write-Fail "Unable to locate $s_RMINIFile."
-    Write-Info "Make sure you've registered the paths with S-Hub packager tool in JaxCore."
+    Write-Info "Make sure you've registered the paths with S-Hub packager tool in MosaicShell."
     Return
 }
 # ----------------------------- Default locations ---------------------------- #
@@ -542,11 +542,11 @@ New-Item -Path "$o_saveLocation\WinVS" -ItemType "Directory" > $null
 New-Item -Path "$o_saveLocationSHP" -ItemType "Directory" > $null
 Write-Done
 # ---------------------------------------------------------------------------- #
-#                             Rainmeter and JaxCore                            #
+#                             Rainmeter and MosaicShell                            #
 # ---------------------------------------------------------------------------- #
-# ------------------------ Get JaxCore module details ------------------------ #
+# ------------------------ Get MosaicShell module details ------------------------ #
 Write-Task "Reading remote ModuleDetails.ini"
-$ModuleDetails = Get-RemoteIniContent 'https://raw.githubusercontent.com/Jax-Core/JaxCore/main/S-Hub/ModuleDetails.ini'
+$ModuleDetails = Get-RemoteIniContent 'https://raw.githubusercontent.com/uairhahs/MosaicShell/main/S-Hub/ModuleDetails.ini'
 
 $tagged_modules = $ModuleDetails.SHubPreferences.TaggedModules
 $custom_userimages = @{}
@@ -558,7 +558,7 @@ foreach ($k in $ModuleDetails.CustomUserImages.Keys) {
     }
     $custom_userimages[$k] = $ha
 }
-$jaxcore_modules = $ModuleDetails.Keys | Where-Object {$_ -notmatch "Setup|Version|JaxCore|JaxCoreDLCs|CustomUserImages|SHubPreferences"}
+$mosaic_modules = $ModuleDetails.Keys | Where-Object {$_ -notmatch "Setup|Version|MosaicShell|MosaicShellDLCs|CustomUserImages|SHubPreferences"}
 $exclude_plugins = $ModuleDetails.Version.Keys
 $s_RMINIFile_filterpattern = $ModuleDetails.SHubPreferences.SectionFilterPattern
 Write-Done
@@ -626,29 +626,29 @@ Write-Done
 # ----------------------- Convert sections to skin name ---------------------- #
 $valid_skins = [string[]]$Ini.Keys | ForEach-Object { $_ -replace '\\.*$', '' }
 # --------------------------- Work with valid skins -------------------------- #
-Write-Task "Copying Rainmeter and JaxCore items"
+Write-Task "Copying Rainmeter and MosaicShell items"
 $i = 0
 $ii = 0
 $skins = @()
-$valid_jaxcore_modules = @()
+$valid_mosaic_modules = @()
 $valid_skins | select-object -unique | ForEach-Object { 
-    if ($jaxcore_modules -contains $_) {
+    if ($mosaic_modules -contains $_) {
         if (!$o_noCore) {
             $ii++
-            $valid_jaxcore_modules += $_
+            $valid_mosaic_modules += $_
             $skin_varf = $ModuleDetails["$_"].VarFiles -split '\s\|\s' | Where-Object {$_ -notmatch "WelcomeVars|Hotkeys"}
 
             if (!$o_noCopy) {
                 foreach ($varf in $skin_varf) {
                     if (Test-Path -path "$s_RMSkinFolder\$varf") {
                         # ----------------------------------- Copy ----------------------------------- #
-                        $i_savedir = "$o_saveLocation\Rainmeter\JaxCore\$(Split-Path $varf)"
-                        $i_savelocation = "$o_saveLocation\Rainmeter\JaxCore\$varf"
+                        $i_savedir = "$o_saveLocation\Rainmeter\MosaicShell\$(Split-Path $varf)"
+                        $i_savelocation = "$o_saveLocation\Rainmeter\MosaicShell\$varf"
                         if (!(Test-Path "$i_savedir")) { New-Item -Path "$i_savedir" -Type "Directory" > $null }
                         Copy-Item -Path "$s_RMSkinFolder\$varf" -Destination "$i_savelocation" -Force > $null
                         # --------------------------------- Check DLC -------------------------------- #
-                        if ($($ModuleDetails.JaxCoreDLCs.ModuleList -Split "\|") -contains $_) {
-                            foreach($dlc in $ModuleDetails.JaxCoreDLCs.DLCList -Split "\|") {
+                        if ($($ModuleDetails.MosaicShellDLCs.ModuleList -Split "\|") -contains $_) {
+                            foreach($dlc in $ModuleDetails.MosaicShellDLCs.DLCList -Split "\|") {
                                 $dlcFound = Select-String -Path "$s_RMSkinFolder\$varf" -Pattern "$dlc"
                                 if ($dlcFound -ne $null) {
                                     debug "Found $dlc in $_ as an active DLC."
@@ -669,9 +669,9 @@ $valid_skins | select-object -unique | ForEach-Object {
                         if (($current_userimage -notmatch "#SKINSPATH#") -and (Test-Path -Path $current_userimage)) {
                             debug "Copying $varf from $module to root of module (user content)"
                             if (!$o_noCopy) {
-                                Copy-Item -Path $current_userimage -Destination "$o_saveLocation\Rainmeter\JaxCore\$module\"
+                                Copy-Item -Path $current_userimage -Destination "$o_saveLocation\Rainmeter\MosaicShell\$module\"
                                 $moduleIni.Variables[$custom_userimages[$module][$varf]] = '#ROOTCONFIGPATH#' + $(Split-Path $current_userimage -Leaf)
-                                Set-IniContent $moduleIni "$o_saveLocation\Rainmeter\JaxCore\$module\$varf"
+                                Set-IniContent $moduleIni "$o_saveLocation\Rainmeter\MosaicShell\$module\$varf"
                             }
                         }
                     }
@@ -695,12 +695,12 @@ $valid_skins | select-object -unique | ForEach-Object {
         }
     }
 }
-$SHPData.Data.CoreModules = $valid_jaxcore_modules
+$SHPData.Data.CoreModules = $valid_mosaic_modules
 $SHPData.Rainmeter.Skins = $skins
 if ($skins.count -ne 0) {
     $SHPData.Tags += "Rainmeter"
 }
-debug "$ii valid JaxCore modules configurations saved: $valid_jaxcore_modules"
+debug "$ii valid MosaicShell modules configurations saved: $valid_mosaic_modules"
 debug "$i valid Rainmeter skins copied: $skins"
 Write-Done
 # ------------------------------- Copy plugins ------------------------------- #

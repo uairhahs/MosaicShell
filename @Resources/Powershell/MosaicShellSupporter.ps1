@@ -13,14 +13,14 @@ function reinstall_all {
     $folderDLCs = "$($skinsPath)..\CoreData\@DLCs\"
     $fileInstalledDLCs = "$($folderDLCs)InstalledDLCs.inc"
     "" | Out-File -FilePath $fileInstalledDLCs -Encoding unicode -Force
-    $RmAPI.Bang("[!Delay 200][!WriteKeyvalue Variables Sec.Page 2 `"$($skinsPath)#JaxCore\@Resources\CacheVars\Supporter.inc`"][!Refresh]")
+    $RmAPI.Bang("[!Delay 200][!WriteKeyvalue Variables Sec.Page 2 `"$($skinsPath)#MosaicShell\@Resources\CacheVars\Supporter.inc`"][!Refresh]")
 }
 
 function check-update {
     # $editingModule = $RmAPI.VariableStr('Page.SubpageModule')
     $skinsPath = $RmAPI.VariableStr('SKINSPATH')
     $skinName = $RmAPI.VariableStr('Skin.Name')
-    $skinDir = "$($skinsPath)#JaxCore"
+    $skinDir = "$($skinsPath)#MosaicShell"
 
     $folderDLCs = "$($skinsPath)..\CoreData\@DLCs\"
     $fileInstalledDLCs = "$($folderDLCs)InstalledDLCs.inc"
@@ -376,9 +376,9 @@ Y=R
     if ($RmAPI.VariableStr('Page.Complete_Reinstallation') -contains '1') {
         $RmAPI.Bang("[!WriteKeyvalue Variables Page.Complete_Reinstallation 0 `"$skinDir\@Resources\CacheVars\Supporter.inc`"]")
         If ($RmAPI.VariableStr('Page.Reinstallation_isSingle') -contains 'True') {
-            $RmAPI.Bang("[!ActivateConfig `"$($RmAPI.VariableStr('SKin.name'))\Main`"][!ActivateConfig `"#JaxCore\Main`" `"Settings.ini`"]")
+            $RmAPI.Bang("[!ActivateConfig `"$($RmAPI.VariableStr('SKin.name'))\Main`"][!ActivateConfig `"#MosaicShell\Main`" `"Settings.ini`"]")
         } else {
-            $RmAPI.Bang("[!ActivateConfig `"#JaxCore\Main`" `"Home.ini`"]")
+            $RmAPI.Bang("[!ActivateConfig `"#MosaicShell\Main`" `"Home.ini`"]")
         }
     } else {$RmAPI.Bang("[!Delay 200][!WriteKeyvalue Variables Sec.Page 1 `"$skinDir\@Resources\CacheVars\Supporter.inc`"][!Refresh]")}
 }
@@ -387,7 +387,7 @@ function moveDLC($path) {
     $skinsPath = $RmAPI.VariableStr('SKINSPATH')
     $folderDLCs = "$($skinsPath)..\CoreData\@DLCs\"
     $folderDLCPackages = "$($folderDLCs)Packages\"
-    $skinDir = "$($skinsPath)#JaxCore"
+    $skinDir = "$($skinsPath)#MosaicShell"
     debug $path
     If ($path -notmatch '[a-zA-Z]_[a-zA-Z]') {
         $RmAPI.Bang("[!SetOption Error.String Text `"Not a Valid DLC package!#CRLF#Make sure to read the installation guide carefully or watch the walkthrough video above.`"][!ShowMeterGroup ErrorDialog][!UpdateMeterGroup ErrorDialog][!Redraw]")

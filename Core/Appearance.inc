@@ -1,4 +1,4 @@
-[Variables]
+ÿþ[Variables]
 [Header01]
 Meter=String
 Text=Presets
@@ -405,4 +405,4 @@ Y=([Option20:Y]-#Set.P#+(-30/2+8)*[Set.S])
 ;Variable=Set.SubText_Color
 ;[Positive indicator color]
 ;Type=Color
-;Variable=Set.Positive_Color
+;Variable=Set.Positive_Colo

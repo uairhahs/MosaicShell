@@ -27,7 +27,7 @@ jobs:
       - name: "💫  Update README.md"
         uses: "varunsridharan/action-dynamic-readme@main"
         with:
-          GLOBAL_TEMPLATE_REPOSITORY: Jax-Core/ReadME-Template/Templates
+          GLOBAL_TEMPLATE_REPOSITORY: uairhahs/MosaicShell/Templates
           commit_message: ⏩ File Rebuilt by Github Actions - Dynamic ReadME
           files: |
             README.md
