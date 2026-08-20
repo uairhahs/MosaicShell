@@ -25,13 +25,16 @@ jobs:
 
       - name: Resolve tag
         id: tag
-        run: echo "name=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+        run: |
+          REF="$GITHUB_REF"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "name=dev" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=${REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Sync version in RMSKIN.ini
-        run: |
-          VERSION="${{ steps.tag.outputs.name }}"
-          VERSION="${VERSION#v}"
-          sed -i "s/^Version=.*/Version=${VERSION}/" RMSKIN.ini
+        run: sed -i "s|^Version=.*|Version=${{ steps.tag.outputs.name }}|" RMSKIN.ini
 
       - name: Build MosaicShell.rmskin
         run: |
