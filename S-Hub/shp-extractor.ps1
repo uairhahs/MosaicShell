@@ -63,7 +63,7 @@ function Get-IniContent ($filePath) {
             $section = $matches[1]
             $secDup = 1
             while ($ini.Keys -contains $section) {
-                $section = $section + '||ps' + $secDup
+                $section = $section + '|ps' + $secDup
             }
             $ini.Add($section, [ordered]@{})
         }
@@ -101,7 +101,7 @@ function Get-RemoteIniContent ($link) {
             $section = $matches[1]
             $secDup = 1
             while ($ini.Keys -contains $section) {
-                $section = $section + '||ps' + $secDup
+                $section = $section + '|ps' + $secDup
             }
             $ini.Add($section, [ordered]@{})
         }
@@ -684,9 +684,9 @@ if (($SHPData.Data.CoreModules.Count -gt 0) -and ('C', 'A' | ? { $o_toImport -co
                     }
                 }
 
-                if ($m -eq 'ModularVisualizer') {
-                    debug "Moving ModularVisualizer generated bars and measures"
-                    Move-Item -Path "$s_cache_location\Rainmeter\CoreData\ModularVisualizer\*" -Destination "$s_RMSkinFolder\ModularVisualizer\" -Force
+                if ($m -eq 'Pulse') {
+                    debug "Moving Pulse generated bars and measures"
+                    Move-Item -Path "$s_cache_location\Rainmeter\CoreData\Pulse\*" -Destination "$s_RMSkinFolder\Pulse\" -Force
                 }
             }
         }

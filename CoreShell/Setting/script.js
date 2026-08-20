@@ -1,5 +1,5 @@
 var currentPage = 'info';
-var currentModule = 'YourFlyouts';
+var currentModule = 'Tessera';
 
 const pageIconReference = {
 general: 'settings',
