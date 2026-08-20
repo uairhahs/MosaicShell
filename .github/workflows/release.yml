@@ -18,7 +18,9 @@ jobs:
 
     steps:
       - name: Install dependencies
-        run: apk add --no-cache git zip github-cli
+        run: |
+          apk add --no-cache git zip github-cli
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
