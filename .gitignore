@@ -1,0 +1,8 @@
+# local only fodlers
+
+.local
+.venv
+.github/docs
+
+# auto generated stubs
+.codebase-memory
