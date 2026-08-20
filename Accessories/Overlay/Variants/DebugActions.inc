@@ -101,7 +101,7 @@ MEterStyle=Sec.String:S | Act.Des.String:S
 ; --------------------------------- Clear rm --------------------------------- ;
 [Item5.Act3.Shape]
 Meter=Shape
-LeftMouseUpAction=[!DeactivateConfig "#Skin.name#\Main"][!CommandMeasure CoreInstallHandler "Remove-Section #Skin.Name#" "#JaxCore\Main"][!UpdateMeasure m.ConfigActive "#JaxCore\Main"][!UpdateMeter * "#JaxCore\Main"][!Redraw "#JaxCore\Main"][!CommandMeasure mActions "Execute 2"]
+LeftMouseUpAction=[!DeactivateConfig "#Skin.name#\Main"][!CommandMeasure CoreInstallHandler "Remove-Section #Skin.Name#" "#MosaicShell\Main"][!UpdateMeasure m.ConfigActive "#MosaicShell\Main"][!UpdateMeter * "#MosaicShell\Main"][!Redraw "#MosaicShell\Main"][!CommandMeasure mActions "Execute 2"]
 MeterStyle=Act.Shape:S
 [Item5.Act3.String]
 Meter=String

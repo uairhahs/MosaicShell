@@ -72,7 +72,7 @@ MeterStyle=Set.String:S | List.Item.String:S
 
 [Item1.Shape]
 Meter=Shape
-LeftMouseUpAction=["https://ko-fi.com/jaxoriginals/shop"]
+LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell"]
 MeterStyle=Item.Shape:S
 [Item1.StringIcon]
 Meter=String
@@ -91,7 +91,7 @@ MeterStyle=Set.String:S | Item.Arrow.String:S
 
 [Item1.Shape]
 Meter=Shape
-LeftMouseUpAction=["https://ko-fi.com/jaxoriginals/shop"]
+LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell"]
 MeterStyle=Item.Shape:S
 [Item1.StringIcon]
 Meter=String
@@ -126,7 +126,7 @@ MeterStyle=Item.Button.Shape:S
 [Item2.Button.StringIcon]
 Meter=String
 Text=[\xe89e]
-LeftMouseUpAction=["https://ko-fi.com/jaxoriginals/shop"]
+LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell"]
 MeterStyle=Sec.String:S | Item.Button.StringIcon:S
 "@
 
@@ -186,7 +186,7 @@ MeterStyle=Set.String:S | List.Item.String:S
 
 [Item1.Shape]
 Meter=Shape
-LeftMouseUpAction=["https://ko-fi.com/jaxoriginals/shop"]
+LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell"]
 MeterStyle=Item.Shape:S
 [Item1.StringIcon]
 Meter=String
@@ -236,7 +236,7 @@ MeterStyle=Set.Div:S
 
 [Item1.Shape]
 Meter=Shape
-LeftMouseUpAction=["https://ko-fi.com/jaxoriginals/shop"]
+LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell"]
 MeterStyle=Item.Shape:S
 [Item1.StringIcon]
 Meter=String

@@ -3,7 +3,7 @@
 > _Your desktop, composed._
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uairhahs/MosaicShell/master/.github/docs/MosaicShell.png" alt="MosaicShell" width="120" height="120" />
+  <img src="https://raw.githubusercontent.com/uairhahs/MosaicShell/master/.github/res/logo-variants/compact-256.png" alt="MosaicShell" width="120" height="120" />
   <br />
 </p>
 

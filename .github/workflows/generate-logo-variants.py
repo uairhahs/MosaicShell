@@ -2,8 +2,8 @@
 
 from PIL import Image
 
-src = Image.open('.github/docs/MosaicShell.png').convert('RGBA')
-out = '.github/docs/logo-variants'
+src = Image.open('.github/res/MosaicShell.png').convert('RGBA')
+out = '.github/res/logo-variants'
 
 for size in [512, 256, 128, 64, 32]:
     src.resize((size, size), Image.LANCZOS).save(f'{out}/compact-{size}.png')
@@ -29,5 +29,12 @@ for size in [512, 256, 128, 64]:
 
 ico_imgs = [src.resize((s, s), Image.LANCZOS).convert('RGBA') for s in [16, 32]]
 ico_imgs[0].save(f'{out}/favicon.ico', format='ICO', sizes=[(16, 16), (32, 32)], append_images=[ico_imgs[1]])
+
+import shutil
+for dest in [
+    '@Resources/Actions/Logo.ico',
+    '@Resources/Images/Logo.ico',
+]:
+    shutil.copy(f'{out}/favicon.ico', dest)
 
 print('Done')

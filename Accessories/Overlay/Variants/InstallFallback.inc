@@ -44,8 +44,7 @@ W=(#Set.W#)
 StringAlign=CenterCenter
 Text=Installer not working? Click me
 FontSize=20
-# TODO: Update wiki URL once MosaicShell documentation is established (currently pointing to archived JaxCore wiki)
-Leftmouseupaction=["https://wiki.jaxcore.app/getting-started/faqs/jaxcore-faqs#in-app-installer"]
+Leftmouseupaction=["https://github.com/uairhahs/MosaicShell"]
 MouseOverAction=[!SetOption #CURRENTSECTION# InlineSetting "Underline"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# InlineSetting ""][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MEterStyle=Sec.String:S
