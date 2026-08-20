@@ -1,0 +1,57 @@
+name: Release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - v*
+  workflow_dispatch:
+
+jobs:
+  build-and-release:
+    name: Build .rmskin and publish release
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:3.21
+
+    steps:
+      - name: Install dependencies
+        run: apk add --no-cache git zip github-cli
+
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Resolve tag
+        id: tag
+        run: echo "name=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Sync version in RMSKIN.ini
+        run: |
+          VERSION="${{ steps.tag.outputs.name }}"
+          VERSION="${VERSION#v}"
+          sed -i "s/^Version=.*/Version=${VERSION}/" RMSKIN.ini
+
+      - name: Build MosaicShell.rmskin
+        run: |
+          PKG=$(mktemp -d)
+          SKIN="$PKG/Skins/#MosaicShell"
+          mkdir -p "$SKIN"
+
+          for dir in @Resources Accessories Core CoreShell Ctx Main S-Hub; do
+            [ -d "$dir" ] && cp -r "$dir" "$SKIN/"
+          done
+
+          cp RMSKIN.ini "$PKG/"
+
+          cd "$PKG"
+          zip -r "$GITHUB_WORKSPACE/MosaicShell.rmskin" . -x "*.git*"
+
+      - name: Create GitHub release
+        run: |
+          gh release create ${{ steps.tag.outputs.name }} MosaicShell.rmskin \
+            --title "MosaicShell ${{ steps.tag.outputs.name }}" \
+            --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
