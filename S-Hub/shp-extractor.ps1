@@ -318,10 +318,10 @@ function coords-interp {
 
 <#
 Standard extraction
-.\S-Hub\shp-extractor.ps1 "C:\Users\Jax\AppData\Roaming\MosaicShell\CoreData\S-Hub\Exports\Test{}.shp"
+.\S-Hub\shp-extractor.ps1 "C:\Users\$ENV:USERNAME\AppData\Roaming\MosaicShell\CoreData\S-Hub\Exports\Test{}.shp"
 
 Test flow
-.\S-Hub\shp-extractor.ps1 "C:\Users\Jax\AppData\Roaming\MosaicShell\CoreData\S-Hub\Exports\Test{}.shp" -extracted -nomove
+.\S-Hub\shp-extractor.ps1 "C:\Users\$ENV:USERNAME\AppData\Roaming\MosaicShell\CoreData\S-Hub\Exports\Test{}.shp" -extracted -nomove
 #>
 
 Write-Info "SHPEXTRACTOR REF: Experimental v1.9"

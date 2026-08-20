@@ -14,7 +14,7 @@
 
 Approved artwork: `MosaicShell.png`.
 
-![MosaicShell logo](./MosaicShell.png)
+![MosaicShell logo](../res/MosaicShell.png)
 
 **Variants still needed:** compact (icon only, for exe/favicon/tray), micro (2–4 tile, <24px), monochrome (single color, for docs/terminal), wordmark-only.
 

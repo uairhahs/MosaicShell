@@ -823,7 +823,7 @@ Active=1
             }
         }
         If ($s_InstallIsBatch) {
-            # Preserve legacy jaxcore post acton
+            # Preserve legacy post action
             If ($isPostWebviewCore) {
                 & "$RMEXEloc" [!ActivateConfig "#MosaicShell\Main" "Home.Ini"]
             } else {
