@@ -27,14 +27,7 @@ Forked from [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore), archived No
 ---
 
 ## Prerequisites
-
-| Requirement | Minimum |
-|-------------|---------|
-| OS | Windows 10 x64 or later |
-| RAM | 6 GB |
-| CPU | 4 cores |
-| PowerShell | v5.1 or later [upgrade here](https://docs.microsoft.com/en-us/powershell/scripting/windows-powershell/install/installing-windows-powershell?view=powershell-7.2#upgrading-existing-windows-powershell) |
-
+Requirement | Minimum|-------------|---------| OS | Windows 10 x64 or later| RAM | 6 GB| CPU | 4 cores| PowerShell | v5.1 or later [upgrade here](https://docs.microsoft.com/en-us/powershell/scripting/windows-powershell/install/installing-windows-powershell?view=powershell-7.2#upgrading-existing-windows-powershell) 
 ---
 
 ## Installation
@@ -49,70 +42,18 @@ iwr -useb "https://raw.githubusercontent.com/uairhahs/MosaicShell/master/CoreIns
 
 ---
 
-## Modules
+## Tiles
 
-Modules are standalone Rainmeter skins managed through the MosaicShell hub.
-
-| Module | Description |
-|--------|-------------|
-| [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) | System flyout replacements for volume, brightness, and media |
-| [YourMixer](https://github.com/Jax-Core/YourMixer) | Per-app audio mixer overlay |
-| [ValliStart](https://github.com/Jax-Core/ValliStart) | Start menu replacement with hot apps, shortcuts, and modules |
-| [IdleStyle](https://github.com/Jax-Core/IdleStyle) | Idle / lock screen skin |
-| [Keylaunch](https://github.com/Jax-Core/Keylaunch) | Keyboard-driven app launcher |
-| [QuickNote](https://github.com/Jax-Core/QuickNote) | Persistent sticky note overlay |
-| [MIUI-Shade](https://github.com/Jax-Core/MIUI-Shade) | Notification shade inspired by MIUI |
-| [Keystrokes](https://github.com/Jax-Core/Keystrokes) | On-screen keystroke visualizer |
-
----
-
-## Widgets
-
-Widgets are decorative or informational skins. Most require MosaicShell to be installed.
-
-| Widget | Description |
-|--------|-------------|
-| [ModularVisualizer](https://github.com/Jax-Core/ModularVisualizer) | Audio visualizer with bar, round, and vector styles |
-| [ModularClocks](https://github.com/Jax-Core/ModularClocks) | Clock collection with multiple display styles |
-| [ModularPlayers](https://github.com/Jax-Core/ModularPlayers) | Media player widget with multiple layouts |
-| [Plainext](https://github.com/Jax-Core/Plainext) | Minimal plain-text information widget |
-| [Combilaunch](https://github.com/Jax-Core/Combilaunch) | Drag-and-drop app launcher that works without MosaicShell |
-
+Tiles are Rainmeter skins bundled with MosaicShell under `Tiles/`.
+Tile | Description | License|------|-------------|--------| Tessera | System flyout replacements for volume, brightness, and media | MPL-2.0| Mixdeck | Per-app audio mixer overlay | MPL-2.0| Inlay | Start menu replacement with hot apps, shortcuts, and modules | MPL-2.0| Slate | Idle / lock screen skin | MPL-2.0| Chord | Keyboard-driven app launcher | MPL-2.0| Shade | Notification shade inspired by MIUI | MPL-2.0| Pulse | Audio visualizer with bar, round, and vector styles | MIT| Chrono | Clock collection with multiple display styles | MIT| Phono | Media player widget with multiple layouts | MIT| Canvas | Minimal plain-text information widget | MIT 
 ---
 
 ## Credits
 
 ### Plugins
-
-| Plugin | Creator |
-|--------|---------|
-| [AudioAnalyzer](https://forum.rainmeter.net/viewtopic.php?t=31091) | rxtd |
-| [FrostedGlass](https://forum.rainmeter.net/viewtopic.php?t=23106) | theAzack9 |
-| [FileChoose](https://forum.rainmeter.net/viewtopic.php?t=33767) | SetSukka |
-| [magickmeter](https://github.com/khanhas/MagickMeter) | [@khanhas](https://github.com/khanhas) |
-| [ConfigActive](https://forum.rainmeter.net/viewtopic.php?t=28720) | jsMorley |
-| [Focus](https://forum.rainmeter.net/viewtopic.php?t=37989) | [@deathcrafter](https://github.com/deathcrafter) |
-| [Mouse](https://github.com/NighthawkSLO/Mouse.dll/) | [@NighthawkSLO](https://github.com/NighthawkSLO) |
-| [MouseXY](https://forum.rainmeter.net/viewtopic.php?t=22900) | Fawxy |
-| [PowershellRM](https://github.com/khanhas/PowershellRM) | [@khanhas](https://github.com/khanhas) |
-| [ShowInToolbar](https://forum.rainmeter.net/viewtopic.php?t=25334) | theAzack9 |
-| [HotKey](https://github.com/brianferguson/HotKey.dll) | [@brianferguson](https://github.com/brianferguson) |
-| [Chameleon](https://github.com/socks-the-fox/Chameleon) | socks-the-fox |
-| [IsFullScreen](https://forum.rainmeter.net/viewtopic.php?t=28305) | jsMorley |
-| [WebNowPlaying](https://github.com/tjhrulz/WebNowPlaying) | Rainmeter team |
-| [Drag&Drop](https://forum.rainmeter.net/viewtopic.php?t=23107) | theAzack9 |
-| [MediaPlayer](https://github.com/i2002/RainmeterMediaPlayer) | [@i2002](https://github.com/i2002) |
-| [AppVolume](https://github.com/khanhas/AppVolumePlugin) | Original [@khanhas](https://github.com/khanhas), remastered [@deathcrafter](https://github.com/deathcrafter) |
-| [TrayIcon](https://github.com/deathcrafter/PluginTrayIcon) | [@deathcrafter](https://github.com/deathcrafter) |
-| [SysColor](https://github.com/brianferguson/SysColor.dll) | [@brianferguson](https://github.com/brianferguson) |
-
+Plugin | Creator|--------|---------| [AudioAnalyzer](https://forum.rainmeter.net/viewtopic.php?t=31091) | rxtd| [FrostedGlass](https://forum.rainmeter.net/viewtopic.php?t=23106) | theAzack9| [FileChoose](https://forum.rainmeter.net/viewtopic.php?t=33767) | SetSukka| [magickmeter](https://github.com/khanhas/MagickMeter) | [@khanhas](https://github.com/khanhas)| [ConfigActive](https://forum.rainmeter.net/viewtopic.php?t=28720) | jsMorley| [Focus](https://forum.rainmeter.net/viewtopic.php?t=37989) | [@deathcrafter](https://github.com/deathcrafter)| [Mouse](https://github.com/NighthawkSLO/Mouse.dll/) | [@NighthawkSLO](https://github.com/NighthawkSLO)| [MouseXY](https://forum.rainmeter.net/viewtopic.php?t=22900) | Fawxy| [PowershellRM](https://github.com/khanhas/PowershellRM) | [@khanhas](https://github.com/khanhas)| [ShowInToolbar](https://forum.rainmeter.net/viewtopic.php?t=25334) | theAzack9| [HotKey](https://github.com/brianferguson/HotKey.dll) | [@brianferguson](https://github.com/brianferguson)| [Chameleon](https://github.com/socks-the-fox/Chameleon) | socks-the-fox| [IsFullScreen](https://forum.rainmeter.net/viewtopic.php?t=28305) | jsMorley| [WebNowPlaying](https://github.com/tjhrulz/WebNowPlaying) | Rainmeter team| [Drag&Drop](https://forum.rainmeter.net/viewtopic.php?t=23107) | theAzack9| [MediaPlayer](https://github.com/i2002/RainmeterMediaPlayer) | [@i2002](https://github.com/i2002)| [AppVolume](https://github.com/khanhas/AppVolumePlugin) | Original [@khanhas](https://github.com/khanhas), remastered [@deathcrafter](https://github.com/deathcrafter)| [TrayIcon](https://github.com/deathcrafter/PluginTrayIcon) | [@deathcrafter](https://github.com/deathcrafter)| [SysColor](https://github.com/brianferguson/SysColor.dll) | [@brianferguson](https://github.com/brianferguson) 
 ### Technologies
-
-| Technology | Creator |
-|------------|---------|
-| [AutoHotkey](https://www.autohotkey.com/) | AHK Team |
-| [RainRGB](https://forum.rainmeter.net/viewtopic.php?t=6215) | jsMorley |
-
+Technology | Creator|------------|---------| [AutoHotkey](https://www.autohotkey.com/) | AHK Team| [RainRGB](https://forum.rainmeter.net/viewtopic.php?t=6215) | jsMorley 
 ### Original project
 
 MosaicShell is a fork of [JaxCore](https://github.com/Jax-Core/JaxCore) by [@EnhancedJax](https://github.com/EnhancedJax), archived November 2024. The original modules, plugin integrations, and installer architecture are his work.

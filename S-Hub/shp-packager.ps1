@@ -231,7 +231,7 @@ function Get-IniContent ($filePath) {
             $section = $matches[1]
             $secDup = 1
             while ($ini.Keys -contains $section) {
-                $section = $section + '||ps' + $secDup
+                $section = $section + '|ps' + $secDup
             }
             $ini.Add($section, [ordered]@{})
         }
@@ -270,7 +270,7 @@ function Get-RemoteIniContent ($link) {
             $section = $matches[1]
             $secDup = 1
             while ($ini.Keys -contains $section) {
-                $section = $section + '||ps' + $secDup
+                $section = $section + '|ps' + $secDup
             }
             $ini.Add($section, [ordered]@{})
         }
@@ -511,9 +511,9 @@ $SHPFirefox = @{}
 $SHPData = @{'Data'=$SHPInfo;'Rainmeter'=$SHPRainmeter;'BetterDiscord'=$SHPBetterDiscord;'Spicetify'=$SHPSpicetify;'Firefox'=$SHPFirefox;'Tags'=@()}
 # -------------------------------- Name to id -------------------------------- #
 $s_NameToID = @{
-    "YourFlyouts"="0";
-    "YourMixer"="1";
-    "ValliStart"="2";
+    "Tessera"="0";
+    "Mixdeck"="1";
+    "Inlay"="2";
     "Rainmeter"="R";
     "Firefox"="F";
     "Spicetify"="S";
@@ -678,11 +678,11 @@ $valid_skins | select-object -unique | ForEach-Object {
                 }
             }
 
-            if ($_ -eq 'ModularVisualizer') {
-                New-Item -Path "$o_saveLocation\Rainmeter\CoreData\ModularVisualizer" -ItemType Directory > $null
+            if ($_ -eq 'Pulse') {
+                New-Item -Path "$o_saveLocation\Rainmeter\CoreData\Pulse" -ItemType Directory > $null
                 if (!$o_noCopy) {
-                    Get-ChildItem "$s_RMSkinFolder\..\CoreData\ModularVisualizer\" -Directory | ForEach-Object {
-                        Copy-Item -Path $_.FullName -Destination "$o_saveLocation\Rainmeter\CoreData\ModularVisualizer\" -Recurse
+                    Get-ChildItem "$s_RMSkinFolder\..\CoreData\Pulse\" -Directory | ForEach-Object {
+                        Copy-Item -Path $_.FullName -Destination "$o_saveLocation\Rainmeter\CoreData\Pulse\" -Recurse
                     }
                 }
             }
