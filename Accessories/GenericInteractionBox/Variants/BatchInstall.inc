@@ -312,16 +312,16 @@ MeterStyle=Sec.String:S | ListItem.String:S
 Meter=String
 MeterStyle=Sec.String:S | ListItem.Button.String:S
 
-[MIUI-Shade.Shape]
+[Substrate.Shape]
 Meter=Shape
 MeterStyle=ListItem.Shape:S
-[MIUI-Shade.Image]
+[Substrate.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[MIUI-Shade.String]
+[Substrate.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.String:S
-[MIUI-Shade.Button.String]
+[Substrate.Button.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.Button.String:S
 

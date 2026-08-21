@@ -1,5 +1,5 @@
 ﻿﻿[Header.Image]
-ImageName=#SKINSPATH#ModularVisualizer\@Resources\Images\Warning.png
+ImageName=#SKINSPATH#Pulse\@Resources\Images\Warning.png
 
 [Header.String]
 Text=A Visualizer will use additional system resources.

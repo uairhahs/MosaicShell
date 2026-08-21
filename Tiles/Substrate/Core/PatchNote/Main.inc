@@ -11,7 +11,7 @@ Hidden=1
 
 [Title]
 Meter=String
-Text="MIUI-Shade v2.02"
+Text="Substrate v2.02"
 MeterStyle=Sec.String:S | Style.Title:S
 
 [Description.1]

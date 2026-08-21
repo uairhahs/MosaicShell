@@ -2,13 +2,13 @@
 
 function Initialize()
 
-    if SKIN:GetVariable('CURRENTCONFIG') == [[YourMixer\Main\Elements\ControlScreen]] then
+    if SKIN:GetVariable('CURRENTCONFIG') == [[Mixdeck\Main\Elements\ControlScreen]] then
         -- ------------------------ built device context menu ----------------------- --
         local deviceList = SKIN:GetMeasure('p.AudioLevel.DeviceList'):GetStringValue()
 
         local i = 1
         for name in string.gmatch(deviceList, '{[.%d]*}.{[%x-]*}: ([^\n]*)') do
-            local action = '[!CommandMeasure "AppVol0" "SetOutPutIndex ' .. i .. '"][!UpdateMeasure ACTIONREFRESH "YourMixer\\Main"]'
+            local action = '[!CommandMeasure "AppVol0" "SetOutPutIndex ' .. i .. '"][!UpdateMeasure ACTIONREFRESH "Mixdeck\\Main"]'
             if i == 1 then index = '' else index = i end
             SKIN:Bang('!SetOption', 'Rainmeter', 'ContextTitle' .. index, name)
             SKIN:Bang('!SetOption', 'Rainmeter', 'ContextAction' .. index, action)
@@ -92,13 +92,13 @@ function Initialize()
         if SKIN:GetVariable('StayOnDesktop') == '1' then
             SKIN:Bang('[!DisableMeasure mToggleSet][!DisableMeasure mToggle]')
             SKIN:Bang('[\"#@#Actions\\AHKv1.exe\" \"#@#Actions\\Source Code\\Close.ahk\"]')
-            SKIN:Bang('[!SetOption AppVolumeParent OnChangeAction """[!CommandMeasure generateMixer "generateMixer"][!Refresh "YourMixer\\Main\\Elements\\ControlScreen"]"""]')
+            SKIN:Bang('[!SetOption AppVolumeParent OnChangeAction """[!CommandMeasure generateMixer "generateMixer"][!Refresh "Mixdeck\\Main\\Elements\\ControlScreen"]"""]')
             SKIN:Bang('[!Delay 100][!EnableMeasureGroup NUOL][!UpdateMeasure ACTIONLOAD]')
         else
             if SKIN:GetVariable('Hotkey') == '1' then
-                SKIN:Bang('[!Delay 100][!Deactivateconfig "YourMixer\\Main\\Elements\\ControlScreen"][\"#@#Actions\\AHKv1.exe\" \"#@#Actions\\Source Code\\YourMixer.ahk\"][!EnableMeasureGroup NUOL]')
+                SKIN:Bang('[!Delay 100][!Deactivateconfig "Mixdeck\\Main\\Elements\\ControlScreen"][\"#@#Actions\\AHKv1.exe\" \"#@#Actions\\Source Code\\Mixdeck.ahk\"][!EnableMeasureGroup NUOL]')
             else
-                SKIN:Bang('[!Delay 100][!Deactivateconfig "YourMixer\\Main\\Elements\\ControlScreen"][\"#@#Actions\\AHKv1.exe\" \"#@#Actions\\Source Code\\Close.ahk\"][!EnableMeasureGroup NUOL]')
+                SKIN:Bang('[!Delay 100][!Deactivateconfig "Mixdeck\\Main\\Elements\\ControlScreen"][\"#@#Actions\\AHKv1.exe\" \"#@#Actions\\Source Code\\Close.ahk\"][!EnableMeasureGroup NUOL]')
             end
         end
     end
@@ -128,10 +128,10 @@ end
 
 function InitActions(type, reset)
     if type == 1 and tonumber(SKIN:GetVariable('BackgroundMod')) == 1 then
-        SKIN:Bang('[!ActivateConfig "YourMixer\\Main\\Elements\\Unload"]')
+        SKIN:Bang('[!ActivateConfig "Mixdeck\\Main\\Elements\\Unload"]')
     elseif type == -1 then
         if tonumber(SKIN:GetVariable('BackgroundMod')) == 1 then
-            SKIN:Bang('[!DeactivateConfig "YourMixer\\Main\\Elements\\Unload"]')
+            SKIN:Bang('[!DeactivateConfig "Mixdeck\\Main\\Elements\\Unload"]')
         end
         SKIN:Bang('[!DeactivateConfig]')
     end

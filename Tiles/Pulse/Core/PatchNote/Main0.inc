@@ -4,7 +4,7 @@
 Meter=String
 X=(#Sec.W#/2)
 StringAlign=Center
-Text=New to ModularVisualizer?
+Text=New to Pulse?
 MeterStyle=Sec.String:S | Style.Title:S
 
 [Button.1.Shape]

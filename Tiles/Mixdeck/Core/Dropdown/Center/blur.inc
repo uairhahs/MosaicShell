@@ -8,7 +8,7 @@ SaveKey=Blur
 ; ---------------------------------------------------------------------------- ;
 
 [String:S]
-LeftMouseUpAction=[!WriteKeyValue Variables #SaveKey# "#CURRENTSECTION#" "#SaveLocation#"][!Refresh "#JaxCore\Main"][!DeactivateConfig]
+LeftMouseUpAction=[!WriteKeyValue Variables #SaveKey# "#CURRENTSECTION#" "#SaveLocation#"][!Refresh "#MosaicShell\Main"][!DeactivateConfig]
 tooltiptitle=#CURRENTSECTION#
 
 ; ---------------------------------------------------------------------------- ;

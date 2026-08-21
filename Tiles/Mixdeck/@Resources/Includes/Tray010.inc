@@ -21,5 +21,5 @@ Plugin=TrayIcon
 IconName=#@#Icons\Tray\#IconTheme#\Volume0.ico
 ToolTipText=Volume: [AppVolper0:]
 LeftMouseUpAction=[!UpdateMeasure mToggle]
-RightMouseUpAction=[!UpdateMeasureGroup CurPos.XY][!CommandMeasure Ctx.Gen:M "Gen()"][!ActivateConfig "#JaxCore\Ctx"][!SetVariable Sec.Skin "#ROOTCONFIG#" "#JaxCore\Ctx"]
+RightMouseUpAction=[!UpdateMeasureGroup CurPos.XY][!CommandMeasure Ctx.Gen:M "Gen()"][!ActivateConfig "#MosaicShell\Ctx"][!SetVariable Sec.Skin "#ROOTCONFIG#" "#MosaicShell\Ctx"]
 DynamicVariables=1

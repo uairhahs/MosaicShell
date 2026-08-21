@@ -246,7 +246,7 @@ MeterStyle=Set.Button:S
 Y=([Option05:Y]-#Set.P#+(-30/2+8)*[Set.S])
 OverColor=#Set.Accent_color#,150
 LeaveColor=#Set.Accent_color#,50
-Act=["#SKINSPATH#ValliStart\@Resources\Calendars\Holidays.xml"]
+Act=["#SKINSPATH#Inlay\@Resources\Calendars\Holidays.xml"]
 [Icon05]
 Meter=String
 Text=[\xe895]

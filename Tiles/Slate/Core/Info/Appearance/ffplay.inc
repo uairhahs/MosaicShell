@@ -32,7 +32,7 @@ Y=(#sec.P#)R
 FontSize=(12*#Sec.S#)
 MouseOverAction=[!SetOption #CURRENTSECTION# MeterStyle "Sec.String:S | Folder:Link"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# MeterStyle "Sec.String:S | Folder:NoLink"][!UpdateMeter #CURRENTSECTION#][!Redraw]
-LeftMouseUpAction=["#SKINSPATH#..\CoreData\IdleStyle"]
+LeftMouseUpAction=["#SKINSPATH#..\CoreData\Slate"]
 [Folder:NoLink]
 InlinePattern=this folder
 InlineSetting=Color | 88, 166, 218
@@ -44,7 +44,7 @@ InlineSetting2=Color | 31, 69, 174
 
 [Des3]
 Meter=String
-Text=Refresh the core page and it should show as available after that. You can now add your own videos into IdleStyle and have it display then!
+Text=Refresh the core page and it should show as available after that. You can now add your own videos into Slate and have it display then!
 MeterStyle=Sec.String:S | Folder:NoLink
 X=r
 Y=(#sec.P#)R

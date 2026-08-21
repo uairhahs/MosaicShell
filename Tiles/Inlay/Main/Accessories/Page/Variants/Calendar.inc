@@ -18,7 +18,7 @@ HideLastWeek=0
 
 ;Holidays File names
 ;Note: For Holiday file names, multiple sources can be used by uisng the pipe delimiter (|).
-EventFile=#SKINSPATH#ValliStart\@Resources\Calendars\Holidays.xml
+EventFile=#SKINSPATH#Inlay\@Resources\Calendars\Holidays.xml
 
 ;Custom Text formatting for Month Labels. See Readme for details.
 LabelText=
@@ -226,7 +226,7 @@ MiddleMouseUpAction=[!CommandMeasure CScript Move(-12)][!UpdateMeasure CScript][
 
 [CScript]
 Measure=Script
-ScriptFile=#SKINSPATH#ValliStart\@Resources\Lua\CScript.lua
+ScriptFile=#SKINSPATH#Inlay\@Resources\Lua\CScript.lua
 
 ;Day Labels
 [l0]

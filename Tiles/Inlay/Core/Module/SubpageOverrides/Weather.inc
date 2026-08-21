@@ -10,7 +10,7 @@ MeterStyle=Item.Button.Shape:S
 [Item1.Button.StringIcon]
 Meter=String
 Text=[\xe89e]
-LeftMouseUpAction=[!WriteKeyvalue Variables Skin.Name """#JaxCore""" "#@#SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#SecVar.inc"][!Refresh]
+LeftMouseUpAction=[!WriteKeyvalue Variables Skin.Name """#MosaicShell""" "#@#SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#SecVar.inc"][!Refresh]
 MeterStyle=Set.String:S | Item.Button.StringIcon:S
 
 ; ---------------------------------------------------------------------------- ;

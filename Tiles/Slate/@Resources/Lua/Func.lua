@@ -49,11 +49,11 @@ function Update()
     TimeOutRequirement = parseDuration(SKIN:GetVariable('TimeOut'))
     if enabled == nil then enabled = 0 end
     if TimeOutRequirement <= SKIN:GetMeasure('Idletime'):GetValue() and enabled == 0 and SKIN:GetMeasure('mToggle'):GetValue() == 1 then
-        SKIN:Bang('!ActivateConfig', 'IdleStyle\\Launch', 'Main.ini')
+        SKIN:Bang('!ActivateConfig', 'Slate\\Launch', 'Main.ini')
         enabled = 1
     elseif TimeOutRequirement > SKIN:GetMeasure('Idletime'):GetValue() and enabled == 1 and forced == 0 then
         enabled = 0
-        SKIN:Bang('!CommandMeasure', 'mActions', 'Execute 2', 'IdleStyle\\Launch', 'Main.ini')
+        SKIN:Bang('!CommandMeasure', 'mActions', 'Execute 2', 'Slate\\Launch', 'Main.ini')
     end
     if forced == 1 then
         forcedTime = forcedTime + 1
@@ -65,7 +65,7 @@ function Update()
             forced = 0
             forcedTime = 0
             enabled = 0
-            SKIN:Bang('!CommandMeasure', 'mActions', 'Execute 2', 'IdleStyle\\Launch', 'Main.ini')
+            SKIN:Bang('!CommandMeasure', 'mActions', 'Execute 2', 'Slate\\Launch', 'Main.ini')
         end
     end
     -- print('ForcedTime:'..forcedTime..' | Enabled:'..enabled..' | Forced?'..forced..' | IdleTime'..SKIN:GetMeasure('Idletime'):GetValue()..' | TimeOutRequirement:'..TimeOutRequirement)
@@ -75,13 +75,13 @@ function EndIdle()
     forced = 0
     forcedTime = 0
     enabled = 0
-    SKIN:Bang('!CommandMeasure', 'mActions', 'Execute 2', 'IdleStyle\\Launch', 'Main.ini')
+    SKIN:Bang('!CommandMeasure', 'mActions', 'Execute 2', 'Slate\\Launch', 'Main.ini')
 end
 
 function Force()
     forced = 1
     enabled = 1
-    SKIN:Bang('!ActivateConfig', 'IdleStyle\\Launch', 'Main.ini')
+    SKIN:Bang('!ActivateConfig', 'Slate\\Launch', 'Main.ini')
 end
 
 function disp_time(time)

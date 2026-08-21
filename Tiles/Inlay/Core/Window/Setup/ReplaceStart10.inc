@@ -3,12 +3,12 @@
 ; ---------------------------------------------------------------------------- ;
 
 [Variables]
-Sec.SaveLocation=#SKINSPATH#ValliStart\WinBlock\Vars\Winblock.inc
+Sec.SaveLocation=#SKINSPATH#Inlay\WinBlock\Vars\Winblock.inc
 
 [MeasureSysInfo]
 Measure=SysInfo
 Sysinfotype=OS_VERSION
-OnUpdateAction=[!WriteKeyValue Variables "WinblockDisplay" "1" "#Sec.Savelocation#"][!ActivateConfig "ValliStart\WinBlock"][!Move 0 (#SCREENAREAHEIGHT#-40) "ValliStart\WinBlock"]
+OnUpdateAction=[!WriteKeyValue Variables "WinblockDisplay" "1" "#Sec.Savelocation#"][!ActivateConfig "Inlay\WinBlock"][!Move 0 (#SCREENAREAHEIGHT#-40) "Inlay\WinBlock"]
 
 ; ---------------------------------------------------------------------------- ;
 ;                                    Content                                   ;

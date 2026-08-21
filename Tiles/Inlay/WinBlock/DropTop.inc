@@ -1,11 +1,11 @@
 ﻿﻿[Variables]
-CURRENTVALLIACTION=[!UpdateMeasure mToggle "ValliStart\Main"]
+CURRENTVALLIACTION=[!UpdateMeasure mToggle "Inlay\Main"]
 
 [isValliOn]
 Measure=Calc
 Formula=0
 IfCondition=isValliOn = 0
-IfTrueAction=[!SetVariable CURRENTVALLIACTION """[!UpdateMeasure mToggle "ValliStart\Main"]"""][!UpdateMeter Home]
+IfTrueAction=[!SetVariable CURRENTVALLIACTION """[!UpdateMeasure mToggle "Inlay\Main"]"""][!UpdateMeter Home]
 IfFalseAction=[!SetVariable CURRENTVALLIACTION """"""][!UpdateMeter Home]
 DynamicVariables=1
 UpdateDivider=-1
@@ -17,7 +17,7 @@ UpdateDivider=-1
 ; [Home]
 ; MeterStyle=InfoStyle | Block:Off
 ; [Block:Off]
-; LeftMouseDownAction=[!UpdateMeasure mToggle "ValliStart\Main"]
+; LeftMouseDownAction=[!UpdateMeasure mToggle "Inlay\Main"]
 ; [Block:On]
 ; LeftMouseDownAction=[!SetOption Block MeterStyle Block:Off][!UpdateMeter Block]
 

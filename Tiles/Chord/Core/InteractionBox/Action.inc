@@ -41,8 +41,8 @@ ReturnValue=WholePath
 FileInitialDirectory=
 ImageInitialDirectory=#CurrentPath#IconCache\
 DynamicVariables=1
-Command1=[!UpdateMEasure #CURRENTSECTION#][!CommandMeasure GenPs1 """WriteTo -index "#Sec.arg1#" -param1 '$Name$' -param2 '["$Path$"]' -param3 '$Name$_$Ext$'""" "#JaxCore\Main"]
-Command2=[!UpdateMEasure #CURRENTSECTION#][!CommandMeasure GenPs1 """WriteTo -index "#Sec.arg1#" -param1 '$Name$' -param2 '["$Path$"]'' """ "#JaxCore\Main"]
+Command1=[!UpdateMEasure #CURRENTSECTION#][!CommandMeasure GenPs1 """WriteTo -index "#Sec.arg1#" -param1 '$Name$' -param2 '["$Path$"]' -param3 '$Name$_$Ext$'""" "#MosaicShell\Main"]
+Command2=[!UpdateMEasure #CURRENTSECTION#][!CommandMeasure GenPs1 """WriteTo -index "#Sec.arg1#" -param1 '$Name$' -param2 '["$Path$"]'' """ "#MosaicShell\Main"]
 
 [Input:M]
 Measure=Plugin
@@ -58,9 +58,9 @@ W=(#Sec.W#-#sec.P#*2)
 H=([KeyLabel:H])
 DynamicVariables=1
 DefaultValue="[##Editing#]"
-Command1=[!CommandMeasure GenPs1 """WriteTo -index "#Sec.arg1#" -param1 '$UserInput$' """ "#JaxCore\Main"]
-Command2=[!CommandMeasure GenPs1 """WriteTo -index "#Sec.arg1#" -param2 '$UserInput$' """ "#JaxCore\Main"]
-Command3=[!CommandMeasure GenPs1 """WriteTo -index "#Sec.arg1#" -param3 '$UserInput$' """ "#JaxCore\Main"]
+Command1=[!CommandMeasure GenPs1 """WriteTo -index "#Sec.arg1#" -param1 '$UserInput$' """ "#MosaicShell\Main"]
+Command2=[!CommandMeasure GenPs1 """WriteTo -index "#Sec.arg1#" -param2 '$UserInput$' """ "#MosaicShell\Main"]
+Command3=[!CommandMeasure GenPs1 """WriteTo -index "#Sec.arg1#" -param3 '$UserInput$' """ "#MosaicShell\Main"]
 
 ; ---------------------------------------------------------------------------- ;
 ;                                  MeterStyles                                 ;
@@ -177,5 +177,5 @@ MEterStyle=Sec.String:S | Button.String:S
 Meter=String
 Text=Apply changes
 FontColor=#Set.Positive_color#
-Leftmouseupaction=[!Refresh "#JaxCore\Main"][!Refresh "#Skin.Name#\Main"][!CommandMeasure ActionTimer "Execute 2"]
+Leftmouseupaction=[!Refresh "#MosaicShell\Main"][!Refresh "#Skin.Name#\Main"][!CommandMeasure ActionTimer "Execute 2"]
 MEterStyle=Sec.String:S | Button.String:S

@@ -70,11 +70,11 @@ H=(300*[S])
 LeftMouseUpAction=[!WriteKeyValue Variables Sec.arg2 "1" "#CURRENTPATH#Main.ini"][!Refresh]
 DynamicVariables=1
 Container=ContentContainer
-ImageName=#SKINSPATH#ValliStart\@Resources\Images\ValliStart3-512.png
+ImageName=#SKINSPATH#Inlay\@Resources\Images\ValliStart3-512.png
 
 [Header.String]
 Meter=String
-Text=ValliStart Setup
+Text=Inlay Setup
 X=(300*[S]/2)r
 Y=R
 FontSize=(32*[S])
@@ -95,4 +95,4 @@ InlineSetting=Color | #Set.Positive_Color#
 MeterStyle=Sec.String:S
 
 
-@includeContent=#SKINSPATH#ValliStart\Core\Window\Setup\#Sec.Arg2#.inc
+@includeContent=#SKINSPATH#Inlay\Core\Window\Setup\#Sec.Arg2#.inc

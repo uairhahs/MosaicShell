@@ -89,7 +89,7 @@ MeterStyle=Set.String:S | Set.Value:S
 Meter=Shape
 MeterStyle=Set.Button:S
 Y=([Option02:Y]-#Set.P#+(-30/2+8)*[Set.S])
-Act=[!CommandMeasure Func "startDrop([[#SKINSPATH#IdleStyle\Core\AppearanceStyles\DropdownStyles\StringContent.inc]], '#CURRENTSECTION#', 'Custompaper', 'LineOneStyle')"]
+Act=[!CommandMeasure Func "startDrop([[#SKINSPATH#Slate\Core\AppearanceStyles\DropdownStyles\StringContent.inc]], '#CURRENTSECTION#', 'Custompaper', 'LineOneStyle')"]
 [Value02]
 Meter=String
 Text=#LineOneStyle#
@@ -99,7 +99,7 @@ MeterStyle=Set.String:S | Set.Value:S
 Meter=Shape
 MeterStyle=Set.Button:S
 Y=([Option03:Y]-#Set.P#+(-30/2+8)*[Set.S])
-Act=[!CommandMeasure Func "startDrop([[#SKINSPATH#IdleStyle\Core\AppearanceStyles\DropdownStyles\StringContent.inc]], '#CURRENTSECTION#', 'Custompaper', 'LineTwoStyle')"]
+Act=[!CommandMeasure Func "startDrop([[#SKINSPATH#Slate\Core\AppearanceStyles\DropdownStyles\StringContent.inc]], '#CURRENTSECTION#', 'Custompaper', 'LineTwoStyle')"]
 [Value03]
 Meter=String
 Text=#LineTwoStyle#

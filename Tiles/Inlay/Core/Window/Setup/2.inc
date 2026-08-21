@@ -3,7 +3,7 @@
 ; ---------------------------------------------------------------------------- ;
 
 [Variables]
-Sec.SaveLocation=#SKINSPATH#ValliStart\WinBlock\Vars\Winblock.inc
+Sec.SaveLocation=#SKINSPATH#Inlay\WinBlock\Vars\Winblock.inc
 
 [MeasureSysInfo]
 Measure=SysInfo
@@ -18,7 +18,7 @@ IfNotMatchAction=[!WriteKeyValue Variables "X" "0" "#Sec.Savelocation#"][!WriteK
 ; ---------------------------------------------------------------------------- ;
 
 [Description.String]
-Text=By default, ValliStart only replaces the start menu from the windows key. Do you want to replace the start button too?
+Text=By default, Inlay only replaces the start menu from the windows key. Do you want to replace the start button too?
 InlinePattern=from the windows key
 
 [Button.1.Shape]

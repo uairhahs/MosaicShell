@@ -17,7 +17,7 @@ Pad=25
 Blur=Acrylic
 BlurCorner=Round
 ImageUnderlay=0
-ImageUnderlayPath=#SKINSPATH#..\CoreData\ValliStart\DefaultUnderlay.png
+ImageUnderlayPath=#SKINSPATH#..\CoreData\Inlay\DefaultUnderlay.png
 ImageUnderlayAlpha=50
 
 ; ---------------------------- Element properties ---------------------------- ;

@@ -1,9 +1,9 @@
 ﻿﻿[Variables]
-SaveLocation="#SKINSPATH#IdleStyle\Launch\Vars\#Sec.name#.inc"
+SaveLocation="#SKINSPATH#Slate\Launch\Vars\#Sec.name#.inc"
 
 [String:S]
 Text=#CURRENTSECTION#
-LeftMouseUpAction=[!WriteKeyValue Variables "#arg1#" "#CURRENTSECTION#" "#SaveLocatioN#"][!Refresh "#JaxCore\Main"][!DeactivateConfig]
+LeftMouseUpAction=[!WriteKeyValue Variables "#arg1#" "#CURRENTSECTION#" "#SaveLocatioN#"][!Refresh "#MosaicShell\Main"][!DeactivateConfig]
 
 ; ---------------------------------------------------------------------------- ;
 ;                                    Content                                   ;

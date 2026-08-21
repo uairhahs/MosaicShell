@@ -8,7 +8,7 @@ AccurateText=1
 
 [Variables]
 @includeVersion=#@#Version.inc
-@includeJaxCoreChecker=#SKINSPATH#\#JaxCore\@Resources\Version.inc
+@includeJaxCoreChecker=#SKINSPATH#\#MosaicShell\@Resources\Version.inc
 Sec.W=870
 Sec.H=540
 Sec.P=50
@@ -49,27 +49,27 @@ IfNotMatchAction=[!HideMeter Dep.PS.Shape][!HideMeter Dep.PS.String][!Redraw]
 [CheckHotkey]
 Measure=String
 String=#ROOTCONFIG#
-IFmatch=MIUI-Shade|Keystrokes|ValliStart|QuickNote|Keylaunch|IdleStyle|YourMixer|YourFlyouts
+IFmatch=Substrate|Keystrokes|Inlay|QuickNote|Keylaunch|Slate|Mixdeck|Tessera
 IfMatchaction=[!WriteKeyValue Variables RMPATH "#PROGRAMPATH#Rainmeter.exe" "#@#Actions\Hotkeys.ini"]
 
 [CheckScale]
 Measure=String
 String=#ROOTCONFIG#
-IFmatch=MIUI-Shade|Keystrokes|ValliStart|QuickNote|IdleStyle|YourMixer|YourFlyouts
+IFmatch=Substrate|Keystrokes|Inlay|QuickNote|Slate|Mixdeck|Tessera
 IfMatchaction=[!WriteKeyValue Variables Scale "((#SCREENAREAWIDTH#/1920) < (#SCREENAREAHEIGHT#/1080) ? (#SCREENAREAWIDTH#/1920) : (#SCREENAREAHEIGHT#/1080))" "#@#Vars.inc"]
 
 [CheckModular]
 Measure=String
 String=#ROOTCONFIG#
-IFmatch=ModularClocks|ModularPlayers
+IFmatch=Chrono|Phono
 IfNotMatchAction=[!HideMeter Dep.IM.Shape][!HideMeter Dep.IM.String][!Redraw]
 
 [WebParser]
 Measure=WebParser
-URL=https://raw.githubusercontent.com/Jax-Core/JaxCore/main/%40Resources/Version.inc
+URL=https://raw.githubusercontent.com/uairhahs/MosaicShell/main/%40Resources/Version.inc
 RegExp==(.*)$
 OnUpdateAction=[!Delay 1000][!CommandMeasure LogicalScript "check()"]
-OnConnectionErrorAction=[!SetOption Dep.Core.Shape MeterStyle "Dep.Shape:S | Dep.ShapeNo:S"][!SetOption Dep.Core.String Text "//Failed to connect to JaxCore github, if this is an issue please report to me"][!UpdateMEter *][!Redraw]
+OnConnectionErrorAction=[!SetOption Dep.Core.Shape MeterStyle "Dep.Shape:S | Dep.ShapeNo:S"][!SetOption Dep.Core.String Text "//Failed to connect to MosaicShell github, if this is an issue please report to me"][!UpdateMEter *][!Redraw]
 OnRegExpErrorAction=[!Log Developer:RegExpFalse]
 CodePage=1200
 Disabled=1
@@ -85,7 +85,7 @@ Measure=PLUGIN
 Plugin=SysInfo
 SysInfoType=INTERNET_CONNECTIVITY
 IfCondition=InternetStatus = -1
-ifTrueaction=[!SetOption Dep.Core.Shape MeterStyle "Dep.Shape:S | Dep.ShapeNo:S"][!SetOption Dep.Core.String Text "JaxCore // connection error, please check internet connection"][!UpdateMEter *][!Redraw]
+ifTrueaction=[!SetOption Dep.Core.Shape MeterStyle "Dep.Shape:S | Dep.ShapeNo:S"][!SetOption Dep.Core.String Text "MosaicShell // connection error, please check internet connection"][!UpdateMEter *][!Redraw]
 
 [mVer]
 Measure=WebParser
@@ -101,15 +101,15 @@ ScriptFile=Logic.lua
 Measure=String
 Group=NUOL
 Disabled=1
-OnUpdateAction=[!SetOption Dep.Core.Shape MeterStyle "Dep.Shape:S | Dep.ShapeYes:S"][!SetOption Dep.Core.String Text "JaxCore // v#Core.Ver# installed"][!ShowMeterGroup Button][!UpdateMEter *][!Redraw]
+OnUpdateAction=[!SetOption Dep.Core.Shape MeterStyle "Dep.Shape:S | Dep.ShapeYes:S"][!SetOption Dep.Core.String Text "MosaicShell // v#Core.Ver# installed"][!ShowMeterGroup Button][!UpdateMEter *][!Redraw]
 
 [JaxCoreNo]
 Measure=String
 Group=NUOL
 Disabled=1
-OnUpdateAction=[!SetOption Dep.Core.Shape MeterStyle "Dep.Shape:S | Dep.ShapeNo:S"][!SetOption Dep.Core.String Text "JaxCore // click here to install"][!SetOption Dep.Core.Shape Leftmouseupaction """["#@#Actions\AHKv1.exe" "#@#Actions\Installer.ahk"][!DeactivateConfig]"""][!UpdateMEter *][!Redraw]
+OnUpdateAction=[!SetOption Dep.Core.Shape MeterStyle "Dep.Shape:S | Dep.ShapeNo:S"][!SetOption Dep.Core.String Text "MosaicShell // click here to install"][!SetOption Dep.Core.Shape Leftmouseupaction """["#@#Actions\AHKv1.exe" "#@#Actions\Installer.ahk"][!DeactivateConfig]"""][!UpdateMEter *][!Redraw]
 
-; [!SetOption Dep.Core.String Text "JaxCore // download here if it doesn't automatically install"][!SetOption Dep.Core.Shape Leftmouseupaction """["https://github.com/Jax-Core/JaxCore/releases/download/v[mVer]/JaxCore_v[mVer].rmskin"][!UpdateMEter *][!Redraw]"""][!UpdateMEter *][!Redraw]
+; [!SetOption Dep.Core.String Text "MosaicShell // download here if it doesn't automatically install"][!SetOption Dep.Core.Shape Leftmouseupaction """["https://github.com/uairhahs/MosaicShell/releases/download/v[mVer]/JaxCore_v[mVer].rmskin"][!UpdateMEter *][!Redraw]"""][!UpdateMEter *][!Redraw]
 
 ; ---------------------------------------------------------------------------- ;
 ;                                  MeterStyle                                  ;
@@ -209,7 +209,7 @@ FontColor=[#Sec.Subtext_color]
 MeterStyle=String:S | DragBar.String:S1
 StringAlign=LeftCenter
 Container=
-Text=JaxCore module installation window
+Text=MosaicShell module installation window
 
 [Image.Image]
 Meter=Image
@@ -236,7 +236,7 @@ LeftMouseUpAction=[!DeactivateConfig]
 Meter=String
 X=(#Sec.P#)
 Y=#Sec.P#
-Text=JaxCore
+Text=MosaicShell
 InlineSetting=GradientColor | 180 | #Sec.Accent_Color# ; 0.0 | #Sec.Accent_Color_2# ; 1.0
 FontSize=14
 FontWeight=650
@@ -268,7 +268,7 @@ Y=20R
 MEterStyle=Dep.Shape:S
 [Dep.Core.String]
 Meter=String
-Text=JaxCore hub // Checking...
+Text=MosaicShell hub // Checking...
 MeterStyle=Dep.Text:S
 
 [Dep.Appreciation.Shape]
@@ -310,7 +310,7 @@ Shape=Rectangle 0,0,120,40,(#Sec.R#/3) | StrokeWidth (2) | Stroke Color "100,255
 Fill=Fill Color 0,0,0,1
 MouseOverAction=[!SetOption #CURRENTSECTION# Fill "Fill Color 100,255,100,50"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# Fill "Fill Color 0,0,0,1"][!UpdateMeter #CURRENTSECTION#][!Redraw]
-Leftmouseupaction=[!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##JaxCore\@Resources\SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page Info "#SKINSPATH##JaxCore\@Resources\SecVar.inc"][!ActivateConfig "#JaxCore\Main" "Settings.ini"][!DeactivateConfig]
+Leftmouseupaction=[!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page Info "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"][!DeactivateConfig]
 Hidden=1
 Group=Button
 Container=Content.Container

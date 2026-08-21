@@ -1,5 +1,5 @@
 ﻿﻿[Variables]
-@includegVar1=#SKINSPATH##JaxCore\@Resources\gVars\Time.inc
+@includegVar1=#SKINSPATH##MosaicShell\@Resources\gVars\Time.inc
 TimeOut=5m
 IgnoreIdleDuration=0
 LoadedNotif=1

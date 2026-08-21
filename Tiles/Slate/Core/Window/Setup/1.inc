@@ -1,6 +1,6 @@
 ﻿﻿
 [Description.String]
-Text=Welcome to IdleStyle!
+Text=Welcome to Slate!
 
 [Button.1.Shape]
 Meter=Shape

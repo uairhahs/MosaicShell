@@ -73,7 +73,7 @@ MeterStyle=Set.String:S | Set.OptionName:S
 Meter=Shape
 MeterStyle=Set.Button:S
 Y=([Option01:Y]-#Set.P#+(-30/2+8)*[Set.S])
-Act=[!CommandMeasure Func "startDrop([[#SKINSPATH#IdleStyle\Core\AppearanceStyles\DropdownStyles\StringContent.inc]], '#CURRENTSECTION#', 'Ninety', 'LineOneStyle')"]
+Act=[!CommandMeasure Func "startDrop([[#SKINSPATH#Slate\Core\AppearanceStyles\DropdownStyles\StringContent.inc]], '#CURRENTSECTION#', 'Ninety', 'LineOneStyle')"]
 [Value01]
 Meter=String
 Text=#LineOneStyle#

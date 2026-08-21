@@ -12,6 +12,6 @@ Hotkey,%OutputVar%,Button
 Return
 
 Button:
-Run "%RainmeterPath% "!UpdateMeasure "mToggle" "MIUI-Shade\Main" "
+Run "%RainmeterPath% "!UpdateMeasure "mToggle" "Substrate\Main" "
 Unload := 1
 Return

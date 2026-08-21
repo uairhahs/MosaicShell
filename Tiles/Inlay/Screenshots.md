@@ -1,5 +1,5 @@
 # Screenshots
-ValliStart includes these pre-made layouts, but you are not limited to these!
+Inlay includes these pre-made layouts, but you are not limited to these!
 ![Vekl](https://user-images.githubusercontent.com/80020581/187899646-5ad099a5-3178-48a5-9661-c3967bd2cab4.png)
 ![WIn11 Alt](https://user-images.githubusercontent.com/80020581/187905490-e14533fc-3d3c-4161-8bdb-145e01ba132f.png)
 ![Win11](https://user-images.githubusercontent.com/80020581/187899649-be897e9b-e30c-4322-94df-2c387e45ba4a.png)

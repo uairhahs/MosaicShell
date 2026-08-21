@@ -2,8 +2,8 @@
     $editingModule = $RmAPI.VariableStr('Page.SubpageModule')
     $skinsPath = $RmAPI.VariableStr('SKINSPATH')
     $coreDataDir = "$($skinsPath.Replace('Skins\',''))CoreData\"
-    $global:file1 = "$coreDataDir"+"ValliStart\$editingModule.inc"
-    $global:file2 = "$skinsPath"+"ValliStart\@Resources\Shortcuts.inc"
+    $global:file1 = "$coreDataDir"+"Inlay\$editingModule.inc"
+    $global:file2 = "$skinsPath"+"Inlay\@Resources\Shortcuts.inc"
     $global:editingSectionPrefix = $RmAPI.VariableStr('EditingSectionPrefix')+'Box'
     $global:editingPrefix = $RmAPI.VariableStr('EditingPrefix')
     $global:editingCount = $RmAPI.VariableStr('Count')
@@ -137,7 +137,7 @@ function WriteSwap($index, $dir) {
 #     Set-IniContent -ini $Ini -filePath $file3
 #     WriteAll -arg1 $global:t -arg2 ($global:t+1) -arg3 ($global:t+2)
 
-#     # $RmAPI.Bang('[!UpdateMeasure Auto_Refresh:M "#JaxCore\Main"][!Refresh "#JaxCore\Main"]')
+#     # $RmAPI.Bang('[!UpdateMeasure Auto_Refresh:M "#MosaicShell\Main"][!Refresh "#MosaicShell\Main"]')
 # }
 
 # function WriteAdd {

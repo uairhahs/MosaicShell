@@ -48,7 +48,7 @@ function CheckPatchNotes()
         if user ~= pnCheckerVar then
             SKIN:Bang('[!commandMeasure Func "interactionBox(\'PatchNote\')"][!WriteKeyvalue Variables Core.patchNoteCheckvariable "' .. user .. '" "' .. SKIN:GetVariable('SKINSPATH') .. SKIN:GetVariable('Skin.Name') .. '\\@Resources\\PatchNoteVar.inc' .. '"]')
             local SkinName = SKIN:GetVariable('Skin.Name')
-            if string.match("MIUI-Shade|Keystrokes|ValliStart|QuickNote|Keylaunch|IdleStyle|YourMixer|YourFlyouts", SkinName) then
+            if string.match("Substrate|Keystrokes|ValliStart|QuickNote|Keylaunch|IdleStyle|YourMixer|YourFlyouts", SkinName) then
                 local PROGRAMPATH = SKIN:GetVariable('PROGRAMPATH')
                 local SkinsPath = SKIN:GetVariable('SkinsPath')
                 SKIN:Bang('[!WriteKeyValue Variables RMPATH "'..PROGRAMPATH..'Rainmeter.exe" "'..SkinsPath..''..SkinName..'\\@Resources\\Actions\\Hotkeys.ini"]')

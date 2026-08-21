@@ -4,7 +4,7 @@
 ; ---------------------------------------------------------------------------- ;
 
 [Variables]
-Sec.SaveLocation=#SKINSPATH#ValliStart\@Resources\Vars.inc
+Sec.SaveLocation=#SKINSPATH#Inlay\@Resources\Vars.inc
 
 [MeasureSysInfo]
 Measure=SysInfo
@@ -18,7 +18,7 @@ IfNotMatchAction=[!WriteKeyValue Variables "WinR" "0" "#Sec.Savelocation#"]
 ; ---------------------------------------------------------------------------- ;
 
 [Description.String]
-Text=Welcome to ValliStart!
+Text=Welcome to Inlay!
 
 [Button.1.Shape]
 Meter=Shape

@@ -34,7 +34,7 @@ Fill=Fill Color #Set.Sec_Color#
 Stroke=Stroke Color #Set.Ter_Color#
 MouseOverAction=[!SetOption #CURRENTSECTION# Fill "Fill Color #Set.Ter_Color#"][!SetOption #CURRENTSECTION# Stroke "Stroke Color #Set.Subtext_Color#,50"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# Fill "Fill Color #Set.Sec_Color#"][!SetOption #CURRENTSECTION# Stroke "Stroke Color #Set.Ter_Color#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
-LeftMouseUpAction=[!WriteKeyValue Variables #Sec.Arg1# [&Func:trim('#CURRENTSECTIOn#','.Shape','')] "#SKINSPATH#valliStart\@Resources\Vars.inc"][!SetVariable #Sec.Arg1# [&Func:trim('#CURRENTSECTIOn#','.Shape','')] "#JaxCore\Main"][!UpdateMeter * "#JaxCore\Main"][!Redraw "#JaxCore\Main"][!UpdateMeasure Auto_Refresh:M "#JaxCore\Main"][!CommandMeasure ActionTimer "Execute 2"]
+LeftMouseUpAction=[!WriteKeyValue Variables #Sec.Arg1# [&Func:trim('#CURRENTSECTIOn#','.Shape','')] "#SKINSPATH#valliStart\@Resources\Vars.inc"][!SetVariable #Sec.Arg1# [&Func:trim('#CURRENTSECTIOn#','.Shape','')] "#MosaicShell\Main"][!UpdateMeter * "#MosaicShell\Main"][!Redraw "#MosaicShell\Main"][!UpdateMeasure Auto_Refresh:M "#MosaicShell\Main"][!CommandMeasure ActionTimer "Execute 2"]
 DynamicVariables=1
 [Module.Image:S]
 X=(10*#Sec.S#)r
@@ -77,7 +77,7 @@ Meter=String
 MEterStyle=Sec.String:S | Module.STring:S
 [GenericHeader.Description.String]
 Meter=String
-Text=The default header module for ValliStart.
+Text=The default header module for Inlay.
 MEterStyle=Sec.String:S | Module.Description.STring:S
 
 [Win11Row.Shape]

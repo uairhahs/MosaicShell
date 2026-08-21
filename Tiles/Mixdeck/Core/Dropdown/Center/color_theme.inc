@@ -11,7 +11,7 @@ Plugin=PowershellRM
 ScriptFile=#@#Powershell\PresetLoad.ps1
 
 [String:S]
-LeftMouseUpAction=[!CommandMeasure Preset:M "ChangeToFiles -theme 'CenterColorTheme-#CURRENTSECTION#'"][!Refresh "#JaxCore\Main"][!DeactivateConfig]
+LeftMouseUpAction=[!CommandMeasure Preset:M "ChangeToFiles -theme 'CenterColorTheme-#CURRENTSECTION#'"][!Refresh "#MosaicShell\Main"][!DeactivateConfig]
 
 ; ---------------------------------------------------------------------------- ;
 ;                                    Content                                   ;

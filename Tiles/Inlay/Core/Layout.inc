@@ -204,7 +204,7 @@ Meter=String
 MEterStyle=Set.String:S | Module.STring:S
 [ClassicWavy.Description.String]
 Meter=String
-Text=The classic ValliStart layout, but with a new wavy background
+Text=The classic Inlay layout, but with a new wavy background
 MEterStyle=Set.String:S | Module.Description.STring:S
 
 [Flat.Shape]
