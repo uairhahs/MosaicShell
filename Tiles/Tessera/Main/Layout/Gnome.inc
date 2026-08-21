@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 W=(#Width#*#scale#)
 VolumeH=(70*#Scale#)
 MediaH=(70*#Scale#)

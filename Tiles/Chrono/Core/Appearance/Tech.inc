@@ -1,4 +1,4 @@
-﻿﻿[Option11]
+﻿[Option11]
 Meter=String
 Text=Show additional time details
 MeterStyle=Set.String:S | Set.OptionName:S

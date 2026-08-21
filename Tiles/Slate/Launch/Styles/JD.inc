@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 UpdateRate=1000
 @includeConfigurableVariables=#ROOTCONFIGPATH#Launch\Vars\#Style#.inc
 
@@ -13,11 +13,11 @@ Type=#Blur#
 [mActions]
 ActionList1=Start
 ActionList2=End | Deactivate
-Deactivate=[!DeactivateConfig "IdleStyle\Launch\Addons\ExtenderDisplay"][!DeactivateConfig]
-Start=[!ZPos 1][!ActivateConfig "IdleStyle\Launch\Addons\JDWS" "Annen.ini"]
-End=[!Zpos 2][!DeactivateConfig "IdleStyle\Launch\Addons\JDWS" "Annen.ini"]
+Deactivate=[!DeactivateConfig "Slate\Launch\Addons\ExtenderDisplay"][!DeactivateConfig]
+Start=[!ZPos 1][!ActivateConfig "Slate\Launch\Addons\JDWS" "Annen.ini"]
+End=[!Zpos 2][!DeactivateConfig "Slate\Launch\Addons\JDWS" "Annen.ini"]
 [mPreview]
 ActionList2=Start | Wait 3000 | End | Deactivate
-Deactivate=[!DeactivateConfig "IdleStyle\Launch\Addons\ExtenderDisplay"][!DeactivateConfig]
-Start=[!ZPos 1][!ActivateConfig "IdleStyle\Launch\Addons\JDWS" "Annen.ini"]
-End=[!Zpos 2][!DeactivateConfig "IdleStyle\Launch\Addons\JDWS" "Annen.ini"]
+Deactivate=[!DeactivateConfig "Slate\Launch\Addons\ExtenderDisplay"][!DeactivateConfig]
+Start=[!ZPos 1][!ActivateConfig "Slate\Launch\Addons\JDWS" "Annen.ini"]
+End=[!Zpos 2][!DeactivateConfig "Slate\Launch\Addons\JDWS" "Annen.ini"]

@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 BarType=Reflection
 Bands=30
 Height=300

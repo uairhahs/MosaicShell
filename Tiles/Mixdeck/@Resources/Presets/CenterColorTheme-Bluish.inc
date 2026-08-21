@@ -1,4 +1,4 @@
-﻿﻿[Main\Elements\ControlScreen\Vars\Center.inc]
+﻿[Main\Elements\ControlScreen\Vars\Center.inc]
 color_theme=Bluish
 FontColor=240,240,255
 VolumePeakColor=141,204,252

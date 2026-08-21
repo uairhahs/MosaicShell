@@ -1,8 +1,8 @@
-﻿﻿[Title]
+﻿[Title]
 Text=Activation
 
 [Description]
-Text=Configure when will IdleStyle activates.
+Text=Configure when will Slate activates.
 
 [Description2]
 Meter=String

@@ -1,4 +1,4 @@
-﻿﻿[WallpaperPath]
+﻿[WallpaperPath]
 Measure=Registry
 RegHKey=HKEY_CURRENT_USER
 RegKey=Control Panel\Desktop

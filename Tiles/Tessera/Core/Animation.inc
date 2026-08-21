@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 ; ---------------------------------------------------------------------------- ;
 ;                                   Function                                   ;
 ; ---------------------------------------------------------------------------- ;
@@ -94,7 +94,7 @@ Hidden=(#Ani# = 0 ? 1 : 0)
 Meter=Shape
 MeterStyle=Set.DropDown:S
 Y=([Option33:Y]-#Set.P#+(-30/2+8)*[Set.S])
-Leftmouseupaction=[!CommandMeasure Func "startDrop('AniDir', '#CURRENTSECTION#', 'JaxCore', 'AniDir')"]
+Leftmouseupaction=[!CommandMeasure Func "startDrop('AniDir', '#CURRENTSECTION#', 'MosaicShell', 'AniDir')"]
 Hidden=(#Ani# = 0 ? 1 : 0)
 [Value33]
 Meter=String

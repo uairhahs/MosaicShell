@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 skinW=([#SCREENAREAWIDTH@#LaunchAt#])
 skinH=(300*#Style.Scale#)
 moveX=50%@#LaunchAt#

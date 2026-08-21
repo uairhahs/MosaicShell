@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Sec.W=(600*#Sec.S#)
 Sec.H=(140*#Sec.S#)
 AniDir=Bottom

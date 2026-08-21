@@ -1,4 +1,4 @@
-﻿﻿[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 Set.Style=Amarena
 Set.IconStyle=Normal
 Set.Pri_Color=26,32,38

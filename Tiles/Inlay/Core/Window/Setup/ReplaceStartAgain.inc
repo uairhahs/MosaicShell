@@ -1,9 +1,9 @@
-﻿﻿; ---------------------------------------------------------------------------- ;
+﻿; ---------------------------------------------------------------------------- ;
 ;                                   Function                                   ;
 ; ---------------------------------------------------------------------------- ;
 
 [Variables]
-Sec.SaveLocation=#SKINSPATH#ValliStart\WinBlock\Vars\Winblock.inc
+Sec.SaveLocation=#SKINSPATH#Inlay\WinBlock\Vars\Winblock.inc
 
 [MeasureSysInfo]
 Measure=SysInfo

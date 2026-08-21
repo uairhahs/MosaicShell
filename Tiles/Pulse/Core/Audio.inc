@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Sec.SaveLocation=#SKINSPATH##Skin.Name#\@Resources\Vars\AudioAnalyzerSettings.inc
 Sec.SaveLocation2=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
 Sec.Generate=1

@@ -1,4 +1,4 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 Update=#Rm.Update#
 SkinWidth=#SW#
 Skinheight=#SH#

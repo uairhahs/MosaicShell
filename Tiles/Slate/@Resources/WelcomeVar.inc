@@ -1,2 +1,2 @@
-﻿﻿[Variables]
+﻿[Variables]
 Core.WelcomeCheck=0

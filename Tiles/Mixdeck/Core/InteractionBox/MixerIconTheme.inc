@@ -1,11 +1,11 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 SkinWidth=#Sec.W#
 
 [Variables]
 Sec.W=(500*#Sec.S#)
 Sec.H=(450*#Sec.S#)
 AniDir=Bottom
-@includeSecVars=#@#SecVar.inc
+@includeSecVars=#@#CacheVars\Configurator.inc
 Sec.SaveLocation=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
 @includeSkinvars=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
 [moveX]
@@ -66,7 +66,7 @@ Command1=[!SetVariable #Editing# "$UserInput$"][!UpdateMeasure SaveAndLoad:M]
 [SaveAndLoad:M]
 Measure=Calc
 DynamicVariables=1
-OnUpdateAction=[!WriteKeyvalue Variables #Editing# "[##Editing#]" "#Sec.SaveLocation#"][!SetVariable #Editing# "[##Editing#]"][!UpdateMeter *][!Redraw][!Refresh "#JaxCore\Main"][!Refresh "#Skin.Name#\Main"]
+OnUpdateAction=[!WriteKeyvalue Variables #Editing# "[##Editing#]" "#Sec.SaveLocation#"][!SetVariable #Editing# "[##Editing#]"][!UpdateMeter *][!Redraw][!Refresh "#MosaicShell\Main"][!Refresh "#Skin.Name#\Main"]
 Disabled=1
 Group=NUOL
 
@@ -78,7 +78,7 @@ Stroke=StrokeWidth 0
 This=Fill Color #Set.Ter_Color#
 MouseOverAction=[!SetOption #CURRENTSECTION# This "Fill Color #set.SubText_Color#,100"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# This "Fill Color #set.Ter_Color#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
-LeftMouseUpAction=[!WriteKeyValue Variables IconTheme "#CURRENTSECTION#" "#Sec.SaveLocation#"][!Refresh "#JaxCore\Main"][!Refresh "#Skin.Name#\Main"][!Refresh]
+LeftMouseUpAction=[!WriteKeyValue Variables IconTheme "#CURRENTSECTION#" "#Sec.SaveLocation#"][!Refresh "#MosaicShell\Main"][!Refresh "#Skin.Name#\Main"][!Refresh]
 DynamicVariables=1
 [Shape2:S]
 Leftmouseupaction=

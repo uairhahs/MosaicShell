@@ -1,4 +1,4 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 SkinWidth=#SW#
 SkinHeight=#SH#
 

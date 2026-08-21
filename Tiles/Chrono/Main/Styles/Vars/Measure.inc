@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Scale=1
 Rotation=Vert
 Stroke=0

@@ -140,7 +140,7 @@ function Write(t1, t2, t3)
     -- -------------------------------------------------------------------------- --
     --                               Write settings                               --
     -- -------------------------------------------------------------------------- --
-    local File = io.open(SKIN:GetVariable('SKINSPATH')..'..\\CoreData\\IdleStyle\\Include.inc','w')
+    local File = io.open(SKIN:GetVariable('SKINSPATH')..'..\\CoreData\\Slate\\Include.inc','w')
     for i=1,t1 do
         File:write(
             '[Option'..i..']\n'

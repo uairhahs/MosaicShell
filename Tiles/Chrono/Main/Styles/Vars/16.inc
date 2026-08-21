@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Scale=1
 FontFace=SF Pro Rounded
 Style_Render=Color

@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 UpdateRate=1000
 Scale=([#SCREENAREAWIDTH@#Location#]/1920)
 @includeConfigurableVariables=#ROOTCONFIGPATH#Launch\Vars\#Style#.inc

@@ -46,7 +46,7 @@ Measure=Plugin
 Plugin=MagickMeter
 DynamicVariables=1
 Image=File Screenshot | RenderSize (#SCREENAREAWIDTH#/2),(#SCREENAREAWIDTH#/2) | Modulate #BlurModulate# | Blur #BlurRadius#,#BlurSigma#
-ExportTo=#SKINSPATH#..\CoreData\ModularPlayers\Blur.png
+ExportTo=#SKINSPATH#..\CoreData\Phono\Blur.png
 UpdateDivider=-1
 Disabled=1
 Group=NUOL
@@ -55,7 +55,7 @@ Measure=Plugin
 Plugin=MagickMeter
 DynamicVariables=1
 Image=Rectangle #GP#,#GP#,#GW#,#GH#;#R# | Shadow 20,10,0,8,1
-ExportTo=#SKINSPATH#..\CoreData\ModularPlayers\16Shadow.png
+ExportTo=#SKINSPATH#..\CoreData\Phono\16Shadow.png
 UpdateDivider=-1
 Disabled=1
 Group=NUOL
@@ -66,7 +66,7 @@ Group=NUOL
 
 [ShadowMeter]
 Meter=Image
-ImageName=#SKINSPATH#..\CoreData\ModularPlayers\16Shadow.png
+ImageName=#SKINSPATH#..\CoreData\Phono\16Shadow.png
 [B]
 Meter=Shape
 X=#GP#
@@ -74,7 +74,7 @@ Y=#GP#
 Shape=Rectangle 0,0,#GW#,#GH#,#R#,#R# | StrokeWidth 0
 [ImageMeter]
 Meter=Image
-ImageName=#SKINSPATH#..\CoreData\ModularPlayers\Blur.png
+ImageName=#SKINSPATH#..\CoreData\Phono\Blur.png
 DynamicVariables=1
 W=#SCREENAREAWIDTH#
 H=#SCREENAREAHEIGHT#

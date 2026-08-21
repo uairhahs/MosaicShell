@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [DragBar.Shape]
 Meter=Shape
 X=(#Set.WinB#/2)

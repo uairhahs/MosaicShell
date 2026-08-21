@@ -1,4 +1,4 @@
-﻿﻿[mBrightness]
+﻿[mBrightness]
 Measure=Plugin
 Plugin=Backlight
 Policy=ForceLevel

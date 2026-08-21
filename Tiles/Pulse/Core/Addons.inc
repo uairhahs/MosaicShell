@@ -1,4 +1,4 @@
-﻿﻿[ContentContainer]
+﻿[ContentContainer]
 Y=(#Set.TitleBarH#+#Set.P#/2)
 Shape=Rectangle (0),(0),(#Set.W#-#Set.P#*3-30*[Set.S]),(#Set.H#-#Set.P#-#Set.TitleBarH#),(#Set.R#),(#Set.R#) | StrokeWidth 0 | Fill Color 255,255,255
 

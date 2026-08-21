@@ -1,10 +1,10 @@
-﻿﻿
+﻿
 
 [Title.New]
 Meter=String
 X=(#Sec.W#/2)
 StringAlign=Center
-Text=New to ValliStart?
+Text=New to Inlay?
 MeterStyle=Sec.String:S | Style.Title:S
 
 [Button.1.Shape]

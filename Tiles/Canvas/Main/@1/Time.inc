@@ -1,5 +1,5 @@
-﻿﻿[Variables]
-@includegVar1=#SKINSPATH##JaxCore\@Resources\gVars\Time.inc
+﻿[Variables]
+@includegVar1=#SKINSPATH##MosaicShell\@Resources\gVars\Time.inc
 
 [TimeDate]
 Meter=String

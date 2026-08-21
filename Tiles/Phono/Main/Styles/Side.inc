@@ -7,7 +7,7 @@ Formula=Counter
 IfEqualValue=1
 IfEqualAction=[!Delay 100][!enablemeasuregroup NUOL][!CommandMeasure Func "checkMedia#MediaType#()"]
 IfAboveValue=1
-IfAboveAction=[!Delay 10][!DeactivateConfig][!ActivateConfig "ModularPlayers\Main"]
+IfAboveAction=[!Delay 10][!DeactivateConfig][!ActivateConfig "Phono\Main"]
 UpdateDivider=-1
 
 [Variables]

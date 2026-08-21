@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Description.String]
 Text=Select a layout in the layout settings!
 InlinePattern=layout

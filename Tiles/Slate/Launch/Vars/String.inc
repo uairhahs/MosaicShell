@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 ImagePath=#@#Images\DefaultPapertwo.png
 ImageName=DefaultPapertwo
 ImageMask=1

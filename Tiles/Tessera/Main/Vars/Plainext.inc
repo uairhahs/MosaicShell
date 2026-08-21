@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 FontFace=Consolas
 DividerCharacter=-
 DividerCap=

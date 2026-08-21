@@ -1,4 +1,4 @@
-﻿﻿[mState]
+﻿[mState]
 Measure=NowPlaying
 PlayerName=#NPName#
 PlayerType=State

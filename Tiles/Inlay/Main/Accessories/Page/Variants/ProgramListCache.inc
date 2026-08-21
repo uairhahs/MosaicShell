@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [1]
 Meter=Shape
 MeterStyle=Index:Style

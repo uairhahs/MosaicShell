@@ -1,8 +1,8 @@
-﻿﻿[Title]
+﻿[Title]
 Text=List of skins
 
 [Description]
-Text=Customize what skins to be loaded when IdleStyle activates.
+Text=Customize what skins to be loaded when Slate activates.
 
 [Subtitle]
 Meter=String
@@ -22,7 +22,7 @@ MeterStyle=Sec.String:S
 
 [Description3]
 Meter=String
-Text=Any skin hooked to IdleStyle will not be available for widget use. To revert this, remove the skin from the list, activate it and set it's position to normal from the Rainmeter manage panel.
+Text=Any skin hooked to Slate will not be available for widget use. To revert this, remove the skin from the list, activate it and set it's position to normal from the Rainmeter manage panel.
 X=r
 Y=(#sec.P#)R
 FontSize=(12*#Sec.S#)

@@ -1,5 +1,5 @@
-﻿﻿[Variables]
-@includeSecvars=#@#SecVar.inc
+﻿[Variables]
+@includeSecvars=#@#CacheVars\Configurator.inc
 
 ; ---------------------------------------------------------------------------- ;
 ;                                   Functions                                  ;
@@ -11,7 +11,7 @@ Plugin=PowershellRM
 ScriptFile=#@#Powershell\PresetLoad.ps1
 
 [String:S]
-LeftMouseUpAction=[!CommandMeasure Preset:M "ChangeToFiles -theme 'PixelColorTheme-#CURRENTSECTION#'"][!Refresh "#JaxCore\Main"][!Refresh "YourFlyouts\Main"][!DeactivateConfig]
+LeftMouseUpAction=[!CommandMeasure Preset:M "ChangeToFiles -theme 'PixelColorTheme-#CURRENTSECTION#'"][!Refresh "#MosaicShell\Main"][!Refresh "Tessera\Main"][!DeactivateConfig]
 
 ; ---------------------------------------------------------------------------- ;
 ;                                    Content                                   ;

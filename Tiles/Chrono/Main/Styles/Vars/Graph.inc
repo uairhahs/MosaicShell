@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Scale=1
 FontColor=255,255,255
 FontOpacity=255

@@ -1,4 +1,4 @@
-﻿﻿[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 IconName=TuneFluent
 Width=450
 Font=Segoe UI

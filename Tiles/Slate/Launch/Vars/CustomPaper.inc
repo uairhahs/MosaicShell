@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 ImagePath=#@#Images\DefaultPaper.png
 ImageName=DefaultPaper
 LineOneStyle=Time

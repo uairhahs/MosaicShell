@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Sec.SaveLocation=#SKINSPATH##Skin.Name#\@Resources\Vars\Vector\[#BarType].inc
 Sec.SaveLocation2=#SKINSPATH##Skin.Name#\@Resources\Vars\[#VisualizerType].inc
 

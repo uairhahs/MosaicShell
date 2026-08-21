@@ -1,4 +1,4 @@
-﻿﻿[Main\Vars\Pixel.inc]
+﻿[Main\Vars\Pixel.inc]
 color_theme=You Green
 PrimaryColor=46, 49, 47
 PrimaryOpacity=255

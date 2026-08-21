@@ -1,6 +1,6 @@
-﻿﻿
+﻿
 [Description.String]
-Text=ValliStart has nothing in it initially. Select a layout from the layout settings after completing the setup!
+Text=Inlay has nothing in it initially. Select a layout from the layout settings after completing the setup!
 InlinePattern=Select a layout
 
 [Button.1.Shape]

@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 LayerCount=3
 VectorBands=20
 VectorWidth=1920

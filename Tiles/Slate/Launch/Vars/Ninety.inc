@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 ImagePath=#@#Images\Logo256.png
 ImageName=Jax logo v4.5 White
 LineOneStyle=Time

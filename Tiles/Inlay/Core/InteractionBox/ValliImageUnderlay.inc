@@ -1,11 +1,11 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 SkinWidth=#Sec.W#
 
 [Variables]
 Sec.W=(300*#Sec.S#)
 Sec.H=(300*#Sec.S#)
 AniDir=Bottom
-@includeSecVars=#@#SecVar.inc
+@includeSecVars=#@#CacheVars\Configurator.inc
 Sec.SaveLocation=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
 @includeSkinvars=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
 
@@ -32,7 +32,7 @@ CopyLink=1
 GetIcon=0
 ReturnValue=WholePath
 DynamicVariables=1
-Command1=[!WriteKeyValue variables ImageUnderlayPath """$Path$""" #Sec.SaveLocation#][!UpdateMEasure Auto_Refresh:M "#JaxCore\Main"][!Refresh "#JaxCore\Main"][!Refresh]
+Command1=[!WriteKeyValue variables ImageUnderlayPath """$Path$""" #Sec.SaveLocation#][!UpdateMEasure Auto_Refresh:M "#MosaicShell\Main"][!Refresh "#MosaicShell\Main"][!Refresh]
 
 ; ---------------------------------------------------------------------------- ;
 ;                                    Content                                   ;

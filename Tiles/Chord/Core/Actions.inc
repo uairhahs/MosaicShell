@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeAct=#SKINSPATH#..\CoreData\Keylaunch\Act.inc
 Sec.SaveLocation=#SKINSPATH#..\CoreData\Keylaunch\Act.inc
 Sec.ForceWriteVariables=0

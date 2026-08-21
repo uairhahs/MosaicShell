@@ -31,7 +31,7 @@ function Set(hotkey, useWin, repHotkeyIndex)
         -- ---------------------------------- save ---------------------------------- --
         local saveLocation = [[#SKINSPATH##Skin.Name#\@Resources\Actions\HotKeys.ini]]
         -- print(hotkeyString, hotkey)
-        SKIN:Bang('[!CommandMeasure GenPs1 """WriteHotkey -SecNum "'..SecNum..'" -hotkey "'..hotkey..'" -hotkeyString "'..hotkeyString..'"""" "#JaxCore\\Main"]')
+        SKIN:Bang('[!CommandMeasure GenPs1 """WriteHotkey -SecNum "'..SecNum..'" -hotkey "'..hotkey..'" -hotkeyString "'..hotkeyString..'"""" "#MosaicShell\\Main"]')
     end
     SKIN:Bang('[!DeactivateConfig]')
 end
@@ -59,12 +59,12 @@ function Start()
         end
     end
 
-    local saveLocation = [[#SKINSPATH##JaxCore\@Resources\Actions\AHKCacheVariables.inc]]
+    local saveLocation = [[#SKINSPATH##MosaicShell\@Resources\Actions\AHKCacheVariables.inc]]
     bang = bang .. '[!WriteKeyvalue Variables CurrentKey "' .. currentKey .. '" "' .. saveLocation .. '"]'
     bang = bang .. '[!WriteKeyvalue Variables WinBool "' .. winbool .. '" "' .. saveLocation .. '"]'
     bang = bang .. '[!WriteKeyvalue Variables RepHotkey "' .. rephotkey .. '" "' .. saveLocation .. '"]'
     bang = bang .. '[!WriteKeyvalue Variables RMPATH "#PROGRAMPATH#Rainmeter.exe" "' .. saveLocation .. '"]'
     bang = bang .. '[!WriteKeyvalue Variables Config "#CURRENTCONFIG#" "' .. saveLocation .. '"]'
-    bang = bang .. '["#SKINSPATH##JaxCore\\@Resources\\Actions\\AHKv1.exe" "#SKINSPATH##JaxCore\\@Resources\\Actions\\Hotkey.AHK"]'
+    bang = bang .. '["#SKINSPATH##MosaicShell\\@Resources\\Actions\\AHKv1.exe" "#SKINSPATH##MosaicShell\\@Resources\\Actions\\Hotkey.AHK"]'
     SKIN:Bang(bang)
 end

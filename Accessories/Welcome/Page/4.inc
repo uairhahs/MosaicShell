@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [p.SysInfo.USER_NAME]
 Measure=Plugin
 Plugin=SysInfo

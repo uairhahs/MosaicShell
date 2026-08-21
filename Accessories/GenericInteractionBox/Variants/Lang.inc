@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Sec.W=(400*#Sec.S#)
 Sec.H=(800*#Sec.S#)
 Log=
@@ -71,7 +71,7 @@ DynamicVariables=1
 InlinePattern=#CRLF#.*\.\.\.
 InlineSetting=Color | #Set.Text_Color#
 InlinePattern2=#CRLF#?(.*!#CRLF#)
-InlineSetting2=Color | #Set.Accent_color#
+InlineSetting2=Color | #Set.Accent_Color#
 InlinePattern3=->
-InlineSetting3=Color | #Set.Accent_color_2#
+InlineSetting3=Color | #Set.Accent_Color_2#
 MeterStyle=Sec.String:S

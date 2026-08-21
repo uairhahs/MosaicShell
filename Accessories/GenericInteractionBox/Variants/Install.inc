@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeCacheVarsConfigurator=#@#CacheVars\Configurator.inc
 @includeListOfInstalledDLCs=#SKINSPATH#..\CoreData\@DLCs\InstalledDLCs.inc
 Sec.W=(350*#Sec.S#)

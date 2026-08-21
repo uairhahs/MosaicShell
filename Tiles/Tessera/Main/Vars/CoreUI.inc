@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Width=400
 R=8
 FontFace=Poppins

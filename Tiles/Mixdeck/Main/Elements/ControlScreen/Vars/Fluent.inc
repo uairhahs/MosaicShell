@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Scale=1
 Layout.fetch_icons=1
 Layout.volbar_width=(#W#-(#name_width#+22+75)*#scale#)

@@ -1,4 +1,4 @@
-﻿﻿$skinName = $RmAPI.VariableStr('Arg.1')
+﻿$skinName = $RmAPI.VariableStr('Arg.1')
 $skinVer = $RmAPI.VariableStr('Arg.2')
 $resources = $RmAPI.VariableStr('@')
 

@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Page.Items.P=(10*[Set.S])
 Page.Items.H=(60*[Set.S])
 Page.Items.Content.P=(10*[Set.S])
@@ -100,7 +100,7 @@ FontFace=Material Icons Round
 X=(#Set.W#-#HomePage.P#)
 Y=r
 Text=[\xe923]
-InlineSetting=GradientColor | 45 | #SEt.Accent_Color_2# ; 1 | #Set.Accent_color# ;0
+InlineSetting=GradientColor | 45 | #Set.Accent_Color_2# ; 1 | #Set.Accent_Color# ;0
 StringAlign=RightCenter
 FontSize=(32*[Set.S])
 LeftMouseUpAction=[!CommandMeasure Func "interactionBox('GlobalVersionUpdater')"]

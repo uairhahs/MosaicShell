@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Height=300
 FontFace=Roboto
 Scale=1
@@ -11,7 +11,7 @@ FontColor=27, 27, 30
 FontColorAccent=216, 226, 255
 
 HideVolLevel=0
-BottomActionName=YourMixer
-BottomActionBang=[!UpdateMeasure mToggle "YourMixer\Main"]
+BottomActionName=Mixdeck
+BottomActionBang=[!UpdateMeasure mToggle "Mixdeck\Main"]
 Position=CR
 AniDir=Right

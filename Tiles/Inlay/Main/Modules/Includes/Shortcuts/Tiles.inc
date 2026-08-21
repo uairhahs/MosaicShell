@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 module_shortcuts.items.approx_w=125
 module_shortcuts.items.p=(10*#Scale#)
 module_shortcuts.items.content.p=(35*#Scale#)

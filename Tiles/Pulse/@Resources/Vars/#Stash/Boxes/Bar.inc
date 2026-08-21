@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 BarType=mirrorXY
 Bands=40
 Height=0

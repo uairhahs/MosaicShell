@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Bands=240
 Height=200
 BarWidth=10

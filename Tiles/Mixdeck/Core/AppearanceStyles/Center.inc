@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeUnloadVars=#SKINSPATH##Skin.Name#\Main\Elements\Unload\Vars.inc
 
 ; ---------------------------------------------------------------------------- ;

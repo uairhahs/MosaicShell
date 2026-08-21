@@ -1,4 +1,4 @@
-﻿﻿[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 Set.Style=CoreUIv1
 Set.IconStyle=Normal
 Set.WinR=10

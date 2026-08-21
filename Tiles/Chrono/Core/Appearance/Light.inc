@@ -1,4 +1,4 @@
-﻿﻿[Option02]
+﻿[Option02]
 Meter=String
 Text=Time font
 MeterStyle=Set.String:S | Set.OptionName:S

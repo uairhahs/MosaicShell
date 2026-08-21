@@ -1,4 +1,4 @@
-﻿﻿[PageList.Configuration]
+﻿[PageList.Configuration]
 Meter=String
 MeterStyle=Set.String:S | PageList.Category:S
 Text=CONFIGURATION
@@ -29,7 +29,7 @@ MeterStyle=Set.String:S | PageList.Item.String:S
 
 [General.Shape]
 Meter=Shape
-LeftMouseUpAction=[!WriteKeyvalue Variables Page.page 1 "#SKINSPATH##Skin.Name#\Core\General.inc"][!WriteKeyvalue Variables "Skin.Set_Page" "[&Func:trim('#CURRENTSECTION#', '.Shape', '')]" "#@#SecVar.inc"][!Refresh]
+LeftMouseUpAction=[!WriteKeyvalue Variables Page.page 1 "#SKINSPATH##Skin.Name#\Core\General.inc"][!WriteKeyvalue Variables "Skin.Set_Page" "[&Func:trim('#CURRENTSECTION#', '.Shape', '')]" "#@#CacheVars\Configurator.inc"][!Refresh]
 MeterStyle=PageList.Item.Shape:S
 [General.Icon.String]
 Meter=String
@@ -71,7 +71,7 @@ Text=MODULAR
 
 [Modules.Shape]
 Meter=Shape
-LeftMouseUpAction=[!WriteKeyvalue Variables Page.Page 1 "#SKINSPATH##Skin.Name#\Core\Modules.inc"][!WriteKeyvalue Variables "Skin.Set_Page" "Modules" "#@#SecVar.inc"][!Refresh]
+LeftMouseUpAction=[!WriteKeyvalue Variables Page.Page 1 "#SKINSPATH##Skin.Name#\Core\Modules.inc"][!WriteKeyvalue Variables "Skin.Set_Page" "Modules" "#@#CacheVars\Configurator.inc"][!Refresh]
 MeterStyle=PageList.Item.Shape:S
 [Modules.Icon.String]
 Meter=String
@@ -102,7 +102,7 @@ Text=LOOK N' FEEL
 
 [Appearance.Shape]
 Meter=Shape
-LeftMouseUpAction=[!WriteKeyvalue Variables Page.page 1 "#SKINSPATH##Skin.Name#\Core\Appearance.inc"][!WriteKeyvalue Variables "Skin.Set_Page" "[&Func:trim('#CURRENTSECTION#', '.Shape', '')]" "#@#SecVar.inc"][!Refresh]
+LeftMouseUpAction=[!WriteKeyvalue Variables Page.page 1 "#SKINSPATH##Skin.Name#\Core\Appearance.inc"][!WriteKeyvalue Variables "Skin.Set_Page" "[&Func:trim('#CURRENTSECTION#', '.Shape', '')]" "#@#CacheVars\Configurator.inc"][!Refresh]
 MeterStyle=PageList.Item.Shape:S
 [Appearance.Icon.String]
 Meter=String

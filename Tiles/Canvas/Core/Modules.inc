@@ -1,4 +1,4 @@
-﻿﻿[Option20]
+﻿[Option20]
 Meter=String
 Text=Prefix
 MeterStyle=Set.String:S | Set.OptionName:S

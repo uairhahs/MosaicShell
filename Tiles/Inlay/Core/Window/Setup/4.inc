@@ -1,6 +1,6 @@
-﻿﻿
+﻿
 [Description.String]
-Text=ValliStart is extremely customizable! Change almost every aspect of your start menu from JaxCore!
+Text=Inlay is extremely customizable! Change almost every aspect of your start menu from MosaicShell!
 InlinePattern=extremely customizable
 
 [Button.1.Shape]

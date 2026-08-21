@@ -1,6 +1,6 @@
-﻿﻿[Variables]
-@includegVar2=#SKINSPATH##JaxCore\@Resources\gVars\Weather.inc
-@includegVar3=#SKINSPATH##JaxCore\@Resources\gVars\WeatherAPIKey.inc
+﻿[Variables]
+@includegVar2=#SKINSPATH##MosaicShell\@Resources\gVars\Weather.inc
+@includegVar3=#SKINSPATH##MosaicShell\@Resources\gVars\WeatherAPIKey.inc
 BackgroundColor=50,50,50
 BackgroundOpacity=50
 Color1=255,0,0

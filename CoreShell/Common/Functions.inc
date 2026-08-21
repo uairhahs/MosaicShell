@@ -1,4 +1,4 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 DynamicWindowSize=1
 AccurateText=1
 DefaultFadeDuration=100

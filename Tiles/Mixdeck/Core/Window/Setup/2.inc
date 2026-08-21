@@ -1,4 +1,4 @@
-﻿﻿; ---------------------------------------------------------------------------- ;
+﻿; ---------------------------------------------------------------------------- ;
 ;                                   Functions                                  ;
 ; ---------------------------------------------------------------------------- ;
 
@@ -15,8 +15,8 @@ Group=NUOL
 Measure=SysInfo
 Sysinfotype=OS_VERSION
 IfMatch=11
-IfMatchAction=[!WriteKeyvalue variables IconTheme "MixerDark" "#SKINSPATH#YourMixer\@Resources\Vars.inc"][!ActivateConfig  "YourMixer\Main"]
-IfNotMatchAction=[!ActivateConfig  "YourMixer\Main"]
+IfMatchAction=[!WriteKeyvalue variables IconTheme "MixerDark" "#SKINSPATH#Mixdeck\@Resources\Vars.inc"][!ActivateConfig  "Mixdeck\Main"]
+IfNotMatchAction=[!ActivateConfig  "Mixdeck\Main"]
 IfMatchMode=1
 
 ; ---------------------------------------------------------------------------- ;
@@ -24,7 +24,7 @@ IfMatchMode=1
 ; ---------------------------------------------------------------------------- ;
 
 [Description.String]
-Text=YourMixer can be activated by a newly generated tray icon or by a hotkey. Check if the tray icon is in your overflow menu, and drag it to the taskbar.
+Text=Mixdeck can be activated by a newly generated tray icon or by a hotkey. Check if the tray icon is in your overflow menu, and drag it to the taskbar.
 InlinePattern=generated tray icon|hotkey|overflow menu|drag
 
 [Button.1.Shape]

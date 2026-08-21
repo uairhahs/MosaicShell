@@ -1,4 +1,4 @@
-﻿﻿[List.Item0.Shape]
+﻿[List.Item0.Shape]
 Meter=Shape
 LeftMouseDownAction=[!CommandMeasure CoreInstallHandler "Install ModularClocks v2.42"][!DeactivateConfig]
 MeterStyle=List.Item.Shape:S

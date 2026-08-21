@@ -11,7 +11,7 @@ Hidden=1
 
 [Title]
 Meter=String
-Text="MIUI-Shade v2.02"
+Text="Substrate v2.02"
 MeterStyle=Sec.String:S | Style.Title:S
 
 [Description.1]
@@ -20,8 +20,8 @@ Text="- Shade now uses global variables"
 MeterStyle=Sec.String:S | Style.Description:S
 ; [Link.1]
 ; Meter=String
-; Text="https://jax-core.github.io/"
-; LeftMouseUpAction=["https://jax-core.github.io/"]
+; Text="https://docs.mosaicshell.io/"
+; LeftMouseUpAction=["https://docs.mosaicshell.io/"]
 ; MeterStyle=Sec.String:S | Style.Link:S
 
 [Description.2]

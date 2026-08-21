@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 ; ---------------------------------------------------------------------------- ;
 ;                                  MeterStyle                                  ;
 ; ---------------------------------------------------------------------------- ;
@@ -41,7 +41,7 @@ MeterStyle=Set.String:S | Set.OptionCat:S
 
 [Item1.Shape]
 Meter=Shape
-LeftMouseUpAction=[!WriteKeyvalue Variables page.subpagemodule "Shortcuts" "#SKINSPATH##Skin.Name#\Core\Modules.inc"][!WriteKeyvalue Variables page.page 2 "#SKINSPATH##Skin.Name#\Core\Modules.inc"][!WriteKeyvalue Variables "Skin.Set_Page" "Modules" "#@#SecVar.inc"][!Refresh]
+LeftMouseUpAction=[!WriteKeyvalue Variables page.subpagemodule "Shortcuts" "#SKINSPATH##Skin.Name#\Core\Modules.inc"][!WriteKeyvalue Variables page.page 2 "#SKINSPATH##Skin.Name#\Core\Modules.inc"][!WriteKeyvalue Variables "Skin.Set_Page" "Modules" "#@#CacheVars\Configurator.inc"][!Refresh]
 MeterStyle=Item.Shape:S
 [Item1.StringIcon]
 Meter=String

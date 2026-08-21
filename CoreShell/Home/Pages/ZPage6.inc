@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [B]
 Shape2=Rectangle 0,0, #Set.W#, #Set.H#, #Set.WinR# | StrokeWidth 0 | Fill RadialGradient This
 This=(-#Set.W#/2),(#set.H#/2),0,0,(#Set.H#/2),(#Set.H#/2) | #Set.Pri_Color#,50 ; 1 | #Set.Accent_Color#,50 ; 0
@@ -9,7 +9,7 @@ This=(-#Set.W#/2),(#set.H#/2),0,0,(#Set.H#/2),(#Set.H#/2) | #Set.Pri_Color#,50 ;
 ; X=(#Set.P#+10*[Set.S])
 ; Y=(#Set.H#*0.25)
 ; Shape=Rectangle 0,0,(500*[Set.S]),(50*[SEt.S]),(#Set.R#/2) | StrokeWidth 2 | Stroke LinearGradient CoreGrad | Fill Color #Set.Ter_Color#
-; CoreGrad=45 | #SEt.Accent_Color# ; 1 | #Set.Accent_color_2# ;0
+; CoreGrad=45 | #Set.Accent_Color# ; 1 | #Set.Accent_Color_2# ;0
 ; DynamicVariables=1
 ; Container=#Sec.Container#
 ; LeftMouseUpAction=["https://forms.gle/pFkV8sYqPfAkSFAF8"]

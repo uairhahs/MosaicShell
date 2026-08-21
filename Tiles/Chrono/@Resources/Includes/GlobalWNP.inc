@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [mCover]
 Measure=Plugin
 Plugin=WebNowPlaying

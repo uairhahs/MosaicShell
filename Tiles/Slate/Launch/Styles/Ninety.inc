@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 UpdateRate=0
 TimeString=Fetching...
 @includeConfigurableVariables=#ROOTCONFIGPATH#Launch\Vars\#Style#.inc

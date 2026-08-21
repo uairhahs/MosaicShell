@@ -1,4 +1,4 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 SkinWidth=#SW#
 SkinHeight=#SW#
 ; SolidColor=255,255,255,25

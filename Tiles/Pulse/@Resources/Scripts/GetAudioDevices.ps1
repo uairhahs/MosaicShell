@@ -1,4 +1,4 @@
-﻿﻿$env:PSModulePath+="$([System.IO.Path]::PathSeparator)$($RmAPI.VariableStr('SKINSPATH') + $RmAPI.VariableStr('Skin.Name'))\@Resources\Addons"
+﻿$env:PSModulePath+="$([System.IO.Path]::PathSeparator)$($RmAPI.VariableStr('SKINSPATH') + $RmAPI.VariableStr('Skin.Name'))\@Resources\Addons"
 
 function ListAudioDevices {
     $a=Get-AudioDevice -List

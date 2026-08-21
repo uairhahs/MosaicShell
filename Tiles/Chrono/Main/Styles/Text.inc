@@ -1,4 +1,4 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 ; SolidColor=255,255,255,25
 ; BackgroundMode=2
 DynamicWindowSize=1

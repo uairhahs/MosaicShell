@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 SaveLocation="#SKINSPATH#ModularCLocks\@Resources\Data\#arg1#Data.inc"
 SaveKey=Fill
 RGBSpeed=1

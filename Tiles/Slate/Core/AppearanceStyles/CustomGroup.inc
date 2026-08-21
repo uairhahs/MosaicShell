@@ -1,4 +1,4 @@
-﻿﻿[CheckForDataFolder]
+﻿[CheckForDataFolder]
 MEasure=Plugin
 Plugin=PowershellRM
 DynamicVariables=1
@@ -71,7 +71,7 @@ LeftMouseUpAction=[!CommandMeasure Script:M "Remove(0, '#CURRENTSECTION#')"]
 ; ---------------------------------------------------------------------------- ;
 
 
-@includeInclude=#SKINSPATH#..\CoreData\IdleStyle\Include.inc
+@includeInclude=#SKINSPATH#..\CoreData\Slate\Include.inc
 
 ; ---------------------------------------------------------------------------- ;
 ;                                    Anchor                                    ;

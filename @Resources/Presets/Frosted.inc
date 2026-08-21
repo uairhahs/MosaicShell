@@ -1,4 +1,4 @@
-﻿﻿[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 Set.Style=Frosted
 Set.IconStyle=Frosted
 Set.Pri_Color=12,12,20

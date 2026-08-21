@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [MeasureTopUsage1GPU]
 Measure=Plugin
 Plugin=UsageMonitor

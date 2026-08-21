@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 SaveLocation="#SKINSPATH##Sec.Name#\Main\Styles\Vars\16.inc"
 SaveKey=FontFace
 
@@ -9,7 +9,7 @@ SaveKey=FontFace
 [String:S]
 W=(#Sec.W#-#Sec.P#*2)
 CLipString=2
-LeftMouseUpAction=[!WriteKeyValue Variables #SaveKey# "#CURRENTSECTION#" "#SaveLocation#"][!Refresh "#Sec.Name#\Main"][!Refresh "#JaxCore\Main"][!DeactivateConfig]
+LeftMouseUpAction=[!WriteKeyValue Variables #SaveKey# "#CURRENTSECTION#" "#SaveLocation#"][!Refresh "#Sec.Name#\Main"][!Refresh "#MosaicShell\Main"][!DeactivateConfig]
 
 ; ---------------------------------------------------------------------------- ;
 ;                                    Content                                   ;
@@ -42,5 +42,5 @@ Meter=Shape
 MeterStyle=Div:S
 [Change custom font]
 Meter=String
-LeftMouseUpAction=["#SKINSPATH#ModularClocks\Main\Styles\Vars\16.inc"]
+LeftMouseUpAction=["#SKINSPATH#Chrono\Main\Styles\Vars\16.inc"]
 MeterStyle=String:S

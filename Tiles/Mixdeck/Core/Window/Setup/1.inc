@@ -1,9 +1,9 @@
-﻿﻿; ---------------------------------------------------------------------------- ;
+﻿; ---------------------------------------------------------------------------- ;
 ;                                   Function                                   ;
 ; ---------------------------------------------------------------------------- ;
 
 [Variables]
-Skin.Name=YourMixer
+Skin.Name=Mixdeck
 
 [Preset:M]
 Measure=Plugin
@@ -22,7 +22,7 @@ IfNotMatchAction=[!CommandMeasure Preset:M "ChangeToFiles -theme 'Fluent10'"]
 ; ---------------------------------------------------------------------------- ;
 
 [Description.String]
-Text=Welcome to YourMixer!
+Text=Welcome to Mixdeck!
 
 [Button.1.Shape]
 Meter=Shape

@@ -1,4 +1,4 @@
-﻿﻿[Shadow]
+﻿[Shadow]
 Measure=Plugin
 Plugin=MagickMeter
 DynamicVariables=1

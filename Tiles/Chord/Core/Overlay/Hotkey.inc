@@ -1,8 +1,8 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 UpdateDivider=-1
 
 [Variables]
-@includeSecVar=#@#SecVar.inc
+@includeSecVar=#@#CacheVars\Configurator.inc
 @includeSkinHotkeys=#SKINSPATH#..\CoreData\#Skin.Name#\HotKeys.inc
 
 [mActions]

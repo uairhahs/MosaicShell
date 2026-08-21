@@ -1,9 +1,9 @@
-﻿[Variables]
+[Variables]
 Page.Items.P=(25*[Set.S])
 Page.Items.H=(([BC:H]-90*[Set.S]-#Page.Items.P#*3)/2)
 Page.Items.Content.P=(25*[Set.S])
 Page.R=(16*[Set.S])
-Sec.Container=
+Sec.Container=BC
 PostWelcome.Guide=0
 PostWelcome.GameMode=0
 
@@ -92,7 +92,7 @@ X=(-30*[Set.S])r
 Y=(16*[Set.S])r
 Shape=Ellipse 0,0,(24*[Set.S]) | StrokeWidth 0 | Extend This | OffSet (-24*[Set.S]),0
 This=Fill Color #Set.Subtext_Color#,75 | Scale 1,1
-CoreGrad=45 | #SEt.Accent_Color_2# ; 1 | #Set.Accent_color# ;0
+CoreGrad=45 | #Set.Accent_Color_2# ; 1 | #Set.Accent_Color# ;0
 MouseOverAction=[!SetOption "#CURRENTSECTION#" This "Fill LinearGradient CoreGrad | Scale 1.2,1.2"][!UpdateMeter "#CURRENTSECTION#"][!Redraw]
 MouseLeaveAction=[!SetOption "#CURRENTSECTION#" This "Fill Color #Set.Subtext_Color#,75 | Scale 1,1"][!UpdateMeter "#CURRENTSECTION#"][!Redraw]
 DynamicVariables=1
@@ -127,7 +127,7 @@ Text=MosaicShell
 FontSize=(32*[Set.S])
 FontWeight=650
 FontFace=Righteous
-InlineSetting=GradientColor | 45 | #SEt.Accent_Color_2# ; 1 | #Set.Accent_color# ;0
+InlineSetting=GradientColor | 45 | #Set.Accent_Color_2# ; 1 | #Set.Accent_Color# ;0
 MeterStyle=Set.String:S
 LeftMouseUpAction=[!WriteKeyValue Variables Sec.Page "00000"][!Refresh]
 

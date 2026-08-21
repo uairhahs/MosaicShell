@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 S1=Select a file...
 S2=Select a file...
 S3=Select a file...
@@ -14,7 +14,7 @@ D7=Select a file...
 D8=Select a file...
 D9=Select a file...
 D10=Select a file...
-W1=JaxCore
+W1=MosaicShell
 W2=Spotify
 W3=Reddit
 W4=Google Translate
@@ -28,12 +28,12 @@ W11=Google Maps
 W12=Wordle
 ; [Variables]
 ; S1=osu!
-; S2=JaxCore
+; S2=MosaicShell
 ; S3=Spotify
 ; S4=GitHub Desktop
 ; S5=Discord
 ; D1=Discord
-; D2=JaxCore
+; D2=MosaicShell
 ; D3=Spotify
 ; D4=osu!
 ; D5=Discord RPC Maker
@@ -43,7 +43,7 @@ W12=Wordle
 ; D9=Rainmeter
 ; D10=MusicBee
 ; W1=Discord
-; W2=JaxCore
+; W2=MosaicShell
 ; W3=GitHub Desktop
 ; W4=Spotify
 ; W5=Vscode

@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [MeasureTime]
 Measure=Time
 Format=%#gVar.2412#:%M

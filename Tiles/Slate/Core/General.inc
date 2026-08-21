@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 ; ---------------------------------------------------------------------------- ;
 ;                                  MeterStyles                                 ;
 ; ---------------------------------------------------------------------------- ;
@@ -43,21 +43,21 @@ MeterStyle=Set.String:S | Set.OptionCat:S
 
 [Option01]
 Meter=String
-Text=Hotkey for pausing IdleStyle
+Text=Hotkey for pausing Slate
 MeterStyle=Set.String:S | Set.OptionName:S
 [Set.Div:382]
 Meter=Shape
 MeterStyle=Set.Div:S
 [Option02]
 Meter=String
-Text=Hotkey for activating IdleStyle forcefully
+Text=Hotkey for activating Slate forcefully
 MeterStyle=Set.String:S | Set.OptionName:S
 [Set.Div:38]
 Meter=Shape
 MeterStyle=Set.Div:S
 [Option03]
 Meter=String
-Text=Ignore idle duration and manually activate IdleStyle forcefully
+Text=Ignore idle duration and manually activate Slate forcefully
 MeterStyle=Set.String:S | Set.OptionName:S
 [Set.Div:44438]
 Meter=Shape
@@ -72,7 +72,7 @@ Meter=Shape
 MeterStyle=Set.Div:S
 [Option05]
 Meter=String
-Text=Show IdleStyle background activeness notification
+Text=Show Slate background activeness notification
 MeterStyle=Set.String:S | Set.OptionName:S
 
 [Time]
@@ -82,7 +82,7 @@ MeterStyle=Set.String:S |  Set.OptionCat:S
 
 [Item01.Shape]
 Meter=Shape
-LeftMouseUpAction=[!WriteKeyvalue Variables Skin.Name """#JaxCore""" "#@#SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#SecVar.inc"][!Refresh]
+LeftMouseUpAction=[!WriteKeyvalue Variables Skin.Name """#MosaicShell""" "#@#CacheVars\Configurator.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#CacheVars\Configurator.inc"][!Refresh]
 MeterStyle=Item.Shape:S
 [Item01.StringIcon]
 Meter=String
@@ -90,7 +90,7 @@ Text=[\xe775]
 MeterStyle=Set.String:S | Item.StringIcon:S
 [Item01.String]
 Meter=String
-Text=Change time format in JaxCore global settings.
+Text=Change time format in MosaicShell global settings.
 MeterStyle=Set.String:S | Item.String:S
 [Item01.Arrow.String]
 Meter=String
@@ -98,7 +98,7 @@ MeterStyle=Set.String:S | Item.Arrow.String:S
 
 [Item02.Shape]
 Meter=Shape
-LeftMouseUpAction=[!WriteKeyvalue Variables Skin.Name """#JaxCore""" "#@#SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#SecVar.inc"][!Refresh]
+LeftMouseUpAction=[!WriteKeyvalue Variables Skin.Name """#MosaicShell""" "#@#CacheVars\Configurator.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#CacheVars\Configurator.inc"][!Refresh]
 MeterStyle=Item.Shape:S
 [Item02.StringIcon]
 Meter=String
@@ -106,7 +106,7 @@ Text=[\xe774]
 MeterStyle=Set.String:S | Item.StringIcon:S
 [Item02.String]
 Meter=String
-Text=Change weather location & units in JaxCore global settings.
+Text=Change weather location & units in MosaicShell global settings.
 MeterStyle=Set.String:S | Item.String:S
 [Item02.Arrow.String]
 Meter=String
@@ -191,8 +191,8 @@ Meter=Shape
 MeterStyle=Set.Textbox:S
 Type=Time
 Hidden=#IgnoreIdleDuration#
-TooltipTitle=Time till IdleStyle shows
-Tooltiptext=Enter in time format (x)h(x)m(x)s for the time needed for you to be idle to activate IdleStyle.
+TooltipTitle=Time till Slate shows
+Tooltiptext=Enter in time format (x)h(x)m(x)s for the time needed for you to be idle to activate Slate.
 Y=([Option04:Y]-#Set.P#+(-30/2+8)*[Set.S])
 [Value04]
 Meter=String
@@ -209,7 +209,7 @@ Y=([Option05:Y]-#Set.P#+(-20/2+8)*[Set.S])
 Meter=Shape
 MeterStyle=Set.Bool:S
 ToolTipTitle=#CURRENTSECTION#
-ToolTipText=Checks if there are any full screen applications to prevent IdleStyle from showing when, for example you're gaming
+ToolTipText=Checks if there are any full screen applications to prevent Slate from showing when, for example you're gaming
 Y=([Option31:Y]-#Set.P#+(-20/2+8)*[Set.S])
 [YoutubeCheck]
 Meter=Shape

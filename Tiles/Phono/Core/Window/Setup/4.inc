@@ -1,13 +1,13 @@
-﻿﻿
+﻿
 [Description.String]
-Text=ModularPlayers is all yours!
+Text=Phono is all yours!
 InlinePattern=.*
 
 [Button.1.Shape]
 Meter=Shape
 X=(#W#/2-300*[S]/2)
 Y=(#Set.P#)R
-LeftMouseUpAction=[!WriteKeyValue Variables Sec.arg2 "1" "#CURRENTPATH#Main.ini"][!WriteKeyValue Variables "Core.WelcomeCheck" 1 "#SKINSPATH#ModularPlayers\@Resources\WelcomeVar.inc"][!DeactivateConfig]
+LeftMouseUpAction=[!WriteKeyValue Variables Sec.arg2 "1" "#CURRENTPATH#Main.ini"][!WriteKeyValue Variables "Core.WelcomeCheck" 1 "#SKINSPATH#Phono\@Resources\WelcomeVar.inc"][!DeactivateConfig]
 MeterStyle=Pos_Button.Shape:S
 [Button.1.String]
 Meter=String

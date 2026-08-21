@@ -1,4 +1,4 @@
-﻿﻿[AudioAnalyzer]
+﻿[AudioAnalyzer]
 Measure=Plugin
 Plugin=AudioAnalyzer
 Type=Parent

@@ -1,4 +1,4 @@
-﻿﻿; ---------------------------------------------------------------------------- ;
+﻿; ---------------------------------------------------------------------------- ;
 ;                                   Function                                   ;
 ; ---------------------------------------------------------------------------- ;
 
@@ -51,10 +51,10 @@ X=([ContentContainer:W]/2-20*[Set.S])r
 Y=(-([ContentContainer:W]/2-20*[Set.S]-#Set.P#)/1.625-#Set.P#)r
 Shape=Rectangle 0,0,([ContentContainer:W]/2-20*[Set.S]),(([ContentContainer:W]/2-20*[Set.S])*0.8),(#Set.R#) | StrokeWidth (2*[Set.S]) | Extend Fill | Stroke LinearGradient CoreGrad
 Fill=Fill Color #Set.Sec_Color#
-CoreGrad=45 | #SEt.Accent_Color# ; 1 | #Set.Accent_color_2# ;0
+CoreGrad=45 | #Set.Accent_Color# ; 1 | #Set.Accent_Color_2# ;0
 MouseOverAction=[!SetOption #CURRENTSECTION# Fill "Fill Color #Set.Ter_Color#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# Fill "Fill Color #Set.Sec_Color#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
-LeftMouseUpAction=["https://ko-fi.com/jaxoriginals/shop"]
+LeftMouseUpAction=["https://ko-fi.com/mosaicshell/shop"]
 DynamicVariables=1
 Container=#Sec.Container#
 [Product.Image:S]
@@ -69,13 +69,13 @@ Container=#Sec.Container#
 X=r
 Y=(#set.P#/2)R
 W=([ContentContainer:W]/2-#Set.P#*2.5)
-Text=[&Func:trim('#CURRENTSECTION#', '.String:S', '')] for YourFlyouts
+Text=[&Func:trim('#CURRENTSECTION#', '.String:S', '')] for Tessera
 FontWeight=650
 FontSize=(20*[Set.S])
 ClipString=2
-InlinePattern= for YourFlyouts
+InlinePattern= for Tessera
 InlineSetting=Size | (10*[Set.S])
-InlinePattern2= for YourFlyouts
+InlinePattern2= for Tessera
 InlineSetting2=Weight | 400
 Container=#Sec.Container#
 
@@ -148,7 +148,7 @@ Shape=Rectangle 0,0,200,40,#set.r# | StrokeWidth 0 | Extend Fill | Scale [Set.S]
 Fill=Fill Color [&Func:LocalVar('#CURRENTSECTION#', 'LeaveColor')],#Set.Alpha#
 MouseOverAction=[!SetOption #CURRENTSECTION# Fill "Fill Color [&Func:LocalVar('#CURRENTSECTION#', 'OverColor')],#Set.Alpha#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# Fill "Fill Color [&Func:LocalVar('#CURRENTSECTION#', 'LeaveColor')],#Set.Alpha#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
-LeftMouseUpAction=["https://ko-fi.com/jaxoriginals/shop"]
+LeftMouseUpAction=["https://ko-fi.com/mosaicshell/shop"]
 Container=#Sec.Container#
 [Spotlight.Button1.String]
 Meter=String

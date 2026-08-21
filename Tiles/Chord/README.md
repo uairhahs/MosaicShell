@@ -1,8 +1,8 @@
 <!-- START Header.mustache -->
 <br />
 <div align="center">
-  <a href="https://github.com/Jax-Core/Keylaunch">
-    <img src="https://raw.githubusercontent.com/Jax-Core/ReadME-Template/main/Resources/Icons/Keylaunch.png" alt="Logo" width="180" height="180">
+  <a href="https://github.com/uairhahs/Keylaunch">
+    <img src="https://raw.githubusercontent.com/uairhahs/ReadME-Template/main/Resources/Icons/Keylaunch.png" alt="Logo" width="180" height="180">
   </a>
 
 <h3 align="center">Keylaunch</h3>
@@ -25,7 +25,7 @@
 
 ## About
 
-![Keylaunch](https://raw.githubusercontent.com/Jax-Core/ReadME-Template/main/Resources/Splash/Keylaunch.png)
+![Keylaunch](https://raw.githubusercontent.com/uairhahs/ReadME-Template/main/Resources/Splash/Keylaunch.png)
 
 <!-- END About.mustache -->
 **Keylaunch** lets you easily launch apps with a hotkey. The application hotkey list is extremely simple to configure, and you can even change the action's name and icon.
@@ -67,12 +67,12 @@ A preview of all the five animation styles Keylaunch has!
 > For older systems, **Powershell v5.1 or newer** is required. Upgrade powershell **[here](https://docs.microsoft.com/en-us/powershell/scripting/windows-powershell/install/installing-windows-powershell?view=powershell-7.2#upgrading-existing-windows-powershell)**!
 
 ### Installation
-Run the following command in Powershell to download the latest version of JaxCore.
+Run the following command in Powershell to download the latest version of MosaicShell.
 
 (To launch Powershell as an Admin: `Win + R` -> `powershell` -> Press `CTRL + SHIFT + ENTER` on your keyboard. Powershell can also be launched via Windows Search.)
 
 ```
-iwr -useb "https://raw.githubusercontent.com/Jax-Core/JaxCore/master/CoreInstaller.ps1" | iex
+iwr -useb "https://raw.githubusercontent.com/uairhahs/MosaicShell/master/CoreInstaller.ps1" | iex
 ```
 
 > Alternatively you can download it from the [website](https://jax-core.github.io/)
@@ -84,19 +84,19 @@ After you've proceeded through the welcome screen, select `Keylaunch` (might hav
 <!-- START Setup.mustache -->
 
 ### Configuration
-Use the JaxCore menu to configure Keylaunch.
-For more information, visit [JaxCore's documentation](https://jaxcore.gitbook.io/core/)
+Use the MosaicShell menu to configure Keylaunch.
+For more information, visit [MosaicShell's documentation](https://jaxcore.gitbook.io/core/)
 <br>
 <br><!-- END Setup.mustache -->
 <!-- START Footer.mustache -->
 
 ## Need assistance?
 * Join the [CoreCommunity Discord Server](https://discord.gg/JmgehPSDD6) for help
-* or [Create an issue](https://github.com/Jax-Core/Keylaunch)
+* or [Create an issue](https://github.com/uairhahs/Keylaunch)
 
 ## Say Hi!
 * Follow me on 👨‍💻 [Github](https://github.com/EnhancedJax) and stay updated on new things that I make
-* You can also watch me on 🐦 [DeviantArt](https://www.deviantart.com/jaxoriginals) instead
+* You can also watch me on 🐦 [DeviantArt](https://www.deviantart.com/mosaicshell) instead
 * Message me on 🗨️ [Discord](https://discord.gg/JmgehPSDD6)
 
 ---
@@ -104,5 +104,5 @@ For more information, visit [JaxCore's documentation](https://jaxcore.gitbook.io
 <p align="center">
 <i>Made with ❤️ by Jax</i>
    <br/><br/>
-   <img src="https://raw.githubusercontent.com/Jax-Core/ReadME-Template/main/Resources/Assets/Logo.png"  width="32" height="32"/>
+   <img src="https://raw.githubusercontent.com/uairhahs/ReadME-Template/main/Resources/Assets/Logo.png"  width="32" height="32"/>
 </p><!-- END Footer.mustache -->

@@ -225,5 +225,5 @@ Substitute="-100":"Muted"
 
     $fileContent | Out-File -FilePath $($RmAPI.VariableStr('ROOTCONFIGPATH') + 'Main\\Elements\\ControlScreen\\Cache\\MixerContent.inc') -Encoding unicode
 
-    $RmAPI.Bang("[!Activateconfig `"YourMixer\Main\Elements\ControlScreen`"]")
+    $RmAPI.Bang("[!Activateconfig `"Mixdeck\Main\Elements\ControlScreen`"]")
 }
