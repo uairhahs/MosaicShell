@@ -1,4 +1,4 @@
-﻿function Initialize()
+function Initialize()
     -- SKIN:Bang('[!SetTransparency 20]')
     AniSteps = tonumber(SKIN:GetVariable('Animation_Steps'))
     TweenInterval = 100 / AniSteps

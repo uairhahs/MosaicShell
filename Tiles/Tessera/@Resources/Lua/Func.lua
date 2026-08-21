@@ -1,4 +1,4 @@
-﻿mediaPlayers = { 'AIMP', 'CAD', 'WMP', 'iTunes', 'Winamp', 'WebNowPlaying' }
+mediaPlayers = { 'AIMP', 'CAD', 'WMP', 'iTunes', 'Winamp', 'WebNowPlaying' }
 g_vol = -2
 tobool={ ["1"]=true, ["0"]=false }
 

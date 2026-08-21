@@ -1,8 +1,6 @@
 ﻿[Variables]
 BarHandler=1
 
-DeviantArtLinks=881177085|881628513|883898019|885183361|886577256|889349339|890749449|893506095|894951390|899004964|903806619|905969076|919259685:Combilaunch|Plainext|ModularClocks|Substrate|ModularPlayers|Keystrokes|Keylaunch|ValliStart|QuickNote|IdleStyle|ModularVisualizer|YourMixer|YourFlyouts
-
 BetaSkinlist=
 
 Sec.HeaderImageName=#Skin.name#
@@ -36,7 +34,7 @@ Text=You're on a dev build of #SKin.Name#! Main branch [mVer]
 [Item1.String:Status:Beta]
 Text=#Skin.Name##CRLF#Not released - currently in beta!
 [Item2.String:Status:Beta]
-Text=Join the Discord server to participate in the public beta test!
+Text=This module is currently in beta, check GitHub for builds and issues.
 ; ------------------------------ Status text end ----------------------------- ;
 
 @includepatchNoteChecker=#SKINSPATH##Skin.Name#\@Resources\PatchNoteVar.inc
@@ -255,41 +253,41 @@ MeterStyle=Item.Shape:S
 Meter=Shape
 X=(10*[Set.S])r
 Y=(10*[Set.S])r
-LeftMouseUpAction=["https://github.com/MosaicShell/#Skin.Name#"]
+LeftMouseUpAction=["https://github.com/uairhahs/#Skin.Name#"]
 MeterStyle=Tag.Shape:S
 [Item3.Tag1.String]
 Meter=String
 Text=Github
 MEterStyle=Set.String:S | Tag.String:S
-; -------------------------------- DeviantArt -------------------------------- ;
+; --------------------------------- Releases --------------------------------- ;
 [Item3.Tag2.Shape]
 Meter=Shape
-Color=57, 159, 89
-LeftMouseUpAction=[!CommandMeasure CoreInstallHandler "Open-DALink"]
+Color=#Set.Accent_Color#
+LeftMouseUpAction=["https://github.com/uairhahs/#Skin.Name#/releases"]
 MeterStyle=Tag.Shape:S
 [Item3.Tag2.String]
 Meter=String
-Text=DeviantArt
+Text=Releases
 MEterStyle=Set.String:S | Tag.String:S
 ; --------------------------------- PatchNote -------------------------------- ;
 [Item3.Tag3.Shape]
 Meter=Shape
-Color=#set.Accent_Color#
+Color=#Set.Accent_Color_2#
 LeftMouseUpAction=[!commandMeasure Func "interactionBox('PatchNote')"]
 MeterStyle=Tag.Shape:S
 [Item3.Tag3.String]
 Meter=String
 Text=Patch notes
 MEterStyle=Set.String:S | Tag.String:S
-; ---------------------------------- Discord --------------------------------- ;
+; ---------------------------------- Issues ---------------------------------- ;
 [Item3.Tag4.Shape]
 Meter=Shape
-Color=88, 101, 242
-LeftMouseUpAction=["https://discord.gg/JmgehPSDD6"]
+Color=166,227,161
+LeftMouseUpAction=["https://github.com/uairhahs/#Skin.Name#/issues"]
 MeterStyle=Tag.Shape:S
 [Item3.Tag4.String]
 Meter=String
-Text=Discord server
+Text=GitHub issues
 MEterStyle=Set.String:S | Tag.String:S
 
 ; ---------------------------------------------------------------------------- ;

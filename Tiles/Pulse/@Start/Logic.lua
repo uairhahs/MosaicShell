@@ -1,4 +1,4 @@
-﻿function check()
+function check()
     mVer = SKIN:GetMeasure('mVer')
     CoreVer = tonumber(SKIN:GetVariable('Core.Ver', '00000'))
     ParsedVer = tonumber(mVer:GetStringValue())

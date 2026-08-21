@@ -129,7 +129,7 @@ MeterStyle=Sec.String:S | Header.Description:0
 [Header.Description:0]
 Text=Please only downgrade if you are experiencing issues. Older versions might not work as expected or might not be compatible with the latest version of Core.
 [Header.Description:1]
-Text=MosaicShell is unable to fetch the version list from github. Please report this issue in the Discord server.
+Text=MosaicShell is unable to fetch the version list from GitHub. Please report this as a GitHub issue.
 
 [List.Container]
 Meter=Shape

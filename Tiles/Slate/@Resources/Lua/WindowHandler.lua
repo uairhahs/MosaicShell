@@ -1,4 +1,4 @@
-﻿local savedW = 0
+local savedW = 0
 local savedH = 0
 local savedX = 0
 local savedY = 0

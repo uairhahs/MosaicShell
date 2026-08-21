@@ -110,5 +110,5 @@ The root manifest contains metadata, display geometry, and component-specific se
 
 ## 5. Tooling
 
-* **Packager:** `S-Hub/shp-packager.ps1` — Reads current system layout, active themes, and compiles the `.shp`.
-* **Extractor:** `S-Hub/shp-extractor.ps1` — Extracts `.shp`, verifies dependencies, and restores desktop layout.
+* **Packager:** `S-Hub/shp-packager.ps1` - Reads current system layout, active themes, and compiles the `.shp`.
+* **Extractor:** `S-Hub/shp-extractor.ps1` - Extracts `.shp`, verifies dependencies, and restores desktop layout.
