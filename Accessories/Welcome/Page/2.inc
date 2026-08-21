@@ -79,7 +79,7 @@ LeftMouseUpAction=[!CommandMeasure PSRM "RemoveDeskop"][!SetOption Section4.Butt
 
 [Header.String]
 Meter=String
-Text=Welcome to MosaicShell#CRLF#Let's set up Core here!
+Text=Welcome to MosaicShell#CRLF#Set up the hub here.
 X=(#Sec.W#/2)r
 Y=(70*#Sec.S#)r
 FontSize=(24*#Sec.S#)

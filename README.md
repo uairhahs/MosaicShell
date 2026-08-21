@@ -3,12 +3,11 @@
 > _Your desktop, composed._
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uairhahs/MosaicShell/master/.github/res/logo-variants/compact-256.png" alt="MosaicShell" width="120" height="120" />
-  <br />
+  <img src=".github/res/logo-variants/compact-256.png" alt="MosaicShell" width="120" height="120" />
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/github/v/release/uairhahs/MosaicShell?label=Version&style=for-the-badge" />
+  <img alt="Version" src="https://img.shields.io/github/v/tag/uairhahs/MosaicShell?label=Version&style=for-the-badge" />
   <img alt="Downloads" src="https://img.shields.io/github/downloads/uairhahs/MosaicShell/total?style=for-the-badge" />
   <img alt="Last Update" src="https://img.shields.io/github/release-date/uairhahs/MosaicShell?label=Last%20Update&style=for-the-badge" />
   <img alt="License" src="https://img.shields.io/github/license/uairhahs/MosaicShell?style=for-the-badge" />
@@ -18,9 +17,9 @@
 
 ## About
 
-MosaicShell is a modular desktop layer for widgets, utilities, and workflows. Arrange the pieces, tune the surface, and build an environment that fits the way you work.
+MosaicShell is a configurable desktop shell built from composable surfaces — widgets, utilities, and workflows you arrange to fit how you work.
 
-The central hub provides quick access to settings, module management, and updates across the entire ecosystem. Each module can be installed, configured, and updated independently without affecting the others.
+The hub handles settings, module management, and updates. Each tile installs and updates on its own.
 
 Forked from [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore), archived November 2024.
 
@@ -42,7 +41,7 @@ Run the following command in PowerShell to install the latest version of MosaicS
 > To launch PowerShell as Administrator: `Win + R` → type `powershell` → press `Ctrl + Shift + Enter`
 
 ```powershell
-iwr -useb "https://raw.githubusercontent.com/uairhahs/MosaicShell/master/CoreInstaller.ps1" | iex
+iwr -useb "https://raw.githubusercontent.com/uairhahs/MosaicShell/master/RunMosaicist.ps1" | iex
 ```
 
 ---

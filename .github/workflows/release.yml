@@ -27,7 +27,7 @@ jobs:
 
       - name: Resolve version
         id: tag
-        run: echo "name=$(date -u +%Y.%-m.%-d).${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+        run: echo "name=$(date -u +%Y.%-m.%-d)-b${{ github.run_number }}" >> "$GITHUB_OUTPUT"
 
       - name: Sync version in RMSKIN.ini
         run: sed -i "s|^Version=.*|Version=${{ steps.tag.outputs.name }}|" RMSKIN.ini
