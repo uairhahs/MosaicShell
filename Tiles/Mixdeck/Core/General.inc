@@ -246,8 +246,8 @@ Y=([Option22:Y]-#Set.P#+(-20/2+8)*[Set.S])
 Meter=Shape
 MeterStyle=Set.Button:S
 Y=([Option23:Y]-#Set.P#+(-30/2+8)*[Set.S])
-OverColor=#Set.Accent_color#,150
-LeaveColor=#Set.Accent_color#,50
+OverColor=#Set.Accent_Color#,150
+LeaveColor=#Set.Accent_Color#,50
 Act=[!CommandMeasure Func "interactionBox([[#SKINSPATH##Skin.Name#\Core\InteractionBox\MixerIconTheme.inc]], '#IconTheme#')"]
 Hidden=(#Tray# = 0 || #StayOnDesktop# = 1 ? 1 : 0)
 [Icon23]
@@ -279,8 +279,8 @@ Y=([Option32:Y]-#Set.P#+(-20/2+8)*[Set.S])
 Meter=Shape
 MeterStyle=Set.Button:S
 Y=([Option33:Y]-#Set.P#+(-30/2+8)*[Set.S])
-OverColor=#Set.Accent_color#,150
-LeaveColor=#Set.Accent_color#,50
+OverColor=#Set.Accent_Color#,150
+LeaveColor=#Set.Accent_Color#,50
 Act=[!CommandMeasure Func "startSide('Ease')"]
 Hidden=(#Animated# = 0 || #StayOnDesktop# = 1 ? 1 : 0)
 [Icon33]

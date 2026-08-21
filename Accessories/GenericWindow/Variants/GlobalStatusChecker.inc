@@ -61,7 +61,7 @@ InlineSetting=Color | #set.Accent_color#
 InlinePattern2=^\d\.\d+ (>> \d\.\d+)
 InlineSetting2=Color | #set.Positive_color#
 InlinePattern3=^\d\.\d+ 🛠️$
-InlineSetting3=Color | #Set.Accent_color_2#
+InlineSetting3=Color | #Set.Accent_Color_2#
 InlinePattern4=^Not installed ❌$
 InlineSetting4=Color | #Set.Subtext_Color#,150
 [List.Item.Button_Eq.Shape:S]
