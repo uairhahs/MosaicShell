@@ -30,7 +30,7 @@ param(
     [Alias("keep")][switch]$o_keepGenerated,
     [Alias("nocopy")][switch]$o_noCopy,
     [Alias("nocompile")][switch]$o_noCompile
-) 
+)
 
 $ErrorActionPreference = 'SilentlyContinue'
 
@@ -231,7 +231,7 @@ function Get-IniContent ($filePath) {
             $section = $matches[1]
             $secDup = 1
             while ($ini.Keys -contains $section) {
-                $section = $section + '||ps' + $secDup
+                $section = $section + '|ps' + $secDup
             }
             $ini.Add($section, [ordered]@{})
         }
@@ -270,7 +270,7 @@ function Get-RemoteIniContent ($link) {
             $section = $matches[1]
             $secDup = 1
             while ($ini.Keys -contains $section) {
-                $section = $section + '||ps' + $secDup
+                $section = $section + '|ps' + $secDup
             }
             $ini.Add($section, [ordered]@{})
         }
@@ -461,7 +461,7 @@ if ($saw -eq $null) {
         }
     }
 }
-$WinVer = [int]((Get-WmiObject -class Win32_OperatingSystem).Caption -replace "[^0-9]" , '')
+$WinVer = [int]((Get-CimInstance Win32_OperatingSystem).Caption -replace "[^0-9]" , '')
 if ($WinVer -eq $null) {
     $WinVer = [int]((Get-ComputerInfo).WindowsProductName -replace "[^0-9]" , '')
 }
@@ -511,9 +511,9 @@ $SHPFirefox = @{}
 $SHPData = @{'Data'=$SHPInfo;'Rainmeter'=$SHPRainmeter;'BetterDiscord'=$SHPBetterDiscord;'Spicetify'=$SHPSpicetify;'Firefox'=$SHPFirefox;'Tags'=@()}
 # -------------------------------- Name to id -------------------------------- #
 $s_NameToID = @{
-    "YourFlyouts"="0";
-    "YourMixer"="1";
-    "ValliStart"="2";
+    "Tessera"="0";
+    "Mixdeck"="1";
+    "Inlay"="2";
     "Rainmeter"="R";
     "Firefox"="F";
     "Spicetify"="S";
@@ -570,7 +570,7 @@ Write-Done
 debug "Found $($Ini.Count) sections in $s_RMINIFile"
 # -------------------------- Filter through sections ------------------------- #
 Write-Task "Filtering through Rainmeter sections"
-[string[]]$Ini.Keys | Where-Object { $Ini[$_].Active -contains "0" -or $_ -match $s_RMINIFile_filterpattern } | ForEach-Object { 
+[string[]]$Ini.Keys | Where-Object { $Ini[$_].Active -contains "0" -or $_ -match $s_RMINIFile_filterpattern } | ForEach-Object {
     $Ini.Remove($_)
 }
 # ----------------------------- Tag modules & WH ----------------------------- #
@@ -588,12 +588,12 @@ function isOffscreen($st, $sl, $sb, $sr) {
     if ($sb -lt $sa_Top -or $sa_Bottom -lt $st) {
         return $true
     }
- 
+
     return $false
 }
-[string[]]$Ini.Keys | ForEach-Object { 
+[string[]]$Ini.Keys | ForEach-Object {
     $currentSection = $_
-    
+
     if ($_ -notmatch "$tagged_modules") {
         Get-ChildItem -Path "$s_RMSkinFolder\$currentSection" -File | ForEach-Object {
             debug "Getting window property of $s_RMSkinFolder\$currentSection\$($_.Name)"
@@ -631,7 +631,7 @@ $i = 0
 $ii = 0
 $skins = @()
 $valid_mosaic_modules = @()
-$valid_skins | select-object -unique | ForEach-Object { 
+$valid_skins | select-object -unique | ForEach-Object {
     if ($mosaic_modules -contains $_) {
         if (!$o_noCore) {
             $ii++
@@ -678,11 +678,11 @@ $valid_skins | select-object -unique | ForEach-Object {
                 }
             }
 
-            if ($_ -eq 'ModularVisualizer') {
-                New-Item -Path "$o_saveLocation\Rainmeter\CoreData\ModularVisualizer" -ItemType Directory > $null
+            if ($_ -eq 'Pulse') {
+                New-Item -Path "$o_saveLocation\Rainmeter\CoreData\Pulse" -ItemType Directory > $null
                 if (!$o_noCopy) {
-                    Get-ChildItem "$s_RMSkinFolder\..\CoreData\ModularVisualizer\" -Directory | ForEach-Object {
-                        Copy-Item -Path $_.FullName -Destination "$o_saveLocation\Rainmeter\CoreData\ModularVisualizer\" -Recurse
+                    Get-ChildItem "$s_RMSkinFolder\..\CoreData\Pulse\" -Directory | ForEach-Object {
+                        Copy-Item -Path $_.FullName -Destination "$o_saveLocation\Rainmeter\CoreData\Pulse\" -Recurse
                     }
                 }
             }
@@ -737,9 +737,9 @@ if (!$o_noSpotify) {
             $spicetify_current_theme = $Ini['Setting']["current_theme"]
             $spicetify_color_scheme = $Ini['Setting']["color_scheme"]
             $spicetify_extensions = $Ini['AdditionalOptions']["extensions"].Split("|")
-            # Copy spicetify theme 
+            # Copy spicetify theme
             Write-Task "Exporting Theme: $spicetify_current_theme, ColorScheme: $spicetify_color_scheme"
-            if (!$o_noCopy) { 
+            if (!$o_noCopy) {
                 Copy-Item -Path "$spicetify_path\Themes\$spicetify_current_theme\*" -Destination "$o_saveLocation\AppSkins\Spicetify\Themes" -Exclude @("*.png", "*.jpeg") -Recurse -Force
             }
             $SHPData.Spicetify.current_theme = $spicetify_current_theme
@@ -784,9 +784,9 @@ if (!$o_noDiscord) {
         $bd_themes = Get-Content -Path "$bd_path\data\$($bd_selected_folder)\themes.json" | ConvertFrom-Json
 
         $i_found = $False
-        $bd_themes | Get-Member | Where-Object -Property MemberType -match "NoteProperty" | Select-Object "Name" | ForEach-Object { 
+        $bd_themes | Get-Member | Where-Object -Property MemberType -match "NoteProperty" | Select-Object "Name" | ForEach-Object {
             $i_bd_themename = "$([string]$_.Name)"
-            
+
             if ($($bd_themes.$i_bd_themename) -match "True") {
                 debug "Theme `"$i_bd_themename`" applied, trying to find css file"
                 Get-ChildItem -Path "$bd_path\themes\*" -Filter *.theme.css | ForEach-Object {
@@ -824,7 +824,7 @@ if (!$o_noFirefox) {
         Write-Done
         $ff_userchrome_path = "$($ff_path)$ff_defaultprofile_path\chrome\*"
         if (Test-Path -Path "$ff_userchrome_path") {
-            # Copy firefox theme 
+            # Copy firefox theme
             Write-Task "Exporting user css files $ff_userchrome_path"
             if (!$o_noCopy) {Copy-Item -Path "$ff_userchrome_path" -Destination "$o_saveLocation\AppSkins\Firefox\" -Force}
             $SHPData.Tags += "Firefox"

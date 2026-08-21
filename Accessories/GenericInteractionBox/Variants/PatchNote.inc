@@ -1,4 +1,4 @@
-
+﻿
 [Variables]
 Sec.W=(600*#Sec.S#)
 Sec.H=([Anchor:Y])
@@ -19,7 +19,7 @@ Formula=100
 X=(#Sec.P#)
 Y=#Sec.P#
 FontSize=(18*#Sec.S#)
-FontFace=#Set.Font# 
+FontFace=#Set.Font#
 FontWeight=(650)
 DynamicVariables=1
 ClipString=2

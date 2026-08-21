@@ -1,0 +1,11 @@
+﻿﻿[Variables]
+Scale=1
+Rotation=Vert
+Stroke=0
+FontOverColor=255,255,255
+FontOverOpacity=255
+FontDefaultColor=0,0,0
+FontDefaultOpacity=255
+BackgroundColor=255,255,255
+BackgroundOpacity=150
+FontFace=Roboto

@@ -1,0 +1,12 @@
+﻿﻿[Variables]
+Bands=60
+Radius=60
+StartAngle=0
+TotalAngle=600
+Height=0
+BarWidth=3
+Levitate=0
+StartCap=Round
+EndCap=Triangle
+MinimumHeight=20
+BarType=Dummy

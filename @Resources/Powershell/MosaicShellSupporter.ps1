@@ -28,11 +28,11 @@ function check-update {
     $folderIncludes = "$($folderDLCs)Includes\"
     $fileIncluder = "$($folderIncludes)Includer.inc"
     # ----------------------------- Module includers ----------------------------- #
-    # $skinDLCs = @('YourFlyouts','ValliStart')
-    $fileIncluder0_YourMixer = "$($skinsPath)YourMixer\Core\Layout\Includer.inc"
-    $fileIncluder0_YourFlyouts = "$($skinsPath)YourFlyouts\Core\Layout\Includer.inc"
-    $fileIncluder0_ValliStart = "$($skinsPath)ValliStart\Core\Layout\Includer.inc"
-    $fileIncluder1_ValliStart = "$($skinsPath)ValliStart\Core\Window\ValliModule\4.inc"
+    # $skinDLCs = @('Tessera','Inlay')
+    $fileIncluder0_Mixdeck = "$($skinsPath)Mixdeck\Core\Layout\Includer.inc"
+    $fileIncluder0_Tessera = "$($skinsPath)Tessera\Core\Layout\Includer.inc"
+    $fileIncluder0_Inlay = "$($skinsPath)Inlay\Core\Layout\Includer.inc"
+    $fileIncluder1_Inlay = "$($skinsPath)Inlay\Core\Window\ValliModule\4.inc"
 
     # -------------------------- Generate DLC structure -------------------------- #
     If (!(Test-Path "$folderDLCs")) {
@@ -67,12 +67,12 @@ Text=You don't have any DLCs installed!
 MeterStyle=Set.String:S | List.Item.String:S
 
 "@
-        # ----------------------- Write content for YourFlyouts ---------------------- #
-        $fileIncluder0_YourFlyouts_content += @"
+        # ----------------------- Write content for Tessera ---------------------- #
+        $fileIncluder0_Tessera_content += @"
 
 [Item1.Shape]
 Meter=Shape
-LeftMouseUpAction=["https://ko-fi.com/jaxoriginals/shop"]
+LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell"]
 MeterStyle=Item.Shape:S
 [Item1.StringIcon]
 Meter=String
@@ -86,12 +86,12 @@ MeterStyle=Set.String:S | Item.String:S
 Meter=String
 MeterStyle=Set.String:S | Item.Arrow.String:S
 "@
-        # ----------------------- Write content for YourMixer ---------------------- #
-        $fileIncluder0_YourMixer_content += @"
+        # ----------------------- Write content for Mixdeck ---------------------- #
+        $fileIncluder0_Mixdeck_content += @"
 
 [Item1.Shape]
 Meter=Shape
-LeftMouseUpAction=["https://ko-fi.com/jaxoriginals/shop"]
+LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell"]
 MeterStyle=Item.Shape:S
 [Item1.StringIcon]
 Meter=String
@@ -105,10 +105,10 @@ MeterStyle=Set.String:S | Item.String:S
 Meter=String
 MeterStyle=Set.String:S | Item.Arrow.String:S
 "@
-        # ----------------------- Write content for ValliStart ----------------------- #
-        $fileIncluder0_ValliStart_content += ""
-        $fileIncluder1_ValliStart_content += @"
-        
+        # ----------------------- Write content for Inlay ----------------------- #
+        $fileIncluder0_Inlay_content += ""
+        $fileIncluder1_Inlay_content += @"
+
 [Item2.Shape]
 Meter=Shape
 MeterStyle=Item.Shape:S
@@ -126,15 +126,15 @@ MeterStyle=Item.Button.Shape:S
 [Item2.Button.StringIcon]
 Meter=String
 Text=[\xe89e]
-LeftMouseUpAction=["https://ko-fi.com/jaxoriginals/shop"]
+LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell"]
 MeterStyle=Sec.String:S | Item.Button.StringIcon:S
 "@
 
-        $fileIncluderContent | Out-File -FilePath $fileIncluder -Force -Encoding unicode 
-        If (Test-Path -Path $fileIncluder0_YourMixer) {$fileIncluder0_YourMixer_content | Out-File -FilePath $fileIncluder0_YourMixer -Encoding unicode -Force}
-        If (Test-Path -Path $fileIncluder0_YourFlyouts) {$fileIncluder0_YourFlyouts_content | Out-File -FilePath $fileIncluder0_YourFlyouts -Encoding unicode -Force}
-        If (Test-Path -Path $fileIncluder0_ValliStart) {$fileIncluder0_ValliStart_content | Out-File -FilePath $fileIncluder0_ValliStart -Encoding unicode -Force}
-        If (Test-Path -Path $fileIncluder1_ValliStart) {$fileIncluder1_ValliStart_content | Out-File -FilePath $fileIncluder1_ValliStart -Encoding unicode -Force}
+        $fileIncluderContent | Out-File -FilePath $fileIncluder -Force -Encoding unicode
+        If (Test-Path -Path $fileIncluder0_Mixdeck) {$fileIncluder0_Mixdeck_content | Out-File -FilePath $fileIncluder0_Mixdeck -Encoding unicode -Force}
+        If (Test-Path -Path $fileIncluder0_Tessera) {$fileIncluder0_Tessera_content | Out-File -FilePath $fileIncluder0_Tessera -Encoding unicode -Force}
+        If (Test-Path -Path $fileIncluder0_Inlay) {$fileIncluder0_Inlay_content | Out-File -FilePath $fileIncluder0_Inlay -Encoding unicode -Force}
+        If (Test-Path -Path $fileIncluder1_Inlay) {$fileIncluder1_Inlay_content | Out-File -FilePath $fileIncluder1_Inlay -Encoding unicode -Force}
         "" | Out-File -FilePath $fileInstalledDLCs -Encoding unicode -Force
     }
 
@@ -152,7 +152,7 @@ MeterStyle=Sec.String:S | Item.Button.StringIcon:S
                 $iInfo = $iName -split '_'
                 # $iInfo[0]: Module
                 # $iInfo[1]: DLC
-                
+
                 $fileInstalledDLCs_content += @"
 
 $iName=$(-join ((48..57) + (97..122) | Get-Random -Count 32 | % {[char]$_}))
@@ -178,15 +178,15 @@ MeterStyle=Set.String:S | List.Item.String:S
 # ---------------------------------------------------------------------------- #
 #                    Generated content for separate modules                    #
 # ---------------------------------------------------------------------------- #
-# --------------------------------- YourMixer -------------------------------- #
-                if ($iInfo[0] -Contains "YourMixer") {
+# --------------------------------- Mixdeck -------------------------------- #
+                if ($iInfo[0] -Contains "Mixdeck") {
                     debug "$iInfo"
-                    if ([string]::IsNullOrEmpty($fileIncluder0_YourMixer_content)) {
-                        $fileIncluder0_YourMixer_content += @"
+                    if ([string]::IsNullOrEmpty($fileIncluder0_Mixdeck_content)) {
+                        $fileIncluder0_Mixdeck_content += @"
 
 [Item1.Shape]
 Meter=Shape
-LeftMouseUpAction=["https://ko-fi.com/jaxoriginals/shop"]
+LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell"]
 MeterStyle=Item.Shape:S
 [Item1.StringIcon]
 Meter=String
@@ -205,7 +205,7 @@ X=(20*[Set.S])
 MeterStyle=Set.Div:S
 "@
                     }
-                    $fileIncluder0_YourMixer_content += @"
+                    $fileIncluder0_Mixdeck_content += @"
 
 [$($iInfo[1])]
 Meter=Image
@@ -217,7 +217,7 @@ MeterStyle=Set.String:S | DLC.String:S
 
 "@
                     if ($i -eq $arr.Length) {
-                        $fileIncluder0_YourMixer_content += @"
+                        $fileIncluder0_Mixdeck_content += @"
 
 [Div:Anchor]
 Meter=Shape
@@ -229,14 +229,14 @@ MeterStyle=Set.Div:S
                     }
                 }
 # ------------------------------------- - ------------------------------------ #
-# -------------------------------- YourFlyouts ------------------------------- #
-                if ($iInfo[0] -Contains "YourFlyouts") {
-                    if ([string]::IsNullOrEmpty($fileIncluder0_YourFlyouts_content)) {
-                        $fileIncluder0_YourFlyouts_content += @"
+# -------------------------------- Tessera ------------------------------- #
+                if ($iInfo[0] -Contains "Tessera") {
+                    if ([string]::IsNullOrEmpty($fileIncluder0_Tessera_content)) {
+                        $fileIncluder0_Tessera_content += @"
 
 [Item1.Shape]
 Meter=Shape
-LeftMouseUpAction=["https://ko-fi.com/jaxoriginals/shop"]
+LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell"]
 MeterStyle=Item.Shape:S
 [Item1.StringIcon]
 Meter=String
@@ -255,7 +255,7 @@ X=(20*[Set.S])
 MeterStyle=Set.Div:S
 "@
                     }
-                    $fileIncluder0_YourFlyouts_content += @"
+                    $fileIncluder0_Tessera_content += @"
 
 [$($iInfo[1])]
 Meter=Image
@@ -267,7 +267,7 @@ MeterStyle=Set.String:S | DLC.String:S
 
 "@
                     if ($i -eq $arr.Length) {
-                        $fileIncluder0_YourFlyouts_content += @"
+                        $fileIncluder0_Tessera_content += @"
 
 [Div:Anchor]
 Meter=Shape
@@ -279,9 +279,9 @@ MeterStyle=Set.Div:S
                     }
                 }
 # ------------------------------------- - ------------------------------------ #
-# -------------------------------- ValliStart -------------------------------- #
-                if ($iInfo[0] -Contains "ValliStart") {
-                    $fileIncluder0_ValliStart_content += @"
+# -------------------------------- Inlay -------------------------------- #
+                if ($iInfo[0] -Contains "Inlay") {
+                    $fileIncluder0_Inlay_content += @"
 
 [$($iInfo[1]).Shape]
 Meter=Shape
@@ -298,7 +298,7 @@ Text=Default layout for the $($iInfo[1]) DLC
 MEterStyle=Set.String:S | Module.Description.STring:S
 
 "@
-                    $fileIncluder1_ValliStart_content += @"
+                    $fileIncluder1_Inlay_content += @"
 
 [$($iInfo[1]).Div]
 Meter=Shape
@@ -322,23 +322,23 @@ MeterStyle=Sec.String:S
 
 
 "@
-                # ---------------- Generate a block for each ValliStart module --------------- #
-                    $moduleNames = @(Get-ChildItem "$($skinsPath)ValliStart\Core\Module" | Where-Object { $_.Name -match "^$($iInfo[1])" } | Foreach-Object -Process {[System.IO.Path]::GetFileNameWithoutExtension($_)})
+                # ---------------- Generate a block for each Inlay module --------------- #
+                    $moduleNames = @(Get-ChildItem "$($skinsPath)Inlay\Core\Module" | Where-Object { $_.Name -match "^$($iInfo[1])" } | Foreach-Object -Process {[System.IO.Path]::GetFileNameWithoutExtension($_)})
                     for ($j = 1; $j -le $moduleNames.Length; $j++) {
                         $mo = $j % 3
-                        $fileIncluder1_ValliStart_content += @"
-                
+                        $fileIncluder1_Inlay_content += @"
+
 [$($moduleNames[$j-1]).Shape]
 Meter=Shape
 "@
                         if ($mo -eq 1) {
-                            $fileIncluder1_ValliStart_content += @"
+                            $fileIncluder1_Inlay_content += @"
 
 X=(#SEc.P#)
 Y=(#Sec.P#*2)r
 "@
                         }
-                        $fileIncluder1_ValliStart_content += @"
+                        $fileIncluder1_Inlay_content += @"
 
 MeterStyle=DLC.Shape:S
 [$($moduleNames[$j-1]).Image]
@@ -350,8 +350,8 @@ MEterStyle=Sec.String:S | DLC.STring:S
 "@
                     }
 
-                    $fileIncluder1_ValliStart_content += @"
-                
+                    $fileIncluder1_Inlay_content += @"
+
 [AnchorSuppli]
 Meter=String
 Container=ContentContainer
@@ -362,14 +362,14 @@ Y=R
                 }
 # ------------------------------------- - ------------------------------------ #
                 $fileIncluderContent | Out-File -FilePath $fileIncluder -Force -Encoding unicode
-                If (Test-Path -Path $fileIncluder0_YourMixer) {$fileIncluder0_YourMixer_content | Out-File -FilePath $fileIncluder0_YourMixer -Encoding unicode -Force}
-                If (Test-Path -Path $fileIncluder0_YourFlyouts) {$fileIncluder0_YourFlyouts_content | Out-File -FilePath $fileIncluder0_YourFlyouts -Encoding unicode -Force}
-                If (Test-Path -Path $fileIncluder0_ValliStart) {$fileIncluder0_ValliStart_content | Out-File -FilePath $fileIncluder0_ValliStart -Encoding unicode -Force}
-                If (Test-Path -Path $fileIncluder1_ValliStart) {$fileIncluder1_ValliStart_content | Out-File -FilePath $fileIncluder1_ValliStart -Encoding unicode -Force}
+                If (Test-Path -Path $fileIncluder0_Mixdeck) {$fileIncluder0_Mixdeck_content | Out-File -FilePath $fileIncluder0_Mixdeck -Encoding unicode -Force}
+                If (Test-Path -Path $fileIncluder0_Tessera) {$fileIncluder0_Tessera_content | Out-File -FilePath $fileIncluder0_Tessera -Encoding unicode -Force}
+                If (Test-Path -Path $fileIncluder0_Inlay) {$fileIncluder0_Inlay_content | Out-File -FilePath $fileIncluder0_Inlay -Encoding unicode -Force}
+                If (Test-Path -Path $fileIncluder1_Inlay) {$fileIncluder1_Inlay_content | Out-File -FilePath $fileIncluder1_Inlay -Encoding unicode -Force}
             }
-            $fileInstalledDLCs_content | Out-File -FilePath $fileInstalledDLCs -Force -Encoding unicode 
+            $fileInstalledDLCs_content | Out-File -FilePath $fileInstalledDLCs -Force -Encoding unicode
 
-            
+
             break
         }
     }
