@@ -1,4 +1,4 @@
-﻿-- A simple UTF-8 validator in Lua. (Tested only with texlua.)
+-- A simple UTF-8 validator in Lua. (Tested only with texlua.)
 -- Manuel Pégourié-Gonnard, 2009, WTFPL v2.
 
 -- returns true if s is a valid utf-8 sequence according to rfc3629
@@ -85,18 +85,19 @@ function Initialize()
 end
 
 function checkPS()
-    psVersionRaw = SKIN:GetMeasure('MeasurePSVer'):GetStringValue()
-    psVersion = tonumber(psVersionRaw)
+    psVersionRaw = SKIN:GetMeasure('MeasurePSVer'):GetStringValue() or ''
+    local cleanPS = psVersionRaw:match('%d+%.?%d*')
+    psVersion = tonumber(cleanPS)
     if psVersion == nil then
         coreLog('[i] Note that Powershell v5.1 or above is required.')
-        coreLog('[-] Powershell version returned: "' .. psVersionRaw:gsub('\n', '') .. '", which is not comparable with numeric values. Proceed?')
+        coreLog('[-] Powershell version returned: "' .. psVersionRaw:gsub('[\r\n]', '') .. '", which is not comparable with numeric values. Proceed?')
         SKIN:Bang('[!ShowmeterGroup PSButton][!SetOption PSButton.Yes:Shape MeterStyle "Sec.Button:S | PSButton.Yes:Shape:Cant"][!UpdateMeterGroup PSButton][!Redraw]')
     elseif psVersion < 5.1 then
         coreLog('[-] Powershell version does not match requirement: 5.1')
         coreLog('[i] This is likely due to your device having an version of Windows older than Windows 10.')
         SKIN:Bang('[!ShowmeterGroup PSButton][!SetOption PSButton.Yes:Shape MeterStyle "Sec.Button:S | PSButton.Yes:Shape:Not"][!UpdateMeterGroup PSButton][!Redraw]')
     else
-        coreLog('[+] Powershell verion >= 5.1')
+        coreLog('[+] Powershell version >= 5.1 (' .. tostring(psVersion) .. ')')
         -- SKIN:Bang('[!Delay 500][!CommandMeasure ScriptLua "checkTRANS()"]')
         coreLog('[i] Translation feature is disabled.')
         SKIN:Bang('[!Delay 500][!EnableMeasure p.SysInfo.USER_NAME][!UpdateMeasure p.SysInfo.USER_NAME]')

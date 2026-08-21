@@ -1,9 +1,9 @@
-﻿[Variables]
+[Variables]
 Page.Items.P=(25*[Set.S])
 Page.Items.H=(([BC:H]-90*[Set.S]-#Page.Items.P#*3)/2)
 Page.Items.Content.P=(25*[Set.S])
 Page.R=(16*[Set.S])
-Sec.Container=
+Sec.Container=BC
 PostWelcome.Guide=0
 PostWelcome.GameMode=0
 
