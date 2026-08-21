@@ -1,7 +1,7 @@
 ﻿[Variables]
 Sec.SaveLocation=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
 ; ------------------------------ User variables ------------------------------ ;
-UserNameCheckVariable=jax
+UserNameCheckVariable=mosaicshell
 AlreadyHasImageMagick=0
 ; ---------------------------------- Remote ---------------------------------- ;
 Set.Lang=English
@@ -22,17 +22,18 @@ Set.R=10
 Set.WinR=2
 Set.WinB=2
 ; --------------------------- Appearance variables --------------------------- ;
+; Catppuccin Mocha — Sky / Mauve accents from MosaicShell logo
 Set.Style=CoreUIv2
 Set.IconStyle=Normal
 Set.Alpha=255
-Set.Pri_Color=18,18,18
-Set.Sec_Color=28,28,28
-Set.Ter_Color=35,35,35
-Set.Accent_Color=242, 52, 0
-Set.Accent_Color_2=255, 183, 0
-Set.Text_Color=242,240,255
-Set.SubText_Color=120,120,120
-Set.Positive_Color=35,209,96
+Set.Pri_Color=17,17,27
+Set.Sec_Color=30,30,46
+Set.Ter_Color=49,50,68
+Set.Accent_Color=137,220,235
+Set.Accent_Color_2=203,166,247
+Set.Text_Color=205,214,244
+Set.SubText_Color=166,173,200
+Set.Positive_Color=166,227,161
 Set.Font=Poppins
 Set.Blur=None
 Set.BlurCorner=Round

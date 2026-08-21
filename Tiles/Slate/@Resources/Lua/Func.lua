@@ -1,4 +1,4 @@
-﻿forced = 0
+forced = 0
 forcedTime = 0
 
 function CheckPause()

@@ -1,4 +1,4 @@
-﻿mediaPlayers = {'AIMP', 'CAD', 'WMP', 'iTunes', 'Winamp', 'WebNowPlaying'}
+mediaPlayers = {'AIMP', 'CAD', 'WMP', 'iTunes', 'Winamp', 'WebNowPlaying'}
 -- mediaPlayers = {'CAD', 'WebNowPlaying'}
 
 function checkMediaAuto()

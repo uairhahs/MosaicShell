@@ -47,7 +47,7 @@ X=r
 Y=(10*[Set.S])R
 W=(#Set.W#-350*[Set.S])
 ClipString=2
-Text=S-Hub is estimated to be released during / before Winter Holiday. View the latest development progress in our Discord server!
+Text=S-Hub is estimated to be released during / before Winter Holiday. Follow progress on GitHub.
 InlinePattern=during / before Winter Holiday
 inlinesetting=Color | #Set.Accent_Color_2#
 

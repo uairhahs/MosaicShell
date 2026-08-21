@@ -1,4 +1,4 @@
-﻿
+
 function StartCtx()
 	local saveLocation = SKIN:GetVariable('SKINSPATH')..'#MosaicShell\\@Resources\\CacheVars\\Ctx.inc'
 	-- local SAW = tonumber(SKIN:GetVariable('SCREENAREAWIDTH'))

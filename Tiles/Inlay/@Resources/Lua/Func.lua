@@ -1,4 +1,4 @@
-﻿MediaPlayers = { 'AIMP', 'CAD', 'WMP', 'iTunes', 'Winamp', 'WebNowPlaying' }
+MediaPlayers = { 'AIMP', 'CAD', 'WMP', 'iTunes', 'Winamp', 'WebNowPlaying' }
 GlobalInit = 0
 GlobalGeneratedProgramList = 0
 RequireVolumeHook = false

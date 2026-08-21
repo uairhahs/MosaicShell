@@ -1,4 +1,4 @@
-﻿function start(variant, title, description, iconpath, timeout)
+function start(variant, title, description, iconpath, timeout)
 	local File = SKIN:GetVariable('SKINSPATH')..'#MosaicShell\\Accessories\\Toast\\Main.ini'
     if variant ~= nil then variant = 'Standard' end
 	if iconpath ~= nil then iconpath = '#SKINSPATH##MosaicShell\\@Resources\\Images\\CoreAssets\\NormalLogo.png' end

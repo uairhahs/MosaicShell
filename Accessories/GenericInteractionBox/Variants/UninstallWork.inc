@@ -65,7 +65,7 @@ Y=R
 W=(#sec.W#-#sec.p#*2)
 clipstring=2
 StringAlign=Center
-Text=Seems like an important issue. If you want, please contact me on my Discord server so I can investigate and patch this issue.
+Text=Seems like an important issue. Please open a GitHub issue so it can be investigated and patched.
 MeterStyle=Sec.String:S
 FontSize=(10*#sec.s#)
 
@@ -77,7 +77,7 @@ Y=(#Sec.P#)R
 MouseOverAction=[!SetOption #CURRENTSECTION# Fill "Fill Color 88, 101, 242"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# Fill "Fill Color 88, 101, 242, 150"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 Fill=Fill Color 88, 101, 242, 150
-LeftMouseUpAction=["https://discord.gg/JmgehPSDD6"]
+LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell/issues"]
 [Image.DC]
 Meter=Image
 MeterStyle=Sec.Button.Image:S

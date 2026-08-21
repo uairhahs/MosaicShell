@@ -1,4 +1,4 @@
-﻿RepHotkeyArray = {[[Do not replace]], 'Space', 'Enter', 'Tab', 'BackSpace', 'Delete'}
+RepHotkeyArray = {[[Do not replace]], 'Space', 'Enter', 'Tab', 'BackSpace', 'Delete'}
 
 function Set(hotkey, useWin, repHotkeyIndex)
     if hotkey ~= nil then

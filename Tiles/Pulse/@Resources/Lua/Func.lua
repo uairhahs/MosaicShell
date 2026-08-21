@@ -1,4 +1,4 @@
-﻿mediaPlayers = { 'AIMP', 'CAD', 'WMP', 'iTunes', 'Winamp', 'WebNowPlaying', 'Modern' }
+mediaPlayers = { 'AIMP', 'CAD', 'WMP', 'iTunes', 'Winamp', 'WebNowPlaying', 'Modern' }
 havePlaying = false
 activated = false
 

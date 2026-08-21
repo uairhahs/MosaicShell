@@ -1,4 +1,4 @@
-﻿IsExist = false
+IsExist = false
 
 function Initialize()
     local function file_exists(name)
