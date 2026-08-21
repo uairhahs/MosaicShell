@@ -1,4 +1,4 @@
-﻿﻿[Choose:M]
+﻿[Choose:M]
 Measure=Plugin
 Plugin=FileChoose
 UseNewStyle=0

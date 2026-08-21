@@ -1,4 +1,4 @@
-﻿﻿[Item1.Shape]
+﻿[Item1.Shape]
 Meter=Shape
 LeftMouseUpAction=["https://ko-fi.com/mosaicshell/shop"]
 MeterStyle=Item.Shape:S

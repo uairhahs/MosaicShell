@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 ColorCount=2
 ColorA1=234,234,234
 ColorA2=108,230,255

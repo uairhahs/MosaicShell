@@ -1,4 +1,4 @@
-﻿﻿[CalendarButton.StringIcon]
+﻿[CalendarButton.StringIcon]
 Meter=String
 Text=[\xe787]
 MeterStyle=RegularText | Button.StringIcon:S

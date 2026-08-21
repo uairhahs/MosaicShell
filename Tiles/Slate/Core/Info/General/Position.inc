@@ -1,4 +1,4 @@
-﻿﻿[Title]
+﻿[Title]
 Text=Position
 
 [Description]

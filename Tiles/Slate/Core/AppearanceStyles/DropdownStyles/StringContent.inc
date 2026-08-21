@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 SaveLocation="#SKINSPATH#Slate\Launch\Vars\#Sec.name#.inc"
 
 [String:S]

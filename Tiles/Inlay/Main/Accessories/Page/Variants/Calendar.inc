@@ -1,4 +1,4 @@
-﻿﻿[ActionTimer]
+﻿[ActionTimer]
 Custom0=[!UpdateMeasure CurrentDayCalc][!UpdateMeter TodayHL][!Redraw]
 
 

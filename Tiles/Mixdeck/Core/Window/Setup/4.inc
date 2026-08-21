@@ -1,4 +1,4 @@
-﻿﻿[Header.String]
+﻿[Header.String]
 Text=Customize everything!
 
 [Description.String]

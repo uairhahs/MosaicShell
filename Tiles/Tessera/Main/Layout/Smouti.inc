@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 H=100
 MediaW=(500*#Scale#)
 LocksW=(#H#)

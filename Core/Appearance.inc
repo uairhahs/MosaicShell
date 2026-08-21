@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 [Header01]
 Meter=String
 Text=Presets

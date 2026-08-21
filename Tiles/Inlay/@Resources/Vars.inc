@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 ; --------------------------------- Operation -------------------------------- ;
 ReplaceWin=1
 DroptopIntegration=0

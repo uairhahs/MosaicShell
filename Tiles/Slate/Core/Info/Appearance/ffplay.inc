@@ -1,4 +1,4 @@
-﻿﻿[Title]
+﻿[Title]
 Text=ffplay file availability
 
 [Description]
@@ -6,11 +6,11 @@ Text=You'll have to manually download ffplay from the link below in order for th
 
 [Link]
 Meter=String
-Text=https://jaxcore.gitbook.io/core/modules/idlestyle#video-backgrounds
+Text=https://docs.mosaicshell.io/core/modules/idlestyle#video-backgrounds
 MouseOverAction=[!SetOption #CURRENTSECTION# MeterStyle "Sec.String:S | Link:Link"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# MeterStyle "Sec.String:S | Link:NoLink"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MeterStyle=Sec.String:S | Link:NoLink
-LeftMouseUpAction=["https://jaxcore.gitbook.io/core/modules/idlestyle#video-backgrounds"]
+LeftMouseUpAction=["https://docs.mosaicshell.io/core/modules/idlestyle#video-backgrounds"]
 X=r
 Y=(#sec.P#)R
 FontSize=(12*#Sec.S#)

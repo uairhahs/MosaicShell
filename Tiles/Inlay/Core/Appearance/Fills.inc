@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 ; ---------------------------------------------------------------------------- ;
 ;                                  MeterStyle                                  ;
 ; ---------------------------------------------------------------------------- ;
@@ -79,7 +79,7 @@ MeterStyle=Set.String:S | Item.String:S
 
 [Item2.Shape]
 Meter=Shape
-LeftMouseUpAction=[!WriteKeyvalue Variables "Skin.Set_Page" "ColorScheme" "#@#SecVar.inc"][!Refresh]
+LeftMouseUpAction=[!WriteKeyvalue Variables "Skin.Set_Page" "ColorScheme" "#@#CacheVars\Configurator.inc"][!Refresh]
 MeterStyle=Item.Shape:S
 [Item2.StringIcon]
 Meter=String

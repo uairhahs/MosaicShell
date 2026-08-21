@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Description.String]
 Text=Inlay has nothing in it initially. Select a layout from the layout settings after completing the setup!
 InlinePattern=Select a layout

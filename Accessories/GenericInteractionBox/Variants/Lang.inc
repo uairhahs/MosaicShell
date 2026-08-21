@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Sec.W=(400*#Sec.S#)
 Sec.H=(800*#Sec.S#)
 Log=

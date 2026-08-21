@@ -1,4 +1,4 @@
-﻿﻿[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 Layout=Rounded
 BackgroundMod=0
 Position=BR

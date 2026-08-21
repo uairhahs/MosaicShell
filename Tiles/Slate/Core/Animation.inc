@@ -1,4 +1,4 @@
-﻿﻿[Header]
+﻿[Header]
 Text=Animation layout
 Y=(20*[Set.S]+#Scroll#)
 

@@ -1,2 +1,2 @@
-﻿﻿[Variables]
+﻿[Variables]
 BarHandler=9

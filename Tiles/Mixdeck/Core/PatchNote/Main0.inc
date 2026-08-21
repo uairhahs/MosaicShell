@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 
 [Title.New]
 Meter=String

@@ -1,4 +1,4 @@
-﻿﻿[Info.Shape]
+﻿[Info.Shape]
 Meter=shape
 X=(25*#Scale#)
 Y=(25*#scale#)r
@@ -6,7 +6,7 @@ Shape=Rectangle 0,0,(#W#-50*#Scale#),(130*#Scale#),(#R#*#Scale#) | StrokeWidth 2
 This=Stroke color #Border#,#Alpha# | Fill Color #Pri_color#,#Alpha#
 MouseOverAction=[!SetOption #CURRENTSECTION# This "Stroke color #BoxBorder# | Fill Color #BoxColor#,#Alpha#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# This "Stroke color #Border#,#Alpha# | Fill Color #Pri_color#,#Alpha#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
-LeftMouseUpAction=[!DeactivateConfig "#MosaicShell\Main"][!Delay 100][!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page Layout "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"]
+LeftMouseUpAction=[!DeactivateConfig "#MosaicShell\Main"][!Delay 100][!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##MosaicShell\@Resources\CacheVars\Configurator.inc"][!WriteKeyvalue Variables Skin.Set_Page Layout "#SKINSPATH##MosaicShell\@Resources\CacheVars\Configurator.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"]
 [Info.Container]
 Meter=SHape
 X=r
@@ -41,7 +41,7 @@ Shape=Rectangle 0,0,(#W#-50*#Scale#),(130*#Scale#),(#R#*#Scale#) | StrokeWidth 2
 This=Stroke color #Border#,#Alpha# | Fill Color #Pri_color#,#Alpha#
 MouseOverAction=[!SetOption #CURRENTSECTION# This "Stroke color #BoxBorder# | Fill Color #BoxColor#,#Alpha#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# This "Stroke color #Border#,#Alpha# | Fill Color #Pri_color#,#Alpha#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
-LeftMouseUpAction=[!DeactivateConfig "#MosaicShell\Main"][!Delay 100][!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page Appearance "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"]
+LeftMouseUpAction=[!DeactivateConfig "#MosaicShell\Main"][!Delay 100][!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##MosaicShell\@Resources\CacheVars\Configurator.inc"][!WriteKeyvalue Variables Skin.Set_Page Appearance "#SKINSPATH##MosaicShell\@Resources\CacheVars\Configurator.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"]
 [Info2.Container]
 Meter=SHape
 X=r
@@ -76,7 +76,7 @@ Shape=Rectangle 0,0,(#W#-50*#Scale#),(60*#Scale#),(#R#*#Scale#) | StrokeWidth 2 
 This=Stroke color #Border#,#Alpha# | Fill Color #Pri_color#,#Alpha#
 MouseOverAction=[!SetOption #CURRENTSECTION# This "Stroke color #BoxBorder# | Fill Color #BoxColor#,#Alpha#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# This "Stroke color #Border#,#Alpha# | Fill Color #Pri_color#,#Alpha#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
-LeftMouseUpAction=[!DeactivateConfig "#MosaicShell\Main"][!Delay 100][!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page Position "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"]
+LeftMouseUpAction=[!DeactivateConfig "#MosaicShell\Main"][!Delay 100][!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##MosaicShell\@Resources\CacheVars\Configurator.inc"][!WriteKeyvalue Variables Skin.Set_Page Position "#SKINSPATH##MosaicShell\@Resources\CacheVars\Configurator.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"]
 [Info3.String]
 Meter=String
 Text=Inlay's on the wrong monitor? Change the monitor index in the position settings!

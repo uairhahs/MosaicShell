@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 CURRENTVALLIACTION=[!UpdateMeasure mToggle "Inlay\Main"]
 
 [isValliOn]

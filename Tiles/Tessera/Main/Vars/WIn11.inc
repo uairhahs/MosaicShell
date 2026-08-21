@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 PrimaryColor=34,34,34
 PrimaryOpacity=185
 FontColor=255,255,255

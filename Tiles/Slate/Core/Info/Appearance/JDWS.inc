@@ -1,4 +1,4 @@
-﻿﻿[Title]
+﻿[Title]
 Text=Jelle's weather skin's configuration
 
 [Description]

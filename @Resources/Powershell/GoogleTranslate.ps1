@@ -1,4 +1,4 @@
-﻿﻿param (
+﻿param (
     [Parameter(Mandatory=$false)]
     [String]
     $TargetLanguage = "Spanish", # See list of possible languages in $LanguageHashTable below.

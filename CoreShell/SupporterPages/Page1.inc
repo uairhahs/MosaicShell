@@ -1,4 +1,4 @@
-﻿﻿[Header.String]
+﻿[Header.String]
 Text=Installed DLCs
 [Header.Button.Icon.String]
 Text=[\xe627]

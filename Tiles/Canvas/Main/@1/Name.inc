@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Title]
 Meter=String
 Y=10R

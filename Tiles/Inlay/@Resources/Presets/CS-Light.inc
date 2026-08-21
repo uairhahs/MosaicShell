@@ -1,4 +1,4 @@
-﻿﻿[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 Alpha=255
 Accent_Color=99,188,255
 Pri_Color=252,252,252

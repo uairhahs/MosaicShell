@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 CCW=1113
 CCH=736
 SkinX=759

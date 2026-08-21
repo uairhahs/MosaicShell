@@ -1,2 +1,2 @@
-﻿﻿[variables]
+﻿[variables]
 Version=2.21

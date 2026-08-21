@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Description.String]
 Text=Get help by creating a help thread on our Discord server!
 

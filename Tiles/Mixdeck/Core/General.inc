@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeHotkeys=#SKINSPATH##Skin.Name#\@Resources\Actions\HotKeys.ini
 @include19Custom=#SKINSPATH##Skin.Name#\Main\Elements\Unload\Vars.inc
 

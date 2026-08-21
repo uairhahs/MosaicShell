@@ -1,11 +1,11 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 SkinWidth=#Sec.W#
 
 [Variables]
 Sec.W=(500*#Sec.S#)
 Sec.H=(450*#Sec.S#)
 AniDir=Bottom
-@includeSecVars=#@#SecVar.inc
+@includeSecVars=#@#CacheVars\Configurator.inc
 Sec.SaveLocation=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
 @includeSkinvars=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
 [moveX]

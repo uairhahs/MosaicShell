@@ -79,7 +79,7 @@ MeterStyle=Item.Button.Shape:S
 [Item1.Button.StringIcon]
 Meter=String
 Text=[\xe89e]
-LeftMouseUpAction=["https://jaxcore.gitbook.io/core/getting-started/additional-requisites#imagemagick"]
+LeftMouseUpAction=["https://docs.mosaicshell.io/core/getting-started/additional-requisites#imagemagick"]
 MeterStyle=Set.String:S | Item.Button.StringIcon:S
 
 [Box1]
@@ -243,7 +243,7 @@ MeterStyle=Set.String:S | Set.OptionCat:S
 
 [Item2.Shape]
 Meter=Shape
-LeftMouseUpAction=[!WriteKeyvalue Variables "Skin.Set_Page" "Appearance" "#@#SecVar.inc"][!Refresh]
+LeftMouseUpAction=[!WriteKeyvalue Variables "Skin.Set_Page" "Appearance" "#@#CacheVars\Configurator.inc"][!Refresh]
 MeterStyle=Item.Shape:S
 [Item2.StringIcon]
 Meter=String

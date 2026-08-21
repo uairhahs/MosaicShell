@@ -1,4 +1,4 @@
-﻿﻿$scriptpath = $MyInvocation.MyCommand.Path
+﻿$scriptpath = $MyInvocation.MyCommand.Path
 $dir = Split-Path $scriptpath
 Remove-Item -Path "$dir/../../../@CoreUpdateTemp" -Recurse
 New-Item -Path "$dir/../../.." -Name "@CoreUpdateTemp" -ItemType "directory"

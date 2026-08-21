@@ -1,4 +1,4 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 OnRefreshAction=[!SetWindowPosition 50% 50% 50% 50%][!CommandMeasure p.ActionTimer "Execute 1"]
 
 [Variables]

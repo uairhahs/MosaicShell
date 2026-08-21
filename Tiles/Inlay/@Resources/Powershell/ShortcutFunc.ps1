@@ -1,4 +1,4 @@
-﻿﻿$file = "$($RmAPI.VariableStr('SKINSPATH'))..\CoreData\Inlay\Shortcuts.inc"
+﻿$file = "$($RmAPI.VariableStr('SKINSPATH'))..\CoreData\Inlay\Shortcuts.inc"
 $imageDirectory = "$($RmAPI.VariableStr('SKINSPATH'))..\CoreData\Inlay\IconCache\"
 $mainConfig = "Inlay\Main\Accessories\ShortcutsEditor"
 

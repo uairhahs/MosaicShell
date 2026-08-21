@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Description.String]
 Text=If you have multiple monitors, you can choose to blacken / draw over them too! These configurations can be found in the general settings.
 InlinePattern=video file|requires an additional executable|animation tab

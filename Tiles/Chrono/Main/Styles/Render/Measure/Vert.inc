@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 SW=(100*#Scale#)
 SH=(400*#Scale#)
 WaveScale=(#Scale#*1)

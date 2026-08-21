@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeModuleVariable=Vars\Shortcuts.inc
 module_shortcuts.shortcut_shape_w=((#W#-50*#scale#-#module_shortcuts.items.p#*(#module_shortcuts.rowitems_count#-1))/#module_shortcuts.rowitems_count#)
 

@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Sec.SaveLocation=#SKINSPATH##Skin.Name#\@Resources\Vars\Colors.inc
 Sec.SaveLocation3=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
 Sec.Generate=0

@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeSkinList=#ROOTCONFIGPATH#CoreWebResources.inc
 Parsed=0
 

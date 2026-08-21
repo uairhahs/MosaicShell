@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [B]
 Shape2=Rectangle 0,0, #Set.W#, #Set.H#, #Set.WinR# | StrokeWidth 0 | Fill RadialGradient This
 This=(-#Set.W#/2),(#set.H#/2),0,0,(#Set.H#/2),(#Set.H#/2) | #Set.Pri_Color#,50 ; 1 | #Set.Accent_Color#,50 ; 0

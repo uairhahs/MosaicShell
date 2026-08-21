@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includegVar1=#SKINSPATH##MosaicShell\@Resources\gVars\Time.inc
 TimeOut=5m
 IgnoreIdleDuration=0

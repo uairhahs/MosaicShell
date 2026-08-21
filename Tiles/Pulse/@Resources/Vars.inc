@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 VisualizerType=Bar
 ImageUnderlay=0
 ImageUnderlayName=#SKINSPATH#Pulse\@Resources\UserImages\Alena Aenami.jpg

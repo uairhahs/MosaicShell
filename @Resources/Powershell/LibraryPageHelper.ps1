@@ -1,4 +1,4 @@
-﻿﻿$skinList = $RmAPI.VariableStr('SkinList')
+﻿$skinList = $RmAPI.VariableStr('SkinList')
 $SkinArray = $SkinList -split '\s\|\s'
 $resources = $RmAPI.VariableStr('@')
 $skinspath = $RmAPI.VariableStr('Skinspath')

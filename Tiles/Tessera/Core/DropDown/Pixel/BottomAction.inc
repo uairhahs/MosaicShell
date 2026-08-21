@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 SaveLocation="#SKINSPATH##sec.name#\Main\Vars\Pixel.inc"
 
 ; ---------------------------------------------------------------------------- ;

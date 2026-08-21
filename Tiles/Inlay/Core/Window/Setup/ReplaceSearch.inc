@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Sec.StartAction=[!CommandMeasure Func "startSide('Hotkey', '2')"]
 
 

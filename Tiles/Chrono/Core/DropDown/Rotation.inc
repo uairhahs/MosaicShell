@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 SaveLocation="#SKINSPATH##Sec.Name#\Main\Styles\Vars\Measure.inc"
 SaveKey=Rotation
 

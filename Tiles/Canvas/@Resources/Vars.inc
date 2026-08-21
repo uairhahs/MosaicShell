@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 In=20
 Scale=1
 

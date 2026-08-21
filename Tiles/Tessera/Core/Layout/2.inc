@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [OtherTitle]
 Meter=String
 Text=Legacy

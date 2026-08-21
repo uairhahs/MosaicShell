@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 SaveLocation="#SKINSPATH##sec.name#\@Resources\Vars.inc"
 SaveKey=CollapseIcons
 

@@ -1,11 +1,11 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 SkinWidth=#Sec.W#
 
 [Variables]
 Sec.W=(500*#Sec.S#)
 Sec.H=(700*#Sec.S#)
 AniDir=Bottom
-@includeSecVars=#@#SecVar.inc
+@includeSecVars=#@#CacheVars\Configurator.inc
 Sec.SaveLocation=#SKINSPATH##Skin.Name#\Main\Modules\Vars\GenericHeader.inc
 @includeSkinvars=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
 @includeGenericHeader=#SKINSPATH##Skin.Name#\Main\Modules\Vars\GenericHeader.inc

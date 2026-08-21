@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeWinBlockVars=#SKINSPATH##Skin.Name#\WinBlock\Vars\Winblock.inc
 Sec.SaveLocation2=#SKINSPATH##Skin.Name#\WinBlock\Vars\Winblock.inc
 WinBlock=0
@@ -298,7 +298,7 @@ MeterStyle=Set.Button:S
 Y=([Option15:Y]-#Set.P#+(-30/2+8)*[Set.S])
 OverColor=#Set.Positive_color#,150
 LeaveColor=#Set.Positive_color#,50
-LeftMouseUpAction=["https://jaxcore.gitbook.io/core/modules/vallistart#replacing-the-native-windows-button-and-key"]
+LeftMouseUpAction=["https://docs.mosaicshell.io/core/modules/vallistart#replacing-the-native-windows-button-and-key"]
 Hidden=(1-#WinBlock#)
 [Icon15]
 Meter=String

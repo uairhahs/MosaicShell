@@ -1,4 +1,4 @@
-﻿﻿function WriteToMemory {
+﻿function WriteToMemory {
     for ($i=1 ; $i -le $t ; $i++) {
         $arrayName.Add($RmAPI.VariableStr("$($i)Name"))
         $arrayAction.Add($RmAPI.VariableStr("$($i)Action"))

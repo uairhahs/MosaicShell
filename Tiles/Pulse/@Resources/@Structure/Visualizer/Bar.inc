@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Shape]
 Meter=Shape
 DynamicVariables=1

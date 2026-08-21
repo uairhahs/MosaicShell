@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Page.Items.P=(10*[Set.S])
 Page.Items.H=(60*[Set.S])
 Page.Items.Content.P=(10*[Set.S])

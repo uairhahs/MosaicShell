@@ -1,4 +1,4 @@
-﻿﻿[Header.String]
+﻿[Header.String]
 Text=Stuck while using Slate?
 
 [Description.String]

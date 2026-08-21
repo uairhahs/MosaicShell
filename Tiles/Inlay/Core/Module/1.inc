@@ -1,4 +1,4 @@
-﻿﻿[LogicLua]
+﻿[LogicLua]
 Measure=Script
 ScriptFile=#SKINSPATH##Skin.name#\Core\Module\Logic.lua
 

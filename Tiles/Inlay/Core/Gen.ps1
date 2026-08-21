@@ -1,4 +1,4 @@
-﻿﻿function Update {
+﻿function Update {
     $editingModule = $RmAPI.VariableStr('Page.SubpageModule')
     $skinsPath = $RmAPI.VariableStr('SKINSPATH')
     $coreDataDir = "$($skinsPath.Replace('Skins\',''))CoreData\"

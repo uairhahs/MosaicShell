@@ -1,4 +1,4 @@
-﻿﻿[CheckForDataFolder]
+﻿[CheckForDataFolder]
 MEasure=Plugin
 Plugin=PowershellRM
 DynamicVariables=1

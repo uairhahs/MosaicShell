@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Padding]
 Meter=String
 Text=Look and feel

@@ -1,4 +1,4 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 ; OnUnfocusAction=[!UpdateMeasure UnloadHandler2]
 
 [Variables]

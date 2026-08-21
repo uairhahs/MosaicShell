@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 width=(256*#Sec.S#)
 imgwidth=(75*#sec.s#)
 TweenNode3=0

@@ -1,4 +1,4 @@
-﻿﻿[Main\Vars\Pixel.inc]
+﻿[Main\Vars\Pixel.inc]
 color_theme=You Pink
 PrimaryColor=53, 47, 48
 PrimaryOpacity=255

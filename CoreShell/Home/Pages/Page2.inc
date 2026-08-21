@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Page.Subpage=1
 Page.Complete_Reinstallation=0
 Sec.AnchorName=AnchorSuppli

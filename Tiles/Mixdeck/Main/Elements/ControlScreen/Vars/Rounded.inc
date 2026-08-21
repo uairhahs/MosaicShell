@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Scale=1
 Layout.fetch_icons=1
 Layout.circ_size=5

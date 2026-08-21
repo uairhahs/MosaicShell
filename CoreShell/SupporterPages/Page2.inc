@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Header.Button.Icon.String]
 Text=[\xe627]
 [Header.Button.Text.String]

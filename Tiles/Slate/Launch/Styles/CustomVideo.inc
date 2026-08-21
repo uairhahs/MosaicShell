@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 UpdateRate=1000
 @includeConfigurableVariables=#ROOTCONFIGPATH#Launch\Vars\#Style#.inc
 

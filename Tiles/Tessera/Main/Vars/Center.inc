@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Height=150
 
 FontFace=SF Pro Rounded

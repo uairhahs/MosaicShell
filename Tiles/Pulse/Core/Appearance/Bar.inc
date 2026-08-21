@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [PrefixTextHeader]
 Meter=String
 Text="Visualizer filling"

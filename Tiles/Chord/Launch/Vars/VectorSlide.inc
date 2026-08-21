@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Style.Scale=1
 Style.FontSize=18
 Style.YPos=200

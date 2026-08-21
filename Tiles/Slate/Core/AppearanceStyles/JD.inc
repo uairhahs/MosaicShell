@@ -1,4 +1,4 @@
-﻿﻿; ---------------------------------------------------------------------------- ;
+﻿; ---------------------------------------------------------------------------- ;
 ;                                  MeterStyles                                 ;
 ; ---------------------------------------------------------------------------- ;
 
@@ -59,7 +59,7 @@ MeterStyle=Set.String:S | Set.OptionCat:S
 
 [Item01.Shape]
 Meter=Shape
-LeftMouseUpAction=[!WriteKeyvalue Variables Skin.Name """#MosaicShell""" "#@#SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#SecVar.inc"][!Refresh]
+LeftMouseUpAction=[!WriteKeyvalue Variables Skin.Name """#MosaicShell""" "#@#CacheVars\Configurator.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#CacheVars\Configurator.inc"][!Refresh]
 MeterStyle=Item.Shape:S
 [Item01.StringIcon]
 Meter=String
@@ -75,7 +75,7 @@ MeterStyle=Set.String:S | Item.Arrow.String:S
 
 [Item02.Shape]
 Meter=Shape
-LeftMouseUpAction=[!WriteKeyvalue Variables Skin.Name """#MosaicShell""" "#@#SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#SecVar.inc"][!Refresh]
+LeftMouseUpAction=[!WriteKeyvalue Variables Skin.Name """#MosaicShell""" "#@#CacheVars\Configurator.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#CacheVars\Configurator.inc"][!Refresh]
 MeterStyle=Item.Shape:S
 [Item02.StringIcon]
 Meter=String

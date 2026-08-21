@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 H=(#Height#*#scale#)
 R=(14*#Scale#)
 VolumeW=(28*#Scale#)

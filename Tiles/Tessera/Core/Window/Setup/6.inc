@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Description.String]
 Text=Tessera is all yours!
 InlinePattern=.*

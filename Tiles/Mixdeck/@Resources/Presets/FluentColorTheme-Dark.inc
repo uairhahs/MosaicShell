@@ -1,4 +1,4 @@
-﻿﻿[Main\Elements\ControlScreen\Vars\Fluent.inc]
+﻿[Main\Elements\ControlScreen\Vars\Fluent.inc]
 color_theme=Dark
 background_color=36,36,36
 Border=150,150,150

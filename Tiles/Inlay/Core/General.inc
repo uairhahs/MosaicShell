@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Page.Page=1
 Sec.AnchorName=AnchorSuppli
 

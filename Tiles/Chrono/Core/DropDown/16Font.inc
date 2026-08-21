@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 SaveLocation="#SKINSPATH##Sec.Name#\Main\Styles\Vars\16.inc"
 SaveKey=FontFace
 

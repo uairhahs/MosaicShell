@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeSaveHotAppVars=#SKINSPATH##Skin.Name#\@Resources\HotApps.inc
 
 

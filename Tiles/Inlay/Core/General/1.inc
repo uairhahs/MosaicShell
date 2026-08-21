@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeVars=#SKINSPATH##Skin.Name#\Main\Accessories\Unload\Vars.inc
 @includeWeatherVars=#SKINSPATH##Skin.Name#\Main\Modules\Vars\Weather.inc
 Sec.SaveLocation2=#SKINSPATH##Skin.Name#\Main\Accessories\Unload\Vars.inc

@@ -1,4 +1,4 @@
-﻿﻿[1.Shape]
+﻿[1.Shape]
 Meter=Shape
 MeterStyle=Action.Shape:S
 [1.String]

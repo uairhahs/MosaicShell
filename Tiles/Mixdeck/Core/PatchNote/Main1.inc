@@ -1,4 +1,4 @@
-﻿﻿[ImageContainer]
+﻿[ImageContainer]
 Hidden=1
 [Image]
 Hidden=1

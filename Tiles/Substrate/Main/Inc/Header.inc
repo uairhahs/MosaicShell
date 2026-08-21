@@ -26,7 +26,7 @@ W=(24*#Scale#)
 H=(24*#Scale#)
 SolidColor=0,0,0,1
 Container=C
-LeftMouseUpAction=[!WriteKeyValue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!WriteKeyValue Variables Skin.Set_Page Info "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"][!UpdateMeasure mToggle]
+LeftMouseUpAction=[!WriteKeyValue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##MosaicShell\@Resources\CacheVars\Configurator.inc"][!WriteKeyValue Variables Skin.Set_Page Info "#SKINSPATH##MosaicShell\@Resources\CacheVars\Configurator.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"][!UpdateMeasure mToggle]
 
 
 [mBattery]

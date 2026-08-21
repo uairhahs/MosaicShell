@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 R=10
 ; FontFace=Elianto
 FontFace=Consolas

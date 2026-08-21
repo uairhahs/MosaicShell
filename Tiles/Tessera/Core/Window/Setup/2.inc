@@ -1,4 +1,4 @@
-﻿﻿[Header.Image]
+﻿[Header.Image]
 Y=(50*[S])
 
 [Header.String]

@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Internet]
 Meter=String
 MeasureName=InternetStatus

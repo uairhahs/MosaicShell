@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 AppListIcon=e71d
 SettingsIcon=e713
 DownloadsIcon=e896

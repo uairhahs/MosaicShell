@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeModulevars=#SKINSPATH##Skin.Name#\Main\Modules\Vars\#Page.SubpageModule#.inc
 Sec.SaveLocation=#SKINSPATH##Skin.Name#\Main\Modules\Vars\#Page.SubpageModule#.inc
 

@@ -1,4 +1,4 @@
-﻿﻿[Header]
+﻿[Header]
 Y=(20*[Set.S]+#Scroll#)
 
 [Option01]

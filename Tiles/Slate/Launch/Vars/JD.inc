@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includegVar2=#SKINSPATH##MosaicShell\@Resources\gVars\Weather.inc
 @includegVar3=#SKINSPATH##MosaicShell\@Resources\gVars\WeatherAPIKey.inc
 BackgroundColor=50,50,50

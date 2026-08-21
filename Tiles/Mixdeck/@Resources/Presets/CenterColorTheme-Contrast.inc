@@ -1,4 +1,4 @@
-﻿﻿[Main\Elements\ControlScreen\Vars\Center.inc]
+﻿[Main\Elements\ControlScreen\Vars\Center.inc]
 color_theme=Contrast
 FontColor=255,255,255
 VolumePeakColor=141,204,252

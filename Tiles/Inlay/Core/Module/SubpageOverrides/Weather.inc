@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeModulevars=#SKINSPATH##Skin.Name#\Main\Modules\Vars\#Page.SubpageModule#.inc
 Sec.SaveLocation=#SKINSPATH##Skin.Name#\Main\Modules\Vars\#Page.SubpageModule#.inc
 
@@ -10,7 +10,7 @@ MeterStyle=Item.Button.Shape:S
 [Item1.Button.StringIcon]
 Meter=String
 Text=[\xe89e]
-LeftMouseUpAction=[!WriteKeyvalue Variables Skin.Name """#MosaicShell""" "#@#SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#SecVar.inc"][!Refresh]
+LeftMouseUpAction=[!WriteKeyvalue Variables Skin.Name """#MosaicShell""" "#@#CacheVars\Configurator.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#CacheVars\Configurator.inc"][!Refresh]
 MeterStyle=Set.String:S | Item.Button.StringIcon:S
 
 ; ---------------------------------------------------------------------------- ;

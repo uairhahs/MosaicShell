@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Description.String]
 Text=Inlay is extremely customizable! Change almost every aspect of your start menu from MosaicShell!
 InlinePattern=extremely customizable

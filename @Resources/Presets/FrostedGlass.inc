@@ -1,4 +1,4 @@
-﻿﻿[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 Set.Style=FrostedGlass
 Set.IconStyle=Normal
 Set.Alpha=150
