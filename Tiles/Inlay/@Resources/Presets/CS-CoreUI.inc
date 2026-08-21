@@ -1,6 +1,6 @@
-﻿[@Resources\Vars.inc]
+[@Resources\Vars.inc]
 Alpha=255
-Accent_Color=242, 52, 0
+Accent_Color=137,220,235
 Pri_Color=18,18,18
 Sec_Color=28,28,28
 Ter_Color=35,35,35

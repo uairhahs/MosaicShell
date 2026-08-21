@@ -1,11 +1,11 @@
 ﻿[@Resources\Vars.inc]
 Set.Style=Golden
 Set.IconStyle=Golden
-Set.Pri_Color=12,12,12
-Set.Sec_Color=28,28,28
-Set.Ter_Color=35,35,35
-Set.Accent_Color=255,186,82
-Set.Accent_Color_2=255, 183, 0
-Set.Text_Color=242,240,255
-Set.SubText_Color=120,120,120
-Set.Positive_Color=35,209,96
+Set.Pri_Color=17,17,27
+Set.Sec_Color=30,30,46
+Set.Ter_Color=49,50,68
+Set.Accent_Color=249,226,175
+Set.Accent_Color_2=250,179,135
+Set.Text_Color=205,214,244
+Set.SubText_Color=166,173,200
+Set.Positive_Color=166,227,161

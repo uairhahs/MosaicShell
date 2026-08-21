@@ -72,7 +72,7 @@ function debug {
         $message
     )
 
-    $RmAPI.Bang("[!Log `"`"`"CoreInstaller: " + $message + "`"`"`" Debug]")
+    $RmAPI.Bang("[!Log `"`"`"RunMosaicist: " + $message + "`"`"`" Debug]")
 }
 
 function post-prog {
@@ -151,11 +151,7 @@ function Install($installModuleObj, $Version) {
     If ($RmAPI.VariableStr('Set.UseExtInstaller') -eq '1') {
         $command += "`$o_ExtInstall=`$true;"
     }
-    If ($RmAPI.VariableStr('Set.UseBetaInstaller') -eq '1') {
-        $command += "iwr -useb 'https://raw.githubusercontent.com/uairhahs/MosaicShell/main/CoreInstallerBeta.ps1' | iex`""
-    } else {
-        $command += "iwr -useb 'https://raw.githubusercontent.com/uairhahs/MosaicShell/main/CoreInstaller.ps1' | iex`""
-    }
+    $command += "iwr -useb 'https://raw.githubusercontent.com/uairhahs/MosaicShell/main/RunMosaicist.ps1' | iex`""
     # --------------------------------- Fallback --------------------------------- #
     $RmAPI.Bang("[!CommandMeasure Func `"startOverlay('InstallFallback')`"]")
     # ---------------------------- Launch PS instance ---------------------------- #

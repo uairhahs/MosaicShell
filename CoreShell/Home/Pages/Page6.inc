@@ -1,6 +1,6 @@
 ﻿
 [Header.String]
-Text=About Jax
+Text=About
 
 [Text.1]
 Meter=String
@@ -9,11 +9,11 @@ X=(#HomePage.P#)
 Y=(#Set.P#+#Sec.selector_height#)
 W=(#Set.W#-#HomePage.P#*2)
 ClipString=2
-Text=I'm a student who enjoys graphic design and coding!#CRLF##CRLF#MosaicShell is my passion project, which originates from my desire for good-looking customizable UI on Windows, which is very lacking to this day, even with Windows 11.#CRLF##CRLF#The support and appreciation I've received along the way motivate me to keep going and improve the user experience. So don't hesitate to message me about anything!#CRLF##CRLF#Some of my far future goals are to learn front-end web development and to be able to make MosaicShell standalone!
+Text=MosaicShell is a configurable desktop shell built from composable surfaces.#CRLF##CRLF#Build your desktop from the pieces that matter — widgets, utilities, and workflows you control.#CRLF##CRLF#This project is a hard fork of JaxCore by EnhancedJax (archived November 2024). Issues and contributions are welcome on GitHub.
 
 [Logo]
 Meter=Image
-ImageName=#@#Images\CoreAssets\Jax.png
+ImageName=#@#Images\CoreAssets\LogoIconAccent.png
 X=(#Set.W#-#HomePage.P#-((64)*[Set.S]))
 Y=((90/2-32)*[Set.S])
 W=(64*[Set.S])
