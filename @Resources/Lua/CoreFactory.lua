@@ -1,4 +1,4 @@
-﻿sectionTable = {}
+sectionTable = {}
 leftAlignContent=""
 rightAlignContent=""
 variableContent="[Variables]\n"

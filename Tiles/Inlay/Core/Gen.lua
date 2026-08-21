@@ -1,4 +1,4 @@
-﻿function Initialize()
+function Initialize()
     if SKIN:GetVariable('Page.SubpageModule') == 'SingleRow' then
         EditingModule = 'Single'
         EditingPrefix = 'S'

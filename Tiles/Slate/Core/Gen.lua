@@ -1,4 +1,4 @@
-﻿function Initialize()
+function Initialize()
     _, t = SKIN:GetVariable('SkinRow'):gsub("|", "|")
     saveLocation = SKIN:GetVariable('Sec.SaveLocation')
     root = SKIN:GetVariable('ROOTCONFIGPATH')

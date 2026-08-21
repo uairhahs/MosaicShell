@@ -1,4 +1,4 @@
-﻿globalMixerVolumeIndex = 0
+globalMixerVolumeIndex = 0
 
 function Initialize()
 

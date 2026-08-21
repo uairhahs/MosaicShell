@@ -1,4 +1,4 @@
-﻿function ToggleMaximize()
+function ToggleMaximize()
 	SKIN:Bang("[!AutoSelectScreen 1]")
 	local isMaximized = tonumber(SKIN:GetVariable("Set.Maximized"))
 	local WindowPosX = tonumber(SKIN:GetVariable("CURRENTCONFIGX"))

@@ -1,4 +1,4 @@
-﻿function Initialize()
+function Initialize()
     root = SKIN:GetVariable('ROOTCONFIGPATH')
     local t = tonumber(SKIN:GetVariable('Total'))
     for i=1,t do

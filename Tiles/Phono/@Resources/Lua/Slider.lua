@@ -1,4 +1,4 @@
-﻿
+
 function Initialize()
     scale=SKIN:ParseFormula(SKIN:ReplaceVariables(SKIN:GetVariable('Scale')))
     updateRate=SKIN:GetVariable('UpdateRate')

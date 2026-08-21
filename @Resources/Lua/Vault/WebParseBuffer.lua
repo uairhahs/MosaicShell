@@ -1,4 +1,4 @@
-﻿function start()
+function start()
     local File = SKIN:GetVariable('ROOTCONFIGPATH')..'Accessories\\WebParse\\Main.ini'
 	local MyMeter = SKIN:GetMeter('Shape1')
 	local PosX = SKIN:GetX() + MyMeter:GetX()

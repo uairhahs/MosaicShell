@@ -5,8 +5,8 @@ permissions:
 
 on:
   push:
-    tags:
-      - v*
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -25,14 +25,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Resolve tag
+      - name: Resolve version
         id: tag
-        run: |
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
-            echo "name=dev-$(echo $GITHUB_SHA | cut -c1-7)" >> "$GITHUB_OUTPUT"
-          else
-            echo "name=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
-          fi
+        run: echo "name=$(date -u +%Y.%-m.%-d).${{ github.run_number }}" >> "$GITHUB_OUTPUT"
 
       - name: Sync version in RMSKIN.ini
         run: sed -i "s|^Version=.*|Version=${{ steps.tag.outputs.name }}|" RMSKIN.ini
@@ -56,6 +51,7 @@ jobs:
         run: |
           gh release create ${{ steps.tag.outputs.name }} MosaicShell.rmskin \
             --title "MosaicShell ${{ steps.tag.outputs.name }}" \
-            --generate-notes
+            --generate-notes \
+            --target ${{ github.sha }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,4 +1,4 @@
-﻿function Update()
+function Update()
     t = tonumber(SKIN:GetVariable('Total'))
     if t == nil then print("ERROR, CONTACT DEVELOPER FOR MORE INFORMATION")
     elseif t == 0 then

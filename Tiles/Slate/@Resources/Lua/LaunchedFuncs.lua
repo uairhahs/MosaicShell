@@ -1,4 +1,4 @@
-﻿function Initialize()
+function Initialize()
     local Style = SKIN:GetVariable('Style')
     SKIN:Bang('[!WriteKeyValue "#CURRENTCONFIG#" "Active" "0" "#SETTINGSPATH#Rainmeter.ini"]')
     if Style == 'CustomGroup' then

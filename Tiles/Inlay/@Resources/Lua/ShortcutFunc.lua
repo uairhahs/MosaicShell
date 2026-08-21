@@ -1,4 +1,4 @@
-﻿function ChangeTargetTo(index)
+function ChangeTargetTo(index)
     ChangeIndex('Shortcut'..index..'.Shape')
 end
 

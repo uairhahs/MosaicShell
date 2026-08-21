@@ -190,7 +190,7 @@ MeterStyle=Sec.String:S | Header.Description:0
 [Header.Description:0]
 Text=Choose what modules or widgets you would like to start with.
 [Header.Description:1]
-Text=MosaicShell is unable to fetch the version list from github. Please report this issue in the Discord server.
+Text=MosaicShell is unable to fetch the version list from GitHub. Please report this as a GitHub issue.
 
 [List.Container]
 Meter=Shape
