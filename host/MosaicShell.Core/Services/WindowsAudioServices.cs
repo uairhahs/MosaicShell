@@ -21,7 +21,12 @@ public sealed class WindowsAudioService : IAudioService
         get => _device.AudioEndpointVolume.MasterVolumeLevelScalar;
         set
         {
-            var v = Math.Clamp((float)value, 0f, 1f);
+            var v = (float)VolumePercent.Quantize(value);
+            var cur = _device.AudioEndpointVolume.MasterVolumeLevelScalar;
+            if (Math.Abs(cur - v) < 0.004f) // <0.5% — already there
+                return;
+            // Pre-arm filter so our own write's notification doesn't look like an external change
+            _lastVol = v;
             _device.AudioEndpointVolume.MasterVolumeLevelScalar = v;
         }
     }
@@ -43,7 +48,7 @@ public sealed class WindowsAudioService : IAudioService
         var vol = data.MasterVolume;
         var mute = data.Muted;
         if (!float.IsNaN(_lastVol)
-            && Math.Abs(vol - _lastVol) < 0.0005f
+            && Math.Abs(vol - _lastVol) < 0.004f // ignore sub-percent endpoint noise
             && mute == _lastMute)
             return;
         _lastVol = vol;

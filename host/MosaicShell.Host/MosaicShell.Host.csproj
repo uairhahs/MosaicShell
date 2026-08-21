@@ -11,6 +11,8 @@
   <ItemGroup>
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
+    <!-- Canonical logos live in repo .github/res — link into avares for runtime -->
+    <AvaloniaResource Include="..\..\.github\res\MosaicShell.png" Link="Assets\MosaicShell.png" />
   </ItemGroup>
 
   <ItemGroup>

@@ -67,6 +67,24 @@ public class TesseraParityTests : IDisposable
     }
 
     [Fact]
+    public void FlyoutAnchor_clamps_inside_work_area_when_oversized()
+    {
+        // Window wider than work area → pinned to workX
+        var (x, y) = FlyoutAnchor.Compute(100, 50, 800, 600, 900, 100, "BR", 24, 24);
+        x.Should().Be(100);
+        y.Should().BeGreaterThanOrEqualTo(50);
+        y.Should().BeLessThanOrEqualTo(50 + 600 - 100);
+    }
+
+    [Fact]
+    public void FlyoutAnchor_clamps_negative_pad_junk()
+    {
+        var (x, y) = FlyoutAnchor.Compute(0, 0, 1920, 1080, 320, 120, "TL", -50, 9999);
+        x.Should().Be(0); // pad clamped
+        y.Should().BeInRange(0, 1080 / 2);
+    }
+
+    [Fact]
     public void TesseraSettings_roundtrip_expanded_fields()
     {
         var s = new TesseraSettings
@@ -113,6 +131,7 @@ public class TesseraParityTests : IDisposable
             LockKeys = lockSvc,
             Airplane = air,
             AudioDevices = new NullAudioDeviceService(),
+            ShellFlyoutTriggers = new NullShellFlyoutTriggerSource(),
         };
 
         ModuleSettingsStore.Save("Tessera", new TesseraSettings
@@ -176,6 +195,7 @@ public class TesseraParityTests : IDisposable
     {
         public void Show(FlyoutRequest request) => shown.Add(request);
         public void Update(FlyoutRequest request) => shown.Add(request);
+        public void SoftRefresh(FlyoutRequest request) { }
         public void Hide(string moduleId) { }
         public void HideAll() { }
         public bool IsVisible(string moduleId) => shown.Any(r => r.ModuleId.Equals(moduleId, StringComparison.OrdinalIgnoreCase));

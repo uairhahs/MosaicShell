@@ -16,6 +16,11 @@ public static class FlyoutAnchor
         return Known.Contains(p) ? p : "TL";
     }
 
+    /// <summary>
+    /// Place a window of size (windowW×windowH) inside the work area.
+    /// All arguments must be in the same unit (typically physical pixels).
+    /// Result is clamped so the window stays fully on-screen when it fits.
+    /// </summary>
     public static (int X, int Y) Compute(
         int workX, int workY, int workW, int workH,
         int windowW, int windowH,
@@ -24,6 +29,12 @@ public static class FlyoutAnchor
         int yPad)
     {
         var p = Normalize(position);
+        // Treat negative/oversized pads as 0 — stale JSON sometimes stores junk
+        xPad = Math.Clamp(xPad, 0, Math.Max(0, workW / 2));
+        yPad = Math.Clamp(yPad, 0, Math.Max(0, workH / 2));
+        windowW = Math.Max(1, windowW);
+        windowH = Math.Max(1, windowH);
+
         var x = p switch
         {
             "TL" or "CL" or "BL" => workX + xPad,
@@ -36,6 +47,22 @@ public static class FlyoutAnchor
             "CL" or "CC" or "CR" => workY + (workH - windowH) / 2,
             _ => workY + workH - windowH - yPad // BL/BC/BR
         };
+
+        return ClampToWorkArea(workX, workY, workW, workH, windowW, windowH, x, y);
+    }
+
+    /// <summary>Keep the window rectangle inside the work area when possible.</summary>
+    public static (int X, int Y) ClampToWorkArea(
+        int workX, int workY, int workW, int workH,
+        int windowW, int windowH,
+        int x, int y)
+    {
+        if (workW <= 0 || workH <= 0) return (x, y);
+
+        var maxX = workX + Math.Max(0, workW - windowW);
+        var maxY = workY + Math.Max(0, workH - windowH);
+        x = Math.Clamp(x, workX, maxX);
+        y = Math.Clamp(y, workY, maxY);
         return (x, y);
     }
 }

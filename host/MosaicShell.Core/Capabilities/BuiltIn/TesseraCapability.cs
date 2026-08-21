@@ -30,9 +30,12 @@ public sealed class TesseraCapability : IModuleCapability
         _settings = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
         _services.Audio.Changed += OnVolume;
         _services.Media.Changed += OnMedia;
+        _services.Media.ProgressChanged += OnMediaProgress;
         _services.BrightnessChanges.Changed += OnBrightness;
         _services.BrightnessChanges.Start();
         _services.OsdSuppressor.Start();
+        _services.ShellFlyoutTriggers.Triggered += OnShellTrigger;
+        _services.ShellFlyoutTriggers.Start();
         if (_settings.UseLegacyVolumeHooks)
         {
             _services.LegacyVolumeKeys.Pressed += OnLegacyKey;
@@ -58,9 +61,12 @@ public sealed class TesseraCapability : IModuleCapability
         if (!IsArmed) return Task.CompletedTask;
         _services.Audio.Changed -= OnVolume;
         _services.Media.Changed -= OnMedia;
+        _services.Media.ProgressChanged -= OnMediaProgress;
         _services.BrightnessChanges.Changed -= OnBrightness;
         _services.BrightnessChanges.Stop();
         _services.OsdSuppressor.Stop();
+        _services.ShellFlyoutTriggers.Triggered -= OnShellTrigger;
+        _services.ShellFlyoutTriggers.Stop();
         _services.LegacyVolumeKeys.Pressed -= OnLegacyKey;
         _services.LegacyVolumeKeys.Stop();
         _services.LockKeys.Changed -= OnLock;
@@ -72,12 +78,68 @@ public sealed class TesseraCapability : IModuleCapability
         return Task.CompletedTask;
     }
 
+    private void OnShellTrigger(object? s, ShellFlyoutKind kind)
+    {
+        switch (kind)
+        {
+            case ShellFlyoutKind.Volume:
+                ShowOrUpdate("vol");
+                break;
+            case ShellFlyoutKind.Brightness:
+                ShowOrUpdate("bright");
+                break;
+            case ShellFlyoutKind.Media:
+                if (_settings.EnableMediaFlyouts) ShowOrUpdate("media");
+                break;
+        }
+    }
+
     private void OnVolume(object? s, EventArgs e) => ShowOrUpdate("vol");
     private void OnBrightness(object? s, EventArgs e) => ShowOrUpdate("bright");
     private void OnMedia(object? s, EventArgs e)
     {
-        // Media.Changed is already filtered to title/artist/play-state (not timeline ticks).
+        // Prefer refreshing an already-visible volume/brightness strip (art/title) in place.
+        // Only open a dedicated media flyout when nothing is showing (or media flyouts enabled).
+        string? refreshKind = null;
+        lock (_gate)
+        {
+            if (_ui.Flyouts.IsVisible(ModuleId)
+                && (_lastKind.Equals("vol", StringComparison.OrdinalIgnoreCase)
+                    || _lastKind.Equals("bright", StringComparison.OrdinalIgnoreCase)
+                    || _lastKind.Equals("media", StringComparison.OrdinalIgnoreCase)))
+                refreshKind = _lastKind;
+        }
+
+        if (refreshKind is not null)
+        {
+            SoftUpdateVisible(refreshKind);
+            return;
+        }
+
         if (_settings.EnableMediaFlyouts) ShowOrUpdate("media");
+    }
+
+    /// <summary>Timeline ticks: update scrubber/time on an already-open flyout only.</summary>
+    private void OnMediaProgress(object? s, EventArgs e)
+    {
+        if (!_ui.Flyouts.IsVisible(ModuleId)) return;
+        string kind;
+        lock (_gate) kind = _lastKind;
+        if (kind is not ("vol" or "bright" or "media")) return;
+        SoftUpdateVisible(kind);
+    }
+
+    private void SoftUpdateVisible(string kind)
+    {
+        try
+        {
+            // Progress / art refresh — must not reset auto-dismiss
+            _ui.Flyouts.SoftRefresh(BuildRequest(kind, null));
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TesseraCapability soft] {ex}");
+        }
     }
 
     private void OnLock(object? s, LockKeyState state)
@@ -105,10 +167,14 @@ public sealed class TesseraCapability : IModuleCapability
         switch (key)
         {
             case LegacyVolumeKey.Up:
-                _services.Audio.MasterVolume = Math.Clamp(_services.Audio.MasterVolume + _settings.LegacyVolumeStep, 0, 1);
+                _services.Audio.MasterVolume = StepVolume(
+                    _services.Audio.MasterVolume,
+                    Math.Max(1, (int)Math.Round(_settings.LegacyVolumeStep * 100)));
                 break;
             case LegacyVolumeKey.Down:
-                _services.Audio.MasterVolume = Math.Clamp(_services.Audio.MasterVolume - _settings.LegacyVolumeStep, 0, 1);
+                _services.Audio.MasterVolume = StepVolume(
+                    _services.Audio.MasterVolume,
+                    -Math.Max(1, (int)Math.Round(_settings.LegacyVolumeStep * 100)));
                 break;
             case LegacyVolumeKey.Mute:
                 _services.Audio.IsMuted = !_services.Audio.IsMuted;
@@ -116,6 +182,9 @@ public sealed class TesseraCapability : IModuleCapability
         }
         ShowOrUpdate("vol");
     }
+
+    private static double StepVolume(double current, int deltaPercent) =>
+        VolumePercent.Step(current, deltaPercent);
 
     private void ShowOrUpdate(string kind, IReadOnlyDictionary<string, string>? payload = null)
     {

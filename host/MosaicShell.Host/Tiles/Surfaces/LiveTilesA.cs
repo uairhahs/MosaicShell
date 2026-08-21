@@ -1,12 +1,46 @@
+using System.IO;
 using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
 
 namespace MosaicShell.Host.Tiles.Surfaces;
+
+internal static class WidgetChrome
+{
+    public static Border Wrap(string title, Control body, double corner, double padding, double minWidth) =>
+        new()
+        {
+            Background = Brush("#E6181825"),
+            CornerRadius = new Avalonia.CornerRadius(corner),
+            Padding = new Avalonia.Thickness(padding),
+            BorderBrush = Brush("#45475a"),
+            BorderThickness = new Avalonia.Thickness(1),
+            MinWidth = minWidth,
+            Child = new StackPanel
+            {
+                Spacing = 10,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = title,
+                        FontSize = 12,
+                        FontWeight = FontWeight.SemiBold,
+                        Foreground = Brush("#a6adc8")
+                    },
+                    body
+                }
+            }
+        };
+
+    public static IBrush Brush(string hex) => new SolidColorBrush(Color.Parse(hex));
+}
 
 public sealed class CanvasTileView : UserControl
 {
@@ -22,12 +56,20 @@ public sealed class CanvasTileView : UserControl
     {
         _metrics = metrics;
         _settings = ModuleSettingsStore.Load("Canvas", () => new CanvasSettings());
-        var stack = new StackPanel { Spacing = 8 };
-        if (_settings.ShowHost) { stack.Children.Add(Label("HOST")); stack.Children.Add(_host); }
-        if (_settings.ShowCpu) { stack.Children.Add(Label("CPU")); stack.Children.Add(_cpu); }
-        if (_settings.ShowRam) { stack.Children.Add(Label("MEMORY")); stack.Children.Add(_ram); }
-        if (_settings.ShowDisk) { stack.Children.Add(Label("DISK")); stack.Children.Add(_disk); }
-        Content = stack;
+        var compact = _settings.Style.Equals("Compact", StringComparison.OrdinalIgnoreCase);
+        var stack = new StackPanel { Spacing = compact ? 4 : 8 };
+        if (_settings.ShowHost) { stack.Children.Add(Label("HOST", compact)); stack.Children.Add(_host); }
+        if (_settings.ShowCpu) { stack.Children.Add(Label("CPU", compact)); stack.Children.Add(_cpu); }
+        if (_settings.ShowRam) { stack.Children.Add(Label("MEMORY", compact)); stack.Children.Add(_ram); }
+        if (_settings.ShowDisk) { stack.Children.Add(Label("DISK", compact)); stack.Children.Add(_disk); }
+
+        Content = WidgetChrome.Wrap(
+            $"Canvas · {_settings.Style}",
+            stack,
+            corner: compact ? 6 : 12,
+            padding: compact ? 12 : 16,
+            minWidth: compact ? 220 : 280);
+
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _timer.Tick += (_, _) => Tick();
         _timer.Start();
@@ -44,15 +86,18 @@ public sealed class CanvasTileView : UserControl
         _disk.Text = string.Join("  ", s.Disks.Select(d => $"{d.Name} {d.FreeGb:0.0}G free"));
     }
 
-    private static TextBlock Label(string t) => new()
+    private static TextBlock Label(string t, bool compact) => new()
     {
-        Text = t, FontSize = 10, Foreground = Brush("#6c7086"), LetterSpacing = 1.2
+        Text = t,
+        FontSize = compact ? 9 : 10,
+        Foreground = WidgetChrome.Brush("#6c7086"),
+        LetterSpacing = 1.2
     };
+
     private static TextBlock Val() => new()
     {
-        FontSize = 18, FontWeight = FontWeight.SemiBold, Foreground = Brush("#cdd6f4")
+        FontSize = 18, FontWeight = FontWeight.SemiBold, Foreground = WidgetChrome.Brush("#cdd6f4")
     };
-    private static IBrush Brush(string hex) => new SolidColorBrush(Color.Parse(hex));
 }
 
 public sealed class ChronoTileView : UserControl
@@ -60,25 +105,32 @@ public sealed class ChronoTileView : UserControl
     private readonly ChronoSettings _settings;
     private readonly TextBlock _time = new()
     {
-        FontSize = 48, FontWeight = FontWeight.Light,
-        Foreground = new SolidColorBrush(Color.Parse("#cdd6f4")),
+        FontWeight = FontWeight.Light,
+        Foreground = WidgetChrome.Brush("#cdd6f4"),
         HorizontalAlignment = HorizontalAlignment.Center
     };
     private readonly TextBlock _date = new()
     {
-        FontSize = 14, Foreground = new SolidColorBrush(Color.Parse("#a6adc8")),
-        HorizontalAlignment = HorizontalAlignment.Center, Margin = new Avalonia.Thickness(0, 8, 0, 0)
+        Foreground = WidgetChrome.Brush("#a6adc8"),
+        HorizontalAlignment = HorizontalAlignment.Center,
+        Margin = new Avalonia.Thickness(0, 8, 0, 0)
     };
     private readonly DispatcherTimer _timer;
 
     public ChronoTileView()
     {
         _settings = ModuleSettingsStore.Load("Chrono", () => new ChronoSettings());
-        Content = new StackPanel
-        {
-            VerticalAlignment = VerticalAlignment.Center,
-            Children = { _time, _date, StyleBadge() }
-        };
+        ApplyStyleChrome();
+        Content = WidgetChrome.Wrap(
+            $"Chrono · {_settings.Style}",
+            new StackPanel
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                Children = { _time, _date }
+            },
+            corner: 12,
+            padding: 20,
+            minWidth: 280);
         _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
         _timer.Tick += (_, _) => Tick();
         _timer.Start();
@@ -86,14 +138,36 @@ public sealed class ChronoTileView : UserControl
         DetachedFromVisualTree += (_, _) => _timer.Stop();
     }
 
-    private Control StyleBadge() => new TextBlock
+    private void ApplyStyleChrome()
     {
-        Text = $"Style: {_settings.Style}",
-        FontSize = 11,
-        Foreground = new SolidColorBrush(Color.Parse("#6c7086")),
-        HorizontalAlignment = HorizontalAlignment.Center,
-        Margin = new Avalonia.Thickness(0, 12, 0, 0)
-    };
+        var style = _settings.Style;
+        if (style.Equals("Text", StringComparison.OrdinalIgnoreCase)
+            || style.Equals("Minimal", StringComparison.OrdinalIgnoreCase))
+        {
+            _time.FontSize = 36;
+            _time.FontWeight = FontWeight.SemiBold;
+            _date.FontSize = 12;
+        }
+        else if (style.Equals("Tech", StringComparison.OrdinalIgnoreCase)
+                 || style.Equals("CircTech", StringComparison.OrdinalIgnoreCase))
+        {
+            _time.FontSize = 44;
+            _time.FontFamily = new FontFamily("Consolas, Cascadia Mono, monospace");
+            _date.FontSize = 13;
+            _date.FontFamily = _time.FontFamily;
+        }
+        else if (style.Equals("Light", StringComparison.OrdinalIgnoreCase))
+        {
+            _time.FontSize = 52;
+            _time.FontWeight = FontWeight.Thin;
+            _date.FontSize = 14;
+        }
+        else
+        {
+            _time.FontSize = 48;
+            _date.FontSize = 14;
+        }
+    }
 
     private void Tick()
     {
@@ -103,21 +177,40 @@ public sealed class ChronoTileView : UserControl
             : (_settings.ShowSeconds ? "h:mm:ss tt" : "h:mm tt");
         _time.Text = now.ToString(fmt);
         _date.Text = now.ToString("dddd, MMM d");
-        if (_settings.Style.Equals("Minimal", StringComparison.OrdinalIgnoreCase))
-            _time.FontSize = 36;
     }
 }
 
 public sealed class PhonoTileView : UserControl
 {
     private readonly IMediaSessionService _media;
-    private readonly TextBlock _title = new() { FontSize = 16, FontWeight = FontWeight.SemiBold, Foreground = Brush("#cdd6f4") };
-    private readonly TextBlock _artist = new() { FontSize = 12, Foreground = Brush("#6c7086"), Margin = new Avalonia.Thickness(0, 4, 0, 16) };
+    private readonly PhonoSettings _settings;
+    private readonly TextBlock _title = new()
+    {
+        FontSize = 16, FontWeight = FontWeight.SemiBold, Foreground = WidgetChrome.Brush("#cdd6f4"),
+        TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 220
+    };
+    private readonly TextBlock _artist = new()
+    {
+        FontSize = 12, Foreground = WidgetChrome.Brush("#6c7086"),
+        Margin = new Avalonia.Thickness(0, 4, 0, 12),
+        TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 220
+    };
+    private readonly Image _art = new()
+    {
+        Width = 72, Height = 72, Stretch = Stretch.UniformToFill, IsVisible = false
+    };
+    private readonly EventHandler _onChanged;
 
     public PhonoTileView(IMediaSessionService media)
     {
         _media = media;
-        var row = new StackPanel
+        _settings = ModuleSettingsStore.Load("Phono", () => new PhonoSettings());
+        var corner = _settings.Style.Contains("Card", StringComparison.OrdinalIgnoreCase)
+            || _settings.Style.Equals("Win11", StringComparison.OrdinalIgnoreCase)
+            ? 10.0
+            : 16.0;
+
+        var transport = new StackPanel
         {
             Orientation = Orientation.Horizontal, Spacing = 10,
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -128,23 +221,55 @@ public sealed class PhonoTileView : UserControl
                 Btn("⏭", () => _ = _media.NextAsync()),
             }
         };
-        Content = new StackPanel
-        {
-            VerticalAlignment = VerticalAlignment.Center,
-            Children = { _title, _artist, row }
-        };
-        _media.Changed += (_, _) => Update();
-        Update();
-        DetachedFromVisualTree += (_, _) => _media.Changed -= OnChanged;
-    }
 
-    private void OnChanged(object? s, EventArgs e) => Update();
+        var textCol = new StackPanel { Children = { _title } };
+        if (_settings.ShowArtist)
+            textCol.Children.Add(_artist);
+        textCol.Children.Add(transport);
+
+        Content = WidgetChrome.Wrap(
+            $"Phono · {_settings.Style}",
+            new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 14,
+                VerticalAlignment = VerticalAlignment.Center,
+                Children = { _art, textCol }
+            },
+            corner: corner,
+            padding: 16,
+            minWidth: 320);
+
+        _onChanged = (_, _) => Dispatcher.UIThread.Post(Update);
+        _media.Changed += _onChanged;
+        Update();
+        DetachedFromVisualTree += (_, _) => _media.Changed -= _onChanged;
+    }
 
     private void Update()
     {
         var c = _media.Current;
         _title.Text = c?.Title ?? "Nothing playing";
         _artist.Text = c?.Artist ?? "Start media on this PC";
+        if (c?.ThumbnailPng is { Length: > 0 } png)
+        {
+            try
+            {
+                using var ms = new MemoryStream(png);
+                _art.Source = new Bitmap(ms);
+                _art.IsVisible = true;
+            }
+            catch
+            {
+                _art.Source = null;
+                _art.IsVisible = false;
+            }
+        }
+        else
+        {
+            _art.Source = null;
+            _art.IsVisible = false;
+        }
     }
 
     private static Button Btn(string g, Action act)
@@ -152,57 +277,108 @@ public sealed class PhonoTileView : UserControl
         var b = new Button
         {
             Content = g, Width = 44, Height = 36,
-            Background = Brush("#313244"), Foreground = Brush("#cdd6f4"),
+            Background = WidgetChrome.Brush("#313244"), Foreground = WidgetChrome.Brush("#cdd6f4"),
             CornerRadius = new Avalonia.CornerRadius(8)
         };
         b.Click += (_, _) => act();
         return b;
     }
-
-    private static IBrush Brush(string hex) => new SolidColorBrush(Color.Parse(hex));
 }
 
 public sealed class PulseTileView : UserControl
 {
     private readonly IAudioLevelService _levels;
-    private readonly List<Avalonia.Controls.Shapes.Rectangle> _bars = [];
+    private readonly PulseSettings _settings;
+    private readonly List<Control> _viz = [];
+    private readonly Panel _host;
     private readonly DispatcherTimer _timer;
+    private readonly bool _round;
 
     public PulseTileView(IAudioLevelService levels)
     {
         _levels = levels;
+        _settings = ModuleSettingsStore.Load("Pulse", () => new PulseSettings());
+        _round = _settings.VisualizerType.Equals("Round", StringComparison.OrdinalIgnoreCase)
+                 || _settings.Style.Equals("Circ", StringComparison.OrdinalIgnoreCase);
+
         _levels.Start();
-        var panel = new StackPanel
-        {
-            Orientation = Orientation.Horizontal, Spacing = 4, Height = 120,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Bottom
-        };
-        for (var i = 0; i < 16; i++)
-        {
-            var bar = new Avalonia.Controls.Shapes.Rectangle
+        _host = _round
+            ? new Canvas { Width = 200, Height = 200 }
+            : new StackPanel
             {
-                Width = 10, Height = 8,
-                Fill = new SolidColorBrush(Color.Parse("#89dceb")),
-                RadiusX = 2, RadiusY = 2,
+                Orientation = Orientation.Horizontal,
+                Spacing = 4,
+                Height = 120,
+                HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Bottom
             };
-            _bars.Add(bar);
-            panel.Children.Add(bar);
-        }
-        Content = panel;
-        _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
-        _timer.Tick += (_, _) =>
+
+        for (var i = 0; i < 16; i++)
         {
-            var bands = _levels.Bands;
-            for (var i = 0; i < _bars.Count; i++)
-                _bars[i].Height = 8 + (i < bands.Count ? bands[i] : _levels.Peak) * 110;
-        };
+            if (_round)
+            {
+                var dot = new Ellipse
+                {
+                    Width = 10, Height = 10,
+                    Fill = WidgetChrome.Brush("#89dceb")
+                };
+                _viz.Add(dot);
+                ((Canvas)_host).Children.Add(dot);
+            }
+            else
+            {
+                var bar = new Rectangle
+                {
+                    Width = 10, Height = 8,
+                    Fill = WidgetChrome.Brush("#89dceb"),
+                    RadiusX = 2, RadiusY = 2,
+                    VerticalAlignment = VerticalAlignment.Bottom
+                };
+                _viz.Add(bar);
+                ((StackPanel)_host).Children.Add(bar);
+            }
+        }
+
+        Content = WidgetChrome.Wrap($"Pulse · {_settings.Style}", _host, corner: 12, padding: 16, minWidth: 280);
+
+        _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+        _timer.Tick += (_, _) => Tick();
         _timer.Start();
         DetachedFromVisualTree += (_, _) =>
         {
             _timer.Stop();
             _levels.Stop();
         };
+    }
+
+    private void Tick()
+    {
+        var bands = _levels.Bands;
+        if (_round)
+        {
+            var canvas = (Canvas)_host;
+            var cx = canvas.Width / 2;
+            var cy = canvas.Height / 2;
+            for (var i = 0; i < _viz.Count; i++)
+            {
+                var level = i < bands.Count ? bands[i] : _levels.Peak;
+                var radius = 40 + level * 50;
+                var angle = i * (Math.PI * 2 / _viz.Count) - Math.PI / 2;
+                var ell = (Ellipse)_viz[i];
+                var size = 8 + level * 14;
+                ell.Width = size;
+                ell.Height = size;
+                Canvas.SetLeft(ell, cx + Math.Cos(angle) * radius - size / 2);
+                Canvas.SetTop(ell, cy + Math.Sin(angle) * radius - size / 2);
+            }
+        }
+        else
+        {
+            for (var i = 0; i < _viz.Count; i++)
+            {
+                var level = i < bands.Count ? bands[i] : _levels.Peak;
+                ((Rectangle)_viz[i]).Height = 8 + level * 110;
+            }
+        }
     }
 }

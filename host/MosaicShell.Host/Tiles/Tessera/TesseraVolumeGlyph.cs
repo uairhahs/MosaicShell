@@ -61,11 +61,20 @@ public static class TesseraShell
             BorderBrush = TesseraPalette.StrokeBrush,
             BorderThickness = new Thickness(1),
             Padding = padding ?? new Thickness(0),
-            // Clip only when rounded — keeps acrylic corners clean without squeezing children
-            ClipToBounds = cornerRadius > 0,
-            Child = child
+            // Don't ClipToBounds on the stroked shell — clips the outline off rounded corners
+            ClipToBounds = false,
+            Child = cornerRadius > 0
+                ? new Border
+                {
+                    CornerRadius = new CornerRadius(Math.Max(0, cornerRadius - 0.5)),
+                    ClipToBounds = true,
+                    Child = child
+                }
+                : child
         };
-        if (width is not null) border.Width = width.Value;
+        if (width is not null) border.MinWidth = width.Value; // MinWidth — allow media strip to widen naturally
+        if (width is not null && height is null) { /* width as hint via MinWidth only */ }
+        else if (width is not null) border.Width = width.Value;
         if (height is not null) border.Height = height.Value;
         if (minWidth is not null) border.MinWidth = minWidth.Value;
         return border;

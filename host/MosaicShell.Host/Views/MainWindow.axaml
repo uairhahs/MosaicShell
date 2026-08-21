@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:MosaicShell.Host.ViewModels"
+        xmlns:tessera="using:MosaicShell.Host.Tiles.Tessera"
         xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -112,6 +113,28 @@
       <Setter Property="Foreground" Value="#6c7086" />
       <Setter Property="TextWrapping" Value="Wrap" />
       <Setter Property="Margin" Value="0,0,0,12" />
+    </Style>
+    <!-- Readable spinboxes under LayoutScale (text was clipped at Width=100) -->
+    <Style Selector="NumericUpDown.config">
+      <Setter Property="MinWidth" Value="168" />
+      <Setter Property="Width" Value="180" />
+      <Setter Property="MinHeight" Value="40" />
+      <Setter Property="FontSize" Value="16" />
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="Background" Value="#313244" />
+      <Setter Property="Foreground" Value="#cdd6f4" />
+      <Setter Property="BorderBrush" Value="#45475a" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="ShowButtonSpinner" Value="True" />
+      <Setter Property="AllowSpin" Value="True" />
+    </Style>
+    <Style Selector="NumericUpDown.config /template/ TextBox#PART_TextBox">
+      <Setter Property="FontSize" Value="16" />
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="Padding" Value="8,4" />
+      <Setter Property="Foreground" Value="#cdd6f4" />
     </Style>
   </Window.Styles>
 
@@ -429,30 +452,52 @@
               </TextBlock>
             </StackPanel>
           </Grid>
+
+          <!-- Pinned: Appearance + Try now stay above the scrolling options -->
+          <Border DockPanel.Dock="Top" Classes="section" Margin="0,0,0,8">
+            <StackPanel Spacing="12">
+              <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                <TextBlock Classes="sectionTitle" Text="Appearance" Margin="0" VerticalAlignment="Center" />
+                <Button Grid.Column="1" Classes="primary" Content="Try now"
+                        IsVisible="{Binding ShowTesseraExtras}"
+                        Command="{Binding PreviewTesseraFlyoutCommand}"
+                        ToolTip.Tip="Save placement/style and preview a volume flyout on the desktop" />
+              </Grid>
+              <TextBlock Classes="sectionHint" Margin="0"
+                         Text="Pick a template. Tessera shows a live scaled preview below — Try now opens it on the desktop."
+                         IsVisible="{Binding ShowTesseraExtras}" />
+              <TextBlock Classes="sectionHint" Margin="0"
+                         Text="Fluent + Win11 use the transfer kit; other styles are approximations."
+                         IsVisible="{Binding !ShowTesseraExtras}" />
+
+              <StackPanel Orientation="Horizontal" Spacing="12">
+                <ComboBox MinWidth="220" HorizontalAlignment="Left" VerticalAlignment="Center"
+                          ItemsSource="{Binding ModuleStyleOptions}"
+                          SelectedItem="{Binding ModuleStyle}" />
+                <TextBlock Text="Saves on Try now / Save"
+                           VerticalAlignment="Center" Foreground="#6c7086" FontSize="12"
+                           IsVisible="{Binding ShowTesseraExtras}" />
+              </StackPanel>
+
+              <tessera:TesseraStylePreview IsVisible="{Binding ShowTesseraExtras}"
+                                           StyleId="{Binding ModuleStyle}"
+                                           ShowMediaStrip="{Binding TesseraMediaStrip}" />
+
+              <StackPanel Spacing="8" IsVisible="{Binding ShowChronoExtras}">
+                <Border Height="1" Background="#313244" Margin="0,4" />
+                <CheckBox Content="Show seconds" IsChecked="{Binding ChronoSeconds}" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
           <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Visible"
                         AllowAutoHide="False">
             <StackPanel HorizontalAlignment="Stretch" Margin="0,0,8,8" Spacing="0">
-              <Border Classes="section">
-                <StackPanel Spacing="12">
-                  <TextBlock Classes="sectionTitle" Text="Appearance" />
-                  <TextBlock Classes="sectionHint"
-                             Text="Layout style names match JaxCore Tessera (Fluent, Win11, …)." />
-                  <ComboBox MinWidth="220" HorizontalAlignment="Left"
-                            ItemsSource="{Binding ModuleStyleOptions}"
-                            SelectedItem="{Binding ModuleStyle}" />
-
-                  <StackPanel Spacing="8" IsVisible="{Binding ShowChronoExtras}">
-                    <Border Height="1" Background="#313244" Margin="0,4" />
-                    <CheckBox Content="Show seconds" IsChecked="{Binding ChronoSeconds}" />
-                  </StackPanel>
-                </StackPanel>
-              </Border>
-
               <Border Classes="section" IsVisible="{Binding ShowTesseraExtras}">
                 <StackPanel Spacing="12">
                   <TextBlock Classes="sectionTitle" Text="Placement" />
                   <TextBlock Classes="sectionHint"
-                             Text="Where the flyout sits on the chosen monitor’s work area (default: top left, like JaxCore)." />
+                             Text="Where the flyout sits on the chosen monitor’s work area (default: top left, like JaxCore). Insets are pixels from that edge." />
                   <StackPanel Spacing="4">
                     <TextBlock Text="Corner" Foreground="#a6adc8" FontSize="12" />
                     <ComboBox MinWidth="200" HorizontalAlignment="Left"
@@ -463,17 +508,20 @@
                   <StackPanel Orientation="Horizontal" Spacing="16">
                     <StackPanel Spacing="4">
                       <TextBlock Text="Monitor" Foreground="#a6adc8" FontSize="12" />
-                      <NumericUpDown Width="100" Minimum="1" Maximum="8" Value="{Binding TesseraMonitorIndex}"
-                                     ToolTip.Tip="1 = primary (Avalonia screen order)" />
+                      <NumericUpDown Classes="config" Minimum="1" Maximum="8"
+                                     FormatString="0" Value="{Binding TesseraMonitorIndex}"
+                                     ToolTip.Tip="1 = primary display; 2+ follow Avalonia screen order" />
                     </StackPanel>
                     <StackPanel Spacing="4">
                       <TextBlock Text="Horizontal inset (px)" Foreground="#a6adc8" FontSize="12" />
-                      <NumericUpDown Width="100" Minimum="0" Maximum="200" Value="{Binding TesseraXPad}"
+                      <NumericUpDown Classes="config" Minimum="0" Maximum="200"
+                                     FormatString="0" Value="{Binding TesseraXPad}"
                                      ToolTip.Tip="Pixels from the left or right edge of the work area" />
                     </StackPanel>
                     <StackPanel Spacing="4">
                       <TextBlock Text="Vertical inset (px)" Foreground="#a6adc8" FontSize="12" />
-                      <NumericUpDown Width="100" Minimum="0" Maximum="200" Value="{Binding TesseraYPad}"
+                      <NumericUpDown Classes="config" Minimum="0" Maximum="200"
+                                     FormatString="0" Value="{Binding TesseraYPad}"
                                      ToolTip.Tip="Pixels from the top or bottom edge of the work area" />
                     </StackPanel>
                   </StackPanel>
@@ -485,9 +533,9 @@
                   <TextBlock Classes="sectionTitle" Text="Timing" />
                   <TextBlock Classes="sectionHint" Text="How long the flyout stays visible after the last change (hover holds it open)." />
                   <StackPanel Orientation="Horizontal" Spacing="8">
-                    <NumericUpDown Width="120" Minimum="500" Maximum="20000" Increment="100"
-                                   Value="{Binding TesseraAutoDismissMs}" />
-                    <TextBlock Text="milliseconds" VerticalAlignment="Center" Foreground="#a6adc8" />
+                    <NumericUpDown Classes="config" Minimum="0.5" Maximum="20" Increment="0.25"
+                                   FormatString="0.##" Value="{Binding TesseraAutoDismissSeconds}" />
+                    <TextBlock Text="seconds" VerticalAlignment="Center" Foreground="#a6adc8" FontSize="14" />
                   </StackPanel>
                 </StackPanel>
               </Border>
@@ -531,20 +579,13 @@
                             ToolTip.Tip="Intercept volume keys so Tessera owns the gesture (recommended on Win11)" />
                   <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding TesseraLegacyVol}">
                     <TextBlock Text="Volume step" VerticalAlignment="Center" Foreground="#a6adc8" />
-                    <NumericUpDown Width="100" Minimum="0.01" Maximum="0.25" Increment="0.01"
-                                   FormatString="0.00" Value="{Binding TesseraLegacyStep}" />
+                    <NumericUpDown Classes="config" Minimum="1" Maximum="25" Increment="1"
+                                   FormatString="0" Value="{Binding TesseraLegacyStepPercent}"
+                                   ToolTip.Tip="Percent points per legacy volume key press (e.g. 2 = ±2%)" />
+                    <TextBlock Text="/ 100" VerticalAlignment="Center" Foreground="#6c7086" FontSize="13" />
                   </StackPanel>
                   <TextBlock Classes="sectionHint" Margin="0"
-                             Text="Stock Windows volume HUD is hidden best-effort while Tessera is armed. Vendor laptop OSDs (Dell/HP/…) may still appear. Re-arm after changing hooks." />
-                </StackPanel>
-              </Border>
-
-              <Border Classes="section" IsVisible="{Binding ShowTesseraExtras}">
-                <StackPanel Spacing="10">
-                  <TextBlock Classes="sectionTitle" Text="Try it" />
-                  <TextBlock Classes="sectionHint" Text="Saves current placement/style and shows a volume flyout without re-arming." />
-                  <Button Classes="ghost" Content="Preview volume flyout" HorizontalAlignment="Left"
-                          Command="{Binding PreviewTesseraFlyoutCommand}" />
+                             Text="Stock Windows volume HUD is hidden best-effort (WinEvent + ShellHook) while Tessera is armed. Vendor laptop OSDs (Dell/HP/…) unsupported. Media is SMTC-only. Re-arm after changing hooks." />
                 </StackPanel>
               </Border>
 
@@ -592,7 +633,7 @@
             </StackPanel>
           </StackPanel>
           <TextBlock TextWrapping="Wrap" Foreground="#a6adc8" FontSize="14" LineHeight="22"
-                     Text="Native Avalonia hub + CapabilityDaemon + named style catalogs. Tessera replaces OS volume OSD while armed. Modules plug in via ICapabilityFactory (+ optional capability.dll)." />
+                     Text="Native Avalonia hub + CapabilityDaemon. Tessera best-effort replaces OS volume OSD while armed (not full YourFlyouts). Pixel Mixdeck opens the native mixer overlay skeleton/MVP — not Rainmeter Mixdeck." />
           <Button Classes="action" Content="View on GitHub" HorizontalAlignment="Left"
                   Command="{Binding OpenGitHubCommand}" />
         </StackPanel>

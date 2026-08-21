@@ -32,6 +32,8 @@
 <!-- END About.mustache -->
 **Inlay** is a start menu replacement for Windows, with full customizability, interchangeable modules and more.
 
+> **Avalonia branch note:** `Main/Accessories/VolumeHook` depends on Rainmeter `Plugin=Tessera`, which was removed with the Tessera skin. Prefer MosaicShell.Host for volume OSD until Inlay is natively superseded (`docs/native-rewrite.md` Phase B3).
+
 <!-- START Screenshots.mustache -->
 ## Screenshots
 You can view screenshots [here](https://github.com/uairhahs/Inlay/blob/main/Screenshots.md)!

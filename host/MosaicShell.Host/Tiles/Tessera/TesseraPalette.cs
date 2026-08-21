@@ -6,8 +6,10 @@ namespace MosaicShell.Host.Tiles.Tessera;
 /// <summary>YourFlyouts Fluent palette — SysAccent when available.</summary>
 public static class TesseraPalette
 {
-    public static Color Primary { get; } = Color.FromArgb(185, 12, 12, 12);
-    public static Color PrimarySolid { get; } = Color.FromArgb(230, 34, 34, 34);
+    // Catppuccin Mocha crust #11111b — translucent frost (not pure black)
+    public static Color Crust { get; } = Color.FromRgb(0x11, 0x11, 0x1b);
+    public static Color Primary { get; } = Color.FromArgb(200, 0x11, 0x11, 0x1b);
+    public static Color PrimarySolid { get; } = Color.FromArgb(220, 0x11, 0x11, 0x1b);
     public static Color Font { get; } = Color.FromRgb(255, 255, 255);
     public static Color FontMuted { get; } = Color.FromRgb(150, 150, 150);
     public static Color TrackBack { get; } = Color.FromArgb(50, 255, 255, 255);
@@ -42,7 +44,7 @@ public static class TesseraPalette
     public static IBrush FontMutedBrush => new SolidColorBrush(FontMuted);
     public static IBrush AccentBrush => new SolidColorBrush(Accent);
     public static IBrush TrackBackBrush => new SolidColorBrush(TrackBack);
-    public static IBrush StrokeBrush => new SolidColorBrush(Color.FromArgb(50, 255, 255, 255));
+    public static IBrush StrokeBrush => new SolidColorBrush(Color.FromArgb(90, 255, 255, 255));
 
     [DllImport("dwmapi.dll", PreserveSig = true)]
     private static extern int DwmGetColorizationColor(out uint pcrColorization, out bool pfOpaqueBlend);

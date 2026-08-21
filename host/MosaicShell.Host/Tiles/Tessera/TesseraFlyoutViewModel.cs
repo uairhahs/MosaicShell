@@ -24,7 +24,6 @@ public sealed class TesseraFlyoutViewModel
         MediaPositionSeconds = media?.PositionSeconds ?? 0;
         MediaDurationSeconds = media?.DurationSeconds ?? 0;
         ShowMediaStrip = payload.GetValueOrDefault("showMediaStrip") == "1"
-                         && IsPlaying
                          && !string.IsNullOrWhiteSpace(MediaTitle)
                          && MediaTitle != "No media";
         LockName = payload.GetValueOrDefault("lock") ?? "CapsLock";
@@ -60,8 +59,8 @@ public sealed class TesseraFlyoutViewModel
 
     public double PrimaryValue => Kind.Equals("bright", StringComparison.OrdinalIgnoreCase) ? Brightness : Volume;
     public string PrimaryPercent => Kind.Equals("bright", StringComparison.OrdinalIgnoreCase)
-        ? $"{(int)(Brightness * 100)}"
-        : IsMuted ? "Mute" : $"{(int)(Volume * 100)}";
+        ? $"{VolumePercent.ToPercent(Brightness)}"
+        : IsMuted ? "Mute" : $"{VolumePercent.ToPercent(Volume)}";
 
     public string KindLabel => Kind.ToLowerInvariant() switch
     {
@@ -74,18 +73,19 @@ public sealed class TesseraFlyoutViewModel
 
     public void ApplyPrimary(double v)
     {
-        v = Math.Clamp(v, 0, 1);
+        v = VolumePercent.Quantize(v);
         if (Kind.Equals("bright", StringComparison.OrdinalIgnoreCase))
         {
-            if (Math.Abs(Brightness - v) < 0.0005) return;
+            if (Math.Abs(Brightness - v) < 0.004) return;
             Brightness = v;
             if (Services.Brightness.IsSupported) Services.Brightness.Brightness = v;
         }
         else
         {
-            if (Math.Abs(Volume - v) < 0.0005 && !IsMuted) return;
+            if (VolumePercent.ToPercent(Volume) == VolumePercent.ToPercent(v) && !IsMuted)
+                return;
             Volume = v;
-            if (Math.Abs(Services.Audio.MasterVolume - v) >= 0.0005)
+            if (VolumePercent.ToPercent(Services.Audio.MasterVolume) != VolumePercent.ToPercent(v))
                 Services.Audio.MasterVolume = v;
             if (v > 0.001 && IsMuted)
             {
@@ -99,7 +99,10 @@ public sealed class TesseraFlyoutViewModel
     public void Nudge(double delta)
     {
         if (Kind is "locks" or "flight" or "media") return;
-        ApplyPrimary(Math.Clamp(PrimaryValue + delta, 0, 1));
+        // Interpret small deltas as percent steps (legacy BindWheel used 0.02)
+        var step = Math.Abs(delta) < 0.015 ? 1 : VolumePercent.ToPercent(Math.Abs(delta));
+        if (step < 1) step = 1;
+        ApplyPrimary(VolumePercent.Step(PrimaryValue, delta >= 0 ? step : -step));
     }
 
     public void ToggleMute()
@@ -112,6 +115,35 @@ public sealed class TesseraFlyoutViewModel
     public Task NextAsync() => Services.Media.NextAsync();
     public Task PreviousAsync() => Services.Media.PreviousAsync();
     public Task SeekAsync(double seconds) => Services.Media.SeekAsync(seconds);
+
+    public async Task ToggleShuffleAsync(Material.Icons.Avalonia.MaterialIcon? icon = null)
+    {
+        await Services.Media.ToggleShuffleAsync();
+        if (icon is not null)
+            icon.Foreground = new Avalonia.Media.SolidColorBrush(
+                Avalonia.Media.Color.FromArgb(255, 255, 255, 255));
+    }
+
+    public async Task ToggleRepeatAsync(Material.Icons.Avalonia.MaterialIcon? icon = null)
+    {
+        await Services.Media.ToggleRepeatAsync();
+        if (icon is not null)
+            icon.Foreground = new Avalonia.Media.SolidColorBrush(
+                Avalonia.Media.Color.FromArgb(255, 255, 255, 255));
+    }
+
+    public async Task ToggleLikeAsync(Material.Icons.Avalonia.MaterialIcon? icon = null)
+    {
+        await Services.Media.ToggleLikeAsync();
+        if (icon is not null)
+        {
+            var on = icon.Kind != Material.Icons.MaterialIconKind.Heart;
+            icon.Kind = on ? Material.Icons.MaterialIconKind.Heart : Material.Icons.MaterialIconKind.HeartOutline;
+            icon.Foreground = on
+                ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromRgb(255, 80, 100))
+                : TesseraPalette.FontBrush;
+        }
+    }
 
     public IReadOnlyList<AudioOutputDevice> Devices => Services.AudioDevices.GetOutputDevices();
 

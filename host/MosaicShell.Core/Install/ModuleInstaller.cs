@@ -86,7 +86,8 @@ public sealed class ModuleInstaller
             {
                 Id = moduleId,
                 InstalledUtc = DateTime.UtcNow,
-                Source = packagePath
+                Source = packagePath,
+                Runtime = IsNativeModuleStub(dest) ? "avalonia" : "rainmeter"
             };
             await File.WriteAllTextAsync(
                 Path.Combine(dest, "module.json"),
@@ -125,18 +126,24 @@ public sealed class ModuleInstaller
             Directory.Delete(dest, recursive: true);
         CopyDirectory(source, dest);
 
+        var isNative = IsNativeModuleStub(source);
         var marker = new
         {
             Id = moduleId,
             InstalledUtc = DateTime.UtcNow,
-            Source = source
+            Source = source,
+            Runtime = isNative ? "avalonia" : "rainmeter"
         };
         File.WriteAllText(
             Path.Combine(dest, "module.json"),
             JsonSerializer.Serialize(marker, new JsonSerializerOptions { WriteIndented = true }));
         ModuleManifest.WriteDefault(moduleId);
 
-        progress?.Report(new ModuleInstallProgress { Stage = "done", Detail = dest });
+        progress?.Report(new ModuleInstallProgress
+        {
+            Stage = "done",
+            Detail = isNative ? $"{dest} (native stub)" : dest
+        });
         return true;
     }
 
@@ -199,15 +206,21 @@ public sealed class ModuleInstaller
         }
 
         var named = Directory.GetDirectories(unpackRoot, moduleId, SearchOption.AllDirectories)
-            .FirstOrDefault(LooksLikeSkinRoot);
+            .FirstOrDefault(LooksLikeModuleRoot);
         if (named is not null) return named;
 
         var directRoot = Path.Combine(unpackRoot, moduleId);
         return Directory.Exists(directRoot) ? directRoot : null;
     }
 
-    private static bool LooksLikeSkinRoot(string dir) =>
-        File.Exists(Path.Combine(dir, "Main.ini"))
+    /// <summary>Avalonia-only modules ship a stub folder with module.native.json (no Rainmeter Main.ini).</summary>
+    public static bool IsNativeModuleStub(string dir) =>
+        File.Exists(Path.Combine(dir, "module.native.json"))
+        || File.Exists(Path.Combine(dir, "native.marker"));
+
+    private static bool LooksLikeModuleRoot(string dir) =>
+        IsNativeModuleStub(dir)
+        || File.Exists(Path.Combine(dir, "Main.ini"))
         || Directory.Exists(Path.Combine(dir, "Main"))
         || Directory.Exists(Path.Combine(dir, "@Resources"))
         || Directory.GetFiles(dir, "*.ini", SearchOption.AllDirectories).Length > 0;

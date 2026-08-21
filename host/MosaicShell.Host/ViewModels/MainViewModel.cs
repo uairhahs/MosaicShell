@@ -121,7 +121,7 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private decimal _tesseraMonitorIndex = 1;
     [ObservableProperty] private decimal _tesseraXPad = 20;
     [ObservableProperty] private decimal _tesseraYPad = 20;
-    [ObservableProperty] private decimal _tesseraAutoDismissMs = 2000;
+    [ObservableProperty] private decimal _tesseraAutoDismissSeconds = 2.00m;
     [ObservableProperty] private TesseraAniChoice? _selectedTesseraAni;
     [ObservableProperty] private int _tesseraAni = 2;
     [ObservableProperty] private string _tesseraAniDir = "Left";
@@ -130,7 +130,7 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _tesseraLockFlyouts = true;
     [ObservableProperty] private bool _tesseraFlightFlyouts = true;
     [ObservableProperty] private bool _tesseraMediaStrip = true;
-    [ObservableProperty] private decimal _tesseraLegacyStep = 0.05m;
+    [ObservableProperty] private decimal _tesseraLegacyStepPercent = 2;
     [ObservableProperty] private bool _autostartEnabled;
     [ObservableProperty] private bool _closeMinimizesToTray = true;
     [ObservableProperty] private string _updateStatus = "";
@@ -208,10 +208,10 @@ public partial class MainViewModel : ViewModelBase
             TesseraPosition = string.IsNullOrWhiteSpace(s.Position) ? "TL" : s.Position.ToUpperInvariant();
             SelectedTesseraPosition = TesseraPositionChoices.FirstOrDefault(c => c.Code == TesseraPosition)
                                       ?? TesseraPositionChoices[0];
-            TesseraMonitorIndex = s.MonitorIndex;
-            TesseraXPad = s.XPad;
-            TesseraYPad = s.YPad;
-            TesseraAutoDismissMs = s.AutoDismissMs;
+            TesseraMonitorIndex = Math.Clamp(s.MonitorIndex, 1, 8);
+            TesseraXPad = Math.Clamp(s.XPad, 0, 200);
+            TesseraYPad = Math.Clamp(s.YPad, 0, 200);
+            TesseraAutoDismissSeconds = Math.Clamp((decimal)s.AutoDismissMs / 1000m, 0.5m, 20m);
             TesseraAni = s.Ani;
             SelectedTesseraAni = TesseraAniChoices.FirstOrDefault(c => c.Value == TesseraAni)
                                  ?? TesseraAniChoices[^1];
@@ -221,7 +221,11 @@ public partial class MainViewModel : ViewModelBase
             TesseraLockFlyouts = s.EnableLockFlyouts;
             TesseraFlightFlyouts = s.EnableFlightFlyouts;
             TesseraMediaStrip = s.ShowMediaStripOnVolume;
-            TesseraLegacyStep = (decimal)s.LegacyVolumeStep;
+            // Stored as 0–1 fraction; UI is percent points out of 100
+            var stepPct = s.LegacyVolumeStep <= 1.0
+                ? (decimal)Math.Round(s.LegacyVolumeStep * 100)
+                : (decimal)Math.Round(s.LegacyVolumeStep);
+            TesseraLegacyStepPercent = Math.Clamp(stepPct < 1 ? 2 : stepPct, 1, 25);
         }
         else
         {
@@ -268,10 +272,13 @@ public partial class MainViewModel : ViewModelBase
         var s = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
         s.Style = ModuleStyle;
         s.Position = SelectedTesseraPosition?.Code ?? TesseraPosition;
-        s.MonitorIndex = (int)TesseraMonitorIndex;
-        s.XPad = (int)TesseraXPad;
-        s.YPad = (int)TesseraYPad;
-        s.AutoDismissMs = (int)TesseraAutoDismissMs;
+        s.MonitorIndex = Math.Clamp((int)TesseraMonitorIndex, 1, 8);
+        s.XPad = Math.Clamp((int)TesseraXPad, 0, 200);
+        s.YPad = Math.Clamp((int)TesseraYPad, 0, 200);
+        TesseraMonitorIndex = s.MonitorIndex;
+        TesseraXPad = s.XPad;
+        TesseraYPad = s.YPad;
+        s.AutoDismissMs = (int)Math.Round(Math.Clamp((double)TesseraAutoDismissSeconds, 0.5, 20) * 1000);
         s.Ani = SelectedTesseraAni?.Value ?? TesseraAni;
         s.AniDir = TesseraAniDir;
         s.EnableMediaFlyouts = TesseraMediaFlyouts;
@@ -279,7 +286,7 @@ public partial class MainViewModel : ViewModelBase
         s.EnableFlightFlyouts = TesseraFlightFlyouts;
         s.ShowMediaStripOnVolume = TesseraMediaStrip;
         s.UseLegacyVolumeHooks = TesseraLegacyVol;
-        s.LegacyVolumeStep = (double)TesseraLegacyStep;
+        s.LegacyVolumeStep = Math.Clamp((double)TesseraLegacyStepPercent, 1, 25) / 100.0;
         ModuleSettingsStore.Save("Tessera", s);
         TesseraPosition = s.Position;
         TesseraAni = s.Ani;

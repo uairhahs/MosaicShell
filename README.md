@@ -33,47 +33,52 @@ Forked from [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore), archived No
 | .NET SDK | 8.0 (native host) |
 | RAM | 6 GB |
 
-**Primary (native Avalonia host):**
+**Primary install (native Avalonia host):**
 
 ```powershell
 cd host
 dotnet test MosaicShell.Core.Tests
-dotnet run --project Mosaicist -- install-module Canvas
+dotnet run --project Mosaicist -- install-module Tessera
+dotnet run --project Mosaicist -- install-module Mixdeck
 dotnet run --project MosaicShell.Host
 ```
 
-See [docs/architecture-native.md](docs/architecture-native.md) and [docs/native-rewrite.md](docs/native-rewrite.md).
+See [docs/architecture-native.md](docs/architecture-native.md), [docs/native-rewrite.md](docs/native-rewrite.md), and [docs/parity/README.md](docs/parity/README.md).
 
-The classic Rainmeter + `RunMosaicist.ps1 -Local` path remains available for legacy skins. **Do not use `iwr|iex`** (that path is blocked in shipping installs)
+Rainmeter CoreShell is **not** the Tessera runtime on this branch. Prefer Mosaicist over any remote script installer.
 
-## Installation
+### Legacy Rainmeter (unsupported for Tessera on this branch)
 
-Run the following command in PowerShell to install the latest version of MosaicShell.
+Classic skins may still load via local `RunMosaicist.ps1 -Local`. Remote `iwr|iex` install is **blocked** in shipping tooling and must not be used.
 
-> To launch PowerShell as Administrator: `Win + R` → type `powershell` → press `Ctrl + Shift + Enter`
+<details>
+<summary>Historical one-liner (do not use on this Avalonia branch)</summary>
 
 ```powershell
-iwr -useb "https://raw.githubusercontent.com/uairhahs/MosaicShell/master/RunMosaicist.ps1" | iex
+# UNSUPPORTED — kept only as archive reference to JaxCore-era installers
+# iwr -useb "https://raw.githubusercontent.com/uairhahs/MosaicShell/master/RunMosaicist.ps1" | iex
 ```
+
+</details>
 
 ---
 
 ## Tiles
 
-Tiles are Rainmeter skins bundled with MosaicShell under `Tiles/`.
+Most tiles under `Tiles/` remain Rainmeter skins until their Avalonia wave lands (see [docs/native-rewrite.md](docs/native-rewrite.md)).
 
 | Tile | Description | License |
 |------|-------------|---------|
-| Tessera | System flyout replacements for volume, brightness, and media | MPL-2.0 |
-| Mixdeck | Per-app audio mixer overlay | MPL-2.0 |
+| Tessera | Native Avalonia capability (volume / brightness / media flyouts). Rainmeter skin retired — `Tiles/Tessera` is an install stub only. | MPL-2.0 |
+| Mixdeck | Native Host overlay MVP (per-app mixer). Rainmeter skin remains until later stub-delete; `Plugin=Tessera` hooks disabled. | MPL-2.0 |
 | Inlay | Start menu replacement with hot apps, shortcuts, and modules | MPL-2.0 |
 | Slate | Idle / lock screen skin | MPL-2.0 |
 | Chord | Keyboard-driven app launcher | MPL-2.0 |
 | Substrate | Notification shade / control center | MPL-2.0 |
-| Pulse | Audio visualizer with bar, round, and vector styles | MIT |
-| Chrono | Clock collection with multiple display styles | MIT |
-| Phono | Media player widget with multiple layouts | MIT |
-| Canvas | Minimal plain-text information widget | MIT |
+| Pulse | Native Avalonia visualizer widget (`IAudioLevelService`). Rainmeter tree retired — install stub only. | MIT |
+| Chrono | Native Avalonia clock widget. Rainmeter tree retired — install stub only. | MIT |
+| Phono | Native Avalonia SMTC media widget. Rainmeter tree retired — install stub only. | MIT |
+| Canvas | Native Avalonia system-metrics text widget. Rainmeter tree retired — install stub only. | MIT |
 
 ---
 

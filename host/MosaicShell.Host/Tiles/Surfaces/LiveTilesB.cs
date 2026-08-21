@@ -103,13 +103,40 @@ public sealed class TesseraTileView : UserControl
 public sealed class MixdeckTileView : UserControl
 {
     private readonly IAppAudioService _apps;
-    private readonly StackPanel _list = new() { Spacing = 8 };
+    private readonly StackPanel _list = new() { Spacing = 10 };
     private readonly DispatcherTimer _timer;
+    private readonly string _style;
 
     public MixdeckTileView(IAppAudioService apps)
     {
         _apps = apps;
-        Content = new ScrollViewer { Content = _list, Height = 220 };
+        _style = ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings()).Style;
+        var title = new TextBlock
+        {
+            Text = $"Mixdeck · {_style}",
+            FontSize = 16,
+            FontWeight = FontWeight.SemiBold,
+            Foreground = Brush("#cdd6f4"),
+            Margin = new Avalonia.Thickness(0, 0, 0, 8)
+        };
+        var hint = new TextBlock
+        {
+            Text = "Native skeleton mixer (not Rainmeter Mixdeck)",
+            FontSize = 11,
+            Foreground = Brush("#6c7086"),
+            Margin = new Avalonia.Thickness(0, 0, 0, 8)
+        };
+        var body = new StackPanel { Children = { title, hint, _list } };
+        Content = new Border
+        {
+            Background = Brush("#E6181825"),
+            CornerRadius = new Avalonia.CornerRadius(_style.Contains("Fluent", StringComparison.OrdinalIgnoreCase) ? 8 : 12),
+            Padding = new Avalonia.Thickness(16),
+            BorderBrush = Brush("#45475a"),
+            BorderThickness = new Avalonia.Thickness(1),
+            MinWidth = 320,
+            Child = new ScrollViewer { Content = body, Height = 280 }
+        };
         Refresh();
         _apps.SessionsChanged += (_, _) => Dispatcher.UIThread.Post(Refresh);
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
@@ -123,22 +150,46 @@ public sealed class MixdeckTileView : UserControl
         _list.Children.Clear();
         foreach (var s in _apps.GetSessions().Take(12))
         {
+            var id = s.Id;
             var label = new TextBlock
             {
-                Text = s.DisplayName, Foreground = Brush("#cdd6f4"),
+                Text = s.DisplayName,
+                Foreground = Brush("#cdd6f4"),
+                VerticalAlignment = VerticalAlignment.Center,
+                Width = 100,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+            var slider = new Slider
+            {
+                Minimum = 0,
+                Maximum = 1,
+                Value = s.Volume,
                 VerticalAlignment = VerticalAlignment.Center
             };
-            var slider = new Slider { Minimum = 0, Maximum = 1, Value = s.Volume };
-            var id = s.Id;
             slider.PropertyChanged += (_, e) =>
             {
                 if (e.Property == Slider.ValueProperty)
                     _apps.SetVolume(id, slider.Value);
             };
-            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("120,*") };
+            var mute = new Button
+            {
+                Content = s.IsMuted ? "Unmute" : "Mute",
+                Width = 64,
+                Padding = new Avalonia.Thickness(4, 2),
+                Background = Brush("#313244"),
+                Foreground = Brush("#cdd6f4")
+            };
+            mute.Click += (_, _) =>
+            {
+                _apps.SetMuted(id, !s.IsMuted);
+                Refresh();
+            };
+            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("100,*,68") };
             Grid.SetColumn(slider, 1);
+            Grid.SetColumn(mute, 2);
             row.Children.Add(label);
             row.Children.Add(slider);
+            row.Children.Add(mute);
             _list.Children.Add(row);
         }
 

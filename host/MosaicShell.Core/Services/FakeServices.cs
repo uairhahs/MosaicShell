@@ -53,6 +53,18 @@ public sealed class FakeMediaSessionService : IMediaSessionService
 {
     public MediaSessionInfo? Current { get; set; }
     public event EventHandler? Changed;
+    public event EventHandler? ProgressChanged;
+    public void PumpTimeline()
+    {
+        if (Current is { IsPlaying: true, DurationSeconds: > 0 })
+        {
+            Current = Current with
+            {
+                PositionSeconds = Math.Min(Current.DurationSeconds, Current.PositionSeconds + 0.2)
+            };
+            ProgressChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
     public Task PlayPauseAsync()
     {
         if (Current is not null) Current = Current with { IsPlaying = !Current.IsPlaying };
@@ -61,6 +73,10 @@ public sealed class FakeMediaSessionService : IMediaSessionService
     public Task NextAsync() => Task.CompletedTask;
     public Task PreviousAsync() => Task.CompletedTask;
     public Task SeekAsync(double positionSeconds) => Task.CompletedTask;
+    public Task ToggleShuffleAsync() => Task.CompletedTask;
+    public Task ToggleRepeatAsync() => Task.CompletedTask;
+    public Task ToggleLikeAsync() => Task.CompletedTask;
+    public void RaiseProgress() => ProgressChanged?.Invoke(this, EventArgs.Empty);
     public void Dispose() { }
 }
 
@@ -118,5 +134,6 @@ public static class HostServicesFakes
         LockKeys = new NullLockKeysService(),
         Airplane = new NullAirplaneModeService(),
         AudioDevices = new NullAudioDeviceService(),
+        ShellFlyoutTriggers = new NullShellFlyoutTriggerSource(),
     };
 }

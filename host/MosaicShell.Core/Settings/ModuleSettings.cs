@@ -43,7 +43,7 @@ public sealed class TesseraSettings
     public string AniDir { get; set; } = "Left";
     /// <summary>Default on — Win11 volume notifications are often unreliable (JaxCore guidance).</summary>
     public bool UseLegacyVolumeHooks { get; set; } = true;
-    public double LegacyVolumeStep { get; set; } = 0.05;
+    public double LegacyVolumeStep { get; set; } = 0.02;
     public bool EnableMediaFlyouts { get; set; } = true;
     public bool EnableLockFlyouts { get; set; } = true;
     public bool EnableFlightFlyouts { get; set; } = true;

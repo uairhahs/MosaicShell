@@ -43,11 +43,8 @@ public partial class App : Application
             BuiltInCapabilityFactories.RegisterAll(registry);
             _daemon = new CapabilityDaemon(registry, _services, uiBridge);
 
-            TesseraHostBridge.ArmMixdeckAsync = async () =>
-            {
-                if (_daemon is null) return;
-                await _daemon.ArmAsync("Mixdeck");
-            };
+            MixdeckHostBridgeAccessor.OpenOverlayAsync = OpenMixdeckOverlayAsync;
+            TesseraHostBridge.ArmMixdeckAsync = OpenMixdeckOverlayAsync;
             TesseraHostBridge.PreviewVolumeFlyout = () =>
             {
                 var s = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
@@ -73,6 +70,16 @@ public partial class App : Application
             _tileHost = new AvaloniaTileSurfaceHost(_services, UserScale, id =>
                 _tileRuntime?.NotifySurfaceClosed(id));
             _tileRuntime = new TileRuntime(new RestoringSurfaceHost(_tileHost));
+
+            async Task OpenMixdeckOverlayAsync()
+            {
+                if (_daemon is null || _tileRuntime is null || _tileHost is null) return;
+                await _daemon.ArmAsync("Mixdeck");
+                if (_tileRuntime.IsRunning("Mixdeck"))
+                    _tileHost.Focus("Mixdeck");
+                else
+                    _tileRuntime.Start("Mixdeck");
+            }
 
             _vm = new MainViewModel(_tileRuntime, _services, _tileHost, _daemon);
             _mainWindow = new MainWindow { DataContext = _vm };

@@ -547,6 +547,7 @@ public sealed class NullFlyoutPresenter : MosaicShell.Core.Capabilities.IFlyoutP
 {
     public void Show(MosaicShell.Core.Capabilities.FlyoutRequest request) { }
     public void Update(MosaicShell.Core.Capabilities.FlyoutRequest request) { }
+    public void SoftRefresh(MosaicShell.Core.Capabilities.FlyoutRequest request) { }
     public void Hide(string moduleId) { }
     public void HideAll() { }
     public bool IsVisible(string moduleId) => false;

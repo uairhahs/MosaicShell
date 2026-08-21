@@ -2,21 +2,90 @@
 
 Living flags live in `host/MosaicShell.Core.Tests/HubParityBacklogTests.cs`.
 
+**Convention:** `*_skeleton` = wiring exists (arm/hotkey/stub UI). `*_mvp` = JaxCore-comparable user-visible slice (see bars below). Do not mark `_mvp` true without the bar met.
+
 ## Tessera
+
+**Rainmeter Tessera removed (B0)** — runtime is host-only; `Tiles/Tessera` is a native install stub. B0 is **not** full YourFlyouts parity.
 
 | Flag | Meaning |
 |------|---------|
-| `tessera_osd_flyout` | Armed flyout + OSD suppress path |
+| `tessera_osd_flyout` | Armed flyout + OSD suppress (+ ShellHook triggers) |
 | `tessera_named_styles` | Style catalog JaxCore ids |
 | `tessera_locks_flight` | Lock-key + airplane flyouts |
-| `tessera_layout_fidelity` | Per-layout Avalonia chrome (11 styles) |
 | `tessera_live_update_multimonitor` | Reuse/update window; monitor + anchor math |
-| `tessera_fluent_yourflyouts` | Fluent transfer kit (Shape track, side media, SysAccent) |
+| `tessera_fluent_win11_kit` | Fluent + Win11 transfer kit present |
+| `tessera_layout_fidelity` | **false** — layouts rebuilt vs `.local/Tessera` refs; flag stays false until visual QA hits ~8 |
+| `tessera_fluent_yourflyouts` | **false** — Fluent/Win11/Center closer (art wash, structure); not Rainmeter plugin parity |
+| `tessera_media_smtc_only` | **false** — SMTC is not the only media path |
+| `tessera_media_wnp` | **true** — WebNowPlaying host on CLI port **5468** (Rainmeter keeps 8974) |
+| `tile_tessera_mvp` | Armed flyouts + named styles (Host path) |
 
-Reference layout source: [Jax-Core/YourFlyouts](https://github.com/Jax-Core/YourFlyouts).
+References: [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts) (OSD / ShellHook).
 
-## Explicit non-goals (this pass)
+### Known gaps vs YourFlyouts
 
-- Interpreting Tessera layout `.inc` files
-- Rainmeter FrostedGlass / Focus plugins
-- Other tiles beyond Tessera → Mixdeck deep-link
+- FrostedGlass / Focus plugins
+- Full color/size DLC and Rainmeter Core settings pages
+- Brightness / airplane caveats on some Win11 builds (see YourFlyouts README)
+- Vendor laptop OEM HUDs unsupported
+- Rainmeter NowPlaying Auto multi-player (non-WNP)
+
+### B0 regressions
+
+- Rainmeter Mixdeck / Inlay `Plugin=Tessera` volume hooks are **Disabled=1**. Host Mixdeck overlay + Tessera capability replace them.
+
+## Mixdeck MVP bar (must all hold for `tile_mixdeck_mvp`)
+
+- Overlay: per-app sessions from `IAppAudioService`
+- Mute toggle + volume slider per session
+- StyleCatalog style reflected in chrome
+- Hotkey / Pixel deep-link opens **overlay**, not placeholder flyout text
+- No Rainmeter `Plugin=Tessera` required on Host path
+
+## Widget MVP bars (B2 — must all hold to flip `_mvp` and retire Rainmeter trees)
+
+Rainmeter `Tiles/{Chrono,Phono,Pulse,Canvas}` are native install stubs. Runtime is `TileRuntime` + `LiveTilesA` only. Full StyleCatalog pixel skins remain later (`layout_fidelity`-style flags if added).
+
+### Chrono (`tile_chrono_mvp`)
+
+- Live clock + date from system time
+- `TwentyFourHour` / `ShowSeconds` from `ChronoSettings`
+- StyleCatalog style changes chrome (e.g. Center vs Text vs Minimal sizing)
+- Library Start opens overlay via TileRuntime (no Rainmeter)
+
+### Phono (`tile_phono_mvp`)
+
+- SMTC title / artist (and thumbnail when present)
+- Working prev / play-pause / next via `IMediaSessionService`
+- StyleCatalog style reflected in chrome
+- No WebNowPlaying / Rainmeter NowPlaying required
+
+### Pulse (`tile_pulse_mvp`)
+
+- Bars (or round) driven by `IAudioLevelService` bands/peak — not RNG
+- `PulseSettings.VisualizerType` / style affects layout (Bar vs Round minimum)
+- Library Start opens overlay via TileRuntime
+
+### Canvas (`tile_canvas_mvp`)
+
+- Live CPU / RAM / disk / host from `ISystemMetricsService`
+- Section toggles from `CanvasSettings`
+- Compact vs DEFAULT chrome from StyleCatalog
+- Library Start opens overlay via TileRuntime
+
+## Skeleton vs MVP (other tiles)
+
+| Skeleton | MVP |
+|----------|-----|
+| `tile_mixdeck_skeleton` | `tile_mixdeck_mvp` |
+| `tile_chrono/phono/pulse/canvas_skeleton` | corresponding `_mvp` (bars above) |
+| `tile_inlay/chord/substrate/slate_skeleton` | corresponding `_mvp` **false** until real surfaces |
+
+## Companion proofs
+
+True flags map to named tests in `HubParityBacklogTests.CompanionProof` (e.g. `Armed_tessera_shows_flyout_on_volume_change`).
+
+## Supersession waves
+
+See [native-rewrite.md](../native-rewrite.md) Phase B table.

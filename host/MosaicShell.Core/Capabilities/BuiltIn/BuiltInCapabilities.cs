@@ -94,14 +94,54 @@ public abstract class HotkeyCapabilityBase : IModuleCapability
     }
 }
 
-public sealed class MixdeckCapability : HotkeyCapabilityBase
+public sealed class MixdeckCapability : IModuleCapability
 {
+    private readonly HostServices _services;
+    private readonly string _hotkeyId = "cap:Mixdeck";
+    private bool _armed;
+
     public MixdeckCapability(HostServices services, ICapabilityUiBridge ui)
-        : base("Mixdeck", services, ui,
-            () => ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings()).HotkeyGesture,
-            "mixer")
     {
+        _services = services;
+        _ = ui;
     }
+
+    public string ModuleId => "Mixdeck";
+    public bool IsArmed => _armed;
+
+    public Task ArmAsync(CancellationToken cancellationToken = default)
+    {
+        if (_armed) return Task.CompletedTask;
+        var gesture = ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings()).HotkeyGesture;
+        if (HotkeyCapabilityBase.TryParseGesture(gesture, out var mods, out var vk))
+            _services.Hotkeys.Register(_hotkeyId, mods, vk, OnHotkey);
+        _armed = true;
+        return Task.CompletedTask;
+    }
+
+    public Task DisarmAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_armed) return Task.CompletedTask;
+        _services.Hotkeys.Unregister(_hotkeyId);
+        _armed = false;
+        return Task.CompletedTask;
+    }
+
+    private void OnHotkey()
+    {
+        // Prefer Host overlay bridge; no placeholder flyout text
+        var open = MixdeckHostBridgeAccessor.OpenOverlayAsync;
+        if (open is not null)
+            _ = open();
+    }
+
+    public void Dispose() => DisarmAsync().GetAwaiter().GetResult();
+}
+
+/// <summary>Core cannot reference Host; bridge is set from App via this accessor pattern in Host, stubbed in tests.</summary>
+public static class MixdeckHostBridgeAccessor
+{
+    public static Func<Task>? OpenOverlayAsync { get; set; }
 }
 
 public sealed class InlayCapability : HotkeyCapabilityBase

@@ -41,6 +41,8 @@ public interface IFlyoutPresenter
 {
     void Show(FlyoutRequest request);
     void Update(FlyoutRequest request);
+    /// <summary>Patch visible flyout UI without resetting auto-dismiss (progress / live pump).</summary>
+    void SoftRefresh(FlyoutRequest request);
     void Hide(string moduleId);
     void HideAll();
     bool IsVisible(string moduleId);

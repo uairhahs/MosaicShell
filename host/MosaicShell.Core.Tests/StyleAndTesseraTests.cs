@@ -17,6 +17,15 @@ public class StyleCatalogTests
     }
 
     [Fact]
+    public void Catalog_covers_widget_modules()
+    {
+        StyleCatalog.IdsFor("Chrono").Should().NotBeEmpty();
+        StyleCatalog.IdsFor("Phono").Should().NotBeEmpty();
+        StyleCatalog.IdsFor("Mixdeck").Should().NotBeEmpty();
+        StyleCatalog.IsValid("Chrono", "Center").Should().BeTrue();
+    }
+
+    [Fact]
     public void Chrono_and_phono_ids_are_non_empty()
     {
         StyleCatalog.IdsFor("Chrono").Should().NotBeEmpty();
@@ -67,6 +76,7 @@ public class TesseraCapabilityTests : IDisposable
     {
         public void Show(FlyoutRequest request) => shown.Add(request);
         public void Update(FlyoutRequest request) => shown.Add(request);
+        public void SoftRefresh(FlyoutRequest request) { }
         public void Hide(string moduleId) { }
         public void HideAll() { }
         public bool IsVisible(string moduleId) => shown.Any(r => r.ModuleId == moduleId);

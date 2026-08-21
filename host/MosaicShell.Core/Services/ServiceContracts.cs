@@ -35,11 +35,23 @@ public sealed record MediaSessionInfo(
 public interface IMediaSessionService : IDisposable
 {
     MediaSessionInfo? Current { get; }
+    /// <summary>Title / artist / play-state / thumbnail identity changes.</summary>
     event EventHandler? Changed;
+    /// <summary>Timeline position ticks while playing — refresh visible UI only; do not open flyouts.</summary>
+    event EventHandler? ProgressChanged;
+    /// <summary>
+    /// Poll SMTC timeline (and retry thumbnail if missing). Safe to call from a UI timer —
+    /// many players (YouTube Music) do not raise TimelinePropertiesChanged.
+    /// </summary>
+    void PumpTimeline();
     Task PlayPauseAsync();
     Task NextAsync();
     Task PreviousAsync();
     Task SeekAsync(double positionSeconds);
+    Task ToggleShuffleAsync();
+    Task ToggleRepeatAsync();
+    /// <summary>Like/favorite when the player supports it (WNP rating / SMTC best-effort).</summary>
+    Task ToggleLikeAsync();
 }
 
 public sealed record HotkeyBinding(string Id, string Gesture);
@@ -108,6 +120,7 @@ public sealed class HostServices : IDisposable
     public required ILockKeysService LockKeys { get; init; }
     public required IAirplaneModeService Airplane { get; init; }
     public required IAudioDeviceService AudioDevices { get; init; }
+    public required IShellFlyoutTriggerSource ShellFlyoutTriggers { get; init; }
 
     public void Dispose()
     {
@@ -124,6 +137,7 @@ public sealed class HostServices : IDisposable
         LockKeys.Dispose();
         Airplane.Dispose();
         AudioDevices.Dispose();
+        ShellFlyoutTriggers.Dispose();
     }
 
     public static HostServices CreateWindowsDefaults()
@@ -134,7 +148,7 @@ public sealed class HostServices : IDisposable
             Audio = new WindowsAudioService(),
             AppAudio = new WindowsAppAudioService(),
             Brightness = brightness,
-            Media = new WindowsMediaSessionService(),
+            Media = CreateMediaStack(),
             Hotkeys = new WindowsHotkeyService(),
             Metrics = new WindowsSystemMetricsService(),
             AudioLevels = new WindowsAudioLevelService(),
@@ -146,6 +160,15 @@ public sealed class HostServices : IDisposable
             LockKeys = new WindowsLockKeysService(),
             Airplane = new WindowsAirplaneModeService(),
             AudioDevices = new WindowsAudioDeviceService(),
+            ShellFlyoutTriggers = new WindowsShellFlyoutHook(),
         };
+    }
+
+    /// <summary>SMTC + WebNowPlaying (browser covers for YTM, etc.).</summary>
+    public static IMediaSessionService CreateMediaStack()
+    {
+        var wnp = new WebNowPlaying.WebNowPlayingReduxHost();
+        wnp.Start();
+        return new CompositeMediaSessionService(new WindowsMediaSessionService(), wnp);
     }
 }

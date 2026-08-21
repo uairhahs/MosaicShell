@@ -1,112 +1,34 @@
-<!-- START Header.mustache -->
-<br />
-<div align="center">
-  <a href="https://github.com/uairhahs/Tessera">
-    <img src="https://raw.githubusercontent.com/uairhahs/ReadME-Template/main/Resources/Icons/Tessera.png" alt="Logo" width="180" height="180">
-  </a>
+# Tessera (native-only)
 
-<h3 align="center">Tessera</h3>
-  <p align="center">
-    Fully customizable, multi-designed flyouts replacement for Windows
-    <br />
-    <a href="https://discord.gg/JmgehPSDD6">Help, Report Bugs & Request Features »</a>
-  </p>
-</div>
+Tessera runs as an **Avalonia capability** inside `MosaicShell.Host` — not as a Rainmeter skin.
 
-<!-- END Header.mustache -->
-<!-- START ShieldsFull.mustache -->
-<p align="center">
-  <img alt="Latest by date" src="https://img.shields.io/github/v/tag/Jax-Core/Tessera?label=Version&style=for-the-badge" />
-  <img alt="Releases" src="https://img.shields.io/github/downloads/Jax-Core/Tessera/total?style=for-the-badge" />
-  <img alt="Release date" src="https://img.shields.io/github/release-date/Jax-Core/Tessera?label=Last%20Update&style=for-the-badge" />
-  <img alt="Discord" src="https://img.shields.io/discord/880445067754610688?label=Discord%20server&style=for-the-badge" />
-  <img alt="Github" src="https://img.shields.io/github/license/Jax-Core/Tessera?style=for-the-badge" />
-</p><!-- END ShieldsFull.mustache -->
+| Path | Role |
+|------|------|
+| `host/MosaicShell.Core/Capabilities/BuiltIn/TesseraCapability.cs` | Arm / events / OSD burst |
+| `host/MosaicShell.Host/Tiles/Tessera/` | Flyout layouts (Fluent, Win11, …) |
+| This folder | Install stub so `install-module Tessera` creates `Modules/Tessera` for `CapabilityDaemon` |
 
-<!-- START About.mustache -->
+## Browser album art (YouTube Music)
 
-## About
+Tessera merges **WebNowPlaying** covers when SMTC has no thumbnail.
 
-![Tessera](https://raw.githubusercontent.com/uairhahs/ReadME-Template/main/Resources/Splash/Tessera.png)
+1. Install the [WebNowPlaying](https://chromewebstore.google.com/detail/webnowplaying/jfakgfcdgpghbbefmdfjkbdlibjgnbli) browser extension.
+2. Enable the built-in **CLI** adapter (port **5468** — same as [WebNowPlaying-CLI](https://github.com/keifufu/WebNowPlaying-CLI); Rainmeter stays on 8974).
+3. Run MosaicShell Host, play YTM in that browser.
 
-<!-- END About.mustache -->
+Details: [`docs/parity/smtc-album-art.md`](../../docs/parity/smtc-album-art.md).
 
-![YourFlyouts2](https://user-images.githubusercontent.com/80020581/184153360-6ad1d33e-cde4-4982-849f-43747adea7cd.png)
+## References
 
-**Tessera** provides multiple replacements for the default Volume / Brightness flyouts in Windows which are shown while pressing the volume / brightness keys. It also works with lock, airplane mode & multimedia keys!
-Along with 10 unique designs, it also provides additional customizability towards the behavioral **and** appearance side of things!
+- Visual layouts: [Jax-Core/YourFlyouts](https://github.com/Jax-Core/YourFlyouts)
+- OEM / volume OSD hide: [ModernFlyouts-Community/ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts) (`NativeFlyoutHandler`)
 
-This project is heavily inspired by [ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts)! Credit to [@deathcrafter](https://github.com/deathcrafter) (trigger-plugin) and the developers of [ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts).
-> Note: Built-in flyout will not be permanently affected. It will be hidden temporarily while Tessera is running, hence it does not modify any system files.
-> You can also use Tessera to disable the flyout completely!
+## Legacy Rainmeter note
 
-> Note: Tessera's brightness & airplane mode flyout are not supported on Windows 11 22H2. Volume, multimedia and locks flyout is supported via legacy keyhooks, which are options you can turn on in the general settings.
+The Rainmeter Tessera tree (Main.ini, `Plugin=Tessera`, Lua layouts) was removed on the Avalonia migration branch.
 
-<!-- START Screenshots.mustache -->
-## Screenshots
-You can view screenshots [here](https://github.com/uairhahs/Tessera/blob/main/Screenshots.md)!
+**Mixdeck** and **Inlay** Rainmeter skins still reference `Plugin=Tessera` for volume hooks. Those hooks are **Disabled=1** on this branch. Prefer the native Host for volume/brightness flyouts until Mixdeck/Inlay Rainmeter trees are superseded (see `docs/native-rewrite.md` Phase B).
 
-<!-- END Screenshots.mustache -->
+**Widgets** (Chrono / Phono / Pulse / Canvas) follow the same native-stub pattern as Tessera (wave **B2**).
 
-<!-- START Features.mustache -->
-
-## Features<!-- END Features.mustache -->
-* Smooth animations, with the ability to reduce & turn off
-* Multiple visual styles
-* No setup needed
-* Also supports [NowPlaying](https://docs.rainmeter.net/manual/measures/nowplaying/) and [WebNowPlaying](https://github.com/tjhrulz/WebNowPlaying)
-* Extra flyouts for toggling CapsLock, NumLock and ScrollLock
-* Customizable Hotkeys
-* Supports multiple monitors
-* Most aspect of the flyout can be customized to your liking, including **timeout**, **colors**, **size** and anything you can think of
-
-<!-- START GetStarted.mustache -->
-
-## Getting Started
-
-### Prerequisites
-- **Windows 10** or above
-> For older systems, **Powershell v5.1 or newer** is required. Upgrade powershell **[here](https://docs.microsoft.com/en-us/powershell/scripting/windows-powershell/install/installing-windows-powershell?view=powershell-7.2#upgrading-existing-windows-powershell)**!
-
-### Installation
-Run the following command in Powershell to download the latest version of MosaicShell.
-
-(To launch Powershell as an Admin: `Win + R` -> `powershell` -> Press `CTRL + SHIFT + ENTER` on your keyboard. Powershell can also be launched via Windows Search.)
-
-```
-iwr -useb "https://raw.githubusercontent.com/uairhahs/MosaicShell/master/RunMosaicist.ps1" | iex
-```
-
-> Alternatively you can download it from the [website](https://jax-core.github.io/)
-
-After you've proceeded through the welcome screen, select `Tessera` (might have to scroll down) and click `Install`. It will appear in the library page after that.
-<br />
-<br />
-
-<!-- END GetStarted.mustache -->
-<!-- START Setup.mustache -->
-
-### Configuration
-Use the MosaicShell menu to configure Tessera.
-For more information, visit [MosaicShell's documentation](https://jaxcore.gitbook.io/core/)
-<br>
-<br><!-- END Setup.mustache -->
-
-<!-- START Footer.mustache -->
-
-## Need assistance?
-* Join the [CoreCommunity Discord Server](https://discord.gg/JmgehPSDD6) for help
-* or [Create an issue](https://github.com/uairhahs/Tessera)
-
-## Say Hi!
-* Follow me on 👨‍💻 [Github](https://github.com/EnhancedJax) and stay updated on new things that I make
-* You can also watch me on 🐦 [DeviantArt](https://www.deviantart.com/mosaicshell) instead
-* Message me on 🗨️ [Discord](https://discord.gg/JmgehPSDD6)
-
----
-
-<p align="center">
-<i>Made with ❤️ by Jax</i>
-   <br/><br/>
-   <img src="https://raw.githubusercontent.com/uairhahs/ReadME-Template/main/Resources/Assets/Logo.png"  width="32" height="32"/>
-</p><!-- END Footer.mustache -->
+Use **MosaicShell.Host** (not CoreShell) to configure and arm Tessera.
