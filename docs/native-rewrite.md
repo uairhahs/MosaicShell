@@ -26,13 +26,13 @@ Armed capability (not a Library overlay widget). Replaces OS volume/brightness H
 - Full appearance DLC (colors, sizes beyond Host settings)
 - Brightness / airplane limitations on some Win11 builds (upstream YourFlyouts caveat)
 - Vendor laptop OSDs (Dell/HP/…)
-- Rainmeter NowPlaying multi-player Auto (AIMP/CAD/…) — WNP + SMTC only
+- Rainmeter NowPlaying multi-player Auto (AIMP/CAD/…) - WNP + SMTC only
 
 ### External references
 
 - Visual: [Jax-Core/YourFlyouts](https://github.com/Jax-Core/YourFlyouts)
 - OEM / volume OSD + ShellHook: [ModernFlyouts-Community/ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts)
-- Browser media / YTM art: [WebNowPlaying](https://wnp.keifufu.dev/) — Host listens on **5468** (CLI adapter port; see [`docs/parity/smtc-album-art.md`](parity/smtc-album-art.md))
+- Browser media / YTM art: [WebNowPlaying](https://wnp.keifufu.dev/) - Host listens on **5468** (CLI adapter port; see [`docs/parity/smtc-album-art.md`](parity/smtc-album-art.md))
 
 ## Full native supersession (roadmap)
 

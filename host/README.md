@@ -13,4 +13,4 @@ dotnet run --project Mosaicist -- install-module Canvas
 
 Tessera and widgets (Chrono / Phono / Pulse / Canvas) are **native-only** (`Tiles/{Id}` = install stubs). Mixdeck hotkey/Pixel open the **native overlay** (MVP bar in docs/parity). Layout/OSD: [YourFlyouts](https://github.com/Jax-Core/YourFlyouts), [ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts). Honesty flags: [docs/parity/README.md](../docs/parity/README.md). Roadmap: [docs/native-rewrite.md](../docs/native-rewrite.md).
 
-Parity is driven by tests — see [docs/parity/README.md](../docs/parity/README.md).
+Parity is driven by tests - see [docs/parity/README.md](../docs/parity/README.md).

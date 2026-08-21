@@ -55,7 +55,7 @@ Classic skins may still load via local `RunMosaicist.ps1 -Local`. Remote `iwr|ie
 <summary>Historical one-liner (do not use on this Avalonia branch)</summary>
 
 ```powershell
-# UNSUPPORTED — kept only as archive reference to JaxCore-era installers
+# UNSUPPORTED - kept only as archive reference to JaxCore-era installers
 # iwr -useb "https://raw.githubusercontent.com/uairhahs/MosaicShell/master/RunMosaicist.ps1" | iex
 ```
 
@@ -69,16 +69,16 @@ Most tiles under `Tiles/` remain Rainmeter skins until their Avalonia wave lands
 
 | Tile | Description | License |
 |------|-------------|---------|
-| Tessera | Native Avalonia capability (volume / brightness / media flyouts). Rainmeter skin retired — `Tiles/Tessera` is an install stub only. | MPL-2.0 |
+| Tessera | Native Avalonia capability (volume / brightness / media flyouts). Rainmeter skin retired - `Tiles/Tessera` is an install stub only. | MPL-2.0 |
 | Mixdeck | Native Host overlay MVP (per-app mixer). Rainmeter skin remains until later stub-delete; `Plugin=Tessera` hooks disabled. | MPL-2.0 |
 | Inlay | Start menu replacement with hot apps, shortcuts, and modules | MPL-2.0 |
 | Slate | Idle / lock screen skin | MPL-2.0 |
 | Chord | Keyboard-driven app launcher | MPL-2.0 |
 | Substrate | Notification shade / control center | MPL-2.0 |
-| Pulse | Native Avalonia visualizer widget (`IAudioLevelService`). Rainmeter tree retired — install stub only. | MIT |
-| Chrono | Native Avalonia clock widget. Rainmeter tree retired — install stub only. | MIT |
-| Phono | Native Avalonia SMTC media widget. Rainmeter tree retired — install stub only. | MIT |
-| Canvas | Native Avalonia system-metrics text widget. Rainmeter tree retired — install stub only. | MIT |
+| Pulse | Native Avalonia visualizer widget (`IAudioLevelService`). Rainmeter tree retired - install stub only. | MIT |
+| Chrono | Native Avalonia clock widget. Rainmeter tree retired - install stub only. | MIT |
+| Phono | Native Avalonia SMTC media widget. Rainmeter tree retired - install stub only. | MIT |
+| Canvas | Native Avalonia system-metrics text widget. Rainmeter tree retired - install stub only. | MIT |
 
 ---
 

@@ -1,6 +1,6 @@
 namespace MosaicShell.Core.Services;
 
-/// <summary>Stable percent-space volume math — avoids float jitter (49.6% → 49/50 flip).</summary>
+/// <summary>Stable percent-space volume math - avoids float jitter (49.6% → 49/50 flip).</summary>
 public static class VolumePercent
 {
     public static int ToPercent(double v) =>

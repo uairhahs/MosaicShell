@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
@@ -11,8 +11,10 @@
   <ItemGroup>
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
-    <!-- Canonical logos live in repo .github/res — link into avares for runtime -->
+    <!-- Canonical logos from .github/res (source of truth) -->
     <AvaloniaResource Include="..\..\.github\res\MosaicShell.png" Link="Assets\MosaicShell.png" />
+    <AvaloniaResource Include="..\..\.github\res\logo-variants\compact-512.png" Link="Assets\logo-512.png" />
+    <AvaloniaResource Include="..\..\.github\res\logo-variants\compact-256.png" Link="Assets\logo-256.png" />
   </ItemGroup>
 
   <ItemGroup>

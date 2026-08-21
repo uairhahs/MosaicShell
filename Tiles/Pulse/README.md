@@ -1,6 +1,6 @@
 # Pulse (native-only)
 
-Pulse runs as an Avalonia **widget** via `TileRuntime` — not as a Rainmeter skin.
+Pulse runs as an Avalonia **widget** via `TileRuntime` - not as a Rainmeter skin.
 
 | Path | Role |
 |------|------|
@@ -8,7 +8,7 @@ Pulse runs as an Avalonia **widget** via `TileRuntime` — not as a Rainmeter sk
 | `host/MosaicShell.Core/Settings/ModuleSettings.cs` (`PulseSettings`) | Style / Bar vs Round |
 | This folder | Install stub for `install-module Pulse` |
 
-Bands come from WASAPI loopback levels — not RNG. StyleCatalog ids are chrome labels; full JaxCore visualizer skins are later.
+Bands come from WASAPI loopback levels - not RNG. StyleCatalog ids are chrome labels; full JaxCore visualizer skins are later.
 
 ## Legacy
 

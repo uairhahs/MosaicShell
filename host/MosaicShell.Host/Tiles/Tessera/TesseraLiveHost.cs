@@ -28,7 +28,7 @@ public sealed class TesseraLiveBindings
     public MaterialIcon? PlayPauseIcon { get; set; }
 }
 
-/// <summary>Root wrapper — live pump updates Bindings directly (volume / scrub / art).</summary>
+/// <summary>Root wrapper - live pump updates Bindings directly (volume / scrub / art).</summary>
 public sealed class TesseraLiveHost : ContentControl
 {
     public TesseraLiveBindings Bindings { get; } = new();
@@ -93,11 +93,9 @@ public sealed class TesseraLiveHost : ContentControl
 
         if (b.MediaArt is not null)
         {
-            var thumb = media?.ThumbnailPng;
-            if ((thumb is null || thumb.Length < 32)
-                && WebNowPlayingReduxHost.TryGetCachedCover(media?.Title ?? b.MediaTitle?.Text, out var cached))
-                thumb = cached;
-            TesseraMediaPanel.ApplyArtToBorder(b.MediaArt, thumb);
+            var thumb = TesseraLiveHost.ResolveThumbnail(media?.ThumbnailPng, media?.Title ?? b.MediaTitle?.Text);
+            var fillHost = double.IsNaN(b.MediaArt.Width) || b.MediaArt.Width <= 1.0;
+            TesseraMediaPanel.ApplyArtToBorder(b.MediaArt, thumb, fillHost);
         }
 
         if (b.PlayPauseIcon is not null)
@@ -119,5 +117,13 @@ public sealed class TesseraLiveHost : ContentControl
         if (seconds <= 0 || double.IsNaN(seconds)) return "0:00";
         var t = TimeSpan.FromSeconds(seconds);
         return t.TotalHours >= 1 ? t.ToString(@"h\:mm\:ss") : t.ToString(@"m\:ss");
+    }
+
+    public static byte[]? ResolveThumbnail(byte[]? smtcOrMerged, string? title)
+    {
+        if (smtcOrMerged is { Length: >= 32 }) return smtcOrMerged;
+        if (WebNowPlayingReduxHost.TryGetCachedCover(title, out var png) && png is { Length: >= 32 })
+            return png;
+        return null;
     }
 }

@@ -1,6 +1,6 @@
 # Phono (native-only)
 
-Phono runs as an Avalonia **widget** via `TileRuntime` — not as a Rainmeter skin.
+Phono runs as an Avalonia **widget** via `TileRuntime` - not as a Rainmeter skin.
 
 | Path | Role |
 |------|------|

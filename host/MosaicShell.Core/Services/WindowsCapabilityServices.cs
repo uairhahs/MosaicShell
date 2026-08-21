@@ -196,7 +196,7 @@ public sealed class WindowsNativeOsdSuppressor : INativeOsdSuppressor
 
     private static void ResolveClassNames(out string outerClass, out string? outerName, out string innerClass, out string? innerName)
     {
-        // Win11 22H2+ (build >= 22620): XAML island OSD — ModernFlyouts NativeFlyoutHandler
+        // Win11 22H2+ (build >= 22620): XAML island OSD - ModernFlyouts NativeFlyoutHandler
         var build = GetOsBuild();
         if (build >= 22620)
         {

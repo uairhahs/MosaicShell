@@ -6,7 +6,7 @@ Living flags live in `host/MosaicShell.Core.Tests/HubParityBacklogTests.cs`.
 
 ## Tessera
 
-**Rainmeter Tessera removed (B0)** — runtime is host-only; `Tiles/Tessera` is a native install stub. B0 is **not** full YourFlyouts parity.
+**Rainmeter Tessera removed (B0)** - runtime is host-only; `Tiles/Tessera` is a native install stub. B0 is **not** full YourFlyouts parity.
 
 | Flag | Meaning |
 |------|---------|
@@ -15,10 +15,10 @@ Living flags live in `host/MosaicShell.Core.Tests/HubParityBacklogTests.cs`.
 | `tessera_locks_flight` | Lock-key + airplane flyouts |
 | `tessera_live_update_multimonitor` | Reuse/update window; monitor + anchor math |
 | `tessera_fluent_win11_kit` | Fluent + Win11 transfer kit present |
-| `tessera_layout_fidelity` | **false** — layouts rebuilt vs `.local/Tessera` refs; flag stays false until visual QA hits ~8 |
-| `tessera_fluent_yourflyouts` | **false** — Fluent/Win11/Center closer (art wash, structure); not Rainmeter plugin parity |
-| `tessera_media_smtc_only` | **false** — SMTC is not the only media path |
-| `tessera_media_wnp` | **true** — WebNowPlaying host on CLI port **5468** (Rainmeter keeps 8974) |
+| `tessera_layout_fidelity` | **false** - layouts rebuilt vs `.local/Tessera` refs; flag stays false until visual QA hits ~8 |
+| `tessera_fluent_yourflyouts` | **false** - Fluent/Win11/Center closer (art wash, structure); not Rainmeter plugin parity |
+| `tessera_media_smtc_only` | **false** - SMTC is not the only media path |
+| `tessera_media_wnp` | **true** - WebNowPlaying host on CLI port **5468** (Rainmeter keeps 8974) |
 | `tile_tessera_mvp` | Armed flyouts + named styles (Host path) |
 
 References: [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts) (OSD / ShellHook).
@@ -43,7 +43,7 @@ References: [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [Mo
 - Hotkey / Pixel deep-link opens **overlay**, not placeholder flyout text
 - No Rainmeter `Plugin=Tessera` required on Host path
 
-## Widget MVP bars (B2 — must all hold to flip `_mvp` and retire Rainmeter trees)
+## Widget MVP bars (B2 - must all hold to flip `_mvp` and retire Rainmeter trees)
 
 Rainmeter `Tiles/{Chrono,Phono,Pulse,Canvas}` are native install stubs. Runtime is `TileRuntime` + `LiveTilesA` only. Full StyleCatalog pixel skins remain later (`layout_fidelity`-style flags if added).
 
@@ -63,7 +63,7 @@ Rainmeter `Tiles/{Chrono,Phono,Pulse,Canvas}` are native install stubs. Runtime 
 
 ### Pulse (`tile_pulse_mvp`)
 
-- Bars (or round) driven by `IAudioLevelService` bands/peak — not RNG
+- Bars (or round) driven by `IAudioLevelService` bands/peak - not RNG
 - `PulseSettings.VisualizerType` / style affects layout (Bar vs Round minimum)
 - Library Start opens overlay via TileRuntime
 

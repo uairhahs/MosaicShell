@@ -1,6 +1,6 @@
 # Tessera (native-only)
 
-Tessera runs as an **Avalonia capability** inside `MosaicShell.Host` — not as a Rainmeter skin.
+Tessera runs as an **Avalonia capability** inside `MosaicShell.Host` - not as a Rainmeter skin.
 
 | Path | Role |
 |------|------|
@@ -13,7 +13,7 @@ Tessera runs as an **Avalonia capability** inside `MosaicShell.Host` — not as 
 Tessera merges **WebNowPlaying** covers when SMTC has no thumbnail.
 
 1. Install the [WebNowPlaying](https://chromewebstore.google.com/detail/webnowplaying/jfakgfcdgpghbbefmdfjkbdlibjgnbli) browser extension.
-2. Enable the built-in **CLI** adapter (port **5468** — same as [WebNowPlaying-CLI](https://github.com/keifufu/WebNowPlaying-CLI); Rainmeter stays on 8974).
+2. Enable the built-in **CLI** adapter (port **5468** - same as [WebNowPlaying-CLI](https://github.com/keifufu/WebNowPlaying-CLI); Rainmeter stays on 8974).
 3. Run MosaicShell Host, play YTM in that browser.
 
 Details: [`docs/parity/smtc-album-art.md`](../../docs/parity/smtc-album-art.md).

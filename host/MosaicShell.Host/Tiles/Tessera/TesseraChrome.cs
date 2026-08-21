@@ -11,16 +11,20 @@ namespace MosaicShell.Host.Tiles.Tessera;
 /// <summary>Shared high-fidelity chrome pieces for Tessera style layouts.</summary>
 internal static class TesseraChrome
 {
-    // Catppuccin Mocha crust #11111b — translucent (ClipToBounds off on stroke shell so outline reaches corners)
-    public static IBrush DarkGlass => new SolidColorBrush(Color.FromArgb(200, 0x11, 0x11, 0x1b));
-    public static IBrush DarkSolid => new SolidColorBrush(Color.FromArgb(220, 0x11, 0x11, 0x1b));
-    public static IBrush SoftStroke => new SolidColorBrush(Color.FromArgb(90, 255, 255, 255));
-    public static IBrush ArtDim => new SolidColorBrush(Color.FromArgb(130, 0x11, 0x11, 0x1b));
-    public static IBrush TileFace => new SolidColorBrush(Color.FromArgb(195, 0x11, 0x11, 0x1b));
-    public static IBrush TileFaceHi => new SolidColorBrush(Color.FromArgb(210, 0x18, 0x18, 0x25)); // mantle-ish
+    // Catppuccin Mocha crust #11111b - translucent (ClipToBounds off on stroke shell so outline reaches corners)
+    public static IBrush DarkGlass => new SolidColorBrush(TesseraPalette.Primary);
+    public static IBrush DarkSolid => new SolidColorBrush(TesseraPalette.PrimarySolid);
+    public static IBrush SoftStroke => new SolidColorBrush(Color.FromArgb(
+        (byte)(TesseraPalette.UseEdgeBlend ? 55 : 80), 255, 255, 255));
+    public static IBrush ArtDim => new SolidColorBrush(Color.FromArgb(
+        (byte)Math.Clamp(TesseraPalette.ShellAlpha - 20, 80, 200), 0x11, 0x11, 0x1b));
+    public static IBrush TileFace => new SolidColorBrush(Color.FromArgb(
+        (byte)Math.Clamp(TesseraPalette.ShellAlpha + 10, 100, 230), 0x11, 0x11, 0x1b));
+    public static IBrush TileFaceHi => new SolidColorBrush(Color.FromArgb(
+        (byte)Math.Clamp(TesseraPalette.ShellAlpha + 25, 120, 240), 0x18, 0x18, 0x25));
 
     /// <summary>
-    /// Outer stroke shell must NOT ClipToBounds — Avalonia clips the border away from rounded corners.
+    /// Outer stroke shell must NOT ClipToBounds - Avalonia clips the border away from rounded corners.
     /// Inner clip keeps content rounded.
     /// </summary>
     private static Border StrokedShell(Control content, double radius, IBrush background, double? maxWidth = null, double? height = null)
@@ -60,44 +64,42 @@ internal static class TesseraChrome
     public static Border WithArtWash(Control foreground, byte[]? png, double radius, Thickness pad, double? maxWidth = null)
     {
         var root = new Grid();
-        if (TesseraMediaPanel.TryCreateBitmap(png, 240) is { } bmp)
+        var wash = new Border
         {
-            root.Children.Add(new Image
-            {
-                Source = bmp,
-                Stretch = Stretch.UniformToFill,
-                Opacity = 0.55,
-                IsHitTestVisible = false
-            });
-        }
+            Name = "TesseraMediaWash",
+            Background = Brushes.Transparent,
+            IsHitTestVisible = false,
+            Opacity = 0.55
+        };
+        TesseraMediaPanel.ApplyArtToBorder(wash, png, fillHost: true);
+        root.Children.Add(wash);
         root.Children.Add(new Border { Background = ArtDim, IsHitTestVisible = false });
         root.Children.Add(new Border { Padding = pad, Child = foreground });
         return StrokedShell(root, radius, DarkGlass, maxWidth);
     }
 
-    /// <summary>Tile whose face is album art (CoreUI bottom-left) — art reads clearly with a readable dim.</summary>
-    public static Border ArtTile(Control foreground, byte[]? png, double radius, Thickness pad, double height = 72)
+    /// <summary>Tile whose face is album art (CoreUI bottom-left) - art reads clearly with a readable dim.</summary>
+    public static Border ArtTile(Control foreground, byte[]? png, double radius, Thickness pad, double height = 72) =>
+        ArtTile(foreground, png, radius, pad, height, out _);
+
+    public static Border ArtTile(
+        Control foreground, byte[]? png, double radius, Thickness pad, double height, out Border artHost)
     {
         var root = new Grid();
-        if (TesseraMediaPanel.TryCreateBitmap(png, 320) is { } bmp)
+        artHost = new Border
         {
-            root.Children.Add(new Image
-            {
-                Source = bmp,
-                Stretch = Stretch.UniformToFill,
-                Opacity = 1,
-                IsHitTestVisible = false
-            });
-            root.Children.Add(new Border
-            {
-                Background = new SolidColorBrush(Color.FromArgb(140, 0x11, 0x11, 0x1b)),
-                IsHitTestVisible = false
-            });
-        }
-        else
+            Name = "TesseraMediaArt",
+            Background = TileFaceHi,
+            ClipToBounds = true,
+            IsHitTestVisible = false
+        };
+        TesseraMediaPanel.ApplyArtToBorder(artHost, png, fillHost: true);
+        root.Children.Add(artHost);
+        root.Children.Add(new Border
         {
-            root.Children.Add(new Border { Background = TileFaceHi, IsHitTestVisible = false });
-        }
+            Background = new SolidColorBrush(Color.FromArgb(140, 0x11, 0x11, 0x1b)),
+            IsHitTestVisible = false
+        });
         root.Children.Add(new Border
         {
             Padding = pad,

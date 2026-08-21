@@ -199,7 +199,7 @@ public sealed class NullShellFlyoutTriggerSource : IShellFlyoutTriggerSource
     public void Dispose() { }
 }
 
-/// <summary>Test double — raise Triggered manually.</summary>
+/// <summary>Test double - raise Triggered manually.</summary>
 public sealed class FakeShellFlyoutTriggerSource : IShellFlyoutTriggerSource
 {
     public bool IsActive { get; private set; }

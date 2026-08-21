@@ -9,7 +9,7 @@ namespace MosaicShell.Core.Tests;
 
 /// <summary>
 /// Living checklist. Use *_skeleton for wiring; *_mvp only for JaxCore-comparable slices.
-/// Companion coverage is listed in docs/parity/README.md — do not mark mvp true without that bar.
+/// Companion coverage is listed in docs/parity/README.md - do not mark mvp true without that bar.
 /// </summary>
 public class HubParityBacklogTests
 {
@@ -201,7 +201,7 @@ public class HonestyGateTests
     [Fact]
     public void Widget_mvp_bars_documented_and_services_exist()
     {
-        // Bars: docs/parity/README.md — live metrics/media/levels + StyleCatalog chrome
+        // Bars: docs/parity/README.md - live metrics/media/levels + StyleCatalog chrome
         typeof(ISystemMetricsService).GetMethod(nameof(ISystemMetricsService.Sample)).Should().NotBeNull();
         typeof(IMediaSessionService).GetMethod(nameof(IMediaSessionService.PlayPauseAsync)).Should().NotBeNull();
         typeof(IAudioLevelService).GetProperty(nameof(IAudioLevelService.Bands)).Should().NotBeNull();

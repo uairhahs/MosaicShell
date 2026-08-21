@@ -9,12 +9,12 @@ namespace MosaicShell.Core.Tests;
 
 /// <summary>
 /// Drives <see cref="WebNowPlayingReduxHost"/> like the browser extension (WNPLIB rev 3),
-/// without Chrome / Rainmeter — isolates album-art protocol handling.
+/// without Chrome / Rainmeter - isolates album-art protocol handling.
 /// </summary>
 public class WebNowPlayingHostTests
 {
-    // 1×1 PNG
-    private static readonly byte[] TinyPng =
+    // 1×1 PNG (shared with TesseraAlbumArtRegressionTests)
+    internal static readonly byte[] TinyPng =
     [
         0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
         0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,

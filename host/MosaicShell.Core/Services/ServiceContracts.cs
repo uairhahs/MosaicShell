@@ -37,10 +37,10 @@ public interface IMediaSessionService : IDisposable
     MediaSessionInfo? Current { get; }
     /// <summary>Title / artist / play-state / thumbnail identity changes.</summary>
     event EventHandler? Changed;
-    /// <summary>Timeline position ticks while playing — refresh visible UI only; do not open flyouts.</summary>
+    /// <summary>Timeline position ticks while playing - refresh visible UI only; do not open flyouts.</summary>
     event EventHandler? ProgressChanged;
     /// <summary>
-    /// Poll SMTC timeline (and retry thumbnail if missing). Safe to call from a UI timer —
+    /// Poll SMTC timeline (and retry thumbnail if missing). Safe to call from a UI timer -
     /// many players (YouTube Music) do not raise TimelinePropertiesChanged.
     /// </summary>
     void PumpTimeline();

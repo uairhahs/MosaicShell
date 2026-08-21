@@ -1,4 +1,4 @@
-﻿[Header01]
+[Header01]
 Meter=String
 Text=UI scale
 MeterStyle=Set.String:S | Set.OptionCat:S
@@ -12,7 +12,7 @@ Meter=Shape
 MeterStyle=Set.Div:S
 [OptionScaleUser]
 Meter=String
-Text=User scale multiplier (0.75–2.0)
+Text=User scale multiplier (0.75-2.0)
 
 MeterStyle=Set.String:S | Set.OptionName:S
 [DividerScaleUser]

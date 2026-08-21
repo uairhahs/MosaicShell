@@ -229,11 +229,10 @@ public static class TesseraMediaPanel
         var time = TesseraChrome.Mono($"{FormatTime(vm.MediaPositionSeconds)} / {FormatTime(vm.MediaDurationSeconds)}", 9, muted: true);
         time.Name = "TesseraMediaPos";
         var artBorder = new Border { Name = "TesseraMediaArt", Width = 1, Height = 1, IsVisible = false };
-        TesseraLiveAmbient.RegisterMedia(artBorder, title, artist, null, time, null, null);
-
         var text = new StackPanel { Spacing = 2, Children = { header, title, artist, time } };
-        // Artwork as background of the bottom-left tile
-        return TesseraChrome.ArtTile(text, vm.ThumbnailPng, 8, new Thickness(8), 72);
+        var tile = TesseraChrome.ArtTile(text, vm.ThumbnailPng, 8, new Thickness(8), 72, out var artHost);
+        TesseraLiveAmbient.RegisterMedia(artHost, title, artist, null, time, null, null);
+        return tile;
     }
 
     private static Control SmoutiSide(TesseraFlyoutViewModel vm)
@@ -273,7 +272,7 @@ public static class TesseraMediaPanel
         TesseraLiveAmbient.RegisterMedia(new Border { Name = "TesseraMediaArt", Width = 1, Height = 1, IsVisible = false },
             title, artist, scrub, pos, dur, playIcon);
 
-        // Compact side column — keep Smouti under ~110px tall
+        // Compact side column - keep Smouti under ~110px tall
         return new StackPanel
         {
             Spacing = 3,
@@ -443,23 +442,49 @@ public static class TesseraMediaPanel
         }
     }
 
-    public static void ApplyArtToBorder(Border border, byte[]? bytes)
+    public static void ApplyArtToBorder(Border border, byte[]? bytes, bool fillHost = false)
     {
         if (bytes is null || bytes.Length < 32) return;
         var sig = bytes.Length ^ (bytes.Length > 16 ? bytes[8] << 8 | bytes[16] : 0);
         if (border.Tag is int prev && prev == sig && border.Child is Image) return;
-        var size = border.Width > 1 ? border.Width : 64;
+        var size = !fillHost && border.Width > 1 && !double.IsNaN(border.Width)
+            ? border.Width
+            : fillHost ? 128 : 64;
         if (TryCreateBitmap(bytes, (int)size) is not { } bmp) return;
         border.Tag = sig;
+        border.ClipToBounds = true;
         if (border.Child is Image img)
         {
             var old = img.Source;
             img.Source = bmp;
             (old as IDisposable)?.Dispose();
+            if (fillHost)
+            {
+                img.Width = double.NaN;
+                img.Height = double.NaN;
+                img.HorizontalAlignment = HorizontalAlignment.Stretch;
+                img.VerticalAlignment = VerticalAlignment.Stretch;
+                img.Stretch = Stretch.UniformToFill;
+            }
         }
         else
         {
-            border.Child = new Image { Source = bmp, Stretch = Stretch.UniformToFill, Width = size, Height = size };
+            border.Background = Brushes.Transparent;
+            border.Child = fillHost
+                ? new Image
+                {
+                    Source = bmp,
+                    Stretch = Stretch.UniformToFill,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    VerticalAlignment = VerticalAlignment.Stretch
+                }
+                : new Image
+                {
+                    Source = bmp,
+                    Stretch = Stretch.UniformToFill,
+                    Width = size,
+                    Height = size
+                };
         }
     }
 

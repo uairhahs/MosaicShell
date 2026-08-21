@@ -29,7 +29,7 @@ public static class FlyoutAnchor
         int yPad)
     {
         var p = Normalize(position);
-        // Treat negative/oversized pads as 0 — stale JSON sometimes stores junk
+        // Treat negative/oversized pads as 0 - stale JSON sometimes stores junk
         xPad = Math.Clamp(xPad, 0, Math.Max(0, workW / 2));
         yPad = Math.Clamp(yPad, 0, Math.Max(0, workH / 2));
         windowW = Math.Max(1, windowW);

@@ -1,6 +1,6 @@
 namespace MosaicShell.Host.Tiles.Tessera;
 
-/// <summary>YourFlyouts Fluent.inc constants (scale=1) — restored pre-baseline proportions.</summary>
+/// <summary>YourFlyouts Fluent.inc constants (scale=1) - restored pre-baseline proportions.</summary>
 public static class TesseraFluentMetrics
 {
     public const double VolumeWidth = 80;

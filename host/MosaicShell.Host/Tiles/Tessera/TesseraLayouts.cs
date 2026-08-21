@@ -42,7 +42,7 @@ public static class TesseraStyleFactory
     }
 }
 
-/// <summary>YourFlyouts-style layouts — fidelity target ~8 vs .local/Tessera refs.</summary>
+/// <summary>YourFlyouts-style layouts - fidelity target ~8 vs .local/Tessera refs.</summary>
 internal static class TesseraLayouts
 {
     public static Control Fluent(TesseraFlyoutViewModel vm)
@@ -506,7 +506,7 @@ internal static class TesseraLayouts
             FatThumb = false,
             ShowThumb = false,
             TrackThickness = 28,
-            TrackPad = 0 // fill edge-to-edge — no dead space at ends
+            TrackPad = 0 // fill edge-to-edge - no dead space at ends
         };
         track.ValueChanged += (_, v) => vm.ApplyPrimary(v);
         TesseraLiveAmbient.RegisterVolume(track, null, null);
@@ -716,7 +716,7 @@ internal static class TesseraLayouts
         };
         shell.Children.Add(bg);
         shell.Children.Add(cut);
-        // Clip to parallelogram-ish using Border with custom — approximate with opacity mask
+        // Clip to parallelogram-ish using Border with custom - approximate with opacity mask
         bg.Clip = new PathGeometry
         {
             Figures =
@@ -776,7 +776,7 @@ internal static class TesseraLayouts
         return shell;
     }
 
-    // —— helpers ——
+    // --- helpers ---
 
     private static Control StatusChip(TesseraFlyoutViewModel vm, double radius, double? w = null, double? h = null) =>
         TesseraChrome.Glass(new StackPanel

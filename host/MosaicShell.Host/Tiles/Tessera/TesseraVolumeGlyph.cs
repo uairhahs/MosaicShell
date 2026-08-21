@@ -56,12 +56,14 @@ public static class TesseraShell
     {
         var border = new Border
         {
-            Background = new SolidColorBrush(fill ?? TesseraPalette.Primary),
+            Background = TesseraPalette.UseEdgeBlend
+                ? TesseraPalette.SoftFrostFill()
+                : new SolidColorBrush(fill ?? TesseraPalette.Primary),
             CornerRadius = new CornerRadius(cornerRadius),
             BorderBrush = TesseraPalette.StrokeBrush,
             BorderThickness = new Thickness(1),
             Padding = padding ?? new Thickness(0),
-            // Don't ClipToBounds on the stroked shell — clips the outline off rounded corners
+            // Don't ClipToBounds on the stroked shell - clips the outline off rounded corners
             ClipToBounds = false,
             Child = cornerRadius > 0
                 ? new Border
@@ -72,7 +74,7 @@ public static class TesseraShell
                 }
                 : child
         };
-        if (width is not null) border.MinWidth = width.Value; // MinWidth — allow media strip to widen naturally
+        if (width is not null) border.MinWidth = width.Value; // MinWidth - allow media strip to widen naturally
         if (width is not null && height is null) { /* width as hint via MinWidth only */ }
         else if (width is not null) border.Width = width.Value;
         if (height is not null) border.Height = height.Value;

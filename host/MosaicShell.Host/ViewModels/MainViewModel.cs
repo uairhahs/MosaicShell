@@ -50,7 +50,7 @@ public partial class MainViewModel : ViewModelBase
         [
             new("Welcome", "First-run picks, batch install, startup.", "Welcome", "/Assets/Modules/Inlay.png"),
             new("Tiles", "Install widgets or set tiles (Tessera flyouts, launchers).", "Tiles", "/Assets/Modules/Tessera.png"),
-            new("About", "MosaicShell is a native host re-write. The app allows for desktop customisation and tool suite to tailor your experience and relies solely on the background CapabilityDaemon for persistence. Th app is fully self-contained and extensible.", "About", "/Assets/logo-256.png"),
+            new("About", "MosaicShell is a native host re-write. The app allows for desktop customisation and tool suite to tailor your experience and relies solely on the background CapabilityDaemon for persistence. Th app is fully self-contained and extensible.", "About", "/Assets/MosaicShell.png"),
         ];
 
         ModuleStyleOptions = new ObservableCollection<string>();
@@ -106,6 +106,7 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private double _userScale = 1.0;
     [ObservableProperty] private double _uiScale = 1.0;
     [ObservableProperty] private string _scaleSummary = "";
+    [ObservableProperty] private string _userScalePercentLabel = "100%";
     [ObservableProperty] private string _statusMessage = "Ready";
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private string _serviceProbe = "";
@@ -130,6 +131,8 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _tesseraLockFlyouts = true;
     [ObservableProperty] private bool _tesseraFlightFlyouts = true;
     [ObservableProperty] private bool _tesseraMediaStrip = true;
+    [ObservableProperty] private bool _tesseraAcrylicBackdrop = true;
+    [ObservableProperty] private bool _tesseraFocusDim = true;
     [ObservableProperty] private decimal _tesseraLegacyStepPercent = 2;
     [ObservableProperty] private bool _autostartEnabled;
     [ObservableProperty] private bool _closeMinimizesToTray = true;
@@ -221,7 +224,9 @@ public partial class MainViewModel : ViewModelBase
             TesseraLockFlyouts = s.EnableLockFlyouts;
             TesseraFlightFlyouts = s.EnableFlightFlyouts;
             TesseraMediaStrip = s.ShowMediaStripOnVolume;
-            // Stored as 0–1 fraction; UI is percent points out of 100
+            TesseraAcrylicBackdrop = s.UseAcrylicBackdrop;
+            TesseraFocusDim = s.UseFocusDim;
+            // Stored as 0-1 fraction; UI is percent points out of 100
             var stepPct = s.LegacyVolumeStep <= 1.0
                 ? (decimal)Math.Round(s.LegacyVolumeStep * 100)
                 : (decimal)Math.Round(s.LegacyVolumeStep);
@@ -285,6 +290,8 @@ public partial class MainViewModel : ViewModelBase
         s.EnableLockFlyouts = TesseraLockFlyouts;
         s.EnableFlightFlyouts = TesseraFlightFlyouts;
         s.ShowMediaStripOnVolume = TesseraMediaStrip;
+        s.UseAcrylicBackdrop = TesseraAcrylicBackdrop;
+        s.UseFocusDim = TesseraFocusDim;
         s.UseLegacyVolumeHooks = TesseraLegacyVol;
         s.LegacyVolumeStep = Math.Clamp((double)TesseraLegacyStepPercent, 1, 25) / 100.0;
         ModuleSettingsStore.Save("Tessera", s);
@@ -323,7 +330,7 @@ public partial class MainViewModel : ViewModelBase
             case "tessera":
             {
                 PersistTesseraFromUi();
-                StatusMessage = "Tessera settings saved — re-arm if you changed legacy hooks or flyout sources.";
+                StatusMessage = "Tessera settings saved - re-arm if you changed legacy hooks or flyout sources.";
                 break;
             }
             case "phono":
@@ -435,6 +442,15 @@ public partial class MainViewModel : ViewModelBase
             _tileHost?.ApplyUserScale(UserScale);
         }
         catch (ArgumentOutOfRangeException) { UserScale = _scale.UserScale; }
+    }
+
+    partial void OnUserScaleChanged(double value)
+    {
+        // Live preview while dragging; Apply still commits LayoutScale / tiles.
+        UserScalePercentLabel = $"{value * 100:0}%";
+        var effective = value * DpiScale;
+        ScaleSummary =
+            $"{effective * 100:0}% effective  (OS DPI {DpiScale:0.##} × user {value:0.##})";
     }
 
     [RelayCommand]
@@ -645,9 +661,10 @@ public partial class MainViewModel : ViewModelBase
     private void SyncScaleProps()
     {
         DpiScale = _scale.DpiScale;
-        UserScale = _scale.UserScale;
+        UserScale = _scale.UserScale; // also refreshes percent label + ScaleSummary via OnUserScaleChanged
         UiScale = _scale.UiScale;
         LayoutScale = _scale.UserScale;
+        UserScalePercentLabel = $"{UserScale * 100:0}%";
         ScaleSummary = $"{UiScale * 100:0}% effective  (OS DPI {_scale.DpiScale:0.##} × user {_scale.UserScale:0.##})";
     }
 

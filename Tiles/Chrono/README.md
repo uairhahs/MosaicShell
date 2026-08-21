@@ -1,6 +1,6 @@
 # Chrono (native-only)
 
-Chrono runs as an Avalonia **widget** via `TileRuntime` — not as a Rainmeter skin.
+Chrono runs as an Avalonia **widget** via `TileRuntime` - not as a Rainmeter skin.
 
 | Path | Role |
 |------|------|

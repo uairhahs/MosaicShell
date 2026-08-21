@@ -48,6 +48,7 @@ public partial class App : Application
             TesseraHostBridge.PreviewVolumeFlyout = () =>
             {
                 var s = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
+                var media = _services?.Media.Current;
                 flyouts.Show(new FlyoutRequest(
                     "Tessera",
                     "vol",
@@ -58,7 +59,12 @@ public partial class App : Application
                     {
                         ["volume"] = (_services?.Audio.MasterVolume ?? 0.5).ToString("0.###"),
                         ["muted"] = (_services?.Audio.IsMuted == true) ? "1" : "0",
-                        ["showMediaStrip"] = s.ShowMediaStripOnVolume ? "1" : "0"
+                        ["showMediaStrip"] = s.ShowMediaStripOnVolume && media is not null ? "1" : "0",
+                        ["mediaTitle"] = media?.Title ?? "",
+                        ["mediaArtist"] = media?.Artist ?? "",
+                        ["mediaPlaying"] = media?.IsPlaying == true ? "1" : "0",
+                        ["acrylic"] = s.UseAcrylicBackdrop ? "1" : "0",
+                        ["focusDim"] = s.UseFocusDim ? "1" : "0",
                     },
                     s.MonitorIndex,
                     s.XPad,

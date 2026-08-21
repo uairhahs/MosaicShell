@@ -106,7 +106,7 @@ public sealed class TesseraTrack : Panel
 
     public event EventHandler<double>? ValueChanged;
 
-    /// <summary>True while dragging / shortly after a wheel nudge — live pump should not fight the user.</summary>
+    /// <summary>True while dragging / shortly after a wheel nudge - live pump should not fight the user.</summary>
     public bool IsUserAdjusting =>
         _dragging || DateTime.UtcNow < _userUntil;
 
@@ -256,7 +256,7 @@ public sealed class TesseraTrack : Panel
     private void OnWheel(object? sender, PointerWheelEventArgs e)
     {
         MarkUser();
-        // 2% per notch — same as typical Windows volume keys
+        // 2% per notch - same as typical Windows volume keys
         Value = VolumePercent.Step(Value, e.Delta.Y > 0 ? 2 : -2);
         e.Handled = true;
     }

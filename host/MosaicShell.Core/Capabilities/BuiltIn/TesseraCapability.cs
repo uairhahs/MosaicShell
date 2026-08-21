@@ -133,7 +133,7 @@ public sealed class TesseraCapability : IModuleCapability
     {
         try
         {
-            // Progress / art refresh — must not reset auto-dismiss
+            // Progress / art refresh - must not reset auto-dismiss
             _ui.Flyouts.SoftRefresh(BuildRequest(kind, null));
         }
         catch (Exception ex)
@@ -226,6 +226,8 @@ public sealed class TesseraCapability : IModuleCapability
         p["mediaArtist"] = _services.Media.Current?.Artist ?? "";
         p["mediaPlaying"] = _services.Media.Current?.IsPlaying == true ? "1" : "0";
         p["showMediaStrip"] = _settings.ShowMediaStripOnVolume ? "1" : "0";
+        p["acrylic"] = _settings.UseAcrylicBackdrop ? "1" : "0";
+        p["focusDim"] = _settings.UseFocusDim ? "1" : "0";
         if (_lastLock is not null && kind == "locks")
         {
             p["lock"] = _lastLock.Key.ToString();

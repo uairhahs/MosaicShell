@@ -12,7 +12,7 @@ public class WebNowPlayingMergeTests
         var smtc = new MediaSessionInfo(
             "Song | YouTube Music", null, "music.youtube.com-x!App", true,
             ThumbnailPng: null, PositionSeconds: 10, DurationSeconds: 100);
-        var cover = Enumerable.Range(0, 64).Select(i => (byte)i).ToArray();
+        var cover = WebNowPlayingHostTests.TinyPng;
         var wnp = new WnpPlayerSnapshot
         {
             Title = "Song",
@@ -31,10 +31,12 @@ public class WebNowPlayingMergeTests
     [Fact]
     public void Merge_keeps_smtc_cover_when_present()
     {
-        var smtcCover = new byte[48];
-        Array.Fill(smtcCover, (byte)9);
+        var smtcCover = WebNowPlayingHostTests.TinyPng.ToArray();
+        smtcCover[^1] ^= 0x01;
         var smtc = new MediaSessionInfo("T", "A", "Spotify.exe", true, smtcCover, 1, 2);
-        var wnp = new WnpPlayerSnapshot { CoverPng = Enumerable.Repeat((byte)1, 64).ToArray() };
+        var wnpCover = WebNowPlayingHostTests.TinyPng.ToArray();
+        wnpCover[^2] ^= 0x01;
+        var wnp = new WnpPlayerSnapshot { CoverPng = wnpCover };
 
         var merged = CompositeMediaSessionService.Merge(smtc, wnp)!;
         merged.ThumbnailPng.Should().BeSameAs(smtcCover);

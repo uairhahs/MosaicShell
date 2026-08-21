@@ -116,20 +116,7 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
         }
 
         // Prefer any WNP cover when SMTC has none (YTM PWA / browser)
-        var thumb = smtc.ThumbnailPng;
-        if ((thumb is null || thumb.Length < 32) && wnp?.CoverPng is { Length: > 32 })
-            thumb = wnp.CoverPng;
-        if ((thumb is null || thumb.Length < 32)
-            && WebNowPlaying.WebNowPlayingReduxHost.TryGetCachedCover(smtc.Title, out var cached)
-            && cached is { Length: > 32 })
-            thumb = cached;
-        if ((thumb is null || thumb.Length < 32)
-            && wnp is not null
-            && WebNowPlaying.WebNowPlayingReduxHost.TryGetCachedCover(wnp.Title, out var cached2)
-            && cached2 is { Length: > 32 })
-            thumb = cached2;
-
-        // Always take WNP metadata for browser-looking sessions; also when titles match
+        var thumb = PickCover(smtc.ThumbnailPng, wnp?.CoverPng, smtc.Title, wnp?.Title, smtc.AppId);
         var title = smtc.Title;
         var artist = smtc.Artist;
         if (wnp is not null && !string.IsNullOrWhiteSpace(wnp.Title)
@@ -139,7 +126,7 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
             title = wnp.Title;
             if (!string.IsNullOrWhiteSpace(wnp.Artist))
                 artist = wnp.Artist;
-            if ((thumb is null || thumb.Length < 32) && wnp.CoverPng is { Length: > 32 })
+            if (!IsUsableCover(thumb) && IsUsableCover(wnp.CoverPng))
                 thumb = wnp.CoverPng;
         }
 
@@ -208,4 +195,36 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
                && ThumbEqual(a.ThumbnailPng, b.ThumbnailPng)
                && Math.Abs(a.DurationSeconds - b.DurationSeconds) < 0.5;
     }
+
+    public static bool IsUsableCover(byte[]? bytes)
+    {
+        if (bytes is null || bytes.Length < 32) return false;
+        if (LooksLikePng(bytes) || LooksLikeJpeg(bytes) || LooksLikeWebp(bytes)) return true;
+        return bytes.Length >= 256;
+    }
+
+    internal static byte[]? PickCover(
+        byte[]? smtcThumb, byte[]? wnpCover, string? smtcTitle, string? wnpTitle, string? appId)
+    {
+        if (LooksLikeBrowserSession(appId) && IsUsableCover(wnpCover))
+            return wnpCover;
+        if (IsUsableCover(smtcThumb))
+            return smtcThumb;
+        if (IsUsableCover(wnpCover))
+            return wnpCover;
+        if (WebNowPlaying.WebNowPlayingReduxHost.TryGetCachedCover(smtcTitle, out var png) && IsUsableCover(png))
+            return png;
+        if (WebNowPlaying.WebNowPlayingReduxHost.TryGetCachedCover(wnpTitle, out var png2) && IsUsableCover(png2))
+            return png2;
+        return IsUsableCover(smtcThumb) ? smtcThumb : null;
+    }
+
+    private static bool LooksLikePng(byte[] b) =>
+        b.Length > 8 && b[0] == 137 && b[1] == 80 && b[2] == 78 && b[3] == 71;
+
+    private static bool LooksLikeJpeg(byte[] b) =>
+        b.Length > 3 && b[0] == 255 && b[1] == 216 && b[2] == 255;
+
+    private static bool LooksLikeWebp(byte[] b) =>
+        b.Length > 12 && b[0] == 82 && b[1] == 73 && b[2] == 70 && b[3] == 70;
 }

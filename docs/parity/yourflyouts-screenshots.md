@@ -6,4 +6,4 @@ Local mirrors (downloaded for layout QA): `.local/Tessera/yourflyouts-official/y
 
 Also see cropped refs in `.local/Tessera/ref*.png`.
 
-Target on-desktop scale: flyouts are a small fraction of the screen (~1/5 width max), with heavy acrylic blur — not large opaque panels.
+Target on-desktop scale: flyouts are a small fraction of the screen (~1/5 width max), with heavy acrylic blur - not large opaque panels.

@@ -1,6 +1,6 @@
 # Canvas (native-only)
 
-Canvas (Plainext) runs as an Avalonia **widget** via `TileRuntime` — not as a Rainmeter skin.
+Canvas (Plainext) runs as an Avalonia **widget** via `TileRuntime` - not as a Rainmeter skin.
 
 | Path | Role |
 |------|------|

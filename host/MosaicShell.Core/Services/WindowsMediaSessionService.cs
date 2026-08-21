@@ -21,7 +21,7 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
 
     public MediaSessionInfo? Current { get; private set; }
     public event EventHandler? Changed;
-    /// <summary>Timeline / position only — does not open flyouts; consumers refresh visible UI.</summary>
+    /// <summary>Timeline / position only - does not open flyouts; consumers refresh visible UI.</summary>
     public event EventHandler? ProgressChanged;
 
     private async Task InitAsync()
@@ -98,7 +98,7 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
                 else
                     System.Diagnostics.Debug.WriteLine(
                         $"[SMTC] Thumbnail is null for {session.SourceAppUserModelId} / '{props?.Title}' " +
-                        "(source did not publish artwork — common for YouTube Music PWA)");
+                        "(source did not publish artwork - common for YouTube Music PWA)");
             }
             catch { /* optional */ }
 
@@ -171,7 +171,7 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
 
     /// <summary>
     /// Poll timeline + retry thumbnail. YouTube Music / Chrome often never fire TimelinePropertiesChanged
-    /// and freeze Position until the next sparse update — we extrapolate while playing.
+    /// and freeze Position until the next sparse update - we extrapolate while playing.
     /// </summary>
     public void PumpTimeline()
     {
@@ -331,7 +331,7 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
                     await reader.LoadAsync((uint)size);
                     var buf = new byte[size];
                     reader.ReadBytes(buf);
-                    if (buf.Length >= 32) return buf; // don't reject on magic — Skia may still decode
+                    if (buf.Length >= 32) return buf; // don't reject on magic - Skia may still decode
                 }
                 finally
                 {

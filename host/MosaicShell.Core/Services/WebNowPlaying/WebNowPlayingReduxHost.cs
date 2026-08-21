@@ -9,7 +9,7 @@ namespace MosaicShell.Core.Services.WebNowPlaying;
 /// <summary>
 /// WebNowPlaying adapter (WNPLIB rev 3). Player ids from the extension are often
 /// larger than Int32 (chrome port timestamps). Binary covers use JS <c>setUint32</c>
-/// truncation — we match covers with <c>(uint)id</c>, not Int32 parse.
+/// truncation - we match covers with <c>(uint)id</c>, not Int32 parse.
 /// </summary>
 public sealed class WebNowPlayingReduxHost : IWebNowPlayingService
 {
@@ -465,7 +465,7 @@ public sealed class WebNowPlayingReduxHost : IWebNowPlayingService
     {
         var p = ActivePlayer();
         if (p is null) return;
-        // WNP_REPEAT_NONE=1, ALL=2, ONE=4 — cycle NONE → ALL → ONE → NONE
+        // WNP_REPEAT_NONE=1, ALL=2, ONE=4 - cycle NONE → ALL → ONE → NONE
         var next = p.Repeat switch
         {
             2 => 4,

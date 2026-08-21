@@ -32,7 +32,7 @@
 <!-- END About.mustache -->
 **Mixdeck** replaces the standard Windows Volume Mixer with a fully customizable volume controller. **Mixdeck** includes 7 different color schemes as well as a multitude customization options for you to tweak and customize to your liking.
 
-> **Avalonia branch note:** Rainmeter Mixdeck still uses `Plugin=Tessera` for volume-change redraws. That plugin was removed with Rainmeter Tessera — those hooks need an archived plugin, or use MosaicShell.Host. Native Mixdeck UI is Phase B1 in `docs/native-rewrite.md`.
+> **Avalonia branch note:** Rainmeter Mixdeck still uses `Plugin=Tessera` for volume-change redraws. That plugin was removed with Rainmeter Tessera - those hooks need an archived plugin, or use MosaicShell.Host. Native Mixdeck UI is Phase B1 in `docs/native-rewrite.md`.
 
 <!-- START Screenshots.mustache -->
 ## Screenshots

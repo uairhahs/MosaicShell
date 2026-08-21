@@ -23,7 +23,7 @@ public sealed class WindowsAudioService : IAudioService
         {
             var v = (float)VolumePercent.Quantize(value);
             var cur = _device.AudioEndpointVolume.MasterVolumeLevelScalar;
-            if (Math.Abs(cur - v) < 0.004f) // <0.5% — already there
+            if (Math.Abs(cur - v) < 0.004f) // <0.5% - already there
                 return;
             // Pre-arm filter so our own write's notification doesn't look like an external change
             _lastVol = v;

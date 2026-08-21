@@ -196,7 +196,7 @@ public sealed class TileOverlayWindow : Window
         };
         var hide = new Button
         {
-            Content = "–", Width = 28, Height = 24, Padding = new Thickness(0),
+            Content = "-", Width = 28, Height = 24, Padding = new Thickness(0),
             Background = Brushes.Transparent, Foreground = new SolidColorBrush(Color.Parse("#a6adc8")), Tag = "hide"
         };
         var close = new Button
