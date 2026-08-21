@@ -239,8 +239,8 @@ Leftmouseupaction=[!DeactivateConfig "#Skin.Name#\WinBlock"][!Refresh "#Skin.Nam
 Meter=Shape
 MeterStyle=Set.Button:S
 Y=([Option12:Y]-#Set.P#+(-30/2+8)*[Set.S])
-OverColor=#Set.Accent_color#,150
-LeaveColor=#Set.Accent_color#,50
+OverColor=#Set.Accent_Color#,150
+LeaveColor=#Set.Accent_Color#,50
 LeftMouseUpAction=[!CommandMeasure ValliPseudo "Create-Shortcut"]
 Hidden=(1-#WinBlock#)
 [Icon12]

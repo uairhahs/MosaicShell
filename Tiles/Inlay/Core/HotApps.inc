@@ -224,8 +224,8 @@ MeterStyle=Set.String:S | Set.Value:S
 Meter=Shape
 MeterStyle=Set.Button:S
 Y=([Option05:Y]-#Set.P#+(-30/2+8)*[Set.S])
-OverColor=#Set.Accent_color#,150
-LeaveColor=#Set.Accent_color#,50
+OverColor=#Set.Accent_Color#,150
+LeaveColor=#Set.Accent_Color#,50
 Act=["#SKINSPATH#Inlay\@Resources\Calendars\Holidays.xml"]
 [Icon05]
 Meter=String

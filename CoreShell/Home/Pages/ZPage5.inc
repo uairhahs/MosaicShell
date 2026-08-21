@@ -26,7 +26,7 @@ X=r
 Y=(10*[Set.S])R
 FontSize=(24*[Set.S])
 FontWeight=650
-InlineSetting=GradientColor | 45 | #SEt.Accent_Color_2# ; 1 | #Set.Accent_color# ;0
+InlineSetting=GradientColor | 45 | #Set.Accent_Color_2# ; 1 | #Set.Accent_Color# ;0
 ; ---------------------------------------------------------------------------- ;
 ;                                    Meters                                    ;
 ; ---------------------------------------------------------------------------- ;
