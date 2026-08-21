@@ -461,7 +461,7 @@ if ($saw -eq $null) {
         }
     }
 }
-$WinVer = [int]((Get-WmiObject -class Win32_OperatingSystem).Caption -replace "[^0-9]" , '')
+$WinVer = [int]((Get-CimInstance Win32_OperatingSystem).Caption -replace "[^0-9]" , '')
 if ($WinVer -eq $null) {
     $WinVer = [int]((Get-ComputerInfo).WindowsProductName -replace "[^0-9]" , '')
 }

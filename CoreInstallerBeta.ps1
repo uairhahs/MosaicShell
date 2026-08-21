@@ -277,8 +277,9 @@ if (!($o_PromptBestOption)) {
 }
 # ---------------------------- Installer variables --------------------------- #
 $s_InstallIsBatch = [bool]($o_InstallModule.Count -gt '1')
+$s_rootDrive = (Get-CimInstance Win32_OperatingSystem).SystemDrive
 $s_rootFolderName = "MosaicShellCache"
-$s_root = "C:\$s_rootFolderName"
+$s_root = "$($s_rootDrive)\$s_rootFolderName"
 $s_unpacked = "$s_root\Unpacked"
 # Declare global scope installer variables
 
@@ -446,19 +447,6 @@ foreach ($m in $o_InstallModule) {
         $release_api_url = "https://api.github.com/repos/$org/$m/releases/tags/v$o_Version"
     }
 
-    # 22H2 media player patch
-
-    if (($moduleDetails[$m].Values -contains 'WindowsNowPlaying') -and ($22h2_downloaded -ne $true) -and ($([System.Environment]::OSVersion.Version.Build) -gt 22533)) {
-        $22h2_downloaded = $true
-
-        $outpath = "$s_root\zzzzzz.rmskin"
-        Write-Task "Downloading 22H2 media player patch from    "; Write-Emphasized "https://github.com/uairhahs/MosaicShell/releases/download/v1/zzzzzz.rmskin"
-        Invoke-WebRequest "https://github.com/uairhahs/MosaicShell/releases/download/v1/zzzzzz.rmskin" -outfile "$outpath" -UseBasicParsing
-        Write-Done
-    }
-
-    # End End End End
-
     Write-Task "Downloading    "; Write-Emphasized $release_api_url; Write-Task " to get download URL"
     $api_object = Invoke-WebRequest -Uri $release_api_url -UseBasicParsing | ConvertFrom-Json
     Write-Done
@@ -484,7 +472,7 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
             Invoke-Item $_.FullName
         }
     } else {
-        throw 'Unable to find downloaded file. Try running installer as adminstrator, or if you are installing a module within MosaicShell, run Rainmeter as administrator and try again. Make sure you have no programs running that would potentially delete the downloaded file'
+        throw 'Unable to find downloaded file. Try running installer as administrator, or if you are installing a module within MosaicShell, run Rainmeter as administrator and try again. Make sure you have no programs running that would potentially delete the downloaded file'
     }
     Write-Done
     Write-Task "Interacting with installer UI"
@@ -513,7 +501,7 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
             Write-Done
         }
     } else {
-        throw 'Unable to find downloaded file. Try running installer as adminstrator, or if you are installing a module within MosaicShell, run Rainmeter as administrator and try again. Make sure you have no programs running that would potentially delete the downloaded file'
+        throw 'Unable to find downloaded file. Try running installer as administrator, or if you are installing a module within MosaicShell, run Rainmeter as administrator and try again. Make sure you have no programs running that would potentially delete the downloaded file'
     }
     # ---------------------------- Start installation ---------------------------- #
     Write-Info "Starting installation..."
@@ -621,7 +609,7 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
                 }
             } elseif (($skin_name -notcontains '#MosaicShell') -and !$o_FromSHUB -and $o_NoPostActions) {
                 debug "> Automatically changing scale variables (new installation)"
-                $vc = Get-WmiObject -class "Win32_VideoController"
+                $vc = Get-CimInstance -ClassName Win32_VideoController
                 $saw = $vc.CurrentHorizontalResolution
                 $sah = $vc.CurrentVerticalResolution
         #        ((#SCREENAREAWIDTH#/1920) < (#SCREENAREAHEIGHT#/1080) ? (#SCREENAREAWIDTH#/1920) : (#SCREENAREAHEIGHT#/1080))
