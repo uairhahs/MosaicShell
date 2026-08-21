@@ -1,4 +1,4 @@
-
+﻿
 [MainBox]
 Meter=Shape
 Y=(85*#Scale#+#GlobalP#)

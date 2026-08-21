@@ -1,4 +1,4 @@
-
+﻿
 [Div]
 meter=Shape
 X=(25*[Set.S])

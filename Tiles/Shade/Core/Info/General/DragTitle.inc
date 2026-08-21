@@ -1,4 +1,4 @@
-[Title]
+﻿[Title]
 Text=Dragging activation
 
 [Description]

@@ -1,4 +1,4 @@
-[Variables]
+﻿[Variables]
 Grad.1=18, 19, 21
 Grad.2=26, 28, 31
 Accent.1=193, 45, 13

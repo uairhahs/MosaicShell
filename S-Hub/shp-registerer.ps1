@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory=$true)][Alias("corepath")][ValidateNotNullOrEmpty()][string]$o_RMSkinFolder,
     [Parameter(Mandatory=$true)][Alias("rmpath")][ValidateNotNullOrEmpty()][string]$o_RMSettingsFolder,
     [switch]$Elevated
-) 
+)
 # ------------------------------- Run as admin ------------------------------- #
 function Test-Admin {
     $currentUser = New-Object Security.Principal.WindowsPrincipal $([Security.Principal.WindowsIdentity]::GetCurrent())

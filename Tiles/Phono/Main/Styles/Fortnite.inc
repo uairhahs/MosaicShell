@@ -1,4 +1,4 @@
-[Rainmeter]
+﻿[Rainmeter]
 SkinWidth=#GW#
 SkinHeight=#GH#
 Rm.Updiv=1000

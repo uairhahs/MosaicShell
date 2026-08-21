@@ -1,4 +1,4 @@
-[Variables]
+﻿[Variables]
 Height=200
 
 FontFace=Segoe UI

@@ -1,4 +1,4 @@
-[Option1]
+﻿[Option1]
 Meter=String
 Text="Show shuffle Button"
 MeterStyle=Set.String:S | Set.OptionName:S

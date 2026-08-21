@@ -1,4 +1,4 @@
-[General:Category]
+﻿[General:Category]
 Meter=String
 MeterStyle=Set.String:S | Pagecat:S
 Text=GENERAL

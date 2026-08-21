@@ -1,4 +1,4 @@
-; [mCheckforPresence]
+﻿; [mCheckforPresence]
 ; IfMatchAction=[!SetOption Header Text "#Skin.Name# - Currently in beta"][!SetOption Subheader Text "Join the Discord server to participate in beta tests!"][!ShowMeter DownloadButton][!DisableMouseActionGroup * Set.SideButtons][!SetOptionGroup Set.SideIcons ImageAlpha 100][!UpdateMeter *][!Redraw]
 ; IfNotMatchAction=[!HideMeter Obj][!HideMeter Obj.Child]
 
@@ -21,7 +21,7 @@
 ; X=(200/2*[Set.S])r
 ; y=(25*[Set.S])r
 ; FontSize=(10*[Set.S])
-; FontFace=Poppins 
+; FontFace=Poppins
 ; StringAlign=CenterCenter
 ; Text="Join the discord server!"
 ; Container=ContentContainer

@@ -1,4 +1,4 @@
-[Variables]
+﻿[Variables]
 GW=(300*#Scale#)
 GH=(300*#Scale#)
 P=(10*#Scale#)

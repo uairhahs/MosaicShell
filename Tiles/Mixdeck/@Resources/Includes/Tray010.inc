@@ -1,4 +1,4 @@
-
+﻿
 [AppVolper0]
 Measure=Plugin
 Plugin=Win7AudioPlugin

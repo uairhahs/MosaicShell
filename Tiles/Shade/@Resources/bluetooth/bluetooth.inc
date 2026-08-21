@@ -1,4 +1,4 @@
-[BT_MeasureCheckBluetoothRun]
+﻿[BT_MeasureCheckBluetoothRun]
 Measure=Plugin
 Plugin=RunCommand
 Program="#@#\bluetooth\batch\bluetoothCheck.bat"

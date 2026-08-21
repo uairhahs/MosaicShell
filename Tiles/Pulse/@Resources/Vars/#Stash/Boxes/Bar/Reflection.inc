@@ -1,4 +1,4 @@
-[Variables]
+﻿[Variables]
 ReflectionPercentage=60
 Group1XOffset=0
 Group2XOffset=0

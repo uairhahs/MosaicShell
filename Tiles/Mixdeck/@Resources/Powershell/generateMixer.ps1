@@ -15,14 +15,14 @@ function generateMixer {
             # $RmAPI.Log($AppName)
             if ($AppName -in $AppArray) {
                 $SkipIndex += $i
-            } 
+            }
             $AppArray += $appName
         }
 
         if ($collapsetype -contains 'Combine') {
             $AppHash = $AppArray | Group-Object -AsHashTable -AsString
         }
-    } 
+    }
 
 #     if (($rows -gt 0) -and ($RmAPI.Variable('Stroke') -eq 1)) {
 #         $fileContent += @"
@@ -89,7 +89,7 @@ MeterStyle=String:S | Item.Vol.String:S
 "@
             }
 
-        } 
+        }
     } else {
         for (($i = 1); ($i -le $rows) ; $i++) {
             if ($i -notin $SkipIndex) {
@@ -178,7 +178,7 @@ MeterStyle=Item.Image:S
 [Vol$i]
 Meter=String
 MeterStyle=String:S | Item.Name.String:S
-                
+
 [$i]
 Meter=Shape
 MeterStyle=Item.Shape:S
@@ -220,7 +220,7 @@ Substitute="-100":"Muted"
 "@
             }
         }
-    
+
     }
 
     $fileContent | Out-File -FilePath $($RmAPI.VariableStr('ROOTCONFIGPATH') + 'Main\\Elements\\ControlScreen\\Cache\\MixerContent.inc') -Encoding unicode

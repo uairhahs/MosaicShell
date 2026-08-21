@@ -1,4 +1,4 @@
-[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 VisualizerType=Bar
 ImageUnderlay=1
 ImageUnderlayName=#SKINSPATH#ModularVisualizer\@Resources\UserImages\10825696.jpg

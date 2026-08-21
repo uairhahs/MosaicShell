@@ -1,4 +1,4 @@
-; ---------------------------------------------------------------------------- ;
+﻿; ---------------------------------------------------------------------------- ;
 ;                                  MeterStyle                                  ;
 ; ---------------------------------------------------------------------------- ;
 [Item.Shape:S]
@@ -55,7 +55,7 @@ X=(30*[Set.S])
 MeterStyle=Set.Div:S
 [Option11]
 Meter=String
-Text=Blur modulation (Brightness, Saturation, Hue)  
+Text=Blur modulation (Brightness, Saturation, Hue)
 MeterStyle=Set.String:S | Set.OptionName:S
 [Divider132sdasd8]
 Meter=Shape

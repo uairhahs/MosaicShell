@@ -1,4 +1,4 @@
-
+﻿
 [Time]
 Meter=String
 FontSize=(37*#Scale#)
@@ -43,8 +43,8 @@ Y=(65*#Scale#)
 Container=C
 DynamicVariables=1
 Shape=Rectangle 0,0,(30*[mBattery]/100),12,2,2 | StrokeWidth 0 | Fill Color 255,255,255,50  | Scale #Scale#,#Scale#,0,0
-Shape2=Rectangle 0,0,30,12,2,2 | StrokeWidth (2*#Scale#) | Fill Color 0,0,0,0 | Stroke Color 255,255,255 
-Shape3=Rectangle 33,3,1,6,0.25,0.25 | StrokeWidth 0 | Fill Color 255,255,255 
+Shape2=Rectangle 0,0,30,12,2,2 | StrokeWidth (2*#Scale#) | Fill Color 0,0,0,0 | Stroke Color 255,255,255
+Shape3=Rectangle 33,3,1,6,0.25,0.25 | StrokeWidth 0 | Fill Color 255,255,255
 Shape4=Combine Shape2 | Union Shape3  | Scale #Scale#,#Scale#,0,0
 
 [PowerPercent]

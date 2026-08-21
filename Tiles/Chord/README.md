@@ -28,13 +28,13 @@
 ![Keylaunch](https://raw.githubusercontent.com/Jax-Core/ReadME-Template/main/Resources/Splash/Keylaunch.png)
 
 <!-- END About.mustache -->
-**Keylaunch** lets you easily launch apps with a hotkey. The application hotkey list is extremely simple to configure, and you can even change the action's name and icon. 
+**Keylaunch** lets you easily launch apps with a hotkey. The application hotkey list is extremely simple to configure, and you can even change the action's name and icon.
 
 <!-- START Features.mustache -->
 
 ## Features<!-- END Features.mustache -->
 * 5 Animation Presets
-* Vast Customization Options 
+* Vast Customization Options
 * Easy to Setup and Configure
 * Custom Icon and Action Names
 * Unlimited Hotkeys Support
@@ -66,7 +66,7 @@ A preview of all the five animation styles Keylaunch has!
 - **Windows 10** or above
 > For older systems, **Powershell v5.1 or newer** is required. Upgrade powershell **[here](https://docs.microsoft.com/en-us/powershell/scripting/windows-powershell/install/installing-windows-powershell?view=powershell-7.2#upgrading-existing-windows-powershell)**!
 
-### Installation 
+### Installation
 Run the following command in Powershell to download the latest version of JaxCore.
 
 (To launch Powershell as an Admin: `Win + R` -> `powershell` -> Press `CTRL + SHIFT + ENTER` on your keyboard. Powershell can also be launched via Windows Search.)

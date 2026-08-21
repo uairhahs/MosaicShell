@@ -1,2 +1,2 @@
-[Variables]
+﻿[Variables]
 Core.patchNoteCheckvariable=Jax Tam

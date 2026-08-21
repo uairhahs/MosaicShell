@@ -1,4 +1,4 @@
-[Variables]
+﻿[Variables]
 H=(#Height#*#scale#)
 VolumeW=(80*#Scale#)
 MediaW=(500*#Scale#)
@@ -320,7 +320,7 @@ Container=MediaC
 Meter=Shape
 X=#Border#
 Y=#Border#
-Shape=Rectangle 0,0,#LocksW#,#LocksH#,#StaticWin11Corner# | StrokeWidth (#Border#*#Scale#) | Fill Color #PrimaryColor#,#PrimaryOpacity# | Stroke Color #FontColor#,50 
+Shape=Rectangle 0,0,#LocksW#,#LocksH#,#StaticWin11Corner# | StrokeWidth (#Border#*#Scale#) | Fill Color #PrimaryColor#,#PrimaryOpacity# | Stroke Color #FontColor#,50
 Group=Locks | Special
 Hidden=1
 [LocksC]
@@ -336,7 +336,7 @@ Meter=String
 MeterStyle=String:S
 X=#P#
 Y=(26*#scale#)
-FontFace=Segoe Fluent Icons 
+FontFace=Segoe Fluent Icons
 StringAlign=LeftCenter
 FontSize=(12*#scale#)
 Group=Locks | Special

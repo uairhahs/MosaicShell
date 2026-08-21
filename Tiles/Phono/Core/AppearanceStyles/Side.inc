@@ -1,4 +1,4 @@
-
+﻿
 [Option10]
 Meter=String
 Text=Album art / bar height

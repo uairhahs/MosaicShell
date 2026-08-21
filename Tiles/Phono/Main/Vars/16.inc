@@ -1,4 +1,4 @@
-[Variables]
+﻿[Variables]
 Scale=1
 FontColor=0,0,0
 

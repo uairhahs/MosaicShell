@@ -1,4 +1,4 @@
-[Variables]
+﻿[Variables]
 GW=(#Scale#*#W#)
 GH=(#Scale#*#H#)
 
@@ -26,7 +26,7 @@ Meter=Shape
 X=r
 Y=r
 Shape=Rectangle 0,0,#GW#,#GH#,#R# | StrokeWidth 0
-Group=Music 
+Group=Music
 
 
 [ImageFade]

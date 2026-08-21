@@ -1,4 +1,4 @@
-[Variables]
+﻿[Variables]
 Blur=5
 CircSize=140
 

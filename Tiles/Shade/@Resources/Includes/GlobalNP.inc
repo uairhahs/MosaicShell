@@ -1,4 +1,4 @@
-[mCover]
+﻿[mCover]
 Measure=NowPlaying
 PlayerName=[mState]
 PlayerType=Cover

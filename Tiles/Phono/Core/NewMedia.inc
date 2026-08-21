@@ -1,4 +1,4 @@
-[Section2.Icon]
+﻿[Section2.Icon]
 MeterStyle=Set.String:S | Set.Icon:S | Section2.Icon:#AutoHide#
 [Section2.Icon:0]
 FontColor=#Set.Accent_Color#
