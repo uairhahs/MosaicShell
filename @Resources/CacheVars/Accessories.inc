@@ -1,4 +1,4 @@
-﻿[Variables]
+[Variables]
 Dimension.W=1111
 Dimension.H=734
 Arg.1=
@@ -7,6 +7,6 @@ Arg.3=
 Arg.4=
 Arg.Index=7
 Arg.VariantPath=Variants\LazyResizer.inc
-Arg.SkinName=Keylaunch
+Arg.SkinName=Chord
 Arg.SaveLocation=
 Transfer.S=1

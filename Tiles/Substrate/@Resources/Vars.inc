@@ -1,8 +1,9 @@
-﻿[Variables]
+[Variables]
 @includegVar1=#SKINSPATH##MosaicShell\@Resources\gVars\Time.inc
 @includegVar2=#SKINSPATH##MosaicShell\@Resources\gVars\Weather.inc
 @includegVar3=#SKINSPATH##MosaicShell\@Resources\gVars\WeatherAPIKey.inc
-Scale=1
+@includeScaleContract=#SKINSPATH##MosaicShell\@Resources\Includes\ScaleContract.inc
+Scale=#UiScale#
 2412=I
 ;I H
 

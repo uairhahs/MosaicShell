@@ -13,6 +13,9 @@ Set.Maximized=0
 Set.PerformanceMode=0
 Set.LegacyWindowResizing=0
 ; ----------------------------- Scaling variables ---------------------------- ;
+@includeScaleVars=#@#ScaleVars.inc
+@includeScaleContract=#@#Includes\ScaleContract.inc
+Sec.SaveLocationScale=#@#ScaleVars.inc
 Set.Home.P=(100*[Set.S])
 Set.L=(200*([Set.S]+0.2))
 Set.P=(#Set.P.Handle#*[Set.S])
@@ -39,7 +42,8 @@ Set.BlurCorner=Round
 
 [Set.S]
 Measure=Calc
-Formula=1
+Formula=(#DpiScale#*#UserScale#)
+DynamicVariables=1
 
 [Set.WindowSave]
 Measure=Calc

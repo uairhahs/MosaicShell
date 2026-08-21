@@ -30,6 +30,19 @@ Scroll=0
 @IncludeWindow=#@#Includes/Window.inc
 @IncludeMouse=#@#Includes/ScriptMouseHandler#Set.PerformanceMode#.ini
 
+[ScaleContract]
+Measure=Plugin
+Plugin=PowershellRM
+ScriptFile=#@#Powershell\ScaleContract.ps1
+DynamicVariables=1
+
+[ScaleContractInit]
+Measure=Calc
+Formula=Counter
+IfEqualValue=1
+IfEqualAction=[!CommandMeasure ScaleContract "Initialize-ScaleContract"]
+UpdateDivider=-1
+
 [p.FrostedGlass]
 Measure=Plugin
 Plugin=FrostedGlass

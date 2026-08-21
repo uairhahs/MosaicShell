@@ -1,4 +1,4 @@
-﻿[Variables]
+[Variables]
 skinW=([#SCREENAREAWIDTH@#LaunchAt#])
 skinH=(300*#Style.Scale#)
 moveX=50%@#LaunchAt#
@@ -25,7 +25,7 @@ H=(#SkinH#*#TweenNode1#)
 ImageAlpha=(50*(1-#TweenNode2#))
 DynamicVariables=1
 TransformationMatrix=(Cos(Rad(#TweenNode1#*360)));(-Sin(Rad(#TweenNode1#*360)));(Sin(Rad(#TweenNode1#*360)));(Cos(Rad(#TweenNode1#*360)));(([#CURRENTSECTION#:W]*0.5+[#CURRENTSECTION#:X])-([#CURRENTSECTION#:W]*0.5+[#CURRENTSECTION#:X])*Cos(Rad(#TweenNode1#*360))-([#CURRENTSECTION#:H]*0.5+[#CURRENTSECTION#:Y])*Sin(Rad(#TweenNode1#*360)));(([#CURRENTSECTION#:H]*0.5+[#CURRENTSECTION#:Y])+([#CURRENTSECTION#:W]*0.5+[#CURRENTSECTION#:X])*Sin(Rad(#TweenNode1#*360))-([#CURRENTSECTION#:H]*0.5+[#CURRENTSECTION#:Y])*Cos(Rad(#TweenNode1#*360)))
-ImageName=#SKINSPATH#..\CoreData\Keylaunch\IconCache\#Sec.Icon#.png
+ImageName=#SKINSPATH#..\CoreData\Chord\IconCache\#Sec.Icon#.png
 Greyscale=#Greyscale#
 
 [Image]
@@ -37,7 +37,7 @@ H=(256*#Style.Scale#*#TweenNode1#)
 ImageAlpha=(255*(1-#TweenNode2#))
 DynamicVariables=1
 TransformationMatrix=(Cos(Rad(#TweenNode1#*360)));(-Sin(Rad(#TweenNode1#*360)));(Sin(Rad(#TweenNode1#*360)));(Cos(Rad(#TweenNode1#*360)));(([#CURRENTSECTION#:W]*0.5+[#CURRENTSECTION#:X])-([#CURRENTSECTION#:W]*0.5+[#CURRENTSECTION#:X])*Cos(Rad(#TweenNode1#*360))-([#CURRENTSECTION#:H]*0.5+[#CURRENTSECTION#:Y])*Sin(Rad(#TweenNode1#*360)));(([#CURRENTSECTION#:H]*0.5+[#CURRENTSECTION#:Y])+([#CURRENTSECTION#:W]*0.5+[#CURRENTSECTION#:X])*Sin(Rad(#TweenNode1#*360))-([#CURRENTSECTION#:H]*0.5+[#CURRENTSECTION#:Y])*Cos(Rad(#TweenNode1#*360)))
-ImageName=#SKINSPATH#..\CoreData\Keylaunch\IconCache\#Sec.Icon#.png
+ImageName=#SKINSPATH#..\CoreData\Chord\IconCache\#Sec.Icon#.png
 Greyscale=#Greyscale#
 
 

@@ -27,7 +27,7 @@ ScriptFile=#@#Lua\CtxHelpers\MoveCtx.lua
 DynamicVariables=1
 
 [Variables]
-Ctx.S=((#SCREENAREAWIDTH#/1920) < (#SCREENAREAHEIGHT#/1080) ? (#SCREENAREAWIDTH#/1920) : (#SCREENAREAHEIGHT#/1080))
+Ctx.S=#UiScale#
 Ctx.BoxH=(30*#Ctx.S#)
 Ctx.W=(250*#Ctx.S#)
 Ctx.P=(10*#Ctx.S#)

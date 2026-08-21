@@ -1,5 +1,37 @@
-﻿[Variables]
-[Header01]
+﻿[Header01]
+Meter=String
+Text=UI scale
+MeterStyle=Set.String:S | Set.OptionCat:S
+[OptionScaleDpi]
+Meter=String
+Text=Windows DPI (detected)
+
+MeterStyle=Set.String:S | Set.OptionName:S
+[DividerScaleDpi]
+Meter=Shape
+MeterStyle=Set.Div:S
+[OptionScaleUser]
+Meter=String
+Text=User scale multiplier (0.75–2.0)
+
+MeterStyle=Set.String:S | Set.OptionName:S
+[DividerScaleUser]
+Meter=Shape
+MeterStyle=Set.Div:S
+[OptionScaleEffective]
+Meter=String
+Text=Effective UI scale
+
+MeterStyle=Set.String:S | Set.OptionName:S
+[DividerScaleActions]
+Meter=Shape
+MeterStyle=Set.Div:S
+[OptionScaleActions]
+Meter=String
+Text=Scale actions
+
+MeterStyle=Set.String:S | Set.OptionName:S
+[Header01b]
 Meter=String
 Text=Presets
 MeterStyle=Set.String:S | Set.OptionCat:S
@@ -138,6 +170,95 @@ Meter=String
 Text=Positive indicator color
 
 MeterStyle=Set.String:S | Set.OptionName:S
+[ValueScaleDpi]
+Meter=String
+X=((#Set.W#-30*[Set.S]-#Set.P#*3)-15*[Set.S])
+Y=([OptionScaleDpi:Y]-#Set.P#+(-30/2+8)*[Set.S]+15*[Set.S])
+W=((200-30)*[Set.S])
+ClipString=1
+StringAlign=RightCenter
+FontSize=(10*[Set.S])
+Text=#DpiScale#x ([CalcDpiPct]%)
+DynamicVariables=1
+MeterStyle=Set.String:S
+Container=ContentContainer
+[CalcDpiPct]
+Measure=Calc
+Formula=Round(#DpiScale#*100)
+DynamicVariables=1
+[UserScale]
+Meter=Shape
+MeterStyle=Set.Textbox:S
+Type=Num|0.75|2
+SaveLocation=Scale
+Y=([OptionScaleUser:Y]-#Set.P#+(-30/2+8)*[Set.S])
+[UserScaleWatch]
+Measure=String
+String=#UserScale#
+DynamicVariables=1
+OnChangeAction=[!CommandMeasure ScaleContract "Apply-ScaleContract -SkipRefresh"][!SetOption Set.S Formula "(#DpiScale#*#UserScale#)"][!UpdateMeasure Set.S][!UpdateMeter *][!Redraw]
+[ValueScaleUser]
+Meter=String
+Text=#UserScale#
+
+MeterStyle=Set.String:S | Set.Value:S
+[ValueScaleEffective]
+Meter=String
+X=((#Set.W#-30*[Set.S]-#Set.P#*3)-15*[Set.S])
+Y=([OptionScaleEffective:Y]-#Set.P#+(-30/2+8)*[Set.S]+15*[Set.S])
+W=((200-30)*[Set.S])
+ClipString=1
+StringAlign=RightCenter
+FontSize=(10*[Set.S])
+Text=[CalcUiPct]% (#DpiScale# x #UserScale#)
+DynamicVariables=1
+MeterStyle=Set.String:S
+Container=ContentContainer
+[CalcUiPct]
+Measure=Calc
+Formula=Round(#DpiScale#*#UserScale#*100)
+DynamicVariables=1
+[ButtonScaleReset]
+Meter=Shape
+MeterStyle=Set.Button:S
+Y=([OptionScaleActions:Y]-#Set.P#+(-30/2+8)*[Set.S])
+X=((#Set.W#-30*[Set.S]-#Set.P#*3)-210*[Set.S])
+OverColor=#Set.Accent_Color#,150
+LeaveColor=#Set.Accent_Color#,50
+Act=[!CommandMeasure ScaleContract "Reset-UserScale"]
+[IconScaleReset]
+Meter=String
+Text=[\xe5d5]
+FontFace=Material Icons Round
+FontSize=(14*[Set.S])
+MeterStyle=Set.String:S | Set.Value:S
+[ValueScaleReset]
+Meter=String
+X=(-25*[Set.S])r
+Y=r
+Text=Match Windows
+MeterStyle=Set.String:S | Set.Value:S
+[ButtonScaleRedetect]
+Meter=Shape
+MeterStyle=Set.Button:S
+Y=([OptionScaleActions:Y]-#Set.P#+(-30/2+8)*[Set.S])
+X=((#Set.W#-30*[Set.S]-#Set.P#*3)-420*[Set.S])
+OverColor=#Set.Ter_Color#,200
+LeaveColor=#Set.Sec_Color#
+Act=[!CommandMeasure ScaleContract "Redetect-Dpi"]
+[ValueScaleRedetect]
+Meter=String
+X=((#Set.W#-30*[Set.S]-#Set.P#*3)-420*[Set.S]+(200-15)*[Set.S])
+Y=([OptionScaleActions:Y]-#Set.P#+(-30/2+8)*[Set.S]+15*[Set.S])
+W=((200-30)*[Set.S])
+ClipString=1
+StringAlign=RightCenter
+FontSize=(10*[Set.S])
+Text=Re-detect DPI
+DynamicVariables=1
+MeterStyle=Set.String:S
+Container=ContentContainer
+LeftMouseUpAction=[!CommandMeasure ScaleContract "Redetect-Dpi"]
 [Button02]
 Meter=Shape
 MeterStyle=Set.Button:S

@@ -1,8 +1,8 @@
-﻿[Variables]
+[Variables]
 Page.Items.P=(10*[Set.S])
 Page.Items.H=(60*[Set.S])
 Page.Items.Content.P=(10*[Set.S])
-@includeSkinList=#ROOTCONFIGPATH#COreWebResources.inc
+@includeSkinList=#ROOTCONFIGPATH#CoreWebResources.inc
 
 ; ---------------------------------------------------------------------------- ;
 ;                                   Function                                   ;
@@ -59,6 +59,8 @@ ImageAlpha=255
 [ListItem.Name.String:S]
 X=(#Page.Items.Content.P#)R
 Y=(#Page.Items.H#/2-#Page.Items.Content.P#)r
+W=((#Set.W#-#HomePage.P#*3)/2-#Page.Items.Content.P#*3-(#Page.Items.H#-#Page.Items.Content.P#*2)-(24*[Set.S]))
+ClipString=1
 Text=[&Func:trim('#CURRENTSECTION#', '.Name.String', '')] (Not Installed)
 FontColor=#Set.Subtext_Color#
 StringAlign=LeftCenter
@@ -72,12 +74,12 @@ Text=[&Func:trim('#CURRENTSECTION#', '.Name.String', '')]
 FontColor=#Set.Text_Color#
 
 [ListItem.Button.String:S]
-X=((#Set.W#-#HomePage.P#*3)/2-#Page.Items.Content.P#*3-(#Page.Items.H#-#Page.Items.Content.P#*2))r
+X=(#Page.Items.Content.P#)R
 Y=r
 Text=+
 FontSize=(20*[set.S])
 FontColor=#Set.Subtext_Color#
-StringAlign=RightCenter
+StringAlign=LeftCenter
 DynamicVariables=1
 Group=List
 Hidden=1
@@ -125,96 +127,83 @@ MeterStyle=Set.String:S | List.Header.String:S
 Meter=Shape
 MeterStyle=List.Header.Shape:S
 
-[YourFlyouts.Shape]
+[Tessera.Shape]
 Meter=Shape
 X=r
 Y=(#Page.Items.P#)R
 MEterStyle=ListItem.Shape:S
-[YourFlyouts.Image]
+[Tessera.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[YourFlyouts.Name.String]
+[Tessera.Name.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Name.String:S
-[YourFlyouts.Button.String]
+[Tessera.Button.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Button.String:S
 
-[YourMixer.Shape]
+[Mixdeck.Shape]
 Meter=Shape
 MEterStyle=ListItem.Shape:S
-[YourMixer.Image]
+[Mixdeck.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[YourMixer.Name.String]
+[Mixdeck.Name.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Name.String:S
-[YourMixer.Button.String]
+[Mixdeck.Button.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Button.String:S
 
-[ValliStart.Shape]
+[Inlay.Shape]
 Meter=Shape
 MEterStyle=ListItem.Shape:S
-[ValliStart.Image]
+[Inlay.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[ValliStart.Name.String]
+[Inlay.Name.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Name.String:S
-[ValliStart.Button.String]
+[Inlay.Button.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Button.String:S
 
-[IdleStyle.Shape]
+[Slate.Shape]
 Meter=Shape
 MEterStyle=ListItem.Shape:S
-[IdleStyle.Image]
+[Slate.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[IdleStyle.Name.String]
+[Slate.Name.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Name.String:S
-[IdleStyle.Button.String]
+[Slate.Button.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Button.String:S
 
-[Keylaunch.Shape]
+[Chord.Shape]
 Meter=Shape
 MEterStyle=ListItem.Shape:S
-[Keylaunch.Image]
+[Chord.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[Keylaunch.Name.String]
+[Chord.Name.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Name.String:S
-[Keylaunch.Button.String]
+[Chord.Button.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Button.String:S
 
-[QuickNote.Shape]
+[Substrate.Shape]
 Meter=Shape
 MEterStyle=ListItem.Shape:S
-[QuickNote.Image]
+[Substrate.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[QuickNote.Name.String]
+[Substrate.Name.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Name.String:S
-[QuickNote.Button.String]
-Meter=String
-MeterStyle=Set.String:S | ListItem.Button.String:S
-
-[Keystrokes.Shape]
-Meter=Shape
-MEterStyle=ListItem.Shape:S
-[Keystrokes.Image]
-Meter=Image
-MeterStyle=ListItem.Image:S
-[Keystrokes.Name.String]
-Meter=String
-MeterStyle=Set.String:S | ListItem.Name.String:S
-[Keystrokes.Button.String]
+[Substrate.Button.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Button.String:S
 
@@ -230,70 +219,57 @@ MeterStyle=Set.String:S | List.Header.String:S
 Meter=Shape
 MeterStyle=List.Header.Shape:S
 
-[Overlayer.Shape]
+[Chrono.Shape]
 Meter=Shape
 X=r
 Y=(#Page.Items.P#)R
 MEterStyle=ListItem.Shape:S
-[Overlayer.Image]
+[Chrono.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[Overlayer.Name.String]
+[Chrono.Name.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Name.String:S
-[Overlayer.Button.String]
+[Chrono.Button.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Button.String:S
 
-[ModularVisualizer.Shape]
+[Phono.Shape]
 Meter=Shape
 MEterStyle=ListItem.Shape:S
-[ModularVisualizer.Image]
+[Phono.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[ModularVisualizer.Name.String]
+[Phono.Name.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Name.String:S
-[ModularVisualizer.Button.String]
+[Phono.Button.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Button.String:S
 
-[ModularClocks.Shape]
+[Pulse.Shape]
 Meter=Shape
 MEterStyle=ListItem.Shape:S
-[ModularClocks.Image]
+[Pulse.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[ModularClocks.Name.String]
+[Pulse.Name.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Name.String:S
-[ModularClocks.Button.String]
+[Pulse.Button.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Button.String:S
 
-[ModularPlayers.Shape]
+[Canvas.Shape]
 Meter=Shape
 MEterStyle=ListItem.Shape:S
-[ModularPlayers.Image]
+[Canvas.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[ModularPlayers.Name.String]
+[Canvas.Name.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Name.String:S
-[ModularPlayers.Button.String]
-Meter=String
-MeterStyle=Set.String:S | ListItem.Button.String:S
-
-[Plainext.Shape]
-Meter=Shape
-MEterStyle=ListItem.Shape:S
-[Plainext.Image]
-Meter=Image
-MeterStyle=ListItem.Image:S
-[Plainext.Name.String]
-Meter=String
-MeterStyle=Set.String:S | ListItem.Name.String:S
-[Plainext.Button.String]
+[Canvas.Button.String]
 Meter=String
 MeterStyle=Set.String:S | ListItem.Button.String:S
 
@@ -315,5 +291,5 @@ MeterStyle=Set.String:S | ListItem.Button.String:S | ListItem.Button.String:Inst
 [AnchorPuller]
 MEter=String
 DynamicVariables=1
-Y=[Keystrokes.Shape:YH]
+Y=[Substrate.Shape:YH]
 Container=BC

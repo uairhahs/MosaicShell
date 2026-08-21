@@ -1,4 +1,4 @@
-﻿[Variables]
+[Variables]
 Sec.W=(600*#Sec.S#)
 Sec.H=(800*#Sec.S#)
 AniDir=Top
@@ -247,68 +247,68 @@ Meter=String
 Y=#Scroll#
 MeterStyle=Sec.String:S | Category.String:S
 
-[YourFlyouts.Shape]
+[Tessera.Shape]
 Meter=Shape
 MeterStyle=ListItem.Shape:S | ListItem.Shape:Selected
-[YourFlyouts.Image]
+[Tessera.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[YourFlyouts.String]
+[Tessera.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.String:S
-[YourFlyouts.Button.String]
+[Tessera.Button.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.Button.String:S
 
-[YourMixer.Shape]
+[Mixdeck.Shape]
 Meter=Shape
 MeterStyle=ListItem.Shape:S | ListItem.Shape:Selected
-[YourMixer.Image]
+[Mixdeck.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[YourMixer.String]
+[Mixdeck.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.String:S
-[YourMixer.Button.String]
+[Mixdeck.Button.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.Button.String:S
 
-[ValliStart.Shape]
+[Inlay.Shape]
 Meter=Shape
 MeterStyle=ListItem.Shape:S
-[ValliStart.Image]
+[Inlay.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[ValliStart.String]
+[Inlay.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.String:S
-[ValliStart.Button.String]
+[Inlay.Button.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.Button.String:S
 
-[IdleStyle.Shape]
+[Slate.Shape]
 Meter=Shape
 MeterStyle=ListItem.Shape:S
-[IdleStyle.Image]
+[Slate.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[IdleStyle.String]
+[Slate.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.String:S
-[IdleStyle.Button.String]
+[Slate.Button.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.Button.String:S
 
-[Keylaunch.Shape]
+[Chord.Shape]
 Meter=Shape
 MeterStyle=ListItem.Shape:S
-[Keylaunch.Image]
+[Chord.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[Keylaunch.String]
+[Chord.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.String:S
-[Keylaunch.Button.String]
+[Chord.Button.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.Button.String:S
 
@@ -329,55 +329,55 @@ MeterStyle=Sec.String:S | ListItem.Button.String:S
 Meter=String
 MeterStyle=Sec.String:S | Category.String:S
 
-[ModularClocks.Shape]
+[Chrono.Shape]
 Meter=Shape
 MeterStyle=ListItem.Shape:S
-[ModularClocks.Image]
+[Chrono.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[ModularClocks.String]
+[Chrono.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.String:S
-[ModularClocks.Button.String]
+[Chrono.Button.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.Button.String:S
 
-[ModularPlayers.Shape]
+[Phono.Shape]
 Meter=Shape
 MeterStyle=ListItem.Shape:S
-[ModularPlayers.Image]
+[Phono.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[ModularPlayers.String]
+[Phono.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.String:S
-[ModularPlayers.Button.String]
+[Phono.Button.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.Button.String:S
 
-[ModularVisualizer.Shape]
+[Pulse.Shape]
 Meter=Shape
 MeterStyle=ListItem.Shape:S
-[ModularVisualizer.Image]
+[Pulse.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[ModularVisualizer.String]
+[Pulse.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.String:S
-[ModularVisualizer.Button.String]
+[Pulse.Button.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.Button.String:S
 
-[Plainext.Shape]
+[Canvas.Shape]
 Meter=Shape
 MeterStyle=ListItem.Shape:S
-[Plainext.Image]
+[Canvas.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[Plainext.String]
+[Canvas.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.String:S
-[Plainext.Button.String]
+[Canvas.Button.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.Button.String:S
 

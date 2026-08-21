@@ -1,4 +1,4 @@
-﻿[Variables]
+[Variables]
 skinW=([#SCREENAREAWIDTH@#LaunchAt#])
 skinH=(70*#Style.Scale#)
 moveX=0@#LaunchAt#
@@ -63,7 +63,7 @@ Y=(#skinH#/2-32/2*#Style.Scale#)
 W=(32*#Style.Scale#)
 H=(32*#Style.Scale#)
 DynamicVariables=1
-ImageName=#SKINSPATH#..\CoreData\Keylaunch\IconCache\#Sec.Icon#.png
+ImageName=#SKINSPATH#..\CoreData\Chord\IconCache\#Sec.Icon#.png
 Greyscale=#Greyscale#
 Container=ShapeC
 

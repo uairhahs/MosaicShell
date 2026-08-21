@@ -1,4 +1,4 @@
-﻿[Variables]
+[Variables]
 @includegVar2=#SKINSPATH##MosaicShell\@Resources\gVars\Weather.inc
 @includegVar3=#SKINSPATH##MosaicShell\@Resources\gVars\WeatherAPIKey.inc
 BackgroundColor=50,50,50
@@ -14,7 +14,7 @@ DetailsFlip=0
 
 IconStyle=Color
 
-Scale=1.00
+Scale=#UiScale#
 ; A size multiplier for the skin. Please stick to increments of 0.25, so "1.25", "1.5", "1.75" etc.
 Alignment=Center
 ; The alignment of the skin inside of the skin area.

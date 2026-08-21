@@ -2,6 +2,8 @@
 Blur=5
 CircSize=140
 
+@includeScaleContract=#SKINSPATH##MosaicShell\@Resources\Includes\ScaleContract.inc
+
 MainCColor=18,18,18
 MainCOpacity=150
 FontColor=255,255,255

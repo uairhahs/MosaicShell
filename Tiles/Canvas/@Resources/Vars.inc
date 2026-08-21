@@ -1,6 +1,7 @@
-﻿[Variables]
+[Variables]
 In=20
-Scale=1
+@includeScaleContract=#SKINSPATH##MosaicShell\@Resources\Includes\ScaleContract.inc
+Scale=#UiScale#
 
 Font=Consolas
 FontAlias=1

@@ -1,33 +1,34 @@
-﻿$SkinsPath = $RmAPI.VariableStr('SKINSPATH')
+$SkinsPath = $RmAPI.VariableStr('SKINSPATH')
 
 function Update {
     Check-Data
 }
 
-function Create-IdleStyle {
-    New-Item -Path "$SkinsPath..\CoreData" -Name "IdleStyle" -ItemType "directory"
-    New-Item -Path "$SkinsPath..\CoreData\IdleStyle" -Name "Include.inc" -ItemType "file"
-    $RmAPI.Log("Created: IdleStyle")
+function Create-Slate {
+    New-Item -Path "$SkinsPath..\CoreData" -Name "Slate" -ItemType "directory"
+    New-Item -Path "$SkinsPath..\CoreData\Slate" -Name "Include.inc" -ItemType "file"
+    $RmAPI.Log("Created: Slate")
 }
 
-function Create-Keylaunch {
-    New-Item -Path "$SkinsPath..\CoreData" -Name "Keylaunch" -ItemType "directory"
-    New-Item -Path "$SkinsPath..\CoreData\Keylaunch" -Name "Keylaunch.ahk" -ItemType "file"
-    New-Item -Path "$SkinsPath..\CoreData\Keylaunch" -Name "Include.inc" -ItemType "file"
-    New-Item -Path "$SkinsPath..\CoreData\Keylaunch" -Name "IconCache" -ItemType "directory"
-    New-Item -Path "$SkinsPath..\CoreData\Keylaunch\IconCache" -Name "folder.png" -ItemType "file"
-    $RmAPI.Log("Created: Keylaunch")
+function Create-Chord {
+    New-Item -Path "$SkinsPath..\CoreData" -Name "Chord" -ItemType "directory"
+    New-Item -Path "$SkinsPath..\CoreData\Chord" -Name "Chord.ahk" -ItemType "file"
+    New-Item -Path "$SkinsPath..\CoreData\Chord" -Name "Include.inc" -ItemType "file"
+    New-Item -Path "$SkinsPath..\CoreData\Chord" -Name "IconCache" -ItemType "directory"
+    New-Item -Path "$SkinsPath..\CoreData\Chord\IconCache" -Name "folder.png" -ItemType "file"
+    $RmAPI.Log("Created: Chord")
 }
+
 function Create-Updater {
     New-Item -Path "$SkinsPath..\CoreData" -Name "Updater" -ItemType "directory"
     Copy-Item -Path "$SkinsPath\#MosaicShell\@Resources\Actions\*" -Destination "$SkinsPath..\CoreData\Updater" -PassThru
     $RmAPI.Log("Created: Updater")
 }
 
-function Create-ValliStart {
-    New-Item -Path "$SkinsPath..\CoreData" -Name "ValliStart" -ItemType "directory"
-    New-Item -Path "$SkinsPath..\CoreData\ValliStart" -Name "Include.inc" -ItemType "file"
-    Set-Content "$SkinsPath..\CoreData\ValliStart\Include.inc" @"
+function Create-Inlay {
+    New-Item -Path "$SkinsPath..\CoreData" -Name "Inlay" -ItemType "directory"
+    New-Item -Path "$SkinsPath..\CoreData\Inlay" -Name "Include.inc" -ItemType "file"
+    Set-Content "$SkinsPath..\CoreData\Inlay\Include.inc" @"
 [Box1]
 Meter=Shape
 X=(#scale#*25)
@@ -61,10 +62,10 @@ MeterStyle=BoxStyle
 Meter=Image
 MeterStyle=IconStyle
 "@
-    New-Item -Path "$SkinsPath..\CoreData\ValliStart" -Name "IconCache" -ItemType "directory"
-    New-Item -Path "$SkinsPath..\CoreData\ValliStart\IconCache" -Name "folder.png" -ItemType "file"
+    New-Item -Path "$SkinsPath..\CoreData\Inlay" -Name "IconCache" -ItemType "directory"
+    New-Item -Path "$SkinsPath..\CoreData\Inlay\IconCache" -Name "folder.png" -ItemType "file"
 
-    $RmAPI.Log("Created: ValliStart")
+    $RmAPI.Log("Created: Inlay")
 }
 
 function Create-Combilaunch {
@@ -88,18 +89,18 @@ function Check-Data {
             New-Item -Path "$SkinsPath..\" -Name "CoreData" -ItemType "directory"
             $RmAPI.Bang("!Refresh")
         }
-    If (Test-Path -Path "$SkinsPath..\CoreData\Keylaunch\IconCache") {
+    If (Test-Path -Path "$SkinsPath..\CoreData\Chord\IconCache") {
     } else {
-        Create-Keylaunch
+        Create-Chord
     }
-    If (Test-Path -Path "$SkinsPath..\CoreData\IdleStyle") {
+    If (Test-Path -Path "$SkinsPath..\CoreData\Slate") {
     } else {
-        Create-IdleStyle
+        Create-Slate
     }
-    # If (Test-Path -Path "$SkinsPath..\CoreData\ValliStart\SingleRow.inc") {
-    If (Test-Path -Path "$SkinsPath..\CoreData\ValliStart\Include.inc") {
+    # If (Test-Path -Path "$SkinsPath..\CoreData\Inlay\SingleRow.inc") {
+    If (Test-Path -Path "$SkinsPath..\CoreData\Inlay\Include.inc") {
     } else {
-        Create-ValliStart
+        Create-Inlay
     }
     If (Test-Path -Path "$SkinsPath..\CoreData\Combilaunch") {
     } else {

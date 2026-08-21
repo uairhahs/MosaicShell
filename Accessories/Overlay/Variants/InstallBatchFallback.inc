@@ -6,7 +6,7 @@ DefaultFadeDuration=0
 DefaultKeepOnscreen=0
 
 [Variables]
-Transfer.S=((#SCREENAREAWIDTH#/1920) < (#SCREENAREAHEIGHT#/1080) ? (#SCREENAREAWIDTH#/1920) : (#SCREENAREAHEIGHT#/1080))
+Transfer.S=#UiScale#
 @includeVars=#@#Vars.inc
 @includeSkinVars=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
 

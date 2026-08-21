@@ -1,3 +1,3 @@
-﻿[Variables]
-Skin.Name=YourFlyouts
+[Variables]
+Skin.Name=Tessera
 Skin.Set_Page=Info

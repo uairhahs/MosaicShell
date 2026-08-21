@@ -1,14 +1,16 @@
-﻿# RunMosaicist.ps1 - MosaicShell installer (GitHub release or local working tree)
-# Hardened with fixes from .local/install-local.ps1.
+﻿# RunMosaicist.ps1 - LEGACY Rainmeter installer (local -File only)
 #
-# Remote (default):
-#   iwr -useb "https://raw.githubusercontent.com/uairhahs/MosaicShell/master/RunMosaicist.ps1" | iex
-# Local current tree (dev):
+# DO NOT use: iwr … | iex  (blocked for shipping; Defender flags Commando.A)
+#
+# Preferred native path:
+#   cd host
+#   dotnet run --project Mosaicist -- install-module Canvas
+#   dotnet run --project MosaicShell.Host
+#
+# Legacy local tree (dev / Rainmeter path only):
 #   powershell -ExecutionPolicy Bypass -File .\RunMosaicist.ps1 -Local
-#   powershell -ExecutionPolicy Bypass -File .\RunMosaicist.ps1 -Local -Force -CoreOnly
 #
-# Legacy $o_* variables still work when pre-set before iex (Installer.ps1 / S-Hub).
-
+# Legacy $o_* variables still work when pre-set for -File local runs.
 param(
     [switch]$Local,
     [switch]$Force,
@@ -806,33 +808,86 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
                     }
                 }
             } elseif (($skin_name -notcontains '#MosaicShell') -and !$o_FromSHUB -and $o_NoPostActions) {
-                debug "> Automatically changing scale variables (new installation)"
-                $vc = Get-CimInstance -ClassName Win32_VideoController
-                $saw = $vc.CurrentHorizontalResolution
-                $sah = $vc.CurrentVerticalResolution
-        #        ((#SCREENAREAWIDTH#/1920) < (#SCREENAREAHEIGHT#/1080) ? (#SCREENAREAWIDTH#/1920) : (#SCREENAREAHEIGHT#/1080))
-                $scale = 1
-                Write-Task "Getting scale"
-                If (($saw/1920) -lt ($sah/1080)) {
-                    $scale = $saw / 1920
-                } else {
-                    $scale = $sah / 1080
+                debug "> Automatically applying scale contract (new installation)"
+                Write-Task "Detecting Windows DPI scale"
+                $dpiScale = 1
+                try {
+                    if (-not ('MosaicShellDpiSystem' -as [type])) {
+                        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public class MosaicShellDpiSystem {
+  [DllImport("user32.dll")]
+  public static extern uint GetDpiForSystem();
+}
+'@
+                    }
+                    $dpiScale = [Math]::Round([MosaicShellDpiSystem]::GetDpiForSystem() / 96.0, 4)
+                } catch {
+                    try {
+                        if (-not ('MosaicShellDPI' -as [type])) {
+                            Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Drawing;
+public class MosaicShellDPI {
+  [DllImport("gdi32.dll")]
+  static extern int GetDeviceCaps(IntPtr hdc, int nIndex);
+  public enum DeviceCap { VERTRES = 10, DESKTOPVERTRES = 117 }
+  public static float Scaling() {
+    Graphics g = Graphics.FromHwnd(IntPtr.Zero);
+    IntPtr desktop = g.GetHdc();
+    try {
+      int logical = GetDeviceCaps(desktop, (int)DeviceCap.VERTRES);
+      int physical = GetDeviceCaps(desktop, (int)DeviceCap.DESKTOPVERTRES);
+      if (logical <= 0) { return 1f; }
+      return (float)physical / (float)logical;
+    } finally {
+      g.ReleaseHdc(desktop);
+      g.Dispose();
+    }
+  }
+}
+'@ -ReferencedAssemblies 'System.Drawing.dll'
+                        }
+                        $dpiScale = [Math]::Round([MosaicShellDPI]::Scaling(), 4)
+                    } catch {
+                        $dpiScale = 1
+                    }
                 }
+                if ($dpiScale -le 0) { $dpiScale = 1 }
+                $userScale = 1
+                $scale = [Math]::Round($dpiScale * $userScale, 4)
                 Write-Done
-                $scale = [math]::Round($scale,2)
-                debug "Scale is $scale"
+                debug "DpiScale=$dpiScale UserScale=$userScale UiScale=$scale"
+
+                $coreScaleVars = "$s_RMSkinFolder\#MosaicShell\@Resources\ScaleVars.inc"
+                if (Test-Path -LiteralPath "$s_RMSkinFolder\MosaicShell\@Resources\ScaleVars.inc") {
+                    $coreScaleVars = "$s_RMSkinFolder\MosaicShell\@Resources\ScaleVars.inc"
+                }
+                if (Test-Path -LiteralPath (Split-Path $coreScaleVars)) {
+                    @"
+[Variables]
+; Host-agnostic scale contract persistence.
+; UiScale = DpiScale * UserScale (see Includes\ScaleContract.inc)
+; LastUiScale=1 means Set.W/Set.H are still design-space until ScaleContract runs.
+DpiScale=$dpiScale
+UserScale=$userScale
+LastUiScale=1
+"@ | Out-File -FilePath $coreScaleVars -Encoding unicode -Force
+                    debug "Wrote ScaleVars.inc ($coreScaleVars)"
+                }
+
                 if ($scale -eq 1) {
-                    debug "Scale unchanged."
-                } elseif ($scale -eq 0) {
-                    Write-Fail "Seems like the installer is unable to identify the correct screen sizes. Skipping scaling writing."
+                    debug "UiScale is 1 — tile Scale aliases unchanged from defaults."
                 } else {
-                    Write-Task "Applying scaling to config files"
+                    Write-Task "Applying UiScale aliases to module config files"
                     $varsfile = "$s_RMSkinFolder\$skin_name\@Resources\Vars.inc"
                     If (Test-Path $varsfile) {
                         debug "Vars.inc found."
                         $Ini = Get-IniContent $varsfile
                         If ([bool]$Ini["Variables"]["Scale"]) {
-                            $Ini["Variables"]["Scale"] = $scale
+                            $Ini["Variables"]["Scale"] = "(#DpiScale#*#UserScale#)"
                             Set-IniContent $Ini $varsfile
                         }
                     }
@@ -844,7 +899,7 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
                             $Ini = Get-IniContent $i_file
                             If ([bool]$Ini["Variables"]["Scale"]) {
                                 debug "Found scale variable in $i_file"
-                                $Ini["Variables"]["Scale"] = $scale
+                                $Ini["Variables"]["Scale"] = "(#DpiScale#*#UserScale#)"
                                 Set-IniContent $Ini $i_file
                             }
                         }

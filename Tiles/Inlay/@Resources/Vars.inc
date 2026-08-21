@@ -1,4 +1,4 @@
-﻿[Variables]
+[Variables]
 ; --------------------------------- Operation -------------------------------- ;
 ReplaceWin=1
 DroptopIntegration=0
@@ -6,7 +6,8 @@ TypeToSearch=1
 BackgroundMod=0
 ShowTaskbar=1
 ; ----------------------------- Window properties ---------------------------- ;
-Scale=1
+@includeScaleContract=#SKINSPATH##MosaicShell\@Resources\Includes\ScaleContract.inc
+Scale=#UiScale#
 FixW=590
 MinH=0
 WinR=8

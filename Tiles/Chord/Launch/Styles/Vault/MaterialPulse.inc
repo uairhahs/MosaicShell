@@ -1,4 +1,4 @@
-﻿[Variables]
+[Variables]
 TweenTime1=600
 TweenTime2=600
 
@@ -29,7 +29,7 @@ W=(256)
 H=(256)
 ImageAlpha=(255*#TweenNode1#*(1-#TweenNode2#))
 DynamicVariables=1
-ImageName=#SKINSPATH#..\CoreData\Keylaunch\IconCache\#Sec.Icon#.png
+ImageName=#SKINSPATH#..\CoreData\Chord\IconCache\#Sec.Icon#.png
 
 [String]
 Meter=String

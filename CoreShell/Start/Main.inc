@@ -1,4 +1,4 @@
-﻿[Rainmeter]
+[Rainmeter]
 OnRefreshAction=[!ZPos 1][!Draggable 0][!Move (#SCREENAREAWIDTH#/2-#Sec.W#/2) (#SCREENAREAHEIGHT#/2-#Sec.H#/2)][!UpdateMEter *][!Redraw]
 AccurateText=1
 
@@ -9,14 +9,15 @@ AccurateText=1
 [Variables]
 @includeVersion=#@#Version.inc
 @includeMosaicShellChecker=#SKINSPATH#\#MosaicShell\@Resources\Version.inc
-Sec.W=870
-Sec.H=540
-Sec.P=50
-Sec.L=350
-Sec.WR=4
-Sec.R=2.5
+@includeScaleContract=#@#Includes\ScaleContract.inc
+Sec.W=(870*#UiScale#)
+Sec.H=(540*#UiScale#)
+Sec.P=(50*#UiScale#)
+Sec.L=(350*#UiScale#)
+Sec.WR=(4*#UiScale#)
+Sec.R=(2.5*#UiScale#)
 Sec.B=0
-Sec.TB=10
+Sec.TB=(10*#UiScale#)
 
 Sec.Pri_Color=17,17,27
 Sec.Sec_Color=30,30,46
@@ -49,19 +50,19 @@ IfNotMatchAction=[!HideMeter Dep.PS.Shape][!HideMeter Dep.PS.String][!Redraw]
 [CheckHotkey]
 Measure=String
 String=#ROOTCONFIG#
-IFmatch=Substrate|Keystrokes|ValliStart|QuickNote|Keylaunch|IdleStyle|YourMixer|YourFlyouts
+IFmatch=Substrate|Inlay|Chord|Slate|Mixdeck|Tessera|Chrono|Phono|Pulse|Canvas
 IfMatchaction=[!WriteKeyValue Variables RMPATH "#PROGRAMPATH#Rainmeter.exe" "#@#Actions\Hotkeys.ini"]
 
 [CheckScale]
 Measure=String
 String=#ROOTCONFIG#
-IFmatch=Substrate|Keystrokes|ValliStart|QuickNote|IdleStyle|YourMixer|YourFlyouts
-IfMatchaction=[!WriteKeyValue Variables Scale "((#SCREENAREAWIDTH#/1920) < (#SCREENAREAHEIGHT#/1080) ? (#SCREENAREAWIDTH#/1920) : (#SCREENAREAHEIGHT#/1080))" "#@#Vars.inc"]
+IFmatch=Substrate|Inlay|Slate|Mixdeck|Tessera
+IfMatchaction=[!WriteKeyValue Variables Scale "(#DpiScale#*#UserScale#)" "#@#Vars.inc"]
 
 [CheckModular]
 Measure=String
 String=#ROOTCONFIG#
-IFmatch=ModularClocks|ModularPlayers
+IFmatch=Chrono|Phono
 IfNotMatchAction=[!HideMeter Dep.IM.Shape][!HideMeter Dep.IM.String][!Redraw]
 
 [WebParser]

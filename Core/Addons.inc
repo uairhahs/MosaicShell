@@ -1,9 +1,9 @@
-﻿[Variables]
+[Variables]
 
 [SectionButton:S]
 X=((150/2+10)*[Set.S])r
 Y=(-30/2*[Set.S])r
-Shape=Rectangle 0,0,150,30,5 | StrokeWidth 0 | Scale [Set.S],[Set.S],0,0 | Extend This
+Shape=Rectangle 0,0,(150*[Set.S]),(30*[Set.S]),(5*[Set.S]) | StrokeWidth 0 | Extend This
 This=Fill Color #Set.Text_Color#,100
 MouseOverAction=[!SetOption #CURRENTSECTION# This "Fill Color #Set.Text_Color#,150"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# This "Fill Color #Set.Text_Color#,75"][!UpdateMeter #CURRENTSECTION#][!Redraw]
@@ -38,7 +38,7 @@ This=0 | EC8827 ; 0 | DA453C ; 1
 Fill=Fill Color #Set.Sec_Color#,150
 MouseOverAction=[!SetOption #CURRENTSECTION# Fill "Fill Color #Set.Sec_Color#,255"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# Fill "Fill Color #Set.Sec_Color#,150"][!UpdateMeter #CURRENTSECTION#][!Redraw]
-LeftMouseUpAction=["https://github.com/MosaicShell/ModularPlayers#how-to-install-spicetify-cli"]
+LeftMouseUpAction=["https://github.com/uairhahs/Phono#how-to-install-spicetify-cli"]
 Container=ContentContainer
 DynamicVariables=1
 

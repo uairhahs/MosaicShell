@@ -1,4 +1,4 @@
-﻿[Variables]
+[Variables]
 ; -------------------------------- Activation -------------------------------- ;
 Hotkey=1
 StayOnDesktop=0
@@ -30,4 +30,5 @@ XPad=10
 YPad=10
 PreserveTaskbarSpace=1
 
-Scale=1
+@includeScaleContract=#SKINSPATH##MosaicShell\@Resources\Includes\ScaleContract.inc
+Scale=#UiScale#

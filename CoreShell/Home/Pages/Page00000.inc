@@ -1,4 +1,4 @@
-﻿[Variables]
+[Variables]
 BoxH=50
 
 ; ---------------------------------------------------------------------------- ;
@@ -51,7 +51,7 @@ Container=BC
 [title.Text1]
 Meter=String
 MeterStyle=Set.String:S
-Text=Developer tools
+Text=Developer Tools
 X=(#Set.W#/2)
 Y=((110*[Set.S]))
 FontSize=(40*[Set.S])
@@ -71,7 +71,7 @@ FontFace=#Set.Font#
 Fontcolor=#Set.SubText_Color#
 StringAlign=Center
 MeterStyle=Set.String:S
-Text=You can find the tools you need as a developer for Core.
+Text=Internal utilities for setup, installs, and packaging. Not required for normal use.
 
 
 ; [Section1]
@@ -99,7 +99,7 @@ Text=[\xe57b]
 MeterStyle=Set.String:S | Set.Icon:S | Sec.Section.Icon:S
 [Section2.Text]
 Meter=String
-Text="activateConfig #MosaicShell\Accessories\Welcome"
+Text=Welcome / setup wizard
 MeterStyle=Set.String:S | Sec.Section.Text:S
 
 ; [Section3]
@@ -125,7 +125,7 @@ Text=[\xe57b]
 MeterStyle=Set.String:S | Set.Icon:S | Sec.Section.Icon:S
 [Section4.Text]
 Meter=String
-Text="core_install"
+Text=Core installer
 MeterStyle=Set.String:S | Sec.Section.Text:S
 
 [Section5]
@@ -138,18 +138,18 @@ Text=[\xe57b]
 MeterStyle=Set.String:S | Set.Icon:S | Sec.Section.Icon:S
 [Section5.Text]
 Meter=String
-Text="core_stuff_batch_installer"
+Text=Batch install modules
 MeterStyle=Set.String:S | Sec.Section.Text:S
 
-[Sectom6]
+[Section6]
 Meter=Shape
 MeterStyle=Sec.Section.Shape:S
 LeftMouseUpAction=[!activateConfig "#MosaicShell\Main" "S-Hub.ini"]
-[Sectom6.Icon]
+[Section6.Icon]
 Meter=String
 Text=[\xead5]
 MeterStyle=Set.String:S | Set.Icon:S | Sec.Section.Icon:S
-[Sectom6.Text]
+[Section6.Text]
 Meter=String
-Text="mosaicshell_s-hub_app"
+Text=S-Hub packager
 MeterStyle=Set.String:S | Sec.Section.Text:S

@@ -6,3 +6,9 @@
 
 # auto generated stubs
 .codebase-memory
+# .NET host
+**/bin/
+**/obj/
+*.user
+*.suo
+

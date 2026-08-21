@@ -1,4 +1,4 @@
-﻿[Rainmeter]
+[Rainmeter]
 SkinWidth=#Sec.W#
 
 [Variables]
@@ -7,8 +7,8 @@ Sec.H=(300*#Sec.S#)
 Sec.Size1=(180*#Sec.S#)
 Sec.Size2=0
 AniDir=Bottom
-Sec.SaveLocation=#SKINSPATH#..\CoreData\Keylaunch\Act.inc
-@includeSkinActions=#SKINSPATH#..\CoreData\Keylaunch\Act.inc
+Sec.SaveLocation=#SKINSPATH#..\CoreData\Chord\Act.inc
+@includeSkinActions=#SKINSPATH#..\CoreData\Chord\Act.inc
 
 
 [moveX]
@@ -35,7 +35,7 @@ GetTarget=0
 AllowNonstorageFolder=1
 CopyLink=1
 GetIcon=1
-IconCache=#SKINSPATH#..\CoreData\Keylaunch\IconCache\
+IconCache=#SKINSPATH#..\CoreData\Chord\IconCache\
 IconSize=3
 ReturnValue=WholePath
 FileInitialDirectory=
@@ -108,7 +108,7 @@ Y=(30*#Sec.S#)
 W=(#Sec.H#-#Sec.P#-30*#Sec.S#)
 H=(#Sec.H#-#Sec.P#-30*#Sec.S#)
 DynamicVariables=1
-ImageName=#SKINSPATH#..\CoreData\Keylaunch\IconCache\[##Sec.arg1#Icon].png
+ImageName=#SKINSPATH#..\CoreData\Chord\IconCache\[##Sec.arg1#Icon].png
 
 [Name]
 Meter=String
@@ -161,7 +161,7 @@ MEterStyle=Sec.String:S | Button.String:S
 [Button3.String]
 Meter=String
 Text=Open icons directory
-Leftmouseupaction=["#SKINSPATH#..\CoreData\Keylaunch\IconCache\"]
+Leftmouseupaction=["#SKINSPATH#..\CoreData\Chord\IconCache\"]
 MEterStyle=Sec.String:S | Button.String:S
 
 [Button4.String]

@@ -1,11 +1,11 @@
 ﻿[Variables]
 ; --------------------------- Customizing variables -------------------------- ;
-MinWindowW=500
-MinWindowH=375
-MaxWindowW=1920
-MaxWindowH=1080
-ScaleWindowW=1000
-Set.TitleBarH=34
+MinWindowW=(500*#UiScale#)
+MinWindowH=(375*#UiScale#)
+MaxWindowW=(1920*#UiScale#)
+MaxWindowH=(1080*#UiScale#)
+ScaleWindowW=(1000*#UiScale#)
+Set.TitleBarH=(34*#UiScale#)
 ; ScaleWindowH=740
 ; ---------------------------------------------------------------------------- ;
 ;                             CacheWindowVariables                             ;
@@ -13,7 +13,7 @@ Set.TitleBarH=34
 WindowPosX=2046
 WindowPosY=149
 ; ---------------------------- Important variables --------------------------- ;
-WindowDragMarginSize=6
+WindowDragMarginSize=(6*#UiScale#)
 
 ; ---------------------------------------------------------------------------- ;
 ;                                   Measures                                   ;

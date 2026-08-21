@@ -82,7 +82,7 @@ The root manifest contains metadata, display geometry, and component-specific se
     "WinVS": "C:\\Windows\\Resources\\Themes\\Nordic.theme"
   },
   "Rainmeter": {
-    "Skins": "Tessera|Mixdeck|ModularClocks",
+    "Skins": "Tessera|Mixdeck|Chrono",
     "Droptop": false
   },
   "Spicetify": {

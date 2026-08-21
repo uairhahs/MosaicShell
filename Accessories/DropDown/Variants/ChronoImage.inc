@@ -1,10 +1,10 @@
-﻿[Variables]
-SaveLocation="#SKINSPATH#ModularCLocks\@Resources\Vars.inc"
+[Variables]
+SaveLocation="#SKINSPATH#Chrono\@Resources\Vars.inc"
 SaveKey=Fill
 
 [String:S]
 Text=#CURRENTSECTION# Fill
-LeftMouseUpAction=[!WriteKeyValue Variables "#SaveKey#" "#CURRENTSECTION#" "#SaveLocatioN#"][!Refresh "#MosaicShell\Main"][!Refresh "ModularClocks\Main"][!DeactivateConfig]
+LeftMouseUpAction=[!WriteKeyValue Variables "#SaveKey#" "#CURRENTSECTION#" "#SaveLocatioN#"][!Refresh "#MosaicShell\Main"][!Refresh "Chrono\Main"][!DeactivateConfig]
 
 ; ---------------------------------------------------------------------------- ;
 ;                                    Content                                   ;

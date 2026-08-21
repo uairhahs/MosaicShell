@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference = 'SilentlyContinue'
+$ErrorActionPreference = 'SilentlyContinue'
 # ---------------------------------------------------------------------------- #
 #                                   Functions                                  #
 # ---------------------------------------------------------------------------- #
@@ -151,15 +151,11 @@ function Install($installModuleObj, $Version) {
     If ($RmAPI.VariableStr('Set.UseExtInstaller') -eq '1') {
         $command += "`$o_ExtInstall=`$true;"
     }
-    $command += "iwr -useb 'https://raw.githubusercontent.com/uairhahs/MosaicShell/main/RunMosaicist.ps1' | iex`""
-    # --------------------------------- Fallback --------------------------------- #
+    # Cutover: remote iwr|iex is forbidden (Defender Commando.A). Use Mosaicist.
+    $RmAPI.Log("Install via Mosaicist is required. Remote iwr|iex has been disabled.")
     $RmAPI.Bang("[!CommandMeasure Func `"startOverlay('InstallFallback')`"]")
-    # ---------------------------- Launch PS instance ---------------------------- #
-    If (Test-Path "C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe") {
-        Start-Process "C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe" -ArgumentList "-ExecutionPolicy Bypass", $command
-    } else {
-        Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass", $command
-    }
+    Write-Error "Blocked: iwr|iex installer path removed. Run: dotnet run --project host/Mosaicist -- install-module <Id>"
+    return
 }
 
 function InstallBatch () {
@@ -173,7 +169,7 @@ function InstallBatch () {
 # ---------------------------------------------------------------------------- #
 
 function BatchInstall-CreateList {
-    [System.Collections.ArrayList]$global:batchinstall_list = @('YourFlyouts', 'YourMixer')
+    [System.Collections.ArrayList]$global:batchinstall_list = @('Tessera', 'Mixdeck')
 }
 
 function BatchInstall-AddToList($name) {
@@ -194,7 +190,8 @@ function CheckAvailableUpdates {
 
     for ($i=0; $i -lt $SkinArray.Count; $i++) {
         $moduleName = $SkinArray[$i]
-        If (Test-Path -Path "$($skinspath)$moduleName\") {
+        $installed = (Test-Path -Path "$($skinspath)$moduleName\") -or (Test-Path -Path "$($skinspath)#MosaicShell\Tiles\$moduleName\") -or (Test-Path -Path "$($skinspath)Tiles\$moduleName\")
+        If ($installed) {
             try {
                 $latest_v = '0.0'
                 $urls = @(
@@ -216,7 +213,18 @@ function CheckAvailableUpdates {
                 debug "$moduleName repository does not exist or is hidden"
                 $latest_v = '0.0'
             } finally {
-                Get-Content "$($skinspath)$moduleName\@Resources\Version.inc" -Raw | Select-String -Pattern '\d\.\d+' -AllMatches | Foreach-Object {$local_v = $_.Matches.Value}
+                $versionCandidates = @(
+                    "$($skinspath)$moduleName\@Resources\Version.inc",
+                    "$($skinspath)#MosaicShell\Tiles\$moduleName\@Resources\Version.inc",
+                    "$($skinspath)Tiles\$moduleName\@Resources\Version.inc"
+                )
+                $local_v = '0.0'
+                foreach ($verFile in $versionCandidates) {
+                    if (Test-Path -LiteralPath $verFile) {
+                        Get-Content $verFile -Raw | Select-String -Pattern '\d\.\d+' -AllMatches | Foreach-Object {$local_v = $_.Matches.Value}
+                        break
+                    }
+                }
                 debug "$moduleName ✔️ - 🔼 |$latest_v| 🔽 |$local_v|"
                 if ($latest_v -gt $local_v) {
                     $global:batchinstall_list.Add("$moduleName")

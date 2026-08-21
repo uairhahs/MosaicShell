@@ -1,5 +1,7 @@
 ﻿[Variables]
-R=(20*#scale#)
+@includeScaleContract=#SKINSPATH##MosaicShell\@Resources\Includes\ScaleContract.inc
+Scale=#UiScale#
+R=(20*#Scale#)
 
 Style=Side
 

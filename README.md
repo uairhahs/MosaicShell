@@ -30,9 +30,21 @@ Forked from [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore), archived No
 | Requirement | Minimum |
 |-------------|---------|
 | OS | Windows 10 x64 or later |
+| .NET SDK | 8.0 (native host) |
 | RAM | 6 GB |
-| CPU | 4 cores |
-| PowerShell | v5.1 or later — [upgrade here](https://docs.microsoft.com/en-us/powershell/scripting/windows-powershell/install/installing-windows-powershell?view=powershell-7.2#upgrading-existing-windows-powershell) |
+
+**Primary (native Avalonia host):**
+
+```powershell
+cd host
+dotnet test MosaicShell.Core.Tests
+dotnet run --project Mosaicist -- install-module Canvas
+dotnet run --project MosaicShell.Host
+```
+
+See [docs/architecture-native.md](docs/architecture-native.md) and [docs/native-rewrite.md](docs/native-rewrite.md).
+
+The classic Rainmeter + `RunMosaicist.ps1 -Local` path remains available for legacy skins. **Do not use `iwr|iex`** — that path is blocked in shipping installs.
 
 ## Installation
 
@@ -57,7 +69,7 @@ Tiles are Rainmeter skins bundled with MosaicShell under `Tiles/`.
 | Inlay | Start menu replacement with hot apps, shortcuts, and modules | MPL-2.0 |
 | Slate | Idle / lock screen skin | MPL-2.0 |
 | Chord | Keyboard-driven app launcher | MPL-2.0 |
-| Shade | Notification shade inspired by MIUI | MPL-2.0 |
+| Substrate | Notification shade / control center | MPL-2.0 |
 | Pulse | Audio visualizer with bar, round, and vector styles | MIT |
 | Chrono | Clock collection with multiple display styles | MIT |
 | Phono | Media player widget with multiple layouts | MIT |

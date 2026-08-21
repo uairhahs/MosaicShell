@@ -49,14 +49,14 @@ IfNotMatchAction=[!HideMeter Dep.PS.Shape][!HideMeter Dep.PS.String][!Redraw]
 [CheckHotkey]
 Measure=String
 String=#ROOTCONFIG#
-IFmatch=Substrate|Keystrokes|Inlay|QuickNote|Keylaunch|Slate|Mixdeck|Tessera|Chrono|Phono|Pulse|Canvas|Chord
+IFmatch=Substrate|Inlay|Chord|Slate|Mixdeck|Tessera|Chrono|Phono|Pulse|Canvas
 IfMatchaction=[!WriteKeyValue Variables RMPATH "#PROGRAMPATH#Rainmeter.exe" "#@#Actions\Hotkeys.ini"]
 
 [CheckScale]
 Measure=String
 String=#ROOTCONFIG#
-IFmatch=Substrate|Keystrokes|Inlay|QuickNote|Slate|Mixdeck|Tessera
-IfMatchaction=[!WriteKeyValue Variables Scale "((#SCREENAREAWIDTH#/1920) < (#SCREENAREAHEIGHT#/1080) ? (#SCREENAREAWIDTH#/1920) : (#SCREENAREAHEIGHT#/1080))" "#@#Vars.inc"]
+IFmatch=Substrate|Inlay|Slate|Mixdeck|Tessera
+IfMatchaction=[!WriteKeyValue Variables Scale "(#DpiScale#*#UserScale#)" "#@#Vars.inc"]
 
 [CheckModular]
 Measure=String

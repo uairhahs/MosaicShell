@@ -1,6 +1,6 @@
-﻿[Variables]
-@includeAct=#SKINSPATH#..\CoreData\Keylaunch\Act.inc
-Sec.SaveLocation=#SKINSPATH#..\CoreData\Keylaunch\Act.inc
+[Variables]
+@includeAct=#SKINSPATH#..\CoreData\Chord\Act.inc
+Sec.SaveLocation=#SKINSPATH#..\CoreData\Chord\Act.inc
 Sec.ForceWriteVariables=0
 Sec.AnchorName=AnchorSuppli
 
@@ -166,7 +166,7 @@ MeterStyle=Set.Div:S
 [1.Shape]
 Y=(10*[Set.S])R
 
-@includeInclude=#SKINSPATH#..\CoreData\Keylaunch\Include.inc
+@includeInclude=#SKINSPATH#..\CoreData\Chord\Include.inc
 
 
 ; ---------------------------------------------------------------------------- ;
@@ -180,4 +180,4 @@ Container=ContentContainer
 x=r
 Y=R
 
-@includeKeys=#SKINSPATH#..\CoreData\Keylaunch\Hotkeys.inc
+@includeKeys=#SKINSPATH#..\CoreData\Chord\Hotkeys.inc

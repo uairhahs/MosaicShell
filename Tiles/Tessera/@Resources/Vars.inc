@@ -1,4 +1,6 @@
 ﻿[Variables]
+@includeScaleContract=#SKINSPATH##MosaicShell\@Resources\Includes\ScaleContract.inc
+Scale=#UiScale#
 ; ---------------------------- Operation settings ---------------------------- ;
 Timeout=2
 ; ----------------------------- Behavior settings ---------------------------- ;

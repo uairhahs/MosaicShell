@@ -1,4 +1,4 @@
-﻿[Variables]
+[Variables]
 Sec.AnchorName=AnchorSuppli
 Sec.SaveLocation=#SKINSPATH##Skin.Name#\Launch\Vars\#Style#.inc
 @includeSaveLocation=#SKINSPATH##Skin.Name#\Launch\Vars\#Style#.inc
@@ -72,7 +72,7 @@ Shape=Rectangle 0,0,([ContentContainer:W]-#Set.P#-40*[Set.s]),(30*[Set.S]),(5*[S
 Stroke=Stroke Color 0,0,0,1 | Fill Color 0,0,0,1
 MouseOverAction=[!SetOption #CURRENTSECTION# Stroke "Stroke Color #Set.Subtext_Color#,25 | Fill Color #Set.Subtext_Color#,25"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# Stroke "Stroke Color 0,0,0,1 | Fill Color 0,0,0,1"][!UpdateMeter #CURRENTSECTION#][!Redraw]
-LeftMouseUpAction=[!WriteKeyValue Variables Sec.Name "Keylaunch" "#SKINSPATH##SKin.Name#\Launch\Main.ini"][!WriteKeyValue Variables Sec.Icon "folder_png" "#SKINSPATH##SKin.Name#\Launch\Main.ini"][!WriteKeyValue Variables Sec.Action "" "#SKINSPATH##SKin.Name#\Launch\Main.ini"][!ActivateConfig "Keylaunch\Launch" "Main.ini"]
+LeftMouseUpAction=[!WriteKeyValue Variables Sec.Name "Chord" "#SKINSPATH##SKin.Name#\Launch\Main.ini"][!WriteKeyValue Variables Sec.Icon "folder_png" "#SKINSPATH##SKin.Name#\Launch\Main.ini"][!WriteKeyValue Variables Sec.Action "" "#SKINSPATH##SKin.Name#\Launch\Main.ini"][!ActivateConfig "Chord\Launch" "Main.ini"]
 DynamicVariables=1
 Container=ContentContainer
 [Animation.Button1.String:S]

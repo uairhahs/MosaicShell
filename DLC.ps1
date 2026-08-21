@@ -13,7 +13,7 @@ function reinstall_all {
     $folderDLCs = "$($skinsPath)..\CoreData\@DLCs\"
     $fileInstalledDLCs = "$($folderDLCs)InstalledDLCs.inc"
     "" | Out-File -FilePath $fileInstalledDLCs -Encoding unicode -Force
-    $RmAPI.Bang("[!Delay 200][!WriteKeyvalue Variables Page.Subpage 2 `"$($skinsPath)#MosaicShell\CoreShell\Home\Page2.inc`"][!Refresh]")
+    $RmAPI.Bang("[!Delay 200][!WriteKeyvalue Variables Sec.Page 3 `"$($skinsPath)#MosaicShell\Main\Home.ini`"][!Refresh]")
 }
 
 function check-update {
@@ -32,7 +32,7 @@ function check-update {
     $fileIncluder0_Mixdeck = "$($skinsPath)Mixdeck\Core\Layout\Includer.inc"
     $fileIncluder0_Tessera = "$($skinsPath)Tessera\Core\Layout\Includer.inc"
     $fileIncluder0_Inlay = "$($skinsPath)Inlay\Core\Layout\Includer.inc"
-    $fileIncluder1_Inlay = "$($skinsPath)Inlay\Core\Window\ValliModule\4.inc"
+    $fileIncluder1_Inlay = "$($skinsPath)Inlay\Core\Window\InlayModule\4.inc"
 
     # -------------------------- Generate DLC structure -------------------------- #
     If (!(Test-Path "$folderDLCs")) {
@@ -374,13 +374,13 @@ Y=R
         }
     }
     if ($RmAPI.VariableStr('Page.Complete_Reinstallation') -contains '1') {
-        $RmAPI.Bang("[!WriteKeyvalue Variables Page.Complete_Reinstallation 0 `"$skinDir\CoreShell\Home\Page2.inc`"]")
+        $RmAPI.Bang("[!WriteKeyvalue Variables Sec.Page 3 `"$skinDir\Main\Home.ini`"]")
         If ($RmAPI.VariableStr('Page.Reinstallation_isSingle') -contains 'True') {
             $RmAPI.Bang("[!ActivateConfig `"$($RmAPI.VariableStr('SKin.name'))\Main`"][!ActivateConfig `"#MosaicShell\Main`" `"Settings.ini`"]")
         } else {
             $RmAPI.Bang("[!Delay 200][!WriteKeyValue Variables Sec.Page 1 `"$skinspath\#MosaicShell\Main\Home.ini`"][!Refresh]")
         }
-    } else {$RmAPI.Bang("[!Delay 200][!WriteKeyvalue Variables Page.Subpage 1 `"$skinDir\CoreShell\Home\Page2.inc`"][!Refresh]")}
+    } else {$RmAPI.Bang("[!Delay 200][!WriteKeyvalue Variables Sec.Page 3 `"$skinDir\Main\Home.ini`"][!Refresh]")}
 }
 
 function moveDLC($path) {
@@ -394,5 +394,5 @@ function moveDLC($path) {
         Return
     }
     Move-Item -Path $path -Destination $folderDLCPackages
-    $RmAPI.Bang("[!Delay 500][!WriteKeyvalue Variables Page.Subpage 2 `"$skinDir\CoreShell\Home\Page2.inc`"][!Refresh]")
+    $RmAPI.Bang("[!Delay 500][!WriteKeyvalue Variables Sec.Page 3 `"$skinDir\Main\Home.ini`"][!Refresh]")
 }

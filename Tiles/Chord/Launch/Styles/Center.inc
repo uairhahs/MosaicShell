@@ -1,4 +1,4 @@
-﻿[Variables]
+[Variables]
 skinW=([#SCREENAREAWIDTH@#LaunchAt#])
 skinH=(350*#Style.Scale#)
 moveX=50%@#LaunchAt#
@@ -24,7 +24,7 @@ W=(#SkinH#*#TweenNode1#)
 H=(#SkinH#*#TweenNode1#)
 ImageAlpha=(50*(1-#TweenNode2#))
 DynamicVariables=1
-ImageName=#SKINSPATH#..\CoreData\Keylaunch\IconCache\#Sec.Icon#.png
+ImageName=#SKINSPATH#..\CoreData\Chord\IconCache\#Sec.Icon#.png
 Greyscale=#Greyscale#
 
 [Image]
@@ -35,7 +35,7 @@ W=(256*#Style.Scale#*#TweenNode1#)
 H=(256*#Style.Scale#*#TweenNode1#)
 ImageAlpha=(255*(1-#TweenNode2#))
 DynamicVariables=1
-ImageName=#SKINSPATH#..\CoreData\Keylaunch\IconCache\#Sec.Icon#.png
+ImageName=#SKINSPATH#..\CoreData\Chord\IconCache\#Sec.Icon#.png
 Greyscale=#Greyscale#
 
 [String]

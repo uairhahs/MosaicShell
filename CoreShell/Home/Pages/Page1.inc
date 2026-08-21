@@ -26,10 +26,10 @@ Measure=String
 STring=#PostWelcome.Guide##PostWelcome.GameMode#
 DynamicVariables=1
 IfMatch=^1.$
-IfMatchAction=[!WriteKeyValue Variables Set.W (#SCREENAREAWIDTH#*0.65) "#@#Vars.inc"][!WriteKeyValue Variables Set.H (0.65*#SCREENAREAWIDTH#*3/4) "#@#Vars.inc"][!WriteKeyValue Set.S Formula "((#SCREENAREAWIDTH#/1920) < (#SCREENAREAHEIGHT#/1080) ? (#SCREENAREAWIDTH#/1920) : (#SCREENAREAHEIGHT#/1080))" "#@#Vars.inc"][!SetOption Set.S Formula "((#SCREENAREAWIDTH#/1920) < (#SCREENAREAHEIGHT#/1080) ? (#SCREENAREAWIDTH#/1920) : (#SCREENAREAHEIGHT#/1080))"][!UpdateMeasure Set.S][!SetVariable Set.W (#SCREENAREAWIDTH#*0.65)][!SetVariable Set.H (0.65*#SCREENAREAWIDTH#*3/4)][!UpdateMeter *][!Redraw][!Move (#SCREENAREAWIDTH#*(0.5-0.65/2)) (#SCREENAREAHEIGHT#/2-#SCREENAREAWIDTH#*0.65*0.75/2)]
+IfMatchAction=[!WriteKeyValue Variables Set.W (#SCREENAREAWIDTH#*0.65) "#@#Vars.inc"][!WriteKeyValue Variables Set.H (0.65*#SCREENAREAWIDTH#*3/4) "#@#Vars.inc"][!WriteKeyValue Set.S Formula "(#DpiScale#*#UserScale#)" "#@#Vars.inc"][!SetOption Set.S Formula "(#DpiScale#*#UserScale#)"][!UpdateMeasure Set.S][!SetVariable Set.W (#SCREENAREAWIDTH#*0.65)][!SetVariable Set.H (0.65*#SCREENAREAWIDTH#*3/4)][!UpdateMeter *][!Redraw][!Move (#SCREENAREAWIDTH#*(0.5-0.65/2)) (#SCREENAREAHEIGHT#/2-#SCREENAREAWIDTH#*0.65*0.75/2)]
 IfMatch2=^.1$
 IfMatchAction2=[!Manage GameMode]
-OnUpdateAction=[!WriteKeyValue Variables PostWelcome.Guide 0 "#ROOTCONFIGPATH#CoreShell\Home\Page1.inc"][!WriteKeyValue Variables PostWelcome.GameMode 0 "#ROOTCONFIGPATH#CoreShell\Home\Page1.inc"]
+OnUpdateAction=[!WriteKeyValue Variables PostWelcome.Guide 0 "#ROOTCONFIGPATH#CoreShell\Home\Pages\Page1.inc"][!WriteKeyValue Variables PostWelcome.GameMode 0 "#ROOTCONFIGPATH#CoreShell\Home\Pages\Page1.inc"]
 
 [LogicalScript]
 Measure=Script
@@ -105,37 +105,43 @@ H=(32*[Set.S])
 DynamicVariables=1
 Container=#Sec.Container#
 
+[Discover.Card.Shape:S]
+X=#HomePage.P#
+Y=(#Page.Items.P#)R
+Shape=Rectangle 0,0,((#Set.W#-#HomePage.P#*3)/2),#Page.Items.H#,(#Set.R#) | StrokeWidth 0 | Extend This
+This=Fill Color #Set.Sec_Color#
+DynamicVariables=1
+Container=#Sec.Container#
+MouseOverAction=[!SetOption #CURRENTSECTION# This "Fill Color #Set.Ter_Color#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
+MouseLeaveAction=[!SetOption #CURRENTSECTION# This "Fill Color #Set.Sec_Color#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
+
+[Discover.Card.Title:S]
+X=(#Page.Items.Content.P#)r
+Y=(#Page.Items.Content.P#)r
+FontSize=(18*[Set.S])
+FontWeight=650
+Container=#Sec.Container#
+
+[Discover.Card.Body:S]
+X=r
+Y=(8*[Set.S])R
+W=((#Set.W#-#HomePage.P#*3)/2-#Page.Items.Content.P#*2)
+ClipString=2
+FontColor=#Set.SubText_Color#
+Container=#Sec.Container#
+
 ; ---------------------------------------------------------------------------- ;
 ;                                    Content                                   ;
 ; ---------------------------------------------------------------------------- ;
 
-[Header.Shape]
-Meter=Shape
-X=0
-Y=(#SCroll#+#Set.TitleBarH#)
-Shape=Rectangle 0,0,(#Set.W#),(90*[Set.S]) | StrokeWidth 0 | Fill Color #Set.Sec_Color#
-Shape2=Rectangle 0,(90*[Set.S]),(#Set.W#),(2*[Set.S]) | StrokeWidth 0 | Fill Color #Set.Sec_Color#
-DynamicVariables=1
-Container=#Sec.Container#
-
-[Header.MosaicShell.String]
-Meter=String
-X=(#HomePage.P#)
-Y=(90*[Set.S]/2+2*[Set.S]+#Scroll#+#Set.TitleBarH#)
-Stringalign=LeftCenter
-Text=MosaicShell
-FontSize=(32*[Set.S])
-FontWeight=650
-FontFace=#Set.Font#
-InlineSetting=GradientColor | 45 | #Set.Accent_Color_2# ; 1 | #Set.Accent_Color# ;0
-MeterStyle=Set.String:S
-LeftMouseUpAction=[!WriteKeyValue Variables Sec.Page "00000"][!Refresh]
+[Header.String]
+Text=Discover
 
 ; ----------------------------------- Links ---------------------------------- ;
 [Header.Link1.Shape]
 Meter=Shape
 X=(#Set.W#-#HomePage.P#)
-Y=r
+Y=(90*[Set.S]/2+2*[Set.S]+#Scroll#)
 LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell"]
 MeterStyle=Header.Link.Shape:S
 [Header.Link1.Image]
@@ -145,20 +151,80 @@ MeterStyle=Header.Link.Image:S
 ToolTipTitle=GitHub
 ToolTipText=Source, releases, and issues for MosaicShell.
 
-; ---------------------------------------------------------------------------- ;
-;                                    Content                                   ;
-; ---------------------------------------------------------------------------- ;
+; ----------------------------- Discover cards ------------------------------- ;
 
-; ---------------------------------------------------------------------------- ;
-;                               Fallback content                               ;
-; ---------------------------------------------------------------------------- ;
-
-[Fallback.String]
+[Card.Library.Shape]
+Meter=Shape
+X=#HomePage.P#
+Y=(90*[Set.S]+#Page.Items.P#+#Scroll#)
+MeterStyle=Discover.Card.Shape:S
+LeftMouseUpAction=[!WriteKeyValue Variables Sec.Page "3"][!Refresh]
+[Card.Library.Title]
 Meter=String
-Text=Welcome to MosaicShell#CRLF#Your desktop, composed.
-X=(#Set.W#/2)
-Y=(#Set.H#/2)
-Hidden=1
-LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell"]
-StringAlign=CenterCenter
+Text=Library
+MeterStyle=Set.String:S | Discover.Card.Title:S
+[Card.Library.Body]
+Meter=String
+Text=Browse installed tiles and open module settings from one place.
+MeterStyle=Set.String:S | Discover.Card.Body:S
+
+[Card.Settings.Shape]
+Meter=Shape
+X=(#Set.W#/2+#HomePage.P#/2)
+Y=(90*[Set.S]+#Page.Items.P#+#Scroll#)
+MeterStyle=Discover.Card.Shape:S
+LeftMouseUpAction=[!WriteKeyValue Variables Skin.Name "#MosaicShell" "#@#CacheVars\Configurator.inc"][!WriteKeyValue Variables Skin.Set_Page General "#@#CacheVars\Configurator.inc"][!ActivateConfig "#CURRENTCONFIG#" "Settings.ini"]
+[Card.Settings.Title]
+Meter=String
+Text=Settings
+MeterStyle=Set.String:S | Discover.Card.Title:S
+[Card.Settings.Body]
+Meter=String
+Text=Theme, scale, blur, and MosaicShell appearance options.
+MeterStyle=Set.String:S | Discover.Card.Body:S
+
+[Card.Welcome.Shape]
+Meter=Shape
+X=#HomePage.P#
+Y=(#Page.Items.P#)R
+MeterStyle=Discover.Card.Shape:S
+LeftMouseUpAction=[!WriteKeyValue Variables process.page 0 "#ROOTCONFIGPATH#Accessories\Welcome\Main.ini"][!ActivateConfig "#MosaicShell\Accessories\Welcome"]
+[Card.Welcome.Title]
+Meter=String
+Text=Welcome setup
+MeterStyle=Set.String:S | Discover.Card.Title:S
+[Card.Welcome.Body]
+Meter=String
+Text=Re-run the first-run guide for desktop shortcuts and startup options.
+MeterStyle=Set.String:S | Discover.Card.Body:S
+
+[Card.About.Shape]
+Meter=Shape
+X=(#Set.W#/2+#HomePage.P#/2)
+Y=r
+MeterStyle=Discover.Card.Shape:S
+LeftMouseUpAction=[!WriteKeyValue Variables Sec.Page "5"][!Refresh]
+[Card.About.Title]
+Meter=String
+Text=About
+MeterStyle=Set.String:S | Discover.Card.Title:S
+[Card.About.Body]
+Meter=String
+Text=What MosaicShell is and how the composable desktop layer fits together.
+MeterStyle=Set.String:S | Discover.Card.Body:S
+
+; Title easter egg kept subtle via right-click on header string in Home.ini — Discover title is not a hidden door.
+
+[DevLink]
+Meter=String
+X=(#Set.W#-#HomePage.P#)
+Y=([BC:H]-#Set.P#*2+#Scroll#)
+StringAlign=RightBottom
+FontSize=(10*[Set.S])
+FontColor=#Set.SubText_Color#,80
+Text=Developer tools
 MeterStyle=Set.String:S
+MouseOverAction=[!SetOption #CURRENTSECTION# FontColor "#Set.SubText_Color#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
+MouseLeaveAction=[!SetOption #CURRENTSECTION# FontColor "#Set.SubText_Color#,80"][!UpdateMeter #CURRENTSECTION#][!Redraw]
+LeftMouseUpAction=[!WriteKeyValue Variables Sec.Page "00000"][!Refresh]
+ToolTipText=Internal setup and packaging utilities

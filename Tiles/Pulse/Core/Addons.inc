@@ -1,4 +1,4 @@
-﻿[ContentContainer]
+[ContentContainer]
 Y=(#Set.TitleBarH#+#Set.P#/2)
 Shape=Rectangle (0),(0),(#Set.W#-#Set.P#*3-30*[Set.S]),(#Set.H#-#Set.P#-#Set.TitleBarH#),(#Set.R#),(#Set.R#) | StrokeWidth 0 | Fill Color 255,255,255
 
@@ -13,7 +13,7 @@ ImageName=#SKINSPATH##Skin.Name#\@Resources\Images\ModularVisualizerOverlay.png
 ImageAlpha=50
 MouseOverAction=[!SetOption #CURRENTSECTION# ImageAlpha 150][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# ImageAlpha 50][!UpdateMeter #CURRENTSECTION#][!Redraw]
-LeftMouseUpAction=[!CommandMeasure Func "corepage('Overlayer')"][!Refresh]
+MouseActionCursor=0
 PreserveAspectRatio=2
 
 [Header]
@@ -28,7 +28,7 @@ H=(500*[Set.S])
 ClipString=2
 DynamicVariables=1
 StringAlign=CenterCenter
-Text=Create awesome layering effects!
+Text=Layering effects and overlays
 FontFace=#Set.Font#
 FontWeight=650
 FontSize=(42*[Set.S])

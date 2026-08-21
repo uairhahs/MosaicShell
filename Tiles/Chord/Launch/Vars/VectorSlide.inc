@@ -1,5 +1,5 @@
 [Variables]
-Style.Scale=1
+Style.Scale=#UiScale#
 Style.FontSize=18
 Style.YPos=200
 Style.Pad=50

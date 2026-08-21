@@ -1,2 +1,2 @@
-﻿[Variables]
-SkinList=Tessera | Mixdeck | Inlay | Slate | Chord| Chrono | Phono | Pulse | Canvas
+[Variables]
+SkinList=Tessera | Mixdeck | Inlay | Slate | Chord | Substrate | Chrono | Phono | Pulse | Canvas

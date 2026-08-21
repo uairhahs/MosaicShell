@@ -1,4 +1,4 @@
-﻿[Variables]
+[Variables]
 TweenTime1=(700)
 TweenTime2=0
 
@@ -28,4 +28,4 @@ W=(64)
 H=(64)
 ImageAlpha=255
 DynamicVariables=1
-ImageName=#SKINSPATH#..\CoreData\Keylaunch\IconCache\#Sec.Icon#.png
+ImageName=#SKINSPATH#..\CoreData\Chord\IconCache\#Sec.Icon#.png

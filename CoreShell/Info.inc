@@ -326,7 +326,7 @@ MEterStyle=Set.String:S | Act.Des.String:S
 ; -------------------------------- Auto scale -------------------------------- ;
 [Item4.Act2.Shape]
 Meter=Shape
-LeftMouseUpAction=[!WriteKeyValue Variables Scale "((#SCREENAREAWIDTH#/1920) < (#SCREENAREAHEIGHT#/1080) ? (#SCREENAREAWIDTH#/1920) : (#SCREENAREAHEIGHT#/1080))" "#Sec.SaveLocation#"][!UpdateMeasure Auto_Refresh:M]
+LeftMouseUpAction=[!WriteKeyValue Variables Scale "(#DpiScale#*#UserScale#)" "#Sec.SaveLocation#"][!CommandMeasure ScaleContract "Apply-ScaleContract"][!UpdateMeasure Auto_Refresh:M]
 MeterStyle=Act.Shape:S
 [Item4.Act2.String]
 Meter=String
@@ -334,7 +334,7 @@ Text=[\xe85b]
 MEterStyle=Set.String:S | Act.String:S
 [Item4.Act2.Des.String]
 Meter=String
-Text=Apply AutoScale
+Text=Apply scale contract
 MEterStyle=Set.String:S | Act.Des.String:S
 ; ------------------------------ Reset location ------------------------------ ;
 [Item4.Act3.Shape]

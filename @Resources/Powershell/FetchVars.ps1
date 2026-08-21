@@ -1,4 +1,4 @@
-﻿# FUNCTION ALL RIGHTS TO DEATHCRAFTER
+# FUNCTION ALL RIGHTS TO DEATHCRAFTER
 
 function ReadIni($filePath)
 {
@@ -34,14 +34,14 @@ function FetchVars()
 {
     $Settings = $RmAPI.VariableStr('SETTINGSPATH')
     $ini=ReadIni($Settings + 'Rainmeter.ini')
-    $Active=$ini['ModularClocks\Main']['Active']
-    $X=$ini['ModularClocks\Main']['WindowX']
-    $Y=$ini['ModularClocks\Main']['WindowY']
-    $Thru=$ini['ModularClocks\Main']['ClickThrough']
-    $Drag=$ini['ModularClocks\Main']['Draggable']
-    $Snap=$ini['ModularClocks\Main']['SnapEdges']
-    $Keep=$ini['ModularClocks\Main']['KeepOnScreen']
-    $Zpos=$ini['ModularClocks\Main']['AlwaysOntop']
+    $Active=$ini['Chrono\Main']['Active']
+    $X=$ini['Chrono\Main']['WindowX']
+    $Y=$ini['Chrono\Main']['WindowY']
+    $Thru=$ini['Chrono\Main']['ClickThrough']
+    $Drag=$ini['Chrono\Main']['Draggable']
+    $Snap=$ini['Chrono\Main']['SnapEdges']
+    $Keep=$ini['Chrono\Main']['KeepOnScreen']
+    $Zpos=$ini['Chrono\Main']['AlwaysOntop']
     $RmAPI.Bang('!CommandMeasure Script:M SaveStatus('+$Active+','+$X+','+$Y+','+$Thru+','+$Drag+','+$Snap+','+$Keep+','+$ZPos+')')
 }
 

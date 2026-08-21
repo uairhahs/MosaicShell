@@ -49,7 +49,7 @@ IfNotMatchAction=[!HideMeter Dep.PS.Shape][!HideMeter Dep.PS.String][!Redraw]
 [CheckHotkey]
 Measure=String
 String=#ROOTCONFIG#
-IFmatch=Substrate|Keystrokes|Inlay|QuickNote|Keylaunch|Slate|Mixdeck|Tessera|Chrono|Phono|Pulse|Canvas|Chord
+IFmatch=Substrate|Inlay|Chord|Slate|Mixdeck|Tessera|Chrono|Phono|Pulse|Canvas
 IfMatchaction=[!WriteKeyValue Variables RMPATH "#PROGRAMPATH#Rainmeter.exe" "#@#Actions\Hotkeys.ini"]
 
 [CheckModular]

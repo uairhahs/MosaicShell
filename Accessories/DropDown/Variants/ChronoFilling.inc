@@ -1,5 +1,5 @@
-﻿[Variables]
-SaveLocation="#SKINSPATH#ModularCLocks\@Resources\Data\#arg1#Data.inc"
+[Variables]
+SaveLocation="#SKINSPATH#Chrono\@Resources\Data\#arg1#Data.inc"
 SaveKey=Fill
 RGBSpeed=1
 

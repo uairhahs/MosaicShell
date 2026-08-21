@@ -1,6 +1,7 @@
 ﻿[Variables]
 UpdateRate=1000
-Scale=([#SCREENAREAWIDTH@#Location#]/1920)
+@includeScaleContract=#SKINSPATH##MosaicShell\@Resources\Includes\ScaleContract.inc
+Scale=#UiScale#
 @includeConfigurableVariables=#ROOTCONFIGPATH#Launch\Vars\#Style#.inc
 
 [Dum]

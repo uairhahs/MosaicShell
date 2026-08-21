@@ -331,7 +331,7 @@ MeterStyle=Set.Bool:S | PerformanceMode:#Set.PerformanceMode#
 Y=(-25/2*[Set.S])r
 X=([ContentContainer:W]-#Set.P#-50*[Set.S])
 [PerformanceMode:0]
-Leftmouseupaction=[!FadeDuration 0][!WriteKeyValue Variables Set.Blur None "#Sec.SaveLocation#"][!WriteKeyValue Variables Set.W (#SCREENAREAWIDTH#*0.65) "#@#Vars.inc"][!WriteKeyValue Variables Set.H (0.65*#SCREENAREAWIDTH#*3/4) "#@#Vars.inc"][!WriteKeyValue Set.S Formula "((#SCREENAREAWIDTH#/1920) < (#SCREENAREAHEIGHT#/1080) ? (#SCREENAREAWIDTH#/1920) : (#SCREENAREAHEIGHT#/1080))" "#@#Vars.inc"][!Move (#SCREENAREAWIDTH#*(0.5-0.65/2)) (#SCREENAREAHEIGHT#/2-#SCREENAREAWIDTH#*0.65*0.75/2)][!WriteKeyValue Variables #CURRENTSECTION# 1 "#Sec.SaveLocation#"][!Refresh]
+Leftmouseupaction=[!FadeDuration 0][!WriteKeyValue Variables Set.Blur None "#Sec.SaveLocation#"][!WriteKeyValue Variables Set.W (#SCREENAREAWIDTH#*0.65) "#@#Vars.inc"][!WriteKeyValue Variables Set.H (0.65*#SCREENAREAWIDTH#*3/4) "#@#Vars.inc"][!WriteKeyValue Set.S Formula "(#DpiScale#*#UserScale#)" "#@#Vars.inc"][!Move (#SCREENAREAWIDTH#*(0.5-0.65/2)) (#SCREENAREAHEIGHT#/2-#SCREENAREAWIDTH#*0.65*0.75/2)][!WriteKeyValue Variables #CURRENTSECTION# 1 "#Sec.SaveLocation#"][!Refresh]
 [PerformanceMode:1]
 Leftmouseupaction=[!FadeDuration 100][!WriteKeyValue Variables #CURRENTSECTION# 0 "#Sec.SaveLocation#"][!WriteKeyValue Variables Set.Blur Blur "#Sec.SaveLocation#"][!Refresh]
 
@@ -400,7 +400,7 @@ MeterStyle=Set.String:S | Set.Icon:S | Section.Icon:S
 
 [Section7.Text]
 Meter=String
-Text=Fix blurring visuals#CRLF#Use the options on the right to select whether to use absolute scaling or not
+Text=Repair DPI override#CRLF#Re-apply Rainmeter high-DPI awareness if skins look blurry or oversized
 MeterStyle=Set.String:S | Section.String:S
 
 [Section7.Button1.Shape]
@@ -408,19 +408,15 @@ Meter=Shape
 MeterStyle=SectionButton:S
 Y=(-40/2*[Set.S])r
 X=([ContentContainer:W]-#Set.P#-150*[Set.S])
-LeftMouseUpAction=[!CommandMeasure PSRM "Set-DPICompatability"]
+LeftMouseUpAction=[!CommandMeasure ScaleContract "Repair-HighDpiAware"]
 [Section7.Button1.Text]
 Meter=String
 MeterStyle=Set.String:S | SectionButton.String:S
-Text=Absolute
+Text=Repair
 [Section7.Button2.Shape]
-Meter=Shape
-LeftMouseUpAction=[!CommandMeasure PSRM "Reset-DPICompatability"]
-MeterStyle=SectionButton:S
+Meter=
 [Section7.Button2.Text]
-Meter=String
-MeterStyle=Set.String:S | SectionButton.String:S
-Text=Default
+Meter=
 
 ; --------------------------------- Section8 --------------------------------- ;
 

@@ -1,4 +1,4 @@
-﻿[DefaultStartActions]
+[DefaultStartActions]
 Custom1=[!SetOption #Style#.Shape MeterStyle "Animation.Shape:S | ANimation.Shape.Selected:S"][!UpdateMeter #Style#.Shape][!Redraw]
 
 ; ---------------------------------------------------------------------------- ;
@@ -82,7 +82,7 @@ Container=ContentContainer
 [Animation.Button2.Shape:S]
 X=(([ContentContainer:W]-#Set.P#-60*[Set.s])/2/2+30*[Set.S])r
 Y=(-30*[Set.S]/2)r
-LeftMouseUpAction=[!WriteKeyValue Variables Sec.Name "Keylaunch" "#SKINSPATH##SKin.Name#\Launch\Main.ini"][!WriteKeyValue Variables Sec.Icon "folder_png" "#SKINSPATH##SKin.Name#\Launch\Main.ini"][!WriteKeyValue Variables Sec.Action "" "#SKINSPATH##SKin.Name#\Launch\Main.ini"][!WriteKeyValue Variables Style [&Func:trim('#CURRENTSECTIOn#','.Button2.Shape','')] "#Sec.SaveLocation#"][!ActivateConfig "Keylaunch\Launch" "Main.ini"][!Delay 100][!WriteKeyValue Variables Style #Style# "#Sec.SaveLocation#"]
+LeftMouseUpAction=[!WriteKeyValue Variables Sec.Name "Chord" "#SKINSPATH##SKin.Name#\Launch\Main.ini"][!WriteKeyValue Variables Sec.Icon "folder_png" "#SKINSPATH##SKin.Name#\Launch\Main.ini"][!WriteKeyValue Variables Sec.Action "" "#SKINSPATH##SKin.Name#\Launch\Main.ini"][!WriteKeyValue Variables Style [&Func:trim('#CURRENTSECTIOn#','.Button2.Shape','')] "#Sec.SaveLocation#"][!ActivateConfig "Chord\Launch" "Main.ini"][!Delay 100][!WriteKeyValue Variables Style #Style# "#Sec.SaveLocation#"]
 [Animation.Button2.String:S]
 Text=[\xe8f4]  Preview
 
@@ -93,7 +93,7 @@ Text=[\xe8f4]  Preview
 [Item1.Shape]
 Meter=Shape
 Y=(30*[Set.S])R
-LeftMouseUpAction=["https://github.com/uairhahs/Keylaunch#animation-preview"]
+LeftMouseUpAction=["https://github.com/uairhahs/Chord#animation-preview"]
 MeterStyle=Item.Shape:S
 [Item1.StringIcon]
 Meter=String

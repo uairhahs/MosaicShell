@@ -1,5 +1,6 @@
 ﻿[Variables]
 @includegVar1=#SKINSPATH##MosaicShell\@Resources\gVars\Time.inc
+@includeScaleContract=#SKINSPATH##MosaicShell\@Resources\Includes\ScaleContract.inc
 TimeOut=5m
 IgnoreIdleDuration=0
 LoadedNotif=1

@@ -1,4 +1,4 @@
-﻿function WriteToMemory {
+function WriteToMemory {
     for ($i=1 ; $i -le $t ; $i++) {
         $arrayName.Add($RmAPI.VariableStr("$($i)Name"))
         $arrayAction.Add($RmAPI.VariableStr("$($i)Action"))
@@ -12,10 +12,10 @@ function Load {
     $global:t = [int]$RmAPI.VariableStr('Total')
     $global:skinsPath = $RmAPI.VariableStr('SKINSPATH')
     $global:coreDataDir = "$skinsPath\..\CoreData\"
-    $global:file1 = "$coreDataDir"+"Keylaunch\Include.inc"
-    $global:file2 = "$coreDataDir"+"Keylaunch\Act.inc"
-    $global:file3 = "$coreDataDir"+"Keylaunch\Hotkeys.inc"
-    $global:file4 = "$coreDataDir"+"Keylaunch\Keylaunch.ahk"
+    $global:file1 = "$coreDataDir"+"Chord\Include.inc"
+    $global:file2 = "$coreDataDir"+"Chord\Act.inc"
+    $global:file3 = "$coreDataDir"+"Chord\Hotkeys.inc"
+    $global:file4 = "$coreDataDir"+"Chord\Chord.ahk"
     $global:arrayName = New-Object System.Collections.Generic.List[System.Object]
     $global:arrayAction = New-Object System.Collections.Generic.List[System.Object]
     $global:arrayIcon = New-Object System.Collections.Generic.List[System.Object]
@@ -153,7 +153,7 @@ Return
 SendToReceiver(index)
 {
     IniRead, RainmeterPath, $file3, Variables, RMPATH
-    Run "%RainmeterPath% "!CommandMEasure "Receiver:M" "Launch(%index%)" "Keylaunch\Main" " "
+    Run "%RainmeterPath% "!CommandMEasure "Receiver:M" "Launch(%index%)" "Chord\Main" " "
 }
 
 "@

@@ -1,4 +1,6 @@
 ﻿[Variables]
+@includeScaleContract=#SKINSPATH##MosaicShell\@Resources\Includes\ScaleContract.inc
+Scale=#UiScale#
 VisualizerType=Bar
 ImageUnderlay=0
 ImageUnderlayName=#SKINSPATH#Pulse\@Resources\UserImages\Alena Aenami.jpg

@@ -1,4 +1,6 @@
 ﻿[Variables]
+@includeScaleContract=#SKINSPATH##MosaicShell\@Resources\Includes\ScaleContract.inc
+Scale=#UiScale#
 ColorMode=0
 MainColor=12,12,12
 OppositeColor=255,255,255

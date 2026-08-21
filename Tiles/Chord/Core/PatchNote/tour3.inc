@@ -1,4 +1,4 @@
-﻿[Variables]
+[Variables]
 Sec.W=(500*#Sec.S#)
 Sec.H=(700*#Sec.S#)
 AniDir=Bottom
@@ -39,7 +39,7 @@ DynamicVariables=1
 
 [Text2]
 Meter=String
-Text=Keylaunch is all yours!#CRLF#Start by adding your own actions in the Actions tab!
+Text=Chord is all yours!#CRLF#Start by adding your own actions in the Actions tab!
 X=(#Sec.W#/2)
 Y=(#Sec.H#/2)
 FontSize=(20*#Sec.S#)
