@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 WeatherUnitsMetric=m
 WeatherUnitsImperial=e
 

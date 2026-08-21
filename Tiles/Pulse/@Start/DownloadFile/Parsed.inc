@@ -1,4 +1,4 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 OnRefreshAction=[!ZPos 1][!Move (#SCREENAREAWIDTH#/2-#Sec.W#/2) (#SCREENAREAHEIGHT#/2-#Sec.H#/2)][!SetOption Dep3 MeterStyle "Dep.Shape:S | Dep.ShapeYes:S"][!UpdateMEter *][!Redraw]
 
 ; ---------------------------------------------------------------------------- ;
@@ -12,12 +12,12 @@ OnUpdateAction=[!WriteKeyValue Variables RMPATH "#PROGRAMPATH#Rainmeter.exe" "#@
 [CheckModular]
 Measure=String
 String=#ROOTCONFIG#
-IFmatch=Chrono|Phono
+IFmatch=Chrono|Phono|Slate|Inlay|Mixdeck|Tessera
 IfNotMatchAction=[!HideMeter Dep2][!HideMeter Deptext2][!Redraw]
 
 [Variables]
 @includeVersion=#@#Version.inc
-@includeJaxCoreChecker=#SKINSPATH#\#MosaicShell\@Resources\Version.inc
+@includeMosaicShellChecker=#SKINSPATH#\#MosaicShell\@Resources\Version.inc
 Sec.W=800
 Sec.H=500
 Sec.P=40
@@ -176,7 +176,7 @@ X=(#Sec.P#+50)
 Y=(#Sec.H#-#Sec.P#-40)
 DynamicVariables=1
 Shape=Rectangle 0,0,120,40,(#Sec.R#/3) | StrokeWidth 0 | Fill COlor 0,255,50,200
-Leftmouseupaction=[!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page Info "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"][!DeactivateConfig]
+Leftmouseupaction=[!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##MosaicShell\@Resources\CacheVars\Configurator.inc"][!WriteKeyvalue Variables Skin.Set_Page Info "#SKINSPATH##MosaicShell\@Resources\CacheVars\Configurator.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"][!DeactivateConfig]
 Hidden=1
 Group=Button
 [ContinueText]
@@ -227,14 +227,14 @@ CodePage=1200
 Measure=Script
 ScriptFile=Logic.lua
 
-[JaxCoreYes]
+[MosaicShellYes]
 Measure=String
 Group=NUOL
 Disabled=1
 OnUpdateAction=[!SetOption Dep1 MeterStyle "Dep.Shape:S | Dep.ShapeYes:S"][!SetOption DepText1 Text "MosaicShell // v#Core.Ver# installed"][!ShowMeterGroup Button][!UpdateMEter *][!Redraw]
 
-[JaxCoreNo]
+[MosaicShellNo]
 Measure=String
 Group=NUOL
 Disabled=1
-OnUpdateAction=[!SetOption Dep1 MeterStyle "Dep.Shape:S | Dep.ShapeNo:S"][!SetOption DepText1 Text "MosaicShell // click here to install"][!SetOption Dep1 Leftmouseupaction """["#@#Actions\AHKv1.exe" "#@#Actions\Installer.ahk"][!SetOption DepText1 Text "MosaicShell // download here if it doesn't automatically install"][!SetOption Dep1 Leftmouseupaction """["https://github.com/uairhahs/MosaicShell/releases/download/v40000/JaxCore_v40000.rmskin"][!UpdateMEter *][!Redraw]"""][!UpdateMEter *][!Redraw]"""][!UpdateMEter *][!Redraw]
+OnUpdateAction=[!SetOption Dep1 MeterStyle "Dep.Shape:S | Dep.ShapeNo:S"][!SetOption DepText1 Text "MosaicShell // click here to install"][!SetOption Dep1 Leftmouseupaction """["#@#Actions\AHKv1.exe" "#@#Actions\Installer.ahk"][!SetOption DepText1 Text "MosaicShell // download here if it doesn't automatically install"][!SetOption Dep1 Leftmouseupaction """["https://github.com/uairhahs/MosaicShell/releases/download/v50410/MosaicShell_v50410.rmskin"][!UpdateMEter *][!Redraw]"""][!UpdateMEter *][!Redraw]"""][!UpdateMEter *][!Redraw]

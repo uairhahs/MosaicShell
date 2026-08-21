@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Item2.Shape]
 Meter=Shape
 MeterStyle=Item.Shape:S

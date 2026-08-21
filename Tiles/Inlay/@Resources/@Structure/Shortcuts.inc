@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 module_shortcuts.totalitems_count=1
 
 [Shortcut1.Shape]

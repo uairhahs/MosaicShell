@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Option01]
 Meter=String
 Text="Font face"

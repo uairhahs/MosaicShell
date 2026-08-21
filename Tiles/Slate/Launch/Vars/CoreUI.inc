@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 ImagePath=#@#Images\Logo256.png
 ImageName=MosaicShell logo
 LineOneStyle=Time

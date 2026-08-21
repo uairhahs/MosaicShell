@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 StartIconBool=1
 StartTextBool=1
 StartText=Start

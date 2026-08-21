@@ -1,4 +1,4 @@
-﻿﻿[modernProgress]
+﻿[modernProgress]
 Measure=Calc
 [modernCover]
 Measure=String

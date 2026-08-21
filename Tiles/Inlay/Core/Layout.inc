@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Sec.Anchor=AnchorSuppli
 
 [SharePs1]

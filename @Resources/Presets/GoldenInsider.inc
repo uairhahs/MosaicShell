@@ -1,4 +1,4 @@
-﻿﻿[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 Set.Style=Golden
 Set.IconStyle=Golden
 Set.Pri_Color=12,12,12

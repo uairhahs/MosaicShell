@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeMusicVars=#SKINSPATH##Skin.Name#\Main\Modules\Vars\Music.inc
 Sec.SaveLocation2=#SKINSPATH##Skin.Name#\Main\Modules\Vars\Music.inc
 

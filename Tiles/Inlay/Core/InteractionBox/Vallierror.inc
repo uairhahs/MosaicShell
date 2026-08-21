@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Sec.W=(310*#Sec.S#)
 Sec.H=(70*#Sec.S#)
 Sec.R=(5*#Sec.S#)
@@ -26,7 +26,7 @@ ConfigName=#MosaicShell\Main
 ; ---------------------------------------------------------------------------- ;
 
 [B]
-LeftMouseUpAction=[!WriteKeyvalue Variables Skin.name "#MosaicShell" "#@#SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page "General" "#@#SecVar.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"][!CommandMeasure ActionTimer "Execute 2"]
+LeftMouseUpAction=[!WriteKeyvalue Variables Skin.name "#MosaicShell" "#@#CacheVars\Configurator.inc"][!WriteKeyvalue Variables Skin.Set_Page "General" "#@#CacheVars\Configurator.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"][!CommandMeasure ActionTimer "Execute 2"]
 
 [Img]
 Meter=Image

@@ -1,4 +1,4 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 OnRefreshAction=[!ZPos 1][!Draggable 0][!Move (#SCREENAREAWIDTH#/2-#Sec.W#/2) (#SCREENAREAHEIGHT#/2-#Sec.H#/2)][!UpdateMEter *][!Redraw]
 AccurateText=1
 
@@ -8,7 +8,7 @@ AccurateText=1
 
 [Variables]
 @includeVersion=#@#Version.inc
-@includeJaxCoreChecker=#SKINSPATH#\#MosaicShell\@Resources\Version.inc
+@includeMosaicShellChecker=#SKINSPATH#\#MosaicShell\@Resources\Version.inc
 Sec.W=800
 Sec.H=540
 Sec.P=50
@@ -49,7 +49,7 @@ IfNotMatchAction=[!HideMeter Dep.PS.Shape][!HideMeter Dep.PS.String][!Redraw]
 [CheckHotkey]
 Measure=String
 String=#ROOTCONFIG#
-IFmatch=Substrate|Keystrokes|Inlay|QuickNote|Keylaunch|Slate|Mixdeck|Tessera
+IFmatch=Substrate|Keystrokes|Inlay|QuickNote|Keylaunch|Slate|Mixdeck|Tessera|Chrono|Phono|Pulse|Canvas|Chord
 IfMatchaction=[!WriteKeyValue Variables RMPATH "#PROGRAMPATH#Rainmeter.exe" "#@#Actions\Hotkeys.ini"]
 
 [CheckModular]
@@ -91,17 +91,17 @@ CodePage=1200
 Measure=Script
 ScriptFile=Logic.lua
 
-[JaxCoreYes]
+[MosaicShellYes]
 Measure=String
 Group=NUOL
 Disabled=1
 OnUpdateAction=[!SetOption Dep.Core.Shape MeterStyle "Dep.Shape:S | Dep.ShapeYes:S"][!SetOption Dep.Core.String Text "MosaicShell // v#Core.Ver# installed"][!ShowMeterGroup Button][!UpdateMEter *][!Redraw]
 
-[JaxCoreNo]
+[MosaicShellNo]
 Measure=String
 Group=NUOL
 Disabled=1
-OnUpdateAction=[!SetOption Dep.Core.Shape MeterStyle "Dep.Shape:S | Dep.ShapeNo:S"][!SetOption Dep.Core.String Text "MosaicShell // click here to install"][!SetOption Dep.Core.Shape Leftmouseupaction """["#@#Actions\AHKv1.exe" "#@#Actions\Installer.ahk"][!SetOption Dep.Core.String Text "MosaicShell // download here if it doesn't automatically install"][!SetOption Dep.Core.Shape Leftmouseupaction """["https://github.com/uairhahs/MosaicShell/releases/download/v[mVer]/JaxCore_v[mVer].rmskin"][!UpdateMEter *][!Redraw]"""][!UpdateMEter *][!Redraw][!DeactivateConfig]"""][!UpdateMEter *][!Redraw]
+OnUpdateAction=[!SetOption Dep.Core.Shape MeterStyle "Dep.Shape:S | Dep.ShapeNo:S"][!SetOption Dep.Core.String Text "MosaicShell // click here to install"][!SetOption Dep.Core.Shape Leftmouseupaction """["#@#Actions\AHKv1.exe" "#@#Actions\Installer.ahk"][!SetOption Dep.Core.String Text "MosaicShell // download here if it doesn't automatically install"][!SetOption Dep.Core.Shape Leftmouseupaction """["https://github.com/uairhahs/MosaicShell/releases/download/v[mVer]/MosaicShell_v[mVer].rmskin"][!UpdateMEter *][!Redraw]"""][!UpdateMEter *][!Redraw][!DeactivateConfig]"""][!UpdateMEter *][!Redraw]
 
 ; ---------------------------------------------------------------------------- ;
 ;                                  MeterStyle                                  ;
@@ -302,7 +302,7 @@ Shape=Rectangle 0,0,120,40,(#Sec.R#/3) | StrokeWidth (2) | Stroke Color "100,255
 Fill=Fill Color 0,0,0,1
 MouseOverAction=[!SetOption #CURRENTSECTION# Fill "Fill Color 100,255,100,50"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# Fill "Fill Color 0,0,0,1"][!UpdateMeter #CURRENTSECTION#][!Redraw]
-Leftmouseupaction=[!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page Info "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"][!DeactivateConfig]
+Leftmouseupaction=[!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##MosaicShell\@Resources\CacheVars\Configurator.inc"][!WriteKeyvalue Variables Skin.Set_Page Info "#SKINSPATH##MosaicShell\@Resources\CacheVars\Configurator.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"][!DeactivateConfig]
 Hidden=1
 Group=Button
 Container=Content.Container

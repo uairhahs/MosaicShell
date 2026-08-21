@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeCacheVarsConfigurator=#@#CacheVars\Configurator.inc
 SaveLocation=#SKINSPATH##skin.name#\@Resources\Vars.inc
 

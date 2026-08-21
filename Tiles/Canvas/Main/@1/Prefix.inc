@@ -1,4 +1,4 @@
-﻿﻿[Prefix]
+﻿[Prefix]
 Meter=String
 Y=#in#
 Text=#PrefixText#

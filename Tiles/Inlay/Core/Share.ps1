@@ -1,4 +1,4 @@
-﻿﻿function Update {
+﻿function Update {
     $editingModule = $RmAPI.VariableStr('Skin.Name')
     $skinsPath = $RmAPI.VariableStr('SKINSPATH')
     $global:Import = "$skinsPath"+"$editingModule"+"\@Resources\Vars.inc"

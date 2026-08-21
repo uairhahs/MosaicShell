@@ -1,4 +1,4 @@
-﻿﻿[Hour]
+﻿[Hour]
 FontColor=#SecondaryColor#,#SecondaryOpacity#
 [Hightlight]
 FontColor=#PrimaryColor#,#PrimaryOpacity#

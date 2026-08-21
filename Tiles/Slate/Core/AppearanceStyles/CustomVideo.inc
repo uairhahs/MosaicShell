@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Choose:M]
 Measure=Plugin
 Plugin=FileChoose
@@ -60,7 +60,7 @@ MeterStyle=Set.String:S | Set.OptionCat:S
 
 [Item1.Shape]
 Meter=Shape
-LeftMouseUpAction=["https://jaxcore.gitbook.io/core/modules/idlestyle#video-backgrounds"]
+LeftMouseUpAction=["https://docs.mosaicshell.io/core/modules/idlestyle#video-backgrounds"]
 MeterStyle=Item.Shape:S
 [Item1.StringIcon]
 Meter=String

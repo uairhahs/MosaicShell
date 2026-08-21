@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 ; -------------------------------- Activation -------------------------------- ;
 Hotkey=1
 StayOnDesktop=0

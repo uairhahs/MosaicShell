@@ -1,4 +1,4 @@
-﻿﻿[HotkeysTitle]
+﻿[HotkeysTitle]
 Meter=String
 Text=Alignment
 MeterStyle=Set.String:S | Set.OptionCat:S

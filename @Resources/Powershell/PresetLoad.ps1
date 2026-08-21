@@ -1,4 +1,4 @@
-﻿﻿$sectionTable = New-Object System.Collections.Generic.List[System.Object]
+﻿$sectionTable = New-Object System.Collections.Generic.List[System.Object]
 
 function ReadIni($filePath)
 {

@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 ; --------------------------- Customizing variables -------------------------- ;
 MinWindowW=500
 MinWindowH=375

@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 SaveLocation="#@#Vars.inc"
 ; SaveKey=Fill
 

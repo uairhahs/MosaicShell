@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Measure1]
 Measure=Plugin
 Plugin=AudioAnalyzer

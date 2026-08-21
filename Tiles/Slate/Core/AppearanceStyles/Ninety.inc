@@ -1,4 +1,4 @@
-﻿﻿[HotkeysT2itle]
+﻿[HotkeysT2itle]
 Meter=String
 Text=Customization
 MeterStyle=Set.String:S | Set.OptionCat:S

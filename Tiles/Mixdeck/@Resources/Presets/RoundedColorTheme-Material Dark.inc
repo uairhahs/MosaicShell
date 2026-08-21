@@ -1,4 +1,4 @@
-﻿﻿[Main\Elements\ControlScreen\Vars\Rounded.inc]
+﻿[Main\Elements\ControlScreen\Vars\Rounded.inc]
 color_theme=Material Dark
 bar_color=51, 152, 255
 background_color=28,28,28

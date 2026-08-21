@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeCacheVarsConfigurator=#@#CacheVars\Configurator.inc
 Sec.W=(500*#Sec.S#)
 Sec.H=(380*#Sec.S#)

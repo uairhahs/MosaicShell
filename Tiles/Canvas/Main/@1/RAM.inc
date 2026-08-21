@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 
 [ResourceGraph2]
 Meter=String

@@ -20,8 +20,8 @@ Text="- Shade now uses global variables"
 MeterStyle=Sec.String:S | Style.Description:S
 ; [Link.1]
 ; Meter=String
-; Text="https://jax-core.github.io/"
-; LeftMouseUpAction=["https://jax-core.github.io/"]
+; Text="https://docs.mosaicshell.io/"
+; LeftMouseUpAction=["https://docs.mosaicshell.io/"]
 ; MeterStyle=Sec.String:S | Style.Link:S
 
 [Description.2]

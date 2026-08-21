@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeCacheVarsConfigurator=#@#CacheVars\Configurator.inc
 
 [Func]

@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 ColumnW=(60*#Scale#)
 H=(#Height#*#scale#)
 P=(10*#Scale#)

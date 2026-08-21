@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Bands=60
 Radius=60
 StartAngle=0

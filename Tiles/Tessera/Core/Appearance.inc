@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Sec.SaveLocation=#SKINSPATH##Skin.Name#\Main\Vars\#Layout#.inc
 Sec.AnchorName=AnchorSuppli
 @includeSaveLocation=#SKINSPATH##Skin.Name#\Main\Vars\#Layout#.inc

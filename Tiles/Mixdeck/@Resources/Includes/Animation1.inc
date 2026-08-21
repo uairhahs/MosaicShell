@@ -1,4 +1,4 @@
-﻿﻿[ActionTimer]
+﻿[ActionTimer]
 Measure=Plugin
 Plugin=ActionTimer
 DynamicVariables=1

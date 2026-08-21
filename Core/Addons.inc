@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 
 [SectionButton:S]
 X=((150/2+10)*[Set.S])r

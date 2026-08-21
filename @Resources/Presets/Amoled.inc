@@ -1,4 +1,4 @@
-﻿﻿[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 Set.Style=Amoled
 Set.IconStyle=Amoled
 Set.Pri_Color=0,0,0

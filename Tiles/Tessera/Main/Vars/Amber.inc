@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Height=300
 Stroke=4
 PrimaryColor=20, 30, 43

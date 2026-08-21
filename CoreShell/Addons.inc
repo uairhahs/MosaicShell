@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 BarHandler=81
 
 [Header]

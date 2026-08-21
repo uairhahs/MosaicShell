@@ -1,4 +1,4 @@
-﻿﻿[Title]
+﻿[Title]
 Text=List of skins
 
 [Description]

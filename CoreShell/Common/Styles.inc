@@ -1,4 +1,4 @@
-﻿﻿[Set.String:S]
+﻿[Set.String:S]
 FontFace=#Set.Font#
 AntiAlias=1
 FontSize=(12*[Set.S])

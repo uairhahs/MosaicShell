@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Sec.Generate=0
 @includeVariables=#SKINSPATH##Skin.Name#\@Resources\Vars\[#VisualizerType].inc
 @includeAnalyzer=#SKINSPATH##Skin.Name#\@Resources\Vars\AudioAnalyzerSettings.inc

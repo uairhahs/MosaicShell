@@ -1,4 +1,4 @@
-﻿﻿[BackgroundContainer]
+﻿[BackgroundContainer]
 Meter=Shape
 X=r
 Y=r

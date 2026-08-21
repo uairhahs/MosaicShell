@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Sec.W=(310*#Sec.S#)
 Sec.H=(70*#Sec.S#)
 Sec.R=(5*#Sec.S#)

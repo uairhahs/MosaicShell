@@ -1,4 +1,4 @@
-﻿﻿Add-Type -AssemblyName System.Drawing
+﻿Add-Type -AssemblyName System.Drawing
 function Dimensions {
     $imageFile=$RmAPI.VariableStr("Cache.Wallpaper")
     $image = New-Object System.Drawing.Bitmap $imageFile

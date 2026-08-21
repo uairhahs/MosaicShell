@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Header.String]
 Text=Warning!
 

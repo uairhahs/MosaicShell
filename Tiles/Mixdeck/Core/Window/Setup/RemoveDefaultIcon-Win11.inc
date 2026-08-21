@@ -1,4 +1,4 @@
-﻿﻿[Description.String]
+﻿[Description.String]
 Text=Unfortunately Windows 11 does not support hiding the default volume icon. Do you want to use an alternative mixer icon for Mixdeck?
 InlinePattern=does not support
 

@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 VersionStatus=0
 BackgroundCheckStatus=0
 HardwareAcceleration=0

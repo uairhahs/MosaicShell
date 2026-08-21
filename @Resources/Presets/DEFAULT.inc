@@ -1,4 +1,4 @@
-﻿﻿[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 Set.IconStyle=Normal
 Set.Alpha=255
 Set.Font=Poppins

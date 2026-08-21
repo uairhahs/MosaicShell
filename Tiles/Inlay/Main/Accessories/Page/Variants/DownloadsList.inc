@@ -1,4 +1,4 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 MouseScrollUpAction=[!CommandMeasure mPath "PageUp"][!CommandMeasure Func "PageChange(-1)"][!UpdateMeasure mPath]
 MouseScrollDownAction=[!CommandMeasure mPath "Pagedown"][!CommandMeasure Func "PageChange(1)"][!UpdateMeasure mPath]
 

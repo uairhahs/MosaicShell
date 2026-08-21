@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Description.String]
 Text=Slate also supports using a video file as screensaver! Simply change to the video style in the animation tab. This requires an additional executable to be downloaded. A guide can be found in said page.
 InlinePattern=video file|requires an additional executable|animation tab

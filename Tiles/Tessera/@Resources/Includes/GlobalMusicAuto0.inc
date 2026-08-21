@@ -1,4 +1,4 @@
-﻿﻿[WNPProgress]
+﻿[WNPProgress]
 Measure=Calc
 [NPProgress]
 Measure=Calc

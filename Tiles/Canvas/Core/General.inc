@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [PrefixTextHeader]
 Meter=String
 Text=Prefix Text
@@ -98,7 +98,7 @@ MeterStyle=Set.String:S | Set.Value:S
 Meter=Shape
 MeterStyle=Set.Button:S
 Y=([Option11:Y]-#Set.P#+(-30/2+8)*[Set.S])
-Act=[!WriteKeyvalue Variables Skin.Name """#MosaicShell""" "#@#SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#SecVar.inc"][!Refresh]
+Act=[!WriteKeyvalue Variables Skin.Name """#MosaicShell""" "#@#CacheVars\Configurator.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#CacheVars\Configurator.inc"][!Refresh]
 [Icon11]
 Meter=String
 Text=[\xe895]

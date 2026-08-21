@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Description.String]
 Text=By default, Inlay uses the windows search menu for search functionalities. You can use a 3rd party launcher of your choice after installation.
 InlinePattern=windows search menu

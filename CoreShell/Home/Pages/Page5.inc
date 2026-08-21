@@ -1,4 +1,4 @@
-﻿﻿[Header.Shape]
+﻿[Header.Shape]
 Meter=
 
 [Title.Text1]

@@ -1,4 +1,4 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 SkinWidth=#Sec.W#
 
 [Variables]
@@ -8,7 +8,7 @@ Sec.Box.W=(445*#Sec.S#)
 Sec.Box.H=(250*#Sec.S#)
 Sec.Box.P=(70*#Sec.S#)
 AniDir=Left
-@includeSecVars=#@#SecVar.inc
+@includeSecVars=#@#CacheVars\Configurator.inc
 Sec.SaveLocation=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
 ; @includeSkinvars=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
 

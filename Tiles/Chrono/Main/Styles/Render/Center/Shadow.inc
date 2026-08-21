@@ -1,4 +1,4 @@
-﻿﻿[Hour]
+﻿[Hour]
 FontColor=#PrimaryColor#,#PrimaryOpacity#
 InlineSetting=Shadow | #ShadowOffset# | #ShadowOffset# | #ShadowSigma# | #MainColor#,#ShadowOpacity#
 [Min]

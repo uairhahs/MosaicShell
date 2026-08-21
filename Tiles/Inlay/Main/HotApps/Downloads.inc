@@ -1,4 +1,4 @@
-﻿﻿[DownloadsButton.StringIcon]
+﻿[DownloadsButton.StringIcon]
 Meter=String
 Text=[\xe896]
 MeterStyle=RegularText | Button.StringIcon:S

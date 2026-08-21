@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Height=300
 FontFace=Roboto
 Scale=1

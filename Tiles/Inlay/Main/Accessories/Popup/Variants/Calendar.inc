@@ -1,4 +1,4 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 MouseScrollUpAction=[!CommandMeasure CScript Move(-1)][!UpdateMeasure CScript][!UpdateMeter *][!UpdateMeter BA][!Redraw]
 MouseScrollDownAction=[!CommandMeasure CScript Move(1)][!UpdateMeasure CScript][!UpdateMeter *][!UpdateMeter BA][!Redraw]
 

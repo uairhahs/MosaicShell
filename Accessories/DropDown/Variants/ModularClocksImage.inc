@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 SaveLocation="#SKINSPATH#ModularCLocks\@Resources\Vars.inc"
 SaveKey=Fill
 

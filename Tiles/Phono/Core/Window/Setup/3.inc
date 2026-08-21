@@ -1,4 +1,4 @@
-﻿﻿[Header.String]
+﻿[Header.String]
 Text=Choose and customize!
 
 [Description.String]

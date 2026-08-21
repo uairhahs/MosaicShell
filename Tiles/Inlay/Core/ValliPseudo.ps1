@@ -1,4 +1,4 @@
-﻿﻿function Create-Shortcut {
+﻿function Create-Shortcut {
     $RainmeterExe = $RmAPI.VariableStr('PROGRAMPATH')
     $CoreResourceFolder = $RmAPI.VariableStr('@')
     $ResourceFolder = "$($RmAPI.VariableStr('SKINSPATH'))Inlay\@Resources\"

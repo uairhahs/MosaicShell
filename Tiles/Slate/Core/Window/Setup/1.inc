@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Description.String]
 Text=Welcome to Slate!
 

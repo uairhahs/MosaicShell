@@ -1,4 +1,4 @@
-﻿﻿[Header]
+﻿[Header]
 Text=Language [Beta]
 
 ; [DefaultStartActions]

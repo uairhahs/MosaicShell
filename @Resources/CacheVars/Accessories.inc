@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Dimension.W=1111
 Dimension.H=734
 Arg.1=

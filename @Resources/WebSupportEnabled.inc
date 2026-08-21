@@ -1,2 +1,2 @@
-﻿﻿[Variables]
+﻿[Variables]
 WebInstallation=0

@@ -1,2 +1,2 @@
-﻿﻿[Variables]
+﻿[Variables]
 VolumeChangeLevel=2

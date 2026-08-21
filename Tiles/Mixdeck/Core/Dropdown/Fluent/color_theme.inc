@@ -1,5 +1,5 @@
-﻿﻿[Variables]
-@includeSecvars=#@#SecVar.inc
+﻿[Variables]
+@includeSecvars=#@#CacheVars\Configurator.inc
 
 ; ---------------------------------------------------------------------------- ;
 ;                                   Functions                                  ;

@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Scale=1
 ArcStart=(180-#ArcEnd#)
 ArcEnd=30

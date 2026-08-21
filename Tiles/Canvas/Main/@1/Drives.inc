@@ -1,4 +1,4 @@
-﻿﻿[ResourceGraphDrivesC]
+﻿[ResourceGraphDrivesC]
 Meter=String
 Autoscale=1
 MeasureName=DriveCFree

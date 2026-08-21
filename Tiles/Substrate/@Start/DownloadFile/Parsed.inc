@@ -13,12 +13,12 @@ OnUpdateAction=[!WriteKeyValue Variables RMPATH "#PROGRAMPATH#Rainmeter.exe" "#@
 [CheckModular]
 Measure=String
 String=#ROOTCONFIG#
-IFmatch=Chrono|Phono
+IFmatch=Chrono|Phono|Slate|Inlay|Mixdeck|Tessera
 IfNotMatchAction=[!HideMeter Dep2][!HideMeter Deptext2][!Redraw]
 
 [Variables]
 @includeVersion=#@#Version.inc
-@includeJaxCoreChecker=#SKINSPATH#\#MosaicShell\@Resources\Version.inc
+@includeMosaicShellChecker=#SKINSPATH#\#MosaicShell\@Resources\Version.inc
 Sec.W=800
 Sec.H=500
 Sec.P=40
@@ -220,23 +220,21 @@ IfCondition=InternetStatus = -1
 ifTrueaction=[!SetOption Dep1 MeterStyle "Dep.Shape:S | Dep.ShapeNo:S"][!SetOption DepText1 Text "MosaicShell // connection error, please check internet connection"][!UpdateMEter *][!Redraw]
 
 [mVer]
-Measure=Calc
-Formula=40000
-;Measure=WebParser
-;URL=[WebParser]
-;StringIndex=1
+Measure=WebParser
+URL=[WebParser]
+StringIndex=1
 
 [LogicalScript]
 Measure=Script
 ScriptFile=Logic.lua
 
-[JaxCoreYes]
+[MosaicShellYes]
 Measure=String
 Group=NUOL
 Disabled=1
 OnUpdateAction=[!SetOption Dep1 MeterStyle "Dep.Shape:S | Dep.ShapeYes:S"][!SetOption DepText1 Text "MosaicShell // v#Core.Ver# installed"][!ShowMeterGroup Button][!UpdateMEter *][!Redraw]
 
-[JaxCoreNo]
+[MosaicShellNo]
 Measure=String
 Group=NUOL
 Disabled=1

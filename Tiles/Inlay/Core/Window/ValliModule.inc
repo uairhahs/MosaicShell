@@ -1,11 +1,11 @@
-﻿﻿[Variables]
+﻿[Variables]
 SEc.StartAction=[!SetOption NavBar.Button#Sec.arg2#.StringIcon MeterStyle "Sec.String:S | NavBar.Button.StringIcon:S | NavBar.ButtonSelected.StringIcon:S"][!UpdateMeter NavBar.Button#Sec.arg2#.StringIcon][!Redraw]
 ; Sec.Box.W=((#W#-#Sec.P#*4)/3)
 Sec.Box.H=(250*[S])
 Sec.Box.P=(70*[S])
 Sec.Box.DLC.H=(200*[S])
 Sec.AnchorName=AnchorSuppli
-@includeSecVars=#@#SecVar.inc
+@includeSecVars=#@#CacheVars\Configurator.inc
 @includeSkinVars=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
 Sec.SaveLocation=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
 ; @includeSkinvars=#SKINSPATH##Skin.Name#\@Resources\Vars.inc

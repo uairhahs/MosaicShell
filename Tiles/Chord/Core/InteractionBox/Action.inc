@@ -1,4 +1,4 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 SkinWidth=#Sec.W#
 
 [Variables]
@@ -169,7 +169,7 @@ Meter=String
 X=([Button1.String:X])
 Y=(10*#Sec.S#)R
 Text=Help with custom actions
-Leftmouseupaction=["https://jaxcore.gitbook.io/core/getting-started/faqs/modules-faqs/keylaunch#custom-actions-advanced-usage"]
+Leftmouseupaction=["https://docs.mosaicshell.io/core/getting-started/faqs/modules-faqs/keylaunch#custom-actions-advanced-usage"]
 FontColor=#Set.Subtext_Color#
 MEterStyle=Sec.String:S | Button.String:S
 

@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Description.String]
 Text=Slate is all yours!
 InlinePattern=.*

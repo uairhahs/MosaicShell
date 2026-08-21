@@ -1,4 +1,4 @@
-﻿﻿[MeasureTopUsage1RAM]
+﻿[MeasureTopUsage1RAM]
 Measure=Plugin
 Plugin=UsageMonitor
 Alias=RAM

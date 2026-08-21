@@ -1,4 +1,4 @@
-﻿﻿[Main\Vars\Pixel.inc]
+﻿[Main\Vars\Pixel.inc]
 color_theme=You Gold
 PrimaryColor=53, 47, 42
 PrimaryOpacity=255

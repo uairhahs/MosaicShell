@@ -1,4 +1,4 @@
-﻿﻿[Description.String]
+﻿[Description.String]
 Text=Great! Tessera works properly on your device.
 InlinePattern=Windows' idle timer|manually using a hotkey
 

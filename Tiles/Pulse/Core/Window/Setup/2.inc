@@ -1,4 +1,4 @@
-﻿﻿[Header.Image]
+﻿[Header.Image]
 ImageName=#SKINSPATH#Pulse\@Resources\Images\Warning.png
 
 [Header.String]

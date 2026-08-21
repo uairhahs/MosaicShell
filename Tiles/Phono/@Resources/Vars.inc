@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 R=(20*#scale#)
 
 Style=Side

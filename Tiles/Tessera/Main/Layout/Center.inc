@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 H=(#Height#*#scale#)
 VolumeW=(#H#)
 MediaW=(#H#)

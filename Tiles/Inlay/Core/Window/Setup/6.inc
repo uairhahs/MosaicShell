@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Description.String]
 Text=Inlay is all yours!
 InlinePattern=.*

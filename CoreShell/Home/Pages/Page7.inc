@@ -1,4 +1,4 @@
-﻿﻿[Page.Description]
+﻿[Page.Description]
 Meter=String
 X=(#Set.W#/2)
 Y=(#Set.H#/2)

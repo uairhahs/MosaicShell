@@ -1,4 +1,4 @@
-﻿﻿[Description.String]
+﻿[Description.String]
 Text=Unfortunately, Tessera will not be able to activate automatically on your device. You can still activate Tessera using a hotkey which can be configurated in the general settings later.
 InlinePattern=will not be able to activate automatically
 InlineSetting=Color | 255,0,0

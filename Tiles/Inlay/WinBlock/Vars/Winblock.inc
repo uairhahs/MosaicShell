@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 WinblockDisplay=1
 OrbImageName=Win11
 Mode=1

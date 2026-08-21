@@ -1,4 +1,4 @@
-﻿﻿[AppListButton.StringIcon]
+﻿[AppListButton.StringIcon]
 Meter=String
 Text=[\xe71d]
 MeterStyle=RegularText | Button.StringIcon:S

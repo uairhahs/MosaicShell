@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 ProgramListDirectory=%ProgramData%\Microsoft\Windows\Start Menu\Programs
 ListShowIcon=1
 ListShowFolders=0

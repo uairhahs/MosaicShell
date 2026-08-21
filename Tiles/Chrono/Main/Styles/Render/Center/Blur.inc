@@ -1,4 +1,4 @@
-﻿﻿[ImageMeter]
+﻿[ImageMeter]
 Meter=Image
 ImageName=#SKINSPATH#..\CoreData\Modularclocks\Blur.png
 DynamicVariables=1
