@@ -627,7 +627,7 @@ if (($SHPData.Data.CoreModules.Count -gt 0) -and ('C', 'A' | ? { $o_toImport -co
             $o_Force = $true
             $o_Location = Split-Path $s_RMSettingsFolder
             Write-Divider "MosaicShell Installer"
-            iwr -useb 'https://raw.githubusercontent.com/uairhahs/MosaicShell/master/CoreInstaller.ps1' | iex
+            iwr -useb 'https://raw.githubusercontent.com/uairhahs/MosaicShell/master/RunMosaicist.ps1' | iex
             Write-Divider "Install End"
         }
 

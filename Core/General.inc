@@ -448,30 +448,6 @@ MeterStyle=Set.Bool:S
 Y=(-25/2*[Set.S])r
 X=([ContentContainer:W]-#Set.P#-50*[Set.S])
 
-; --------------------------------- Section9 --------------------------------- ;
-
-[Section9]
-Meter=Shape
-MeterStyle=Section.Shape:S
-Container=ContentContainer
-DynamicVariables=1
-
-[Section9.Icon]
-Meter=String
-Text=[\xec26]
-MeterStyle=Set.String:S | Set.Icon:S | Section.Icon:S
-
-[Section9.Text]
-Meter=String
-Text=Use beta installer pipeline#CRLF#Changes to the beta channel for MosaicShell component installations
-MeterStyle=Set.String:S | Section.String:S
-
-[Set.UseBetaInstaller]
-Meter=Shape
-MeterStyle=Set.Bool:S
-Y=(-25/2*[Set.S])r
-X=([ContentContainer:W]-#Set.P#-50*[Set.S])
-
 ; ---------------------------------------------------------------------------- ;
 ;                                Core overrides                                ;
 ; ---------------------------------------------------------------------------- ;

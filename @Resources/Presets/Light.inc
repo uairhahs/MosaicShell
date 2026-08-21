@@ -1,11 +1,11 @@
 ﻿[@Resources\Vars.inc]
 Set.Style=Light
 Set.IconStyle=Normal
-Set.Pri_Color=250, 250, 250
-Set.Sec_Color=255, 255, 255
+Set.Pri_Color=250,250,250
+Set.Sec_Color=255,255,255
 Set.Ter_Color=238,238,238
-Set.Accent_Color=242, 52, 0
-Set.Accent_Color_2=255, 183, 0
+Set.Accent_Color=4,165,229
+Set.Accent_Color_2=114,135,253
 Set.Text_Color=39,39,39
-Set.SubText_Color=167,167,167
-Set.Positive_Color=35,209,96
+Set.SubText_Color=108,112,134
+Set.Positive_Color=64,160,43

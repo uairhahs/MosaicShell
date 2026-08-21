@@ -27,7 +27,7 @@ Container=a.Container
 
 [Text]
 Meter=String
-Text=Welcome to MosaicShell!#CRLF#MosaicShell (series) is a collection of utility modules designed to improve your desktop experience and increase your productivity. It also includes a few additional widgets to spice up your desktop.
+Text=Welcome to MosaicShell#CRLF#A configurable desktop shell built from composable surfaces. Arrange the pieces, tune the surface, and build an environment that fits the way you work.
 X=(#Sec.W#/2)
 Y=(#Sec.H#/2-([Text:H]+#Sec.P#+40*#Sec.S#)/2)
 W=(#Sec.W#-#Sec.WindowPaddingY#*2)

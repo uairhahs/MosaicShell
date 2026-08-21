@@ -1,11 +1,11 @@
-﻿[Variables]
+[Variables]
 Style.Scale=1
 Style.FontSize=18
 Style.YPos=200
 Style.Pad=50
 Style.Pri_Color=18,18,18
-Style.Accent_Color=242,52,0
-Style.Prog_Color=242,52,0
+Style.Accent_Color=137,220,235
+Style.Prog_Color=137,220,235
 Style.Time1=400
 Style.VectorWait=0
 Style.VectorTime=250
