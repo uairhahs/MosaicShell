@@ -1,4 +1,4 @@
-﻿
+
 function Initialize()
 	AccessoriesCacheVars = SKIN:GetVariable('@') .. 'CacheVars\\Accessories.inc'
 end

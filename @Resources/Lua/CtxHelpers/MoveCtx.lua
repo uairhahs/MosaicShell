@@ -1,4 +1,4 @@
-﻿function Update()
+function Update()
 	moveX = '0'
 	moveY = '0'
 	anchorX = '0'

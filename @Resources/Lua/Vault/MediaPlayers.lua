@@ -1,4 +1,4 @@
-﻿function Initialize()
+function Initialize()
     -- --------------------- makes sure this is in the core --------------------- --
     if SKIN:GetVariable('Skin.Name') ~= nil then
         MediaPlayerName = SKIN:GetVariable('NPName')

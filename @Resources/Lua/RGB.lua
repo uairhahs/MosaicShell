@@ -1,4 +1,4 @@
-﻿function Initialize()
+function Initialize()
 
 	dofile(SKIN:GetVariable('SKINSPATH')..'#MosaicShell\\@Resources\\Lua\\HSBLib.lua')
 	

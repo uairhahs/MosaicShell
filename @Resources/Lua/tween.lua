@@ -1,4 +1,4 @@
-﻿tween = {
+tween = {
   _VERSION     = 'tween 2.1.1',
   _DESCRIPTION = 'tweening for lua',
   _URL         = 'https://github.com/kikito/tween.lua',

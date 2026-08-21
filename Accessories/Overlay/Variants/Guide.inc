@@ -146,7 +146,7 @@ Text=Get updated on the latest development and roadmap updates here!
 [Card.Header.5:S]
 Text=Doesn't work? Confused?
 [Card.Description.5:S]
-Text=Feel free to create a help thread on my Discord server, and you'll receive a reply within 24 hours!
+Text=Feel free to open a GitHub issue if you need help.
 
 ; ------------------------------- Right content ------------------------------ ;
 [Card.Shape.1:S]

@@ -242,15 +242,8 @@ function CheckAvailableUpdates {
 # ---------------------------------------------------------------------------- #
 
 function Open-DALink {
-    $LinkData = $RmAPI.VariableStr('DeviantArtLinks')
-    $SkinName = $RmAPI.VariableStr('Skin.Name')
-
-    $s = $LinkData.Split(':')
-    $i = $s[0].Split('|')
-    $n = [array]::indexof($s[1].Split('|'), $SkinName)
-    $l = $i[$n]
-
-    $RmAPI.Bang("[`"https://www.deviantart.com/jaxoriginals/art/$l`"]")
+    # DeviantArt removed... no-op kept so old bangs do not error
+    $RmAPI.Log('Open-DALink: DeviantArt links have been removed')
 }
 
 function GenCoreData {

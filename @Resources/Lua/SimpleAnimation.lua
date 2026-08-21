@@ -1,4 +1,4 @@
-﻿function Initialize()
+function Initialize()
     -- SKIN:Bang('[!SetTransparency 20]')
     AniSteps = tonumber(SELF:GetOption('Animation_Steps'))
     AniEase = SELF:GetOption('Animation_Easing')

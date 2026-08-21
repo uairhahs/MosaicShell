@@ -1,4 +1,4 @@
-﻿local Events = {
+local Events = {
 	MouseMove = {},
 	LeftMouseDown = {},
 	LeftMouseUp = {},

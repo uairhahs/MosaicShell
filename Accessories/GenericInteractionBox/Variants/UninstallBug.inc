@@ -89,7 +89,7 @@ MeterStyle=Sec.Button:S
 MouseOverAction=[!SetOption #CURRENTSECTION# Fill "Fill Color 88, 101, 242"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# Fill "Fill Color 88, 101, 242, 150"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 Fill=Fill Color 88, 101, 242, 150
-LeftMouseUpAction=["https://discord.gg/JmgehPSDD6"]
+LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell/issues"]
 [Image.DC]
 Meter=Image
 MeterStyle=Sec.Button.Image:S

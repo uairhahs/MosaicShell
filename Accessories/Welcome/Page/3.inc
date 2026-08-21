@@ -36,7 +36,7 @@ Container=a.Container
 
 [Text]
 Meter=String
-Text=Join our growing community!#CRLF#MosaicShell is in active development!
+Text=You're set up!#CRLF#MosaicShell is ready on your desktop.
 X=(#Sec.W#/2)r
 Y=#Sec.WindowPaddingY#
 FontSize=(24*#Sec.S#)
@@ -45,7 +45,7 @@ InlineSetting=GradientColor | 180 | #Set.Accent_Color# ; 1.0 | #Set.Accent_Color
 INlinePattern2=#CRLF#.*
 InlineSetting2=Size | (10*#Sec.S#)
 INlinePattern3=#CRLF#.*
-InlineSetting3=Color | 160,155,145
+InlineSetting3=Color | #Set.SubText_Color#
 INlinePattern4=#CRLF#.*
 InlineSetting4=Weight | 400
 StringAlign=center
@@ -64,7 +64,7 @@ MouseOverAction=[!SetOption #CURRENTSECTION# Fill "Fill Color #Set.Ter_Color#"][
 MouseLeaveAction=[!SetOption #CURRENTSECTION# Fill "Fill Color #Set.Sec_Color#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 DynamicVariables=1
 Container=a.Container
-LeftMouseUpAction=["https://discord.gg/JmgehPSDD6"]
+LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell"]
 
 [Section1.Image]
 Meter=Image
@@ -72,7 +72,7 @@ X=(#Sec.P#)r
 Y=(130*#Sec.S#/2-50*#Sec.S#/2)r
 W=(50*#Sec.S#)
 H=(50*#Sec.S#)
-ImageName=#@#Icons\Discord.png
+ImageName=#@#Images\CoreAssets\LogoIconAccent.png
 Container=a.Container
 
 [Section1.String]
@@ -80,7 +80,7 @@ Meter=String
 X=(75*#Sec.S#)r
 Y=(50*#Sec.S#/2)r
 W=(#Sec.W#-#Sec.WindowPaddingX#*2-#Sec.P#*2-#Sec.S#*75)
-Text=Join CoreCommunity's Discord server!#CRLf#This is MosaicShell's homebase. Get to know everything about MosaicShell, from the past to the future.
+Text=MosaicShell on GitHub#CRLf#Source, releases, and issue tracker.
 StringAlign=LeftCenter
 FontWeight=650
 FontSize=(12*#Sec.S#)
@@ -104,7 +104,7 @@ MouseOverAction=[!SetOption #CURRENTSECTION# Fill "Fill Color #Set.Ter_Color#"][
 MouseLeaveAction=[!SetOption #CURRENTSECTION# Fill "Fill Color #Set.Sec_Color#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 DynamicVariables=1
 Container=a.Container
-LeftMouseUpAction=["https://www.deviantart.com/jaxoriginals"]
+LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell/issues"]
 
 [Section2.Image]
 Meter=Image
@@ -112,7 +112,7 @@ X=(#Sec.P#)r
 Y=(130*#Sec.S#/2-50*#Sec.S#/2)r
 W=(50*#Sec.S#)
 H=(50*#Sec.S#)
-ImageName=#@#Images\DA.png
+ImageName=#@#Icons\GitHub.png
 Container=a.Container
 
 [Section2.String]
@@ -120,7 +120,7 @@ Meter=String
 X=(75*#Sec.S#)r
 Y=(50*#Sec.S#/2)r
 W=(#Sec.W#-#Sec.WindowPaddingX#*2-#Sec.P#*2-#Sec.S#*75)
-Text=Watch me on DeviantArt!#CRLf#This is where I mainly release new modules and widgets!
+Text=Report an issue#CRLf#Bugs, ideas, and feedback welcome.
 StringAlign=LeftCenter
 FontWeight=650
 FontSize=(12*#Sec.S#)

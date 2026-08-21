@@ -136,47 +136,14 @@ LeftMouseUpAction=[!WriteKeyValue Variables Sec.Page "00000"][!Refresh]
 Meter=Shape
 X=(#Set.W#-#HomePage.P#)
 Y=r
-LeftMouseUpAction=["https://discord.gg/JmgehPSDD6"]
+LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell"]
 MeterStyle=Header.Link.Shape:S
 [Header.Link1.Image]
 Meter=Image
-ImageName=#@#Icons\HomePage_DiscordIcon.png
+ImageName=#@#Icons\GitHub.png
 MeterStyle=Header.Link.Image:S
-ToolTipTitle=Join CoreCommunity
-ToolTipText=Join MosaicShell's community, get update notification and more!
-
-[Header.Link2.Shape]
-Meter=Shape
-LeftMouseUpAction=["https://www.deviantart.com/jaxoriginals"]
-MeterStyle=Header.Link.Shape:S
-[Header.Link2.Image]
-Meter=Image
-ImageName=#@#Icons\HomePage_DAIcon.png
-MeterStyle=Header.Link.Image:S
-ToolTipTitle=My DeviantArt
-ToolTipText=Watch my DA account to be notified for new releases!
-
-[Header.Link3.Shape]
-Meter=Shape
-LeftMouseUpAction=["https://mosaicshell.app"]
-MeterStyle=Header.Link.Shape:S
-[Header.Link3.Image]
-Meter=Image
-ImageName=#@#Icons\HomePage_WebsiteIcon.png
-MeterStyle=Header.Link.Image:S
-ToolTipTitle=MosaicShell's website
-ToolTipText=Check it out if you like!
-
-[Header.Link4.Shape]
-Meter=Shape
-LeftMouseUpAction=["https://ko-fi.com/jaxoriginals"]
-MeterStyle=Header.Link.Shape:S
-[Header.Link4.Image]
-Meter=Image
-ImageName=#@#Icons\Donate.png
-MeterStyle=Header.Link.Image:S
-ToolTipTitle=Support MosaicShell's development
-ToolTipText=You can donate to my Ko-Fi page to directly support me, or simply purchase any DLC to support me!
+ToolTipTitle=GitHub
+ToolTipText=Source, releases, and issues for MosaicShell.
 
 ; ---------------------------------------------------------------------------- ;
 ;                                    Content                                   ;

@@ -1,4 +1,4 @@
-﻿function CheckIfNone()
+function CheckIfNone()
     local allNone = 1
     for i=1, 7 do
         local im = SKIN:GetVariable('Module'..i-1)

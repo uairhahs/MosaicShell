@@ -1,4 +1,4 @@
-﻿function GenDrive(DriveChar)
+function GenDrive(DriveChar)
 	DriveCount = string.len(DriveChar)
 	local File = io.open(SKIN:GetVariable('SKINSPATH')..'Plainext\\Main\\@1\\Drives.inc','w')
 	-- DriveCount = string.len('DD')
