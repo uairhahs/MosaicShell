@@ -1,8 +1,10 @@
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Platform;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Scale;
@@ -10,6 +12,13 @@ using MosaicShell.Core.Services;
 using MosaicShell.Host.Tiles.Surfaces;
 
 namespace MosaicShell.Host.Tiles;
+
+/// <summary>Host UI hooks for tile overlays (configure / refresh). Set from App.</summary>
+public static class TileHostUiBridge
+{
+    public static Action<string>? OpenModuleConfig { get; set; }
+    public static Action<string>? RefreshOverlay { get; set; }
+}
 
 public sealed class AvaloniaTileSurfaceHost : ITileSurfaceHost
 {
@@ -66,8 +75,8 @@ public sealed class AvaloniaTileSurfaceHost : ITileSurfaceHost
 
             if (restore is not null)
             {
-                window.Width = restore.Width;
-                window.Height = restore.Height;
+                window.Width = Math.Max(window.MinWidth, restore.Width);
+                window.Height = Math.Max(window.MinHeight, restore.Height);
                 window.Position = new PixelPoint(restore.X, restore.Y);
             }
             else
@@ -93,7 +102,13 @@ public sealed class AvaloniaTileSurfaceHost : ITileSurfaceHost
     {
         if (!_windows.TryGetValue(moduleId, out var window)) return;
         if (!window.IsVisible) window.Show();
-        window.Activate();
+        if (window.IsDesktopWidget)
+            window.SendToDesktop();
+        else
+        {
+            window.BringToFront();
+            window.Activate();
+        }
     }
 
     public void Close(string moduleId)
@@ -108,6 +123,15 @@ public sealed class AvaloniaTileSurfaceHost : ITileSurfaceHost
     {
         foreach (var id in _windows.Keys.ToList())
             Close(id);
+    }
+
+    public void Refresh(string moduleId)
+    {
+        if (!_windows.TryGetValue(moduleId, out var window)) return;
+        var state = new TileSessionState(
+            moduleId, window.Position.X, window.Position.Y, window.Width, window.Height);
+        Close(moduleId);
+        Show(moduleId, state, out _);
     }
 
     public IReadOnlyList<string> OpenModuleIds => _windows.Keys.ToList();
@@ -130,24 +154,33 @@ public sealed class AvaloniaTileSurfaceHost : ITileSurfaceHost
     }
 }
 
+/// <summary>
+/// Borderless desktop/capability frame. Content fills the shell (no nested title chrome).
+/// Rainmeter-parity: drag whole surface; manage via right-click Ctx (align / Z / configure / close).
+/// </summary>
 public sealed class TileOverlayWindow : Window
 {
     public string ModuleId { get; }
+    public bool IsDesktopWidget { get; }
     private readonly LayoutTransformControl _scaler;
+    private bool _stuckToDesktop;
 
     public TileOverlayWindow(ModuleInfo info, Control surface, double userScale)
     {
         ModuleId = info.Id;
+        IsDesktopWidget = info.Kind == ModuleKind.Widget;
+        _stuckToDesktop = IsDesktopWidget
+            || info.Id.Equals("Pulse", StringComparison.OrdinalIgnoreCase);
+
         Title = $"MosaicShell: {info.DisplayName}";
-        Width = 380;
-        Height = 300;
-        MinWidth = 240;
-        MinHeight = 160;
+        ApplyDefaultSize(info);
+        MinWidth = 160;
+        MinHeight = 100;
         CanResize = true;
         SystemDecorations = SystemDecorations.None;
-        Topmost = true;
+        Topmost = !IsDesktopWidget && !_stuckToDesktop;
         ShowInTaskbar = false;
-        TransparencyLevelHint = [WindowTransparencyLevel.AcrylicBlur, WindowTransparencyLevel.Transparent];
+        TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
         Background = Brushes.Transparent;
 
         var shell = new Border
@@ -156,25 +189,54 @@ public sealed class TileOverlayWindow : Window
             CornerRadius = new CornerRadius(12),
             BorderBrush = new SolidColorBrush(Color.Parse("#45475a")),
             BorderThickness = new Thickness(1),
-            ClipToBounds = true
+            ClipToBounds = true,
+            // Content is the frame - no title strip.
+            Child = new Border
+            {
+                Padding = new Thickness(IsDesktopWidget ? 12 : 14),
+                Child = surface
+            }
         };
+        shell.PointerPressed += OnSurfacePointerPressed;
+        shell.ContextMenu = BuildContextMenu();
 
-        var root = new DockPanel();
-        var chrome = new Border
+        _scaler = new LayoutTransformControl
         {
-            Background = new SolidColorBrush(Color.Parse("#33202233")),
-            Padding = new Thickness(12, 8),
-            Child = BuildChrome(info.DisplayName)
+            Child = shell,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch
         };
-        DockPanel.SetDock(chrome, Dock.Top);
-        chrome.PointerPressed += OnChromePointerPressed;
-        root.Children.Add(chrome);
-        root.Children.Add(new Border { Padding = new Thickness(14), Child = surface });
-        shell.Child = root;
-
-        _scaler = new LayoutTransformControl { Child = shell };
         ApplyScale(userScale);
         Content = _scaler;
+
+        KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Escape && !IsDesktopWidget)
+            {
+                e.Handled = true;
+                Close();
+            }
+        };
+    }
+
+    private void ApplyDefaultSize(ModuleInfo info)
+    {
+        if (info.Id.Equals("Canvas", StringComparison.OrdinalIgnoreCase))
+        {
+            Width = 340;
+            Height = 420;
+            return;
+        }
+
+        if (info.Kind == ModuleKind.Widget)
+        {
+            Width = 340;
+            Height = 300;
+            return;
+        }
+
+        Width = 420;
+        Height = 360;
     }
 
     public void ApplyScale(double userScale)
@@ -183,50 +245,177 @@ public sealed class TileOverlayWindow : Window
         _scaler.LayoutTransform = new ScaleTransform(s, s);
     }
 
-    private Control BuildChrome(string title)
+    public void SendToDesktop()
     {
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto") };
-        var titleBlock = new TextBlock
+        _stuckToDesktop = true;
+        Topmost = false;
+        SetZOrder(HwndBottom);
+    }
+
+    public void BringToFront()
+    {
+        _stuckToDesktop = false;
+        Topmost = true;
+        SetZOrder(HwndTopmost);
+        Activate();
+    }
+
+    public void SetNormalZ()
+    {
+        _stuckToDesktop = false;
+        Topmost = false;
+        SetZOrder(HwndNoTopmost);
+    }
+
+    public void AlignTo(AlignPreset preset)
+    {
+        var screen = Screens?.ScreenFromWindow(this) ?? Screens?.Primary;
+        if (screen is null) return;
+        var wa = screen.WorkingArea;
+        var scale = screen.Scaling > 0.1 ? screen.Scaling : 1.0;
+        var w = (int)Math.Round(Bounds.Width * scale);
+        var h = (int)Math.Round(Bounds.Height * scale);
+        var x = preset switch
         {
-            Text = title,
-            FontWeight = FontWeight.SemiBold,
-            FontSize = 13,
-            Foreground = new SolidColorBrush(Color.Parse("#cdd6f4")),
-            VerticalAlignment = VerticalAlignment.Center
+            AlignPreset.TopLeft or AlignPreset.BottomLeft => wa.X + 16,
+            AlignPreset.TopRight or AlignPreset.BottomRight => wa.X + wa.Width - w - 16,
+            AlignPreset.Center or AlignPreset.HorizontalCenter or AlignPreset.VerticalCenter
+                or AlignPreset.TopCenter or AlignPreset.BottomCenter =>
+                wa.X + (wa.Width - w) / 2,
+            _ => Position.X
         };
-        var hide = new Button
+        var y = preset switch
         {
-            Content = "-", Width = 28, Height = 24, Padding = new Thickness(0),
-            Background = Brushes.Transparent, Foreground = new SolidColorBrush(Color.Parse("#a6adc8")), Tag = "hide"
+            AlignPreset.TopLeft or AlignPreset.TopRight or AlignPreset.TopCenter => wa.Y + 16,
+            AlignPreset.BottomLeft or AlignPreset.BottomRight or AlignPreset.BottomCenter =>
+                wa.Y + wa.Height - h - 16,
+            AlignPreset.Center or AlignPreset.HorizontalCenter or AlignPreset.VerticalCenter =>
+                wa.Y + (wa.Height - h) / 2,
+            _ => Position.Y
         };
-        var close = new Button
-        {
-            Content = "×", Width = 28, Height = 24, Padding = new Thickness(0),
-            Background = Brushes.Transparent, Foreground = new SolidColorBrush(Color.Parse("#a6adc8")), Tag = "close"
-        };
-        Grid.SetColumn(hide, 1);
-        Grid.SetColumn(close, 2);
-        grid.Children.Add(titleBlock);
-        grid.Children.Add(hide);
-        grid.Children.Add(close);
-        return grid;
+        if (preset == AlignPreset.HorizontalCenter)
+            y = Position.Y;
+        if (preset == AlignPreset.VerticalCenter)
+            x = Position.X;
+        Position = new PixelPoint(x, y);
     }
 
     protected override void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
-        if (Content is not LayoutTransformControl { Child: Border { Child: DockPanel dock } }) return;
-        if (dock.Children[0] is not Border { Child: Grid chrome }) return;
-        foreach (var child in chrome.Children.OfType<Button>())
+        if (_stuckToDesktop)
+            SendToDesktop();
+    }
+
+    private ContextMenu BuildContextMenu()
+    {
+        var menu = new ContextMenu();
+
+        var configure = new MenuItem { Header = "Configure in Host" };
+        configure.Click += (_, _) => TileHostUiBridge.OpenModuleConfig?.Invoke(ModuleId);
+        menu.Items.Add(configure);
+
+        var align = new MenuItem { Header = "Align" };
+        align.Items.Add(AlignItem("Center", AlignPreset.Center));
+        align.Items.Add(AlignItem("Horizontally centered", AlignPreset.HorizontalCenter));
+        align.Items.Add(AlignItem("Vertically centered", AlignPreset.VerticalCenter));
+        align.Items.Add(new Separator());
+        align.Items.Add(AlignItem("Top left", AlignPreset.TopLeft));
+        align.Items.Add(AlignItem("Top center", AlignPreset.TopCenter));
+        align.Items.Add(AlignItem("Top right", AlignPreset.TopRight));
+        align.Items.Add(AlignItem("Bottom left", AlignPreset.BottomLeft));
+        align.Items.Add(AlignItem("Bottom center", AlignPreset.BottomCenter));
+        align.Items.Add(AlignItem("Bottom right", AlignPreset.BottomRight));
+        menu.Items.Add(align);
+
+        var z = new MenuItem { Header = "Change Z layer" };
+        var desk = new MenuItem { Header = "Desktop (behind windows)" };
+        desk.Click += (_, _) => SendToDesktop();
+        var normal = new MenuItem { Header = "Normal" };
+        normal.Click += (_, _) => SetNormalZ();
+        var top = new MenuItem { Header = "Always on top" };
+        top.Click += (_, _) => BringToFront();
+        z.Items.Add(desk);
+        z.Items.Add(normal);
+        z.Items.Add(top);
+        menu.Items.Add(z);
+
+        menu.Items.Add(new Separator());
+
+        var refresh = new MenuItem { Header = "Refresh" };
+        refresh.Click += (_, _) => TileHostUiBridge.RefreshOverlay?.Invoke(ModuleId);
+        menu.Items.Add(refresh);
+
+        var close = new MenuItem { Header = "Unload" };
+        close.Click += (_, _) => Close();
+        menu.Items.Add(close);
+
+        return menu;
+    }
+
+    private MenuItem AlignItem(string header, AlignPreset preset)
+    {
+        var item = new MenuItem { Header = header };
+        item.Click += (_, _) => AlignTo(preset);
+        return item;
+    }
+
+    private void OnSurfacePointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // Drag from empty chrome / non-interactive padding; don't steal button/slider drags.
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        if (e.Source is Button or Slider or TextBox or ComboBox) return;
+        if (e.Source is Control c && (c is TextBox || AncestorsContainInteractive(c)))
+            return;
+        BeginMoveDrag(e);
+    }
+
+    private static bool AncestorsContainInteractive(Control control)
+    {
+        for (var p = control.Parent; p is not null; p = p.Parent)
         {
-            if (Equals(child.Tag, "hide")) child.Click += (_, _) => Hide();
-            if (Equals(child.Tag, "close")) child.Click += (_, _) => Close();
+            if (p is Button or Slider or TextBox or ComboBox or ScrollViewer)
+                return true;
+        }
+        return false;
+    }
+
+    private void SetZOrder(IntPtr insertAfter)
+    {
+        try
+        {
+            var hwnd = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+            if (hwnd == IntPtr.Zero) return;
+            SetWindowPos(hwnd, insertAfter, 0, 0, 0, 0,
+                SwpNomove | SwpNosize | SwpNoactivate);
+        }
+        catch
+        {
+            // best-effort
         }
     }
 
-    private void OnChromePointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-            BeginMoveDrag(e);
-    }
+    private static readonly IntPtr HwndBottom = new(1);
+    private static readonly IntPtr HwndTopmost = new(-1);
+    private static readonly IntPtr HwndNoTopmost = new(-2);
+    private const uint SwpNomove = 0x0002;
+    private const uint SwpNosize = 0x0001;
+    private const uint SwpNoactivate = 0x0010;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool SetWindowPos(
+        IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint uFlags);
+}
+
+public enum AlignPreset
+{
+    Center,
+    HorizontalCenter,
+    VerticalCenter,
+    TopLeft,
+    TopCenter,
+    TopRight,
+    BottomLeft,
+    BottomCenter,
+    BottomRight
 }

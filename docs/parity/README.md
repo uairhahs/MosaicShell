@@ -74,13 +74,68 @@ Rainmeter `Tiles/{Chrono,Phono,Pulse,Canvas}` are native install stubs. Runtime 
 - Compact vs DEFAULT chrome from StyleCatalog
 - Library Start opens overlay via TileRuntime
 
+## Desktop widget chrome (Rainmeter Ctx parity)
+
+Rainmeter Chrono/Phono/Pulse/Canvas had **no product title strip** - content filled the skin. Shared right-click Ctx (`CoreShell Ctx`) offered Configure, Align, Z layer, Refresh, Unload.
+
+Native overlays must match that shape:
+
+| Feature | Status |
+|---------|--------|
+| Single chrome frame (no nested module title) | **required** - content fills `TileOverlayWindow` |
+| Whole-surface drag | **required** (skip interactive controls) |
+| Right-click: Configure in Host | **required** |
+| Right-click: Align (center / corners) | **required** |
+| Right-click: Z layer (desktop / normal / top) | **required** |
+| Right-click: Refresh / Unload | **required** |
+| Widgets default desktop Z (Pulse was AlwaysOnTop=-2) | **required** |
+| Position persist | SessionStore |
+| Style-driven layout fidelity | later (`layout_fidelity`) |
+| Phono AutoHide when idle | later |
+| Canvas DynamicWindowSize / section toggles | partial (settings) |
+
+## Hotkey capability MVP bars (B3 - must all hold for `tile_*_mvp`)
+
+
+Armed hotkey opens a **Host overlay** via bridge (same pattern as Mixdeck), not a placeholder flyout.
+
+### Inlay (`tile_inlay_mvp`)
+
+- Hotkey opens Host overlay via bridge
+- Pins from `InlaySettings` render and launch (`UseShellExecute`)
+- Search / Enter launches a target
+- StyleCatalog style reflected lightly in chrome
+- Escape closes overlay
+
+### Chord (`tile_chord_mvp`)
+
+- Hotkey opens Host overlay via bridge
+- `ChordSettings.Actions` listed; Enter matches Name and launches Target (fallback: raw text as path/URI)
+- StyleCatalog style reflected lightly
+- Escape closes overlay
+
+### Substrate (`tile_substrate_mvp`)
+
+- Hotkey opens Host overlay via bridge
+- Mute / volume (±) wired to `IAudioService`; brightness when `IBrightnessService.IsSupported`
+- `ShowMute` hides mute tile when false
+- StyleCatalog DEFAULT; Escape closes
+
+## Slate MVP bar (B4 - must hold for `tile_slate_mvp`)
+
+- Arm starts idle watch with `SlateSettings.IdleSeconds` (clamped ≥30s)
+- Idle opens Host overlay via bridge (not tiny flyout); live clock updates
+- When `HideOnFullscreen` is true, suppress idle show if fullscreen probe reports fullscreen
+- Disarm stops idle and hides overlay
+
 ## Skeleton vs MVP (other tiles)
 
 | Skeleton | MVP |
 |----------|-----|
 | `tile_mixdeck_skeleton` | `tile_mixdeck_mvp` |
 | `tile_chrono/phono/pulse/canvas_skeleton` | corresponding `_mvp` (bars above) |
-| `tile_inlay/chord/substrate/slate_skeleton` | corresponding `_mvp` **false** until real surfaces |
+| `tile_inlay/chord/substrate_skeleton` | corresponding `_mvp` (B3 bars above) |
+| `tile_slate_skeleton` | `tile_slate_mvp` (B4 bar above) |
 
 ## Companion proofs
 

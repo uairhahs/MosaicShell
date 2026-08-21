@@ -62,6 +62,7 @@ public class ShellFlyoutTriggerTests : IDisposable
             OsdSuppressor = new NullNativeOsdSuppressor(),
             LegacyVolumeKeys = new NullLegacyMediaKeyHook(),
             Idle = new NullIdleService(),
+            Fullscreen = new NullFullscreenProbe(),
             LockKeys = new NullLockKeysService(),
             Airplane = new NullAirplaneModeService(),
             AudioDevices = new NullAudioDeviceService(),

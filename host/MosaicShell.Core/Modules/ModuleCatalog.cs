@@ -23,12 +23,12 @@ public static class ModuleCatalog
     /// <summary>Canonical tile list (same order as CoreWebResources SkinList).</summary>
     public static IReadOnlyList<ModuleInfo> All { get; } =
     [
-        new("Tessera", "Tessera", "System flyouts for volume, brightness, and media.", ModuleKind.Capability),
-        new("Mixdeck", "Mixdeck", "Per-app audio mixer overlay.", ModuleKind.Capability),
-        new("Inlay", "Inlay", "Start-menu style launcher and shortcuts.", ModuleKind.Capability),
-        new("Slate", "Slate", "Idle / lock screen surface.", ModuleKind.Capability),
-        new("Chord", "Chord", "Keyboard-driven app launcher.", ModuleKind.Capability),
-        new("Substrate", "Substrate", "Notification shade / control center.", ModuleKind.Capability),
+        new("Tessera", "Tessera", "Volume / brightness / media flyouts. Arm, then use system keys (replaces OS OSD while Host runs).", ModuleKind.Capability),
+        new("Mixdeck", "Mixdeck", "Per-app audio mixer. Arm, then press Ctrl+Alt+M (default) or Tessera Pixel.", ModuleKind.Capability),
+        new("Inlay", "Inlay", "Start-menu launcher. Arm, then press Ctrl+Alt+I (default) for pins + search.", ModuleKind.Capability),
+        new("Slate", "Slate", "Idle clock overlay. Arm, then wait for the idle timeout (default 5 min).", ModuleKind.Capability),
+        new("Chord", "Chord", "Macro app launcher. Arm, then press Ctrl+Alt+K (default) for named actions.", ModuleKind.Capability),
+        new("Substrate", "Substrate", "Quick-settings shade. Arm, then press Ctrl+Alt+Q (default) for mute / volume / brightness.", ModuleKind.Capability),
         new("Chrono", "Chrono", "Clock collection with multiple styles.", ModuleKind.Widget),
         new("Phono", "Phono", "Media player widget.", ModuleKind.Widget),
         new("Pulse", "Pulse", "Audio visualizer.", ModuleKind.Widget),

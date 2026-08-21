@@ -57,22 +57,27 @@ public sealed class TesseraSettings
 public sealed class MixdeckSettings
 {
     public string Style { get; set; } = "Fluent";
-    public string HotkeyGesture { get; set; } = "Win+Q";
+    public string HotkeyGesture { get; set; } = "Ctrl+Alt+M";
     public bool CloseOnEscape { get; set; } = true;
 }
 
 public sealed class InlaySettings
 {
     public string Style { get; set; } = "Win11";
-    public string HotkeyGesture { get; set; } = "Win+S";
+    public string HotkeyGesture { get; set; } = "Ctrl+Alt+I";
     public List<string> Pins { get; set; } = ["notepad", "calc"];
 }
 
 public sealed class ChordSettings
 {
     public string Style { get; set; } = "Center";
-    public string HotkeyGesture { get; set; } = "Ctrl+Space";
-    public List<ChordAction> Actions { get; set; } = [];
+    public string HotkeyGesture { get; set; } = "Ctrl+Alt+K";
+    public List<ChordAction> Actions { get; set; } =
+    [
+        new() { Name = "Notepad", Target = "notepad" },
+        new() { Name = "Calculator", Target = "calc" },
+        new() { Name = "Settings", Target = "ms-settings:" }
+    ];
 }
 
 public sealed class ChordAction
@@ -84,7 +89,7 @@ public sealed class ChordAction
 public sealed class SubstrateSettings
 {
     public string Style { get; set; } = "DEFAULT";
-    public string HotkeyGesture { get; set; } = "Win+A";
+    public string HotkeyGesture { get; set; } = "Ctrl+Alt+Q";
     public bool ShowMute { get; set; } = true;
 }
 

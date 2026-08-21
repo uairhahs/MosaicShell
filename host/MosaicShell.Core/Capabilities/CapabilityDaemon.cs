@@ -35,11 +35,29 @@ public sealed class CapabilityDaemon : IDisposable
             return _instances.TryGetValue(moduleId, out var c) && c.IsArmed;
     }
 
+    /// <summary>Null when hotkey registered OK (or N/A); otherwise a user-facing error.</summary>
+    public string? GetHotkeyError(string moduleId)
+    {
+        lock (_gate)
+        {
+            if (_instances.TryGetValue(moduleId, out var c) &&
+                c is BuiltIn.HotkeyOverlayCapability hot)
+                return hot.HotkeyRegistered ? null : hot.HotkeyError;
+            return null;
+        }
+    }
+
     public async Task RestoreAsync(CancellationToken cancellationToken = default)
     {
         var state = CapabilityStore.Load();
         foreach (var id in state.Armed.ToList())
             await ArmAsync(id, persist: false, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<bool> ReArmAsync(string moduleId, CancellationToken cancellationToken = default)
+    {
+        await DisarmAsync(moduleId, persist: false, cancellationToken).ConfigureAwait(false);
+        return await ArmAsync(moduleId, persist: true, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<bool> ArmAsync(string moduleId, bool persist = true, CancellationToken cancellationToken = default)

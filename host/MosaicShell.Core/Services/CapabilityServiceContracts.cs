@@ -44,3 +44,9 @@ public interface IIdleService : IDisposable
     void Start();
     void Stop();
 }
+
+/// <summary>Best-effort: true when the foreground window looks fullscreen (Slate HideOnFullscreen).</summary>
+public interface IFullscreenProbe
+{
+    bool IsForegroundFullscreen { get; }
+}

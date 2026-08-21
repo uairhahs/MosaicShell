@@ -117,6 +117,7 @@ public sealed class HostServices : IDisposable
     public required INativeOsdSuppressor OsdSuppressor { get; init; }
     public required ILegacyMediaKeyHook LegacyVolumeKeys { get; init; }
     public required IIdleService Idle { get; init; }
+    public required IFullscreenProbe Fullscreen { get; init; }
     public required ILockKeysService LockKeys { get; init; }
     public required IAirplaneModeService Airplane { get; init; }
     public required IAudioDeviceService AudioDevices { get; init; }
@@ -157,6 +158,7 @@ public sealed class HostServices : IDisposable
             OsdSuppressor = new WindowsNativeOsdSuppressor(),
             LegacyVolumeKeys = new WindowsLegacyMediaKeyHook(),
             Idle = new WindowsIdleService(),
+            Fullscreen = new WindowsFullscreenProbe(),
             LockKeys = new WindowsLockKeysService(),
             Airplane = new WindowsAirplaneModeService(),
             AudioDevices = new WindowsAudioDeviceService(),

@@ -2,41 +2,65 @@ using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
-using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Core.Capabilities.BuiltIn;
 
-public abstract class HotkeyCapabilityBase : IModuleCapability
+/// <summary>Armed hotkey opens Host overlay via bridge (Mixdeck / Inlay / Chord / Substrate).</summary>
+public class HotkeyOverlayCapability : IModuleCapability
 {
     private readonly HostServices _services;
-    private readonly ICapabilityUiBridge _ui;
     private readonly string _hotkeyId;
     private readonly Func<string> _gesture;
-    private readonly string _flyoutKind;
+    private readonly Action<string>? _persistGesture;
+    private readonly Func<Func<Task>?> _getOpenOverlay;
 
-    protected HotkeyCapabilityBase(
+    public HotkeyOverlayCapability(
         string moduleId,
         HostServices services,
-        ICapabilityUiBridge ui,
         Func<string> gesture,
-        string flyoutKind = "popup")
+        Func<Func<Task>?> getOpenOverlay,
+        Action<string>? persistGesture = null)
     {
         ModuleId = moduleId;
         _services = services;
-        _ui = ui;
         _hotkeyId = "cap:" + moduleId;
         _gesture = gesture;
-        _flyoutKind = flyoutKind;
+        _getOpenOverlay = getOpenOverlay;
+        _persistGesture = persistGesture;
     }
 
     public string ModuleId { get; }
     public bool IsArmed { get; private set; }
+    public bool HotkeyRegistered { get; private set; }
+    public string? HotkeyError { get; private set; }
 
     public Task ArmAsync(CancellationToken cancellationToken = default)
     {
         if (IsArmed) return Task.CompletedTask;
-        if (TryParseGesture(_gesture(), out var mods, out var vk))
-            _services.Hotkeys.Register(_hotkeyId, mods, vk, OnHotkey);
+
+        HotkeyRegistered = false;
+        HotkeyError = null;
+        var raw = _gesture() ?? "";
+        var gesture = HotkeyGestureParser.EnsureRegisterable(ModuleId, raw);
+        if (!string.Equals(raw.Trim(), gesture, StringComparison.OrdinalIgnoreCase))
+            _persistGesture?.Invoke(gesture);
+
+        if (!HotkeyGestureParser.TryParse(gesture, out var mods, out var vk))
+        {
+            HotkeyError = $"Could not parse hotkey '{raw}'.";
+            IsArmed = true;
+            return Task.CompletedTask;
+        }
+
+        if (!_services.Hotkeys.Register(_hotkeyId, mods, vk, OnHotkey))
+        {
+            HotkeyError =
+                $"Could not register {gesture} (in use by Windows or another app). Try Ctrl+Alt+Letter.";
+            IsArmed = true;
+            return Task.CompletedTask;
+        }
+
+        HotkeyRegistered = true;
         IsArmed = true;
         return Task.CompletedTask;
     }
@@ -45,92 +69,15 @@ public abstract class HotkeyCapabilityBase : IModuleCapability
     {
         if (!IsArmed) return Task.CompletedTask;
         _services.Hotkeys.Unregister(_hotkeyId);
-        _ui.Flyouts.Hide(ModuleId);
+        HotkeyRegistered = false;
+        HotkeyError = null;
         IsArmed = false;
         return Task.CompletedTask;
     }
 
     private void OnHotkey()
     {
-        var style = StyleCatalog.DefaultFor(ModuleId);
-        _ui.Flyouts.Show(new FlyoutRequest(ModuleId, _flyoutKind, style));
-    }
-
-    public void Dispose() => DisarmAsync().GetAwaiter().GetResult();
-
-    internal static bool TryParseGesture(string gesture, out ModifierKeys mods, out int vk)
-    {
-        mods = ModifierKeys.None;
-        vk = 0;
-        if (string.IsNullOrWhiteSpace(gesture)) return false;
-        var parts = gesture.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (parts.Length == 0) return false;
-        foreach (var p in parts[..^1])
-        {
-            mods |= p.ToLowerInvariant() switch
-            {
-                "ctrl" or "control" => ModifierKeys.Control,
-                "alt" => ModifierKeys.Alt,
-                "shift" => ModifierKeys.Shift,
-                "win" or "windows" => ModifierKeys.Win,
-                _ => ModifierKeys.None
-            };
-        }
-
-        var key = parts[^1];
-        if (key.Length == 1)
-        {
-            vk = char.ToUpperInvariant(key[0]);
-            return true;
-        }
-
-        vk = key.ToLowerInvariant() switch
-        {
-            "space" => 0x20,
-            "escape" or "esc" => 0x1B,
-            _ => 0
-        };
-        return vk != 0;
-    }
-}
-
-public sealed class MixdeckCapability : IModuleCapability
-{
-    private readonly HostServices _services;
-    private readonly string _hotkeyId = "cap:Mixdeck";
-    private bool _armed;
-
-    public MixdeckCapability(HostServices services, ICapabilityUiBridge ui)
-    {
-        _services = services;
-        _ = ui;
-    }
-
-    public string ModuleId => "Mixdeck";
-    public bool IsArmed => _armed;
-
-    public Task ArmAsync(CancellationToken cancellationToken = default)
-    {
-        if (_armed) return Task.CompletedTask;
-        var gesture = ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings()).HotkeyGesture;
-        if (HotkeyCapabilityBase.TryParseGesture(gesture, out var mods, out var vk))
-            _services.Hotkeys.Register(_hotkeyId, mods, vk, OnHotkey);
-        _armed = true;
-        return Task.CompletedTask;
-    }
-
-    public Task DisarmAsync(CancellationToken cancellationToken = default)
-    {
-        if (!_armed) return Task.CompletedTask;
-        _services.Hotkeys.Unregister(_hotkeyId);
-        _armed = false;
-        return Task.CompletedTask;
-    }
-
-    private void OnHotkey()
-    {
-        // Prefer Host overlay bridge; no placeholder flyout text
-        var open = MixdeckHostBridgeAccessor.OpenOverlayAsync;
+        var open = _getOpenOverlay();
         if (open is not null)
             _ = open();
     }
@@ -138,51 +85,105 @@ public sealed class MixdeckCapability : IModuleCapability
     public void Dispose() => DisarmAsync().GetAwaiter().GetResult();
 }
 
-/// <summary>Core cannot reference Host; bridge is set from App via this accessor pattern in Host, stubbed in tests.</summary>
+public sealed class MixdeckCapability : HotkeyOverlayCapability
+{
+    public MixdeckCapability(HostServices services, ICapabilityUiBridge _)
+        : base("Mixdeck", services,
+            () => ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings()).HotkeyGesture,
+            () => MixdeckHostBridgeAccessor.OpenOverlayAsync,
+            PersistMixdeck)
+    {
+    }
+
+    private static void PersistMixdeck(string g)
+    {
+        var s = ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings());
+        s.HotkeyGesture = g;
+        ModuleSettingsStore.Save("Mixdeck", s);
+    }
+}
+
 public static class MixdeckHostBridgeAccessor
 {
     public static Func<Task>? OpenOverlayAsync { get; set; }
 }
 
-public sealed class InlayCapability : HotkeyCapabilityBase
+public sealed class InlayCapability : HotkeyOverlayCapability
 {
-    public InlayCapability(HostServices services, ICapabilityUiBridge ui)
-        : base("Inlay", services, ui,
+    public InlayCapability(HostServices services, ICapabilityUiBridge _)
+        : base("Inlay", services,
             () => ModuleSettingsStore.Load("Inlay", () => new InlaySettings()).HotkeyGesture,
-            "launcher")
+            () => InlayHostBridgeAccessor.OpenOverlayAsync,
+            PersistInlay)
     {
+    }
+
+    private static void PersistInlay(string g)
+    {
+        var s = ModuleSettingsStore.Load("Inlay", () => new InlaySettings());
+        s.HotkeyGesture = g;
+        ModuleSettingsStore.Save("Inlay", s);
     }
 }
 
-public sealed class ChordCapability : HotkeyCapabilityBase
+public static class InlayHostBridgeAccessor
 {
-    public ChordCapability(HostServices services, ICapabilityUiBridge ui)
-        : base("Chord", services, ui,
+    public static Func<Task>? OpenOverlayAsync { get; set; }
+}
+
+public sealed class ChordCapability : HotkeyOverlayCapability
+{
+    public ChordCapability(HostServices services, ICapabilityUiBridge _)
+        : base("Chord", services,
             () => ModuleSettingsStore.Load("Chord", () => new ChordSettings()).HotkeyGesture,
-            "chord")
+            () => ChordHostBridgeAccessor.OpenOverlayAsync,
+            PersistChord)
     {
+    }
+
+    private static void PersistChord(string g)
+    {
+        var s = ModuleSettingsStore.Load("Chord", () => new ChordSettings());
+        s.HotkeyGesture = g;
+        ModuleSettingsStore.Save("Chord", s);
     }
 }
 
-public sealed class SubstrateCapability : HotkeyCapabilityBase
+public static class ChordHostBridgeAccessor
 {
-    public SubstrateCapability(HostServices services, ICapabilityUiBridge ui)
-        : base("Substrate", services, ui,
+    public static Func<Task>? OpenOverlayAsync { get; set; }
+}
+
+public sealed class SubstrateCapability : HotkeyOverlayCapability
+{
+    public SubstrateCapability(HostServices services, ICapabilityUiBridge _)
+        : base("Substrate", services,
             () => ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings()).HotkeyGesture,
-            "shade")
+            () => SubstrateHostBridgeAccessor.OpenOverlayAsync,
+            PersistSubstrate)
     {
     }
+
+    private static void PersistSubstrate(string g)
+    {
+        var s = ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings());
+        s.HotkeyGesture = g;
+        ModuleSettingsStore.Save("Substrate", s);
+    }
+}
+
+public static class SubstrateHostBridgeAccessor
+{
+    public static Func<Task>? OpenOverlayAsync { get; set; }
 }
 
 public sealed class SlateCapability : IModuleCapability
 {
     private readonly HostServices _services;
-    private readonly ICapabilityUiBridge _ui;
 
-    public SlateCapability(HostServices services, ICapabilityUiBridge ui)
+    public SlateCapability(HostServices services, ICapabilityUiBridge _)
     {
         _services = services;
-        _ui = ui;
     }
 
     public string ModuleId => "Slate";
@@ -204,7 +205,7 @@ public sealed class SlateCapability : IModuleCapability
         if (!IsArmed) return Task.CompletedTask;
         _services.Idle.IdleThresholdReached -= OnIdle;
         _services.Idle.Stop();
-        _ui.Flyouts.Hide(ModuleId);
+        SlateHostBridgeAccessor.HideOverlay?.Invoke();
         IsArmed = false;
         return Task.CompletedTask;
     }
@@ -212,10 +213,20 @@ public sealed class SlateCapability : IModuleCapability
     private void OnIdle(object? s, EventArgs e)
     {
         var settings = ModuleSettingsStore.Load("Slate", () => new SlateSettings());
-        _ui.Flyouts.Show(new FlyoutRequest(ModuleId, "idle", settings.Style, AutoDismissMs: 0));
+        if (settings.HideOnFullscreen && _services.Fullscreen.IsForegroundFullscreen)
+            return;
+        var open = SlateHostBridgeAccessor.OpenIdleOverlayAsync;
+        if (open is not null)
+            _ = open();
     }
 
     public void Dispose() => DisarmAsync().GetAwaiter().GetResult();
+}
+
+public static class SlateHostBridgeAccessor
+{
+    public static Func<Task>? OpenIdleOverlayAsync { get; set; }
+    public static Action? HideOverlay { get; set; }
 }
 
 public static class BuiltInCapabilityFactories

@@ -513,26 +513,142 @@
             </Border>
           </Grid>
 
-          <!-- Non-Tessera modules: simple stacked appearance + Save -->
+          <!-- Non-Tessera modules: how-to + appearance + Save -->
           <DockPanel IsVisible="{Binding !ShowTesseraExtras}">
             <Border DockPanel.Dock="Bottom" Classes="section" Margin="0,8,0,0" Padding="16,12">
-              <Button Classes="primary" Content="Save" HorizontalAlignment="Left"
-                      Command="{Binding SaveModuleConfigCommand}" />
-            </Border>
-            <Border Classes="section" VerticalAlignment="Top">
-              <StackPanel Spacing="12">
-                <TextBlock Classes="sectionTitle" Text="Appearance" Margin="0" />
-                <TextBlock Classes="sectionHint" Margin="0"
-                           Text="Fluent + Win11 use the transfer kit; other styles are approximations." />
-                <ComboBox MinWidth="220" HorizontalAlignment="Left"
-                          ItemsSource="{Binding ModuleStyleOptions}"
-                          SelectedItem="{Binding ModuleStyle}" />
-                <StackPanel Spacing="8" IsVisible="{Binding ShowChronoExtras}">
-                  <Border Height="1" Background="#313244" Margin="0,4" />
-                  <CheckBox Content="Show seconds" IsChecked="{Binding ChronoSeconds}" />
-                </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button Classes="primary" Content="Save" HorizontalAlignment="Left"
+                        Command="{Binding SaveModuleConfigCommand}" />
+                <Button Classes="action" Content="Try now"
+                        IsVisible="{Binding ConfigCanTryOverlay}"
+                        Command="{Binding TryCapabilityOverlayCommand}"
+                        ToolTip.Tip="Arm (if needed) and open the overlay so you can see what this module does" />
               </StackPanel>
             </Border>
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto" AllowAutoHide="False">
+              <StackPanel Spacing="12" Margin="0,0,8,8">
+                <Border Classes="section" IsVisible="{Binding ConfigCanTryOverlay}">
+                  <StackPanel Spacing="8">
+                    <TextBlock Classes="sectionTitle" Text="What this does" Margin="0" />
+                    <TextBlock Text="{Binding ConfigUsageSummary}" TextWrapping="Wrap"
+                               Foreground="#cdd6f4" FontSize="14" />
+                    <TextBlock Text="{Binding ConfigHowToTrigger}" TextWrapping="Wrap"
+                               Foreground="#89dceb" FontSize="13" />
+                  </StackPanel>
+                </Border>
+
+                <Border Classes="section" IsVisible="{Binding ShowHotkeyCapExtras}">
+                  <StackPanel Spacing="10">
+                    <TextBlock Classes="sectionTitle" Text="Hotkey" Margin="0" />
+                    <TextBlock Classes="sectionHint" Margin="0"
+                               Text="Capture a shortcut (Ctrl/Alt/Shift/Win + key). Win+S / Win+A / Win+Q are reserved by Windows and will be replaced automatically." />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Border Background="#181825" CornerRadius="8" Padding="12,8" MinWidth="160"
+                              BorderThickness="1" BorderBrush="#45475a">
+                        <TextBlock Text="{Binding ConfigHotkeyGesture}" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="#cdd6f4" VerticalAlignment="Center" />
+                      </Border>
+                      <Button Classes="primary" Content="Capture"
+                              Command="{Binding BeginHotkeyCaptureCommand}"
+                              IsVisible="{Binding !IsCapturingHotkey}" />
+                      <Button Classes="action" Content="Cancel"
+                              Command="{Binding CancelHotkeyCaptureCommand}"
+                              IsVisible="{Binding IsCapturingHotkey}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding HotkeyCaptureHint}" Foreground="#89dceb" FontSize="12" />
+
+                    <StackPanel Spacing="8" IsVisible="{Binding ShowInlayPins}" Margin="0,8,0,0">
+                      <TextBlock Classes="sectionTitle" Text="Pins" Margin="0" />
+                      <TextBlock Classes="sectionHint" Margin="0"
+                                 Text="Search apps, Start Menu shortcuts, or Settings pages, then Add." />
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <AutoCompleteBox Width="320" MinimumPrefixLength="0"
+                                         FilterMode="ContainsOrdinal"
+                                         ItemsSource="{Binding LaunchTargetChoices}"
+                                         Text="{Binding LaunchTargetQuery}"
+                                         Watermark="Search targets…" />
+                        <Button Classes="action" Content="Add pin"
+                                Command="{Binding AddLaunchTargetPinCommand}" />
+                      </StackPanel>
+                      <ItemsControl ItemsSource="{Binding ConfigPins}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <DockPanel Margin="0,2">
+                              <Button DockPanel.Dock="Right" Classes="icon action"
+                                      Command="{Binding #Root.((vm:MainViewModel)DataContext).RemoveConfigPinCommand}"
+                                      CommandParameter="{Binding}"
+                                      ToolTip.Tip="Remove">
+                                <icons:MaterialIcon Kind="Close" Width="16" Height="16" />
+                              </Button>
+                              <TextBlock Text="{Binding}" Foreground="#cdd6f4" VerticalAlignment="Center" />
+                            </DockPanel>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+
+                    <StackPanel Spacing="8" IsVisible="{Binding ShowChordActions}" Margin="0,8,0,0">
+                      <TextBlock Classes="sectionTitle" Text="Actions" Margin="0" />
+                      <TextBlock Classes="sectionHint" Margin="0"
+                                 Text="Optional display name + search a launch target." />
+                      <TextBox Width="200" HorizontalAlignment="Left" Watermark="Action name (optional)"
+                               Text="{Binding ChordActionName}" />
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <AutoCompleteBox Width="320" MinimumPrefixLength="0"
+                                         FilterMode="ContainsOrdinal"
+                                         ItemsSource="{Binding LaunchTargetChoices}"
+                                         Text="{Binding LaunchTargetQuery}"
+                                         Watermark="Search targets…" />
+                        <Button Classes="action" Content="Add action"
+                                Command="{Binding AddChordActionFromPickerCommand}" />
+                      </StackPanel>
+                      <ItemsControl ItemsSource="{Binding ConfigChordActions}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:ChordActionRow">
+                            <DockPanel Margin="0,2">
+                              <Button DockPanel.Dock="Right" Classes="icon action"
+                                      Command="{Binding #Root.((vm:MainViewModel)DataContext).RemoveChordActionCommand}"
+                                      CommandParameter="{Binding}"
+                                      ToolTip.Tip="Remove">
+                                <icons:MaterialIcon Kind="Close" Width="16" Height="16" />
+                              </Button>
+                              <TextBlock Text="{Binding Label}" Foreground="#cdd6f4" VerticalAlignment="Center" />
+                            </DockPanel>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+
+                    <CheckBox Content="Show mute tile" IsChecked="{Binding ConfigShowMute}"
+                              IsVisible="{Binding ShowSubstrateMute}" />
+                  </StackPanel>
+                </Border>
+
+                <Border Classes="section" VerticalAlignment="Top">
+                  <StackPanel Spacing="12">
+                    <TextBlock Classes="sectionTitle" Text="Appearance" Margin="0" />
+                    <TextBlock Classes="sectionHint" Margin="0"
+                               Text="StyleCatalog id. Full visual skins are later." />
+                    <ComboBox MinWidth="220" HorizontalAlignment="Left"
+                              ItemsSource="{Binding ModuleStyleOptions}"
+                              SelectedItem="{Binding ModuleStyle}" />
+                    <StackPanel Spacing="8" IsVisible="{Binding ShowChronoExtras}">
+                      <Border Height="1" Background="#313244" Margin="0,4" />
+                      <CheckBox Content="Show seconds" IsChecked="{Binding ChronoSeconds}" />
+                    </StackPanel>
+                    <StackPanel Spacing="8" IsVisible="{Binding ShowSlateExtras}">
+                      <Border Height="1" Background="#313244" Margin="0,4" />
+                      <TextBlock Text="Idle timeout (seconds)" Foreground="#a6adc8" FontSize="12" />
+                      <NumericUpDown Classes="config" Minimum="30" Maximum="3600" FormatString="0"
+                                     Value="{Binding ConfigIdleSeconds}" />
+                      <CheckBox Content="Hide when foreground app is fullscreen"
+                                IsChecked="{Binding ConfigHideOnFullscreen}" />
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
           </DockPanel>
         </DockPanel>
 

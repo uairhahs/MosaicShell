@@ -13,31 +13,22 @@ namespace MosaicShell.Host.Tiles.Surfaces;
 
 internal static class WidgetChrome
 {
-    public static Border Wrap(string title, Control body, double corner, double padding, double minWidth) =>
-        new()
+    /// <summary>Content-only frame fill. No module title - the overlay shell is the only chrome.</summary>
+    public static Control Wrap(Control body, double corner = 0, double padding = 0, double minWidth = 0)
+    {
+        if (corner <= 0 && padding <= 0 && minWidth <= 0)
+            return body;
+
+        return new Border
         {
-            Background = Brush("#E6181825"),
             CornerRadius = new Avalonia.CornerRadius(corner),
             Padding = new Avalonia.Thickness(padding),
-            BorderBrush = Brush("#45475a"),
-            BorderThickness = new Avalonia.Thickness(1),
-            MinWidth = minWidth,
-            Child = new StackPanel
-            {
-                Spacing = 10,
-                Children =
-                {
-                    new TextBlock
-                    {
-                        Text = title,
-                        FontSize = 12,
-                        FontWeight = FontWeight.SemiBold,
-                        Foreground = Brush("#a6adc8")
-                    },
-                    body
-                }
-            }
+            MinWidth = minWidth > 0 ? minWidth : 0,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = Brushes.Transparent,
+            Child = body
         };
+    }
 
     public static IBrush Brush(string hex) => new SolidColorBrush(Color.Parse(hex));
 }
@@ -64,10 +55,9 @@ public sealed class CanvasTileView : UserControl
         if (_settings.ShowDisk) { stack.Children.Add(Label("DISK", compact)); stack.Children.Add(_disk); }
 
         Content = WidgetChrome.Wrap(
-            $"Canvas · {_settings.Style}",
             stack,
-            corner: compact ? 6 : 12,
-            padding: compact ? 12 : 16,
+            corner: compact ? 6 : 0,
+            padding: 0,
             minWidth: compact ? 220 : 280);
 
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
@@ -83,7 +73,7 @@ public sealed class CanvasTileView : UserControl
         _host.Text = s.MachineName;
         _cpu.Text = $"{s.CpuPercent:0.0}%";
         _ram.Text = $"{s.RamUsedGb:0.0} / {s.RamTotalGb:0.0} GB ({s.RamUsedPercent:0.0}%)";
-        _disk.Text = string.Join("  ", s.Disks.Select(d => $"{d.Name} {d.FreeGb:0.0}G free"));
+        _disk.Text = string.Join("\n", s.Disks.Select(d => $"{d.Name} {d.FreeGb:0.0}G free"));
     }
 
     private static TextBlock Label(string t, bool compact) => new()
@@ -96,7 +86,10 @@ public sealed class CanvasTileView : UserControl
 
     private static TextBlock Val() => new()
     {
-        FontSize = 18, FontWeight = FontWeight.SemiBold, Foreground = WidgetChrome.Brush("#cdd6f4")
+        FontSize = 18,
+        FontWeight = FontWeight.SemiBold,
+        Foreground = WidgetChrome.Brush("#cdd6f4"),
+        TextWrapping = TextWrapping.Wrap
     };
 }
 
@@ -122,14 +115,11 @@ public sealed class ChronoTileView : UserControl
         _settings = ModuleSettingsStore.Load("Chrono", () => new ChronoSettings());
         ApplyStyleChrome();
         Content = WidgetChrome.Wrap(
-            $"Chrono · {_settings.Style}",
             new StackPanel
             {
                 VerticalAlignment = VerticalAlignment.Center,
                 Children = { _time, _date }
             },
-            corner: 12,
-            padding: 20,
             minWidth: 280);
         _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
         _timer.Tick += (_, _) => Tick();
@@ -205,10 +195,6 @@ public sealed class PhonoTileView : UserControl
     {
         _media = media;
         _settings = ModuleSettingsStore.Load("Phono", () => new PhonoSettings());
-        var corner = _settings.Style.Contains("Card", StringComparison.OrdinalIgnoreCase)
-            || _settings.Style.Equals("Win11", StringComparison.OrdinalIgnoreCase)
-            ? 10.0
-            : 16.0;
 
         var transport = new StackPanel
         {
@@ -228,7 +214,6 @@ public sealed class PhonoTileView : UserControl
         textCol.Children.Add(transport);
 
         Content = WidgetChrome.Wrap(
-            $"Phono · {_settings.Style}",
             new StackPanel
             {
                 Orientation = Orientation.Horizontal,
@@ -236,8 +221,6 @@ public sealed class PhonoTileView : UserControl
                 VerticalAlignment = VerticalAlignment.Center,
                 Children = { _art, textCol }
             },
-            corner: corner,
-            padding: 16,
             minWidth: 320);
 
         _onChanged = (_, _) => Dispatcher.UIThread.Post(Update);
@@ -339,7 +322,7 @@ public sealed class PulseTileView : UserControl
             }
         }
 
-        Content = WidgetChrome.Wrap($"Pulse · {_settings.Style}", _host, corner: 12, padding: 16, minWidth: 280);
+        Content = WidgetChrome.Wrap(_host, minWidth: 280);
 
         _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
         _timer.Tick += (_, _) => Tick();

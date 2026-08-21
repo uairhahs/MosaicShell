@@ -218,7 +218,17 @@ public sealed class InlayTileView : UserControl
             if (!settings.Pins.Contains(app, StringComparer.OrdinalIgnoreCase))
                 _grid.Children.Add(AppButton(app));
 
-        Content = new StackPanel { Children = { _search, _grid } };
+        var pad = settings.Style.Equals("Win11", StringComparison.OrdinalIgnoreCase) ? 4 : 0;
+        Content = new StackPanel
+        {
+            Margin = new Avalonia.Thickness(pad),
+            Spacing = 10,
+            Children =
+            {
+                _search,
+                _grid
+            }
+        };
     }
 
     private Button AppButton(string app)
@@ -249,6 +259,7 @@ public sealed class ChordTileView : UserControl
 {
     private readonly TextBox _box = new() { Watermark = "Type to launch… (Enter)" };
     private readonly ChordSettings _settings;
+    private readonly StackPanel _actions = new() { Spacing = 4 };
 
     public ChordTileView()
     {
@@ -260,22 +271,47 @@ public sealed class ChordTileView : UserControl
             var match = _settings.Actions.FirstOrDefault(a =>
                 a.Name.Contains(q, StringComparison.OrdinalIgnoreCase));
             var target = match?.Target ?? q;
-            try { Process.Start(new ProcessStartInfo { FileName = target, UseShellExecute = true }); }
-            catch { /* ignore */ }
+            Launch(target);
         };
+
+        foreach (var a in _settings.Actions)
+        {
+            var btn = new Button
+            {
+                Content = string.IsNullOrWhiteSpace(a.Name) ? a.Target : $"{a.Name} → {a.Target}",
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Background = Brush("#313244"), Foreground = Brush("#cdd6f4"),
+                CornerRadius = new Avalonia.CornerRadius(8), Padding = new Avalonia.Thickness(10, 8)
+            };
+            var target = a.Target;
+            btn.Click += (_, _) => Launch(target);
+            _actions.Children.Add(btn);
+        }
+
+        if (_actions.Children.Count == 0)
+            _actions.Children.Add(new TextBlock
+            {
+                Text = "No actions configured - add ChordSettings.Actions or type a path.",
+                Foreground = Brush("#6c7086"), FontSize = 12, TextWrapping = Avalonia.Media.TextWrapping.Wrap
+            });
+
+        var pad = _settings.Style.Equals("Center", StringComparison.OrdinalIgnoreCase) ? 4 : 0;
         Content = new StackPanel
         {
+            Margin = new Avalonia.Thickness(pad),
             Spacing = 10,
             Children =
             {
                 _box,
-                new TextBlock
-                {
-                    Text = $"Hotkey setting: {_settings.HotkeyGesture}",
-                    FontSize = 12, Foreground = Brush("#6c7086")
-                }
+                _actions
             }
         };
+    }
+
+    private static void Launch(string target)
+    {
+        try { Process.Start(new ProcessStartInfo { FileName = target, UseShellExecute = true }); }
+        catch { /* ignore */ }
     }
 
     private static IBrush Brush(string hex) => new SolidColorBrush(Color.Parse(hex));
@@ -285,16 +321,19 @@ public sealed class SubstrateTileView : UserControl
 {
     public SubstrateTileView(IAudioService audio, IBrightnessService brightness)
     {
+        var settings = ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings());
         var tiles = new WrapPanel();
-        tiles.Children.Add(Qs("Mute", () => audio.IsMuted = !audio.IsMuted));
+        if (settings.ShowMute)
+            tiles.Children.Add(Qs("Mute", () => audio.IsMuted = !audio.IsMuted));
         tiles.Children.Add(Qs("Vol +", () => audio.MasterVolume = Math.Min(1, audio.MasterVolume + 0.05)));
-        tiles.Children.Add(Qs("Vol −", () => audio.MasterVolume = Math.Max(0, audio.MasterVolume - 0.05)));
+        tiles.Children.Add(Qs("Vol -", () => audio.MasterVolume = Math.Max(0, audio.MasterVolume - 0.05)));
         if (brightness.IsSupported)
             tiles.Children.Add(Qs("Bright", () => brightness.Brightness = Math.Min(1, brightness.Brightness + 0.05)));
         tiles.Children.Add(Qs("Settings", () => Process.Start(new ProcessStartInfo
         {
             FileName = "ms-settings:", UseShellExecute = true
         })));
+
         Content = tiles;
     }
 
@@ -334,7 +373,9 @@ public sealed class SlateTileView : UserControl
                 _clock,
                 new TextBlock
                 {
-                    Text = settings.HideOnFullscreen ? "Idle · hide on fullscreen (policy on)" : "Idle surface",
+                    Text = settings.HideOnFullscreen
+                        ? "Idle · hide on fullscreen"
+                        : "Idle",
                     FontSize = 13, Foreground = Brush("#6c7086"),
                     HorizontalAlignment = HorizontalAlignment.Center,
                     Margin = new Avalonia.Thickness(0, 8, 0, 0)

@@ -717,23 +717,21 @@ internal static class TesseraLayouts
         shell.Children.Add(bg);
         shell.Children.Add(cut);
         // Clip to parallelogram-ish using Border with custom - approximate with opacity mask
-        bg.Clip = new PathGeometry
+        var clipFigures = new PathFigures
         {
-            Figures =
+            new PathFigure
             {
-                new PathFigure
+                StartPoint = new Point(0, 0),
+                IsClosed = true,
+                Segments = new PathSegments
                 {
-                    StartPoint = new Point(0, 0),
-                    IsClosed = true,
-                    Segments = new PathSegments
-                    {
-                        new LineSegment { Point = new Point(340, 0) },
-                        new LineSegment { Point = new Point(320, 200) },
-                        new LineSegment { Point = new Point(0, 200) }
-                    }
+                    new LineSegment { Point = new Point(340, 0) },
+                    new LineSegment { Point = new Point(320, 200) },
+                    new LineSegment { Point = new Point(0, 200) }
                 }
             }
         };
+        bg.Clip = new PathGeometry { Figures = clipFigures };
         BindWheel(shell, vm);
         return shell;
     }

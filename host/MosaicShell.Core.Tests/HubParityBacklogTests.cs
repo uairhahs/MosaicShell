@@ -3,6 +3,7 @@ using MosaicShell.Core.Capabilities.BuiltIn;
 using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Services;
+using MosaicShell.Core.Settings;
 using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Core.Tests;
@@ -70,13 +71,13 @@ public class HubParityBacklogTests
         { "tile_mixdeck_skeleton", true },
         { "tile_mixdeck_mvp", true },
         { "tile_inlay_skeleton", true },
-        { "tile_inlay_mvp", false },
+        { "tile_inlay_mvp", true },
         { "tile_chord_skeleton", true },
-        { "tile_chord_mvp", false },
+        { "tile_chord_mvp", true },
         { "tile_substrate_skeleton", true },
-        { "tile_substrate_mvp", false },
+        { "tile_substrate_mvp", true },
         { "tile_slate_skeleton", true },
-        { "tile_slate_mvp", false },
+        { "tile_slate_mvp", true },
 
         { "module_settings_pages_in_host", true },
         { "welcome_wizard_shortcuts_startup", true },
@@ -110,6 +111,10 @@ public class HubParityBacklogTests
         ["tile_pulse_skeleton"] = nameof(HonestyGateTests.Widget_modules_are_catalog_widgets),
         ["tile_canvas_skeleton"] = nameof(HonestyGateTests.Widget_modules_are_catalog_widgets),
         ["tile_inlay_skeleton"] = nameof(HonestyGateTests.Hotkey_caps_register_in_catalog),
+        ["tile_inlay_mvp"] = nameof(HonestyGateTests.Inlay_mvp_bar_documented_and_capability_opens_via_bridge),
+        ["tile_chord_mvp"] = nameof(HonestyGateTests.Chord_mvp_bar_documented_and_capability_opens_via_bridge),
+        ["tile_substrate_mvp"] = nameof(HonestyGateTests.Substrate_mvp_bar_documented_and_capability_opens_via_bridge),
+        ["tile_slate_mvp"] = nameof(HonestyGateTests.Slate_mvp_bar_documented_and_idle_opens_via_bridge),
         ["style_catalog_jaxcore_ids"] = nameof(StyleCatalogTests.Catalog_covers_widget_modules),
     };
 
@@ -138,7 +143,10 @@ public class HubParityBacklogTests
     public void Oversold_mvp_flags_are_false_until_bars_met()
     {
         var map = HubCapabilities.ToDictionary(r => (string)r[0]!, r => (bool)r[1]!);
-        map["tile_inlay_mvp"].Should().BeFalse();
+        map["tile_inlay_mvp"].Should().BeTrue();
+        map["tile_chord_mvp"].Should().BeTrue();
+        map["tile_substrate_mvp"].Should().BeTrue();
+        map["tile_slate_mvp"].Should().BeTrue();
         map["tessera_layout_fidelity"].Should().BeFalse();
         map["tessera_media_wnp"].Should().BeTrue();
         map["tessera_media_smtc_only"].Should().BeFalse();
@@ -178,6 +186,49 @@ public class HonestyGateTests
         {
             MixdeckHostBridgeAccessor.OpenOverlayAsync = null;
         }
+    }
+
+    [Fact]
+    public void Inlay_mvp_bar_documented_and_capability_opens_via_bridge()
+    {
+        StyleCatalog.IdsFor("Inlay").Should().Contain("Win11");
+        typeof(InlaySettings).GetProperty(nameof(InlaySettings.Pins)).Should().NotBeNull();
+        InlayHostBridgeAccessor.OpenOverlayAsync = () => Task.CompletedTask;
+        try { InlayHostBridgeAccessor.OpenOverlayAsync.Should().NotBeNull(); }
+        finally { InlayHostBridgeAccessor.OpenOverlayAsync = null; }
+    }
+
+    [Fact]
+    public void Chord_mvp_bar_documented_and_capability_opens_via_bridge()
+    {
+        StyleCatalog.IdsFor("Chord").Should().Contain("Center");
+        typeof(ChordSettings).GetProperty(nameof(ChordSettings.Actions)).Should().NotBeNull();
+        ChordHostBridgeAccessor.OpenOverlayAsync = () => Task.CompletedTask;
+        try { ChordHostBridgeAccessor.OpenOverlayAsync.Should().NotBeNull(); }
+        finally { ChordHostBridgeAccessor.OpenOverlayAsync = null; }
+    }
+
+    [Fact]
+    public void Substrate_mvp_bar_documented_and_capability_opens_via_bridge()
+    {
+        StyleCatalog.IdsFor("Substrate").Should().Contain("DEFAULT");
+        typeof(IAudioService).GetProperty(nameof(IAudioService.IsMuted)).Should().NotBeNull();
+        typeof(SubstrateSettings).GetProperty(nameof(SubstrateSettings.ShowMute)).Should().NotBeNull();
+        SubstrateHostBridgeAccessor.OpenOverlayAsync = () => Task.CompletedTask;
+        try { SubstrateHostBridgeAccessor.OpenOverlayAsync.Should().NotBeNull(); }
+        finally { SubstrateHostBridgeAccessor.OpenOverlayAsync = null; }
+    }
+
+    [Fact]
+    public void Slate_mvp_bar_documented_and_idle_opens_via_bridge()
+    {
+        StyleCatalog.IdsFor("Slate").Should().Contain("Center");
+        typeof(IIdleService).GetEvent(nameof(IIdleService.IdleThresholdReached)).Should().NotBeNull();
+        typeof(IFullscreenProbe).GetProperty(nameof(IFullscreenProbe.IsForegroundFullscreen)).Should().NotBeNull();
+        typeof(SlateSettings).GetProperty(nameof(SlateSettings.HideOnFullscreen)).Should().NotBeNull();
+        SlateHostBridgeAccessor.OpenIdleOverlayAsync = () => Task.CompletedTask;
+        try { SlateHostBridgeAccessor.OpenIdleOverlayAsync.Should().NotBeNull(); }
+        finally { SlateHostBridgeAccessor.OpenIdleOverlayAsync = null; }
     }
 
     [Fact]

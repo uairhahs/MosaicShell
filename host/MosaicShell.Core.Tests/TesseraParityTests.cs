@@ -128,6 +128,7 @@ public class TesseraParityTests : IDisposable
             OsdSuppressor = new NullNativeOsdSuppressor(),
             LegacyVolumeKeys = new NullLegacyMediaKeyHook(),
             Idle = new NullIdleService(),
+            Fullscreen = new NullFullscreenProbe(),
             LockKeys = lockSvc,
             Airplane = air,
             AudioDevices = new NullAudioDeviceService(),

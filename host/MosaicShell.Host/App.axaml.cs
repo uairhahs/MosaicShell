@@ -44,6 +44,11 @@ public partial class App : Application
             _daemon = new CapabilityDaemon(registry, _services, uiBridge);
 
             MixdeckHostBridgeAccessor.OpenOverlayAsync = OpenMixdeckOverlayAsync;
+            InlayHostBridgeAccessor.OpenOverlayAsync = () => OpenCapabilityOverlayAsync("Inlay");
+            ChordHostBridgeAccessor.OpenOverlayAsync = () => OpenCapabilityOverlayAsync("Chord");
+            SubstrateHostBridgeAccessor.OpenOverlayAsync = () => OpenCapabilityOverlayAsync("Substrate");
+            SlateHostBridgeAccessor.OpenIdleOverlayAsync = () => OpenCapabilityOverlayAsync("Slate");
+            SlateHostBridgeAccessor.HideOverlay = () => _tileHost?.Close("Slate");
             TesseraHostBridge.ArmMixdeckAsync = OpenMixdeckOverlayAsync;
             TesseraHostBridge.PreviewVolumeFlyout = () =>
             {
@@ -77,14 +82,32 @@ public partial class App : Application
                 _tileRuntime?.NotifySurfaceClosed(id));
             _tileRuntime = new TileRuntime(new RestoringSurfaceHost(_tileHost));
 
-            async Task OpenMixdeckOverlayAsync()
+            TileHostUiBridge.OpenModuleConfig = id =>
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    _mainWindow?.Show();
+                    _mainWindow?.Activate();
+                    _vm?.OpenModuleConfigById(id);
+                });
+            };
+            TileHostUiBridge.RefreshOverlay = id =>
+            {
+                Dispatcher.UIThread.Post(() => _tileHost?.Refresh(id));
+            };
+
+            async Task OpenMixdeckOverlayAsync() => await OpenCapabilityOverlayAsync("Mixdeck");
+
+            async Task OpenCapabilityOverlayAsync(string moduleId)
             {
                 if (_daemon is null || _tileRuntime is null || _tileHost is null) return;
-                await _daemon.ArmAsync("Mixdeck");
-                if (_tileRuntime.IsRunning("Mixdeck"))
-                    _tileHost.Focus("Mixdeck");
-                else
-                    _tileRuntime.Start("Mixdeck");
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    if (_tileRuntime.IsRunning(moduleId))
+                        _tileHost.Focus(moduleId);
+                    else
+                        _tileRuntime.Start(moduleId);
+                });
             }
 
             _vm = new MainViewModel(_tileRuntime, _services, _tileHost, _daemon);

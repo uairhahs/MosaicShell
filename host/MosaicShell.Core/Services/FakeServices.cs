@@ -104,9 +104,44 @@ public sealed class FakeBrightnessService : IBrightnessService
 
 public sealed class FakeHotkeyService : IHotkeyService
 {
-    public bool Register(string id, ModifierKeys modifiers, int virtualKey, Action callback) => true;
-    public void Unregister(string id) { }
-    public void Dispose() { }
+    private readonly Dictionary<string, Action> _callbacks = new(StringComparer.OrdinalIgnoreCase);
+
+    public IReadOnlyCollection<string> RegisteredIds => _callbacks.Keys.ToList();
+
+    public bool Register(string id, ModifierKeys modifiers, int virtualKey, Action callback)
+    {
+        _callbacks[id] = callback;
+        return true;
+    }
+
+    public void Unregister(string id) => _callbacks.Remove(id);
+
+    public bool TryInvoke(string id)
+    {
+        if (!_callbacks.TryGetValue(id, out var cb)) return false;
+        cb();
+        return true;
+    }
+
+    public void Dispose() => _callbacks.Clear();
+}
+
+public sealed class FakeIdleService : IIdleService
+{
+    public TimeSpan IdleTime { get; set; }
+    public TimeSpan Threshold { get; set; } = TimeSpan.FromMinutes(5);
+    public event EventHandler? IdleThresholdReached;
+    public bool IsStarted { get; private set; }
+
+    public void Start() => IsStarted = true;
+    public void Stop() => IsStarted = false;
+    public void RaiseIdle() => IdleThresholdReached?.Invoke(this, EventArgs.Empty);
+    public void Dispose() => Stop();
+}
+
+public sealed class FakeFullscreenProbe : IFullscreenProbe
+{
+    public bool IsForegroundFullscreen { get; set; }
 }
 
 public sealed class FakeAutostartService : IAutostartService
@@ -130,7 +165,8 @@ public static class HostServicesFakes
         BrightnessChanges = new NullBrightnessChangeSource(),
         OsdSuppressor = new NullNativeOsdSuppressor(),
         LegacyVolumeKeys = new NullLegacyMediaKeyHook(),
-        Idle = new NullIdleService(),
+        Idle = new FakeIdleService(),
+        Fullscreen = new FakeFullscreenProbe(),
         LockKeys = new NullLockKeysService(),
         Airplane = new NullAirplaneModeService(),
         AudioDevices = new NullAudioDeviceService(),

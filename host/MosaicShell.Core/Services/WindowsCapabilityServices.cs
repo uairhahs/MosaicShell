@@ -543,6 +543,68 @@ public sealed class NullIdleService : IIdleService
     public void Dispose() { }
 }
 
+/// <summary>Win32 probe: foreground HWND covers its monitor work area (approx fullscreen).</summary>
+public sealed class WindowsFullscreenProbe : IFullscreenProbe
+{
+    public bool IsForegroundFullscreen
+    {
+        get
+        {
+            try
+            {
+                var hwnd = GetForegroundWindow();
+                if (hwnd == IntPtr.Zero) return false;
+                if (!GetWindowRect(hwnd, out var wr)) return false;
+                var mon = MonitorFromWindow(hwnd, 2 /* MONITOR_DEFAULTTONEAREST */);
+                var info = new MONITORINFO { cbSize = (uint)Marshal.SizeOf<MONITORINFO>() };
+                if (!GetMonitorInfo(mon, ref info)) return false;
+                var mr = info.rcMonitor;
+                // Near-cover of monitor bounds (±2px tolerance for borders)
+                return wr.Left <= mr.Left + 2
+                       && wr.Top <= mr.Top + 2
+                       && wr.Right >= mr.Right - 2
+                       && wr.Bottom >= mr.Bottom - 2;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct RECT
+    {
+        public int Left, Top, Right, Bottom;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MONITORINFO
+    {
+        public uint cbSize;
+        public RECT rcMonitor;
+        public RECT rcWork;
+        public uint dwFlags;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+}
+
+public sealed class NullFullscreenProbe : IFullscreenProbe
+{
+    public bool IsForegroundFullscreen => false;
+}
+
 public sealed class NullFlyoutPresenter : MosaicShell.Core.Capabilities.IFlyoutPresenter
 {
     public void Show(MosaicShell.Core.Capabilities.FlyoutRequest request) { }

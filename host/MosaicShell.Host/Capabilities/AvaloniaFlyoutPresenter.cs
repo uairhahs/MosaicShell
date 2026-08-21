@@ -765,6 +765,8 @@ internal sealed class TesseraOutsideClickWatcher : IDisposable
 {
     private delegate nint LowLevelMouseProc(int nCode, nint wParam, nint lParam);
 
+    // Fields are written by Win32 via SetWindowsHookEx / Marshal.PtrToStructure.
+#pragma warning disable CS0649
     private struct Point
     {
         public int x;
@@ -779,6 +781,7 @@ internal sealed class TesseraOutsideClickWatcher : IDisposable
         public uint time;
         public nint dwExtraInfo;
     }
+#pragma warning restore CS0649
 
     private readonly FlyoutWindow _flyout;
     private readonly Action _dismiss;

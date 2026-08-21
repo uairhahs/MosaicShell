@@ -43,8 +43,8 @@ Each module follows the Tessera pattern: thin `Tiles/{Id}` stub + real code in `
 | **B0** | Tessera | Rainmeter gone; Host capability | YourFlyouts-class fidelity later | Stub install only |
 | **B1** | Mixdeck | Native overlay MVP | Full StyleCatalog skins later | `tile_mixdeck_mvp`; Plugin=Tessera disabled |
 | **B2** | Widgets | TileRuntime MVP surfaces | Full Chrono/Phono/Pulse/Canvas skins later | Stub install; flip `tile_*_mvp` |
-| **B3** | Hotkey caps | Placeholders | Real launcher / chord / shade | Per-module `_mvp` |
-| **B4** | Slate | Idle placeholder | Full idle/lock UI | `_mvp` |
+| **B3** | Hotkey caps | Overlay MVP (Inlay/Chord/Substrate) | Full StyleCatalog skins later | Per-module `_mvp` (see parity bars) |
+| **B4** | Slate | Idle overlay MVP | Full screensaver DLC later | `tile_slate_mvp` |
 | **B5** | Hub | Avalonia MainWindow + Mosaicist | Retire CoreShell / Rainmeter install as primary | Host-only docs |
 
 **Non-goals until B5:** deleting Mixdeck/Inlay/Chord/Substrate/Slate `@Resources`, `S-Hub` packagers, or CoreShell wholesale. Widget Rainmeter trees (Chrono/Phono/Pulse/Canvas) are retired in **B2** once MVP bars hold.

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Material.Icons;
 using MosaicShell.Core;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.BuiltIn;
 using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Runtime;
@@ -12,8 +13,10 @@ using MosaicShell.Core.Settings;
 using MosaicShell.Core.Shp;
 using MosaicShell.Core.Styles;
 using MosaicShell.Core.Update;
+using MosaicShell.Host.Input;
 using MosaicShell.Host.Tiles;
 using System.Collections.ObjectModel;
+using Avalonia.Input;
 
 namespace MosaicShell.Host.ViewModels;
 
@@ -117,6 +120,29 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _showChronoExtras;
     [ObservableProperty] private bool _tesseraLegacyVol = true;
     [ObservableProperty] private bool _showTesseraExtras;
+    [ObservableProperty] private bool _showHotkeyCapExtras;
+    [ObservableProperty] private bool _showSlateExtras;
+    [ObservableProperty] private bool _showInlayPins;
+    [ObservableProperty] private bool _showChordActions;
+    [ObservableProperty] private bool _showSubstrateMute;
+    [ObservableProperty] private string _configUsageSummary = "";
+    [ObservableProperty] private string _configHowToTrigger = "";
+    [ObservableProperty] private string _configHotkeyGesture = "";
+    [ObservableProperty] private bool _isCapturingHotkey;
+    [ObservableProperty] private string _hotkeyCaptureHint = "Click Capture, then press the shortcut";
+    [ObservableProperty] private string _launchTargetQuery = "";
+    [ObservableProperty] private string _chordActionName = "";
+    [ObservableProperty] private string _configPinsText = "";
+    [ObservableProperty] private string _configActionsText = "";
+    [ObservableProperty] private bool _configShowMute = true;
+    [ObservableProperty] private decimal _configIdleSeconds = 300;
+    [ObservableProperty] private bool _configHideOnFullscreen = true;
+    [ObservableProperty] private bool _configCanTryOverlay;
+
+    public ObservableCollection<string> ConfigPins { get; } = [];
+    public ObservableCollection<ChordActionRow> ConfigChordActions { get; } = [];
+    public ObservableCollection<string> LaunchTargetChoices { get; } = [];
+
     [ObservableProperty] private TesseraNamedChoice? _selectedTesseraPosition;
     [ObservableProperty] private string _tesseraPosition = "TL";
     [ObservableProperty] private decimal _tesseraMonitorIndex = 1;
@@ -188,14 +214,42 @@ public partial class MainViewModel : ViewModelBase
     private void OpenModuleConfig(LibraryItemViewModel? item)
     {
         if (item is null) return;
-        ConfigModuleId = item.Id;
-        ConfigModuleTitle = item.Name;
+        OpenModuleConfigById(item.Id);
+    }
+
+    /// <summary>Opened from overlay context menu (Configure in Host).</summary>
+    public void OpenModuleConfigById(string moduleId)
+    {
+        if (!ModuleCatalog.TryGet(moduleId, out var info) || info is null) return;
+        ConfigModuleId = info.Id;
+        ConfigModuleTitle = info.DisplayName;
         ModuleStyleOptions.Clear();
-        foreach (var id in StyleCatalog.IdsFor(item.Id))
+        foreach (var id in StyleCatalog.IdsFor(info.Id))
             ModuleStyleOptions.Add(id);
 
-        ShowChronoExtras = item.Id.Equals("Chrono", StringComparison.OrdinalIgnoreCase);
-        ShowTesseraExtras = item.Id.Equals("Tessera", StringComparison.OrdinalIgnoreCase);
+        ShowChronoExtras = info.Id.Equals("Chrono", StringComparison.OrdinalIgnoreCase);
+        ShowTesseraExtras = info.Id.Equals("Tessera", StringComparison.OrdinalIgnoreCase);
+        ShowHotkeyCapExtras = info.Id is "Inlay" or "Chord" or "Substrate" or "Mixdeck";
+        ShowSlateExtras = info.Id.Equals("Slate", StringComparison.OrdinalIgnoreCase);
+        ShowInlayPins = info.Id.Equals("Inlay", StringComparison.OrdinalIgnoreCase);
+        ShowChordActions = info.Id.Equals("Chord", StringComparison.OrdinalIgnoreCase);
+        ShowSubstrateMute = info.Id.Equals("Substrate", StringComparison.OrdinalIgnoreCase);
+        ConfigCanTryOverlay = ShowHotkeyCapExtras || ShowSlateExtras || ShowTesseraExtras;
+        ConfigUsageSummary = ModuleUsageGuide.Summary(info.Id);
+        ConfigHowToTrigger = ModuleUsageGuide.HowToTrigger(info.Id);
+        ConfigHotkeyGesture = ModuleUsageGuide.CurrentHotkey(info.Id);
+        IsCapturingHotkey = false;
+        HotkeyCaptureHint = "Click Capture, then press the shortcut";
+        LaunchTargetQuery = "";
+        ChordActionName = "";
+        ConfigPins.Clear();
+        ConfigChordActions.Clear();
+        EnsureLaunchTargetsLoaded();
+        ConfigPinsText = "";
+        ConfigActionsText = "";
+        ConfigShowMute = true;
+        ConfigIdleSeconds = 300;
+        ConfigHideOnFullscreen = true;
 
         if (ShowChronoExtras)
         {
@@ -232,9 +286,45 @@ public partial class MainViewModel : ViewModelBase
                 : (decimal)Math.Round(s.LegacyVolumeStep);
             TesseraLegacyStepPercent = Math.Clamp(stepPct < 1 ? 2 : stepPct, 1, 25);
         }
+        else if (info.Id.Equals("Inlay", StringComparison.OrdinalIgnoreCase))
+        {
+            var s = ModuleSettingsStore.Load("Inlay", () => new InlaySettings());
+            ModuleStyle = s.Style;
+            ConfigHotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Inlay", s.HotkeyGesture);
+            foreach (var pin in s.Pins)
+                ConfigPins.Add(pin);
+        }
+        else if (info.Id.Equals("Chord", StringComparison.OrdinalIgnoreCase))
+        {
+            var s = ModuleSettingsStore.Load("Chord", () => new ChordSettings());
+            ModuleStyle = s.Style;
+            ConfigHotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Chord", s.HotkeyGesture);
+            foreach (var a in s.Actions)
+                ConfigChordActions.Add(new ChordActionRow(a.Name, a.Target));
+        }
+        else if (info.Id.Equals("Substrate", StringComparison.OrdinalIgnoreCase))
+        {
+            var s = ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings());
+            ModuleStyle = s.Style;
+            ConfigHotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Substrate", s.HotkeyGesture);
+            ConfigShowMute = s.ShowMute;
+        }
+        else if (info.Id.Equals("Mixdeck", StringComparison.OrdinalIgnoreCase))
+        {
+            var s = ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings());
+            ModuleStyle = s.Style;
+            ConfigHotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Mixdeck", s.HotkeyGesture);
+        }
+        else if (ShowSlateExtras)
+        {
+            var s = ModuleSettingsStore.Load("Slate", () => new SlateSettings());
+            ModuleStyle = s.Style;
+            ConfigIdleSeconds = Math.Clamp(s.IdleSeconds, 30, 3600);
+            ConfigHideOnFullscreen = s.HideOnFullscreen;
+        }
         else
         {
-            ModuleStyle = LoadStylePreference(item.Id, ModuleStyleOptions.FirstOrDefault() ?? StyleCatalog.DefaultFor(item.Id));
+            ModuleStyle = LoadStylePreference(info.Id, ModuleStyleOptions.FirstOrDefault() ?? StyleCatalog.DefaultFor(info.Id));
         }
 
         if (ModuleStyleOptions.Count > 0 && !ModuleStyleOptions.Contains(ModuleStyle))
@@ -312,10 +402,11 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void SaveModuleConfig()
+    private async Task SaveModuleConfigAsync()
     {
         if (string.IsNullOrWhiteSpace(ConfigModuleId)) return;
         var id = ConfigModuleId;
+        IsCapturingHotkey = false;
         switch (id.ToLowerInvariant())
         {
             case "chrono":
@@ -361,47 +452,214 @@ public partial class MainViewModel : ViewModelBase
             {
                 var s = ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings());
                 s.Style = ModuleStyle;
+                s.HotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Mixdeck", ConfigHotkeyGesture);
+                ConfigHotkeyGesture = s.HotkeyGesture;
                 ModuleSettingsStore.Save("Mixdeck", s);
-                StatusMessage = "Mixdeck style saved.";
+                StatusMessage = await PersistHotkeyArmAsync(id);
                 break;
             }
             case "inlay":
             {
                 var s = ModuleSettingsStore.Load("Inlay", () => new InlaySettings());
                 s.Style = ModuleStyle;
+                s.HotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Inlay", ConfigHotkeyGesture);
+                ConfigHotkeyGesture = s.HotkeyGesture;
+                s.Pins = ConfigPins.Where(p => !string.IsNullOrWhiteSpace(p)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                if (s.Pins.Count == 0) s.Pins = ["notepad", "calc"];
                 ModuleSettingsStore.Save("Inlay", s);
-                StatusMessage = "Inlay style saved.";
+                StatusMessage = await PersistHotkeyArmAsync(id);
                 break;
             }
             case "chord":
             {
                 var s = ModuleSettingsStore.Load("Chord", () => new ChordSettings());
                 s.Style = ModuleStyle;
+                s.HotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Chord", ConfigHotkeyGesture);
+                ConfigHotkeyGesture = s.HotkeyGesture;
+                s.Actions = ConfigChordActions
+                    .Where(a => !string.IsNullOrWhiteSpace(a.Target))
+                    .Select(a => new ChordAction
+                    {
+                        Name = string.IsNullOrWhiteSpace(a.Name) ? a.Target : a.Name,
+                        Target = a.Target
+                    })
+                    .ToList();
                 ModuleSettingsStore.Save("Chord", s);
-                StatusMessage = "Chord style saved.";
+                StatusMessage = await PersistHotkeyArmAsync(id);
                 break;
             }
             case "slate":
             {
                 var s = ModuleSettingsStore.Load("Slate", () => new SlateSettings());
                 s.Style = ModuleStyle;
+                s.IdleSeconds = Math.Clamp((int)ConfigIdleSeconds, 30, 3600);
+                s.HideOnFullscreen = ConfigHideOnFullscreen;
                 ModuleSettingsStore.Save("Slate", s);
-                StatusMessage = "Slate style saved.";
+                if (_daemon?.IsArmed(id) == true)
+                    await _daemon.ReArmAsync(id);
+                StatusMessage = "Slate saved" + (_daemon?.IsArmed(id) == true ? " and re-armed." : ".");
                 break;
             }
             case "substrate":
             {
                 var s = ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings());
                 s.Style = ModuleStyle;
+                s.HotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Substrate", ConfigHotkeyGesture);
+                ConfigHotkeyGesture = s.HotkeyGesture;
+                s.ShowMute = ConfigShowMute;
                 ModuleSettingsStore.Save("Substrate", s);
-                StatusMessage = "Substrate style saved.";
+                StatusMessage = await PersistHotkeyArmAsync(id);
                 break;
             }
             default:
                 StatusMessage = $"No settings store for {id}.";
                 return;
         }
+
+        ConfigHowToTrigger = ModuleUsageGuide.HowToTrigger(id);
+        RefreshLibrary();
     }
+
+    private async Task<string> PersistHotkeyArmAsync(string id)
+    {
+        if (_daemon is null) return $"{id} saved.";
+        if (!_daemon.IsArmed(id))
+            return $"{id} saved. Arm from Tiles, then press {ConfigHotkeyGesture}.";
+
+        var ok = await _daemon.ReArmAsync(id);
+        if (!ok) return $"{id} saved but could not re-arm.";
+        var err = _daemon.GetHotkeyError(id);
+        return string.IsNullOrWhiteSpace(err)
+            ? $"{id} saved. Hotkey active: {ConfigHotkeyGesture}."
+            : $"{id} saved but hotkey failed: {err}";
+    }
+
+    private void EnsureLaunchTargetsLoaded()
+    {
+        if (LaunchTargetChoices.Count > 0) return;
+        foreach (var label in LaunchTargetCatalog.DisplayLabels())
+            LaunchTargetChoices.Add(label);
+    }
+
+    [RelayCommand]
+    private void BeginHotkeyCapture()
+    {
+        IsCapturingHotkey = true;
+        HotkeyCaptureHint = "Press the shortcut now (Esc cancels)…";
+        StatusMessage = "Listening for hotkey…";
+    }
+
+    [RelayCommand]
+    private void CancelHotkeyCapture()
+    {
+        IsCapturingHotkey = false;
+        HotkeyCaptureHint = "Click Capture, then press the shortcut";
+    }
+
+    /// <summary>Called from MainWindow while capturing.</summary>
+    public bool TryCaptureHotkey(KeyEventArgs e)
+    {
+        if (!IsCapturingHotkey) return false;
+        if (e.Key == Key.Escape)
+        {
+            CancelHotkeyCapture();
+            e.Handled = true;
+            return true;
+        }
+
+        if (!HotkeyCapture.TryFormat(e, out var gesture))
+            return false;
+
+        if (HotkeyGestureParser.IsLikelyOsReserved(gesture))
+        {
+            StatusMessage = $"{gesture} is reserved by Windows. Pick Ctrl+Alt+Letter instead.";
+            e.Handled = true;
+            return true;
+        }
+
+        ConfigHotkeyGesture = gesture;
+        IsCapturingHotkey = false;
+        HotkeyCaptureHint = "Click Capture, then press the shortcut";
+        StatusMessage = $"Hotkey set to {gesture}. Save to apply.";
+        e.Handled = true;
+        return true;
+    }
+
+    [RelayCommand]
+    private void AddLaunchTargetPin()
+    {
+        if (!LaunchTargetCatalog.TryResolveLabel(LaunchTargetQuery, out var target, out _))
+            return;
+        if (ConfigPins.Any(p => p.Equals(target, StringComparison.OrdinalIgnoreCase)))
+        {
+            StatusMessage = "Already pinned.";
+            return;
+        }
+        ConfigPins.Add(target);
+        LaunchTargetQuery = "";
+    }
+
+    [RelayCommand]
+    private void RemoveConfigPin(string? pin)
+    {
+        if (pin is null) return;
+        ConfigPins.Remove(pin);
+    }
+
+    [RelayCommand]
+    private void AddChordActionFromPicker()
+    {
+        if (!LaunchTargetCatalog.TryResolveLabel(LaunchTargetQuery, out var target, out var display))
+            return;
+        var name = string.IsNullOrWhiteSpace(ChordActionName) ? display : ChordActionName.Trim();
+        ConfigChordActions.Add(new ChordActionRow(name, target));
+        LaunchTargetQuery = "";
+        ChordActionName = "";
+    }
+
+    [RelayCommand]
+    private void RemoveChordAction(ChordActionRow? row)
+    {
+        if (row is null) return;
+        ConfigChordActions.Remove(row);
+    }
+
+    [RelayCommand]
+    private async Task TryCapabilityOverlayAsync()
+    {
+        if (string.IsNullOrWhiteSpace(ConfigModuleId) || _daemon is null) return;
+        var id = ConfigModuleId;
+        await SaveModuleConfigAsync();
+        var ok = _daemon.IsArmed(id) || await _daemon.ArmAsync(id);
+        if (!ok)
+        {
+            StatusMessage = $"Could not arm {id}. Install it from Tiles first.";
+            return;
+        }
+
+        var err = _daemon.GetHotkeyError(id);
+        if (!string.IsNullOrWhiteSpace(err) && ShowHotkeyCapExtras)
+            StatusMessage = err;
+
+        if (id.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+        {
+            PreviewTesseraFlyout();
+            return;
+        }
+
+        if (_runtime.IsRunning(id))
+            _tileHost?.Focus(id);
+        else
+            _runtime.Start(id);
+
+        StatusMessage = id.Equals("Slate", StringComparison.OrdinalIgnoreCase)
+            ? "Slate overlay opened (preview). Idle timer still applies when armed."
+            : string.IsNullOrWhiteSpace(err)
+                ? $"{id} overlay opened. Hotkey: {ModuleUsageGuide.CurrentHotkey(id)}"
+                : err;
+        RefreshLibrary();
+    }
+
 
     [RelayCommand]
     private void OpenGitHub()
@@ -575,9 +833,15 @@ public partial class MainViewModel : ViewModelBase
                 {
                     var ok = await _daemon.ArmAsync(item.Id);
                     item.ApplyArmed(ok);
-                    StatusMessage = ok
-                        ? $"Armed {item.Name}! Runs in background while Host is in tray."
-                        : $"Could not arm {item.Name}.";
+                    if (!ok)
+                        StatusMessage = $"Could not arm {item.Name}.";
+                    else
+                    {
+                        var err = _daemon.GetHotkeyError(item.Id);
+                        StatusMessage = string.IsNullOrWhiteSpace(err)
+                            ? $"{ModuleUsageGuide.ArmedStatus(item.Id)}. {ModuleUsageGuide.HowToTrigger(item.Id)}"
+                            : err;
+                    }
                 }
                 return;
             }
@@ -730,7 +994,7 @@ public partial class LibraryItemViewModel : ObservableObject
         IsArmed = armed;
         if (IsCapability)
         {
-            StatusText = armed ? "Armed" : "Ready to arm";
+            StatusText = armed ? ModuleUsageGuide.ArmedStatus(Id) : "Ready to arm";
             ActionIcon = armed ? MaterialIconKind.StopCircle : MaterialIconKind.Flash;
         }
         else
@@ -752,7 +1016,7 @@ public partial class LibraryItemViewModel : ObservableObject
     {
         IsArmed = armed;
         if (!IsInstalled || !IsCapability) return;
-        StatusText = armed ? "Armed" : "Ready to arm";
+        StatusText = armed ? ModuleUsageGuide.ArmedStatus(Id) : "Ready to arm";
         ActionIcon = armed ? MaterialIconKind.StopCircle : MaterialIconKind.Flash;
     }
 
@@ -769,7 +1033,7 @@ public partial class LibraryItemViewModel : ObservableObject
         }
         else if (isCap)
         {
-            status = armed ? "Armed" : "Ready to arm";
+            status = armed ? ModuleUsageGuide.ArmedStatus(info.Id) : "Ready to arm";
             icon = armed ? MaterialIconKind.StopCircle : MaterialIconKind.Flash;
         }
         else
@@ -792,6 +1056,12 @@ public partial class LibraryItemViewModel : ObservableObject
             ActionIcon = icon
         };
     }
+}
+
+public sealed record ChordActionRow(string Name, string Target)
+{
+    public string Label => string.IsNullOrWhiteSpace(Name) ? Target : $"{Name} → {Target}";
+    public override string ToString() => Label;
 }
 
 public sealed record TesseraNamedChoice(string Code, string Label)

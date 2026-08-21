@@ -19,9 +19,15 @@ public sealed class WindowsHotkeyService : IHotkeyService
     public bool Register(string id, ModifierKeys modifiers, int virtualKey, Action callback)
     {
         Unregister(id);
-        var hotkeyId = _nextId++;
-        if (!RegisterHotKey(_window.Handle, hotkeyId, (uint)modifiers, (uint)virtualKey))
+        if (_window.Handle == IntPtr.Zero)
             return false;
+
+        var hotkeyId = _nextId++;
+        // MOD_NOREPEAT = 0x4000 avoids key-repeat floods
+        var fsModifiers = (uint)modifiers | 0x4000u;
+        if (!RegisterHotKey(_window.Handle, hotkeyId, fsModifiers, (uint)virtualKey))
+            return false;
+
         _ids[id] = hotkeyId;
         _callbacks[hotkeyId] = callback;
         return true;
@@ -66,10 +72,31 @@ public sealed class WindowsHotkeyService : IHotkeyService
         {
             _onHotkey = onHotkey;
             using var ready = new ManualResetEventSlim(false);
+            Exception? startError = null;
             _thread = new Thread(() =>
             {
-                Handle = CreateMessageWindow();
-                ready.Set();
+                try
+                {
+                    Handle = CreateMessageWindow();
+                    if (Handle == IntPtr.Zero)
+                    {
+                        startError = new InvalidOperationException(
+                            "CreateWindowEx failed for hotkey HWND_MESSAGE (err=" +
+                            Marshal.GetLastWin32Error() + ").");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    startError = ex;
+                }
+                finally
+                {
+                    ready.Set();
+                }
+
+                if (Handle == IntPtr.Zero)
+                    return;
+
                 while (_running && GetMessage(out var msg, IntPtr.Zero, 0, 0) > 0)
                 {
                     if (msg.message == 0x0312) // WM_HOTKEY
@@ -84,7 +111,10 @@ public sealed class WindowsHotkeyService : IHotkeyService
             };
             _thread.SetApartmentState(ApartmentState.STA);
             _thread.Start();
-            ready.Wait(2000);
+            if (!ready.Wait(5000))
+                throw new InvalidOperationException("Timed out creating hotkey message window.");
+            if (Handle == IntPtr.Zero)
+                throw new InvalidOperationException("Failed to create hotkey message window.", startError);
         }
 
         public void Dispose()
@@ -96,21 +126,48 @@ public sealed class WindowsHotkeyService : IHotkeyService
 
         private static IntPtr CreateMessageWindow()
         {
+            var className = "MosaicShellHotkeyWnd." + Guid.NewGuid().ToString("N");
+            var hInstance = GetModuleHandle(null);
             var wndClass = new WNDCLASS
             {
-                lpszClassName = "MosaicShellHotkeyWnd",
-                lpfnWndProc = Marshal.GetFunctionPointerForDelegate(s_wndProc)
+                style = 0,
+                lpfnWndProc = Marshal.GetFunctionPointerForDelegate(s_wndProc),
+                cbClsExtra = 0,
+                cbWndExtra = 0,
+                hInstance = hInstance,
+                hIcon = IntPtr.Zero,
+                hCursor = IntPtr.Zero,
+                hbrBackground = IntPtr.Zero,
+                lpszMenuName = null,
+                lpszClassName = className
             };
-            RegisterClass(ref wndClass);
-            return CreateWindowEx(0, "MosaicShellHotkeyWnd", "", 0, 0, 0, 0, 0, HWND_MESSAGE, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+
+            var atom = RegisterClass(ref wndClass);
+            if (atom == 0)
+            {
+                var err = Marshal.GetLastWin32Error();
+                if (err != 1410) // ERROR_CLASS_ALREADY_EXISTS
+                    return IntPtr.Zero;
+            }
+
+            return CreateWindowEx(
+                0,
+                className,
+                "MosaicShellHotkeys",
+                0,
+                0, 0, 0, 0,
+                HWND_MESSAGE,
+                IntPtr.Zero,
+                hInstance,
+                IntPtr.Zero);
         }
 
-        private static readonly WndProc s_wndProc = (_, msg, w, l) => DefWindowProc(IntPtr.Zero, msg, w, l);
+        private static readonly WndProc s_wndProc = (hWnd, msg, w, l) => DefWindowProc(hWnd, msg, w, l);
         private static readonly IntPtr HWND_MESSAGE = new(-3);
 
         private delegate IntPtr WndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         private struct WNDCLASS
         {
             public uint style;
@@ -137,13 +194,25 @@ public sealed class WindowsHotkeyService : IHotkeyService
             public int pt_y;
         }
 
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+        private static extern IntPtr GetModuleHandle(string? lpModuleName);
+
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern ushort RegisterClass(ref WNDCLASS lpWndClass);
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern IntPtr CreateWindowEx(int dwExStyle, string lpClassName, string lpWindowName, int dwStyle, int x, int y, int nWidth, int nHeight, IntPtr hWndParent, IntPtr hMenu, IntPtr hInstance, IntPtr lpParam);
+        private static extern IntPtr CreateWindowEx(
+            int dwExStyle,
+            string lpClassName,
+            string lpWindowName,
+            int dwStyle,
+            int x, int y, int nWidth, int nHeight,
+            IntPtr hWndParent,
+            IntPtr hMenu,
+            IntPtr hInstance,
+            IntPtr lpParam);
 
-        [DllImport("user32.dll")]
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern IntPtr DefWindowProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam);
 
         [DllImport("user32.dll")]
