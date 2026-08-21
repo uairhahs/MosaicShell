@@ -38,14 +38,14 @@ function debug ([string] $Text) {
 function Check_Program_Installed( $programName ) {
 $x86_check = ((Get-ChildItem "HKLM:Software\Microsoft\Windows\CurrentVersion\Uninstall") |
 Where-Object { $_."Name" -like "*$programName*" } ).Length -gt 0;
-  
-if(Test-Path 'HKLM:Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall')  
+
+if(Test-Path 'HKLM:Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall')
 {
 $x64_check = ((Get-ChildItem "HKLM:Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall") |
 Where-Object { $_."Name" -like "*$programName*" } ).Length -gt 0;
 }
 return $x86_check -or $x64_check;
-}   
+}
 
 # ------------------------------------ Ini ----------------------------------- #
 
@@ -275,7 +275,7 @@ Active=0
 # $o_Force - Overwrite existing files
 # $o_ExtInstall - Run .rmskin
 # $o_PromptBestOption - Prompt for changing to best options
-## $o_Location - Where to install Core, or where the Rainmeter folder is 
+## $o_Location - Where to install Core, or where the Rainmeter folder is
 ## $o_NoPostActions - Whether to do additional things after installation
 # ------------------------------ Default values ------------------------------ #
 if (!($o_InstallModule)) {$o_InstallModule = "MosaicShell"}
@@ -292,7 +292,7 @@ if (!($o_PromptBestOption)) {
 }
 # ---------------------------- Installer variables --------------------------- #
 $s_InstallIsBatch = [bool]($o_InstallModule.Count -gt '1')
-$s_rootDrive = (Get-WmiObject Win32_OperatingSystem).SystemDrive
+$s_rootDrive = (Get-CimInstance Win32_OperatingSystem).SystemDrive
 $s_rootFolderName = "MosaicShellCache"
 $s_root = "$($s_rootDrive)\$s_rootFolderName"
 $s_unpacked = "$s_root\Unpacked"
@@ -306,7 +306,7 @@ $RMEXEloc = ""
 
 # Enable TLS 1.2 since it is required for connections to GitHub.
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        
+
 $ProgressPreference = 'SilentlyContinue'
 
 Write-Info "COREINSTALLER REF: Stable v6"
@@ -347,7 +347,7 @@ if (!($o_Location)) {
         }
     } else {
         $wasRMInstalled = $false
-        
+
         if ($o_InstallModule -match '/') {
             $s_LargeModuleName = $o_InstallModule.Split('/')[1]
         } else {
@@ -380,7 +380,7 @@ if (!($o_Location)) {
             $s_RMINIFile = "$($s_RMSettingsFolder)Rainmeter.ini"
             $s_RMSkinFolder = "$o_Location\MosaicShell\InstalledComponents\"
             $RMEXEloc = "$s_RMSettingsFolder\Rainmeter.exe"
-            
+
             Download-Rainmeter "/S /RESTART=0 /PORTABLE=1 /D=$s_RMSettingsFolder"
         } else {
             Write-Fail "Action cancelled. Installation terminated."
@@ -500,24 +500,11 @@ foreach ($m in $o_InstallModule) {
         $release_api_url = "https://api.github.com/repos/$org/$m/releases/tags/v$o_Version"
     }
 
-    # 22H2 media player patch
-
-    if (($moduleDetails[$m].Values -contains 'WindowsNowPlaying') -and ($22h2_downloaded -ne $true) -and ($([System.Environment]::OSVersion.Version.Build) -gt 22533)) {
-        $22h2_downloaded = $true
-
-        $outpath = "$s_root\zzzzzz.rmskin"
-        Write-Task "Downloading 22H2 media player patch from    "; Write-Emphasized "https://github.com/uairhahs/MosaicShell/releases/download/v1/zzzzzz.rmskin"
-        Invoke-WebRequest "https://github.com/uairhahs/MosaicShell/releases/download/v1/zzzzzz.rmskin" -outfile "$outpath" -UseBasicParsing
-        Write-Done
-    }
-
-    # End End End End
-
     Write-Task "Downloading    "; Write-Emphasized $release_api_url; Write-Task " to get download URL"
     $api_object = Invoke-WebRequest -Uri $release_api_url -UseBasicParsing | ConvertFrom-Json
     Write-Done
     $dl_url = $api_object.assets.browser_download_url
-    
+
     $outpath = "$s_root\$($m)_$($api_object.tag_name).rmskin"
     Write-Task "Downloading    "; Write-Emphasized $dl_url
     Invoke-WebRequest "$dl_url" -outfile "$outpath" -UseBasicParsing
@@ -538,7 +525,7 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
             Invoke-Item $_.FullName
         }
     } else {
-        throw 'Unable to find downloaded file. Try running installer as adminstrator, or if you are installing a module within MosaicShell, run Rainmeter as administrator and try again. Make sure you have no programs running that would potentially delete the downloaded file'
+        throw 'Unable to find downloaded file. Try running installer as administrator, or if you are installing a module within MosaicShell, run Rainmeter as administrator and try again. Make sure you have no programs running that would potentially delete the downloaded file'
     }
     Write-Done
     Write-Task "Interacting with installer UI"
@@ -567,7 +554,7 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
             Write-Done
         }
     } else {
-        throw 'Unable to find downloaded file. Try running installer as adminstrator, or if you are installing a module within MosaicShell, run Rainmeter as administrator and try again. Make sure you have no programs running that would potentially delete the downloaded file'
+        throw 'Unable to find downloaded file. Try running installer as administrator, or if you are installing a module within MosaicShell, run Rainmeter as administrator and try again. Make sure you have no programs running that would potentially delete the downloaded file'
     }
     # ---------------------------- Start installation ---------------------------- #
     Write-Info "Starting installation..."
@@ -584,7 +571,7 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
 
     Get-ChildItem "$s_unpacked\" -Directory | Sort-Object | ForEach-Object {
         $i_root = "$s_unpacked\$($_.Name)"
-        
+
         If (!(Test-Path "$i_root\RMSKIN.ini")) {
             Write-Fail "ERROR: Unable to find RMSKIN.ini in extracted package. Please report this issue to the developer."
             debug "Press ENTER to close this prompt"
@@ -602,7 +589,7 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
 
             $skin_load = $Ini["rmskin"]["Load"]
             $skin_load_path = Split-Path $skin_load
-            if ($skin_name -contains '#MosaicShell') {$isInstallingCore = $true} 
+            if ($skin_name -contains '#MosaicShell') {$isInstallingCore = $true}
             $list_of_installations.Add("$skin_name") > $null
 
             debug "$skin_name $skin_ver - by $skin_auth"
@@ -675,7 +662,7 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
                 }
             } elseif (($skin_name -notcontains '#MosaicShell') -and !$o_FromSHUB -and $o_NoPostActions) {
                 debug "> Automatically changing scale variables (new installation)"
-                $vc = Get-WmiObject -class "Win32_VideoController"
+                $vc = Get-CimInstance -ClassName Win32_VideoController
                 $saw = $vc.CurrentHorizontalResolution
                 $sah = $vc.CurrentVerticalResolution
         #        ((#SCREENAREAWIDTH#/1920) < (#SCREENAREAHEIGHT#/1080) ? (#SCREENAREAWIDTH#/1920) : (#SCREENAREAHEIGHT#/1080))
@@ -806,7 +793,7 @@ Active=1
                     $i_name = $list_of_installations[$i]
                     debug "> Matching $i_name with installed DLCs"
 
-                    for ($j = 0; $j -lt $Ini['Variables'].Keys.Count; $j++) { 
+                    for ($j = 0; $j -lt $Ini['Variables'].Keys.Count; $j++) {
                         if ($Ini['Variables'].Keys[$j] -match $i_name) {
                             debug "Found $i_name in installed DLCs"
                             # Preserve legacy DLC reinstall action
@@ -823,7 +810,7 @@ Active=1
             }
         }
         If ($s_InstallIsBatch) {
-            # Preserve legacy jaxcore post acton
+            # Preserve legacy post action
             If ($isPostWebviewCore) {
                 & "$RMEXEloc" [!ActivateConfig "#MosaicShell\Main" "Home.Ini"]
             } else {

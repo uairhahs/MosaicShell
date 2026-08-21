@@ -1,5 +1,5 @@
-[Variables]
-SkinList=YourFlyouts | YourMixer | ValliStart | IdleStyle | Keylaunch | QuickNote | Keystrokes | Overlayer | ModularClocks | ModularPlayers | ModularVisualizer | Plainext
+﻿[Variables]
+SkinList=Tessera | Mixdeck | Inlay | Slate | Chord| Chrono | Phono | Pulse | Canvas
 
 NewsID=49
 Page2ID=3

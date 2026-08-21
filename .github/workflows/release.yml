@@ -28,11 +28,10 @@ jobs:
       - name: Resolve tag
         id: tag
         run: |
-          REF="$GITHUB_REF"
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
-            echo "name=dev" >> "$GITHUB_OUTPUT"
+            echo "name=dev-$(echo $GITHUB_SHA | cut -c1-7)" >> "$GITHUB_OUTPUT"
           else
-            echo "name=${REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+            echo "name=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Sync version in RMSKIN.ini
