@@ -67,7 +67,7 @@ public sealed class ModuleInstaller
 
         try
         {
-            // .rmskin is already a zip archive — extract in place (no temp copy; avoids file locks).
+            // .rmskin is already a zip archive, just extract in place (no temp copy; avoids file locks).
             var unpack = Path.Combine(work, "unpacked");
             await Task.Run(() => ZipFile.ExtractToDirectory(packagePath, unpack), ct);
 

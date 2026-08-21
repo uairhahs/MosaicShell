@@ -8,8 +8,10 @@ using MosaicShell.Core.Capabilities.BuiltIn;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Scale;
 using MosaicShell.Core.Services;
+using MosaicShell.Core.Settings;
 using MosaicShell.Host.Capabilities;
 using MosaicShell.Host.Tiles;
+using MosaicShell.Host.Tiles.Tessera;
 using MosaicShell.Host.ViewModels;
 using MosaicShell.Host.Views;
 
@@ -40,6 +42,33 @@ public partial class App : Application
             var registry = new CapabilityRegistry();
             BuiltInCapabilityFactories.RegisterAll(registry);
             _daemon = new CapabilityDaemon(registry, _services, uiBridge);
+
+            TesseraHostBridge.ArmMixdeckAsync = async () =>
+            {
+                if (_daemon is null) return;
+                await _daemon.ArmAsync("Mixdeck");
+            };
+            TesseraHostBridge.PreviewVolumeFlyout = () =>
+            {
+                var s = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
+                flyouts.Show(new FlyoutRequest(
+                    "Tessera",
+                    "vol",
+                    s.Style,
+                    s.Position,
+                    s.AutoDismissMs,
+                    new Dictionary<string, string>
+                    {
+                        ["volume"] = (_services?.Audio.MasterVolume ?? 0.5).ToString("0.###"),
+                        ["muted"] = (_services?.Audio.IsMuted == true) ? "1" : "0",
+                        ["showMediaStrip"] = s.ShowMediaStripOnVolume ? "1" : "0"
+                    },
+                    s.MonitorIndex,
+                    s.XPad,
+                    s.YPad,
+                    s.Ani,
+                    s.AniDir));
+            };
 
             _tileHost = new AvaloniaTileSurfaceHost(_services, UserScale, id =>
                 _tileRuntime?.NotifySurfaceClosed(id));
@@ -85,7 +114,7 @@ public partial class App : Application
             return;
         }
 
-        // Exit on close — same teardown as tray Exit
+        // Exit on close, same teardown as tray Exit
         e.Cancel = true; // cancel first so we can dispose async-safe then force-close
         _ = ExitApplicationAsync();
     }

@@ -436,28 +436,121 @@
                 <StackPanel Spacing="12">
                   <TextBlock Classes="sectionTitle" Text="Appearance" />
                   <TextBlock Classes="sectionHint"
-                             Text="Named styles match JaxCore ids. Changes apply on next launch or re-arm." />
-                  <StackPanel Orientation="Horizontal" Spacing="8">
-                    <ComboBox MinWidth="220" HorizontalAlignment="Stretch"
-                              ItemsSource="{Binding ModuleStyleOptions}"
-                              SelectedItem="{Binding ModuleStyle}" />
-                  </StackPanel>
+                             Text="Layout style names match JaxCore Tessera (Fluent, Win11, …)." />
+                  <ComboBox MinWidth="220" HorizontalAlignment="Left"
+                            ItemsSource="{Binding ModuleStyleOptions}"
+                            SelectedItem="{Binding ModuleStyle}" />
 
                   <StackPanel Spacing="8" IsVisible="{Binding ShowChronoExtras}">
                     <Border Height="1" Background="#313244" Margin="0,4" />
                     <CheckBox Content="Show seconds" IsChecked="{Binding ChronoSeconds}" />
                   </StackPanel>
-
-                  <StackPanel Spacing="8" IsVisible="{Binding ShowTesseraExtras}">
-                    <Border Height="1" Background="#313244" Margin="0,4" />
-                    <CheckBox Content="Legacy volume key hooks" IsChecked="{Binding TesseraLegacyVol}" />
-                    <TextBlock Classes="sectionHint" Margin="0"
-                               Text="Use when Windows volume notifications are unreliable (Win11 22H2+)." />
-                  </StackPanel>
-
-                  <Button Classes="primary" Content="Save" HorizontalAlignment="Left" Margin="0,8,0,0"
-                          Command="{Binding SaveModuleConfigCommand}" />
                 </StackPanel>
+              </Border>
+
+              <Border Classes="section" IsVisible="{Binding ShowTesseraExtras}">
+                <StackPanel Spacing="12">
+                  <TextBlock Classes="sectionTitle" Text="Placement" />
+                  <TextBlock Classes="sectionHint"
+                             Text="Where the flyout sits on the chosen monitor’s work area (default: top left, like JaxCore)." />
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="Corner" Foreground="#a6adc8" FontSize="12" />
+                    <ComboBox MinWidth="200" HorizontalAlignment="Left"
+                              ItemsSource="{Binding TesseraPositionChoices}"
+                              SelectedItem="{Binding SelectedTesseraPosition}"
+                              ToolTip.Tip="Nine-point anchor: top/center/bottom × left/center/right" />
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="16">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Monitor" Foreground="#a6adc8" FontSize="12" />
+                      <NumericUpDown Width="100" Minimum="1" Maximum="8" Value="{Binding TesseraMonitorIndex}"
+                                     ToolTip.Tip="1 = primary (Avalonia screen order)" />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Horizontal inset (px)" Foreground="#a6adc8" FontSize="12" />
+                      <NumericUpDown Width="100" Minimum="0" Maximum="200" Value="{Binding TesseraXPad}"
+                                     ToolTip.Tip="Pixels from the left or right edge of the work area" />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Vertical inset (px)" Foreground="#a6adc8" FontSize="12" />
+                      <NumericUpDown Width="100" Minimum="0" Maximum="200" Value="{Binding TesseraYPad}"
+                                     ToolTip.Tip="Pixels from the top or bottom edge of the work area" />
+                    </StackPanel>
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+
+              <Border Classes="section" IsVisible="{Binding ShowTesseraExtras}">
+                <StackPanel Spacing="12">
+                  <TextBlock Classes="sectionTitle" Text="Timing" />
+                  <TextBlock Classes="sectionHint" Text="How long the flyout stays visible after the last change (hover holds it open)." />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <NumericUpDown Width="120" Minimum="500" Maximum="20000" Increment="100"
+                                   Value="{Binding TesseraAutoDismissMs}" />
+                    <TextBlock Text="milliseconds" VerticalAlignment="Center" Foreground="#a6adc8" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+
+              <Border Classes="section" IsVisible="{Binding ShowTesseraExtras}">
+                <StackPanel Spacing="12">
+                  <TextBlock Classes="sectionTitle" Text="Motion" />
+                  <TextBlock Classes="sectionHint" Text="Entrance animation when the flyout appears." />
+                  <StackPanel Orientation="Horizontal" Spacing="16">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Style" Foreground="#a6adc8" FontSize="12" />
+                      <ComboBox MinWidth="180" ItemsSource="{Binding TesseraAniChoices}"
+                                SelectedItem="{Binding SelectedTesseraAni}" />
+                    </StackPanel>
+                    <StackPanel Spacing="4" IsEnabled="{Binding TesseraAniDirEnabled}">
+                      <TextBlock Text="Slide from" Foreground="#a6adc8" FontSize="12" />
+                      <ComboBox Width="120" ItemsSource="{Binding TesseraAniDirOptions}"
+                                SelectedItem="{Binding TesseraAniDir}" />
+                    </StackPanel>
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+
+              <Border Classes="section" IsVisible="{Binding ShowTesseraExtras}">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="sectionTitle" Text="What to show" />
+                  <TextBlock Classes="sectionHint" Text="Which system events open a Tessera flyout." />
+                  <CheckBox Content="Media flyouts (now playing)" IsChecked="{Binding TesseraMediaFlyouts}"
+                            ToolTip.Tip="Show a flyout when SMTC media session changes" />
+                  <CheckBox Content="Media strip on volume flyout" IsChecked="{Binding TesseraMediaStrip}"
+                            ToolTip.Tip="When media is playing, show transport controls next to volume" />
+                  <CheckBox Content="Lock-key flyouts (Caps / Num / Scroll)" IsChecked="{Binding TesseraLockFlyouts}" />
+                  <CheckBox Content="Airplane-mode flyouts" IsChecked="{Binding TesseraFlightFlyouts}" />
+                </StackPanel>
+              </Border>
+
+              <Border Classes="section" IsVisible="{Binding ShowTesseraExtras}">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="sectionTitle" Text="Advanced" />
+                  <CheckBox Content="Legacy volume key hooks" IsChecked="{Binding TesseraLegacyVol}"
+                            ToolTip.Tip="Intercept volume keys so Tessera owns the gesture (recommended on Win11)" />
+                  <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding TesseraLegacyVol}">
+                    <TextBlock Text="Volume step" VerticalAlignment="Center" Foreground="#a6adc8" />
+                    <NumericUpDown Width="100" Minimum="0.01" Maximum="0.25" Increment="0.01"
+                                   FormatString="0.00" Value="{Binding TesseraLegacyStep}" />
+                  </StackPanel>
+                  <TextBlock Classes="sectionHint" Margin="0"
+                             Text="Stock Windows volume HUD is hidden best-effort while Tessera is armed. Vendor laptop OSDs (Dell/HP/…) may still appear. Re-arm after changing hooks." />
+                </StackPanel>
+              </Border>
+
+              <Border Classes="section" IsVisible="{Binding ShowTesseraExtras}">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="sectionTitle" Text="Try it" />
+                  <TextBlock Classes="sectionHint" Text="Saves current placement/style and shows a volume flyout without re-arming." />
+                  <Button Classes="ghost" Content="Preview volume flyout" HorizontalAlignment="Left"
+                          Command="{Binding PreviewTesseraFlyoutCommand}" />
+                </StackPanel>
+              </Border>
+
+              <Border Classes="section">
+                <Button Classes="primary" Content="Save" HorizontalAlignment="Left"
+                        Command="{Binding SaveModuleConfigCommand}" />
               </Border>
             </StackPanel>
           </ScrollViewer>
@@ -475,7 +568,7 @@
           <Image Source="/Assets/logo-hero.png" MaxWidth="280" HorizontalAlignment="Left" />
           <TextBlock Text="Welcome" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
           <TextBlock TextWrapping="Wrap" Foreground="#a6adc8" FontSize="14" LineHeight="22"
-                     Text="Native host — CapabilityDaemon arms Tessera/Mixdeck/etc. in the tray process. Widgets launch as overlays. Prefer Mosaicist over iwr|iex." />
+                     Text="Native host with CapabilityDaemon arms Tessera/Mixdeck/etc. in the tray process. Widgets launch as overlays. Prefer Mosaicist over iwr|iex." />
           <StackPanel Orientation="Horizontal" Spacing="8">
             <Button Classes="primary" Content="Finish welcome" Command="{Binding CompleteWelcomeCommand}" />
             <Button Classes="action" Content="Open Tiles" Command="{Binding NavigateCommand}" CommandParameter="Tiles" />

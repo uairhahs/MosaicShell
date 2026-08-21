@@ -31,12 +31,23 @@ public sealed class PulseSettings
 public sealed class TesseraSettings
 {
     public string Style { get; set; } = "Fluent";
-    public string Anchor { get; set; } = "BR";
-    public int AutoDismissMs { get; set; } = 2500;
-    public bool UseLegacyVolumeHooks { get; set; }
+    /// <summary>Nine-point anchor: TL/TC/TR/CL/CC/CR/BL/BC/BR (JaxCore default TL)</summary>
+    public string Position { get; set; } = "TL";
+    public int MonitorIndex { get; set; } = 1;
+    public int XPad { get; set; } = 20;
+    public int YPad { get; set; } = 20;
+    public int AutoDismissMs { get; set; } = 2000;
+    /// <summary>0 = fade, 1 = fast slide+fade, 2 = fancy slide+fade</summary>
+    public int Ani { get; set; } = 2;
+    /// <summary>Left/Right/Top/Bottom</summary>
+    public string AniDir { get; set; } = "Left";
+    /// <summary>Default on — Win11 volume notifications are often unreliable (JaxCore guidance).</summary>
+    public bool UseLegacyVolumeHooks { get; set; } = true;
+    public double LegacyVolumeStep { get; set; } = 0.05;
     public bool EnableMediaFlyouts { get; set; } = true;
     public bool EnableLockFlyouts { get; set; } = true;
-    public double LegacyVolumeStep { get; set; } = 0.05;
+    public bool EnableFlightFlyouts { get; set; } = true;
+    public bool ShowMediaStripOnVolume { get; set; } = true;
 }
 
 public sealed class MixdeckSettings

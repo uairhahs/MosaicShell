@@ -8,7 +8,7 @@ using MosaicShell.Core.Shp;
 namespace Mosaicist;
 
 /// <summary>
-/// MosaicShell installer CLI — downloads release assets and extracts modules.
+/// MosaicShell installer CLI - downloads release assets and extracts modules.
 /// Never uses iwr|iex or ExecutionPolicy Bypass remote script execution.
 /// </summary>
 public static class Program
@@ -44,7 +44,7 @@ public static class Program
     private static void PrintHelp()
     {
         Console.WriteLine("""
-            Mosaicist — MosaicShell installer (no remote script execution)
+            Mosaicist - MosaicShell installer (fully local)
 
             Commands:
               list

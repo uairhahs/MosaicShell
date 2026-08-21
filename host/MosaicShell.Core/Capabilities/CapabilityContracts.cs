@@ -30,13 +30,20 @@ public sealed record FlyoutRequest(
     string? StyleId = null,
     string? Anchor = null,
     int AutoDismissMs = 2500,
-    IReadOnlyDictionary<string, string>? Payload = null);
+    IReadOnlyDictionary<string, string>? Payload = null,
+    int MonitorIndex = 1,
+    int XPad = 20,
+    int YPad = 20,
+    int Ani = 2,
+    string AniDir = "Left");
 
 public interface IFlyoutPresenter
 {
     void Show(FlyoutRequest request);
+    void Update(FlyoutRequest request);
     void Hide(string moduleId);
     void HideAll();
+    bool IsVisible(string moduleId);
 }
 
 public interface ICapabilityFactory

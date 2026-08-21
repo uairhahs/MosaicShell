@@ -39,7 +39,7 @@ X=r
 Y=(10*[Set.S])R
 W=(#Set.W#-350*[Set.S])
 ClipString=2
-Text=The hub is where you manage settings, updates, and tiles — each module installs and updates independently.
+Text=The hub is where you manage settings, updates, and tiles. Each module installs and updates independently.
 
 [Logo]
 Meter=Image

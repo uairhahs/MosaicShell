@@ -9,7 +9,7 @@ X=(#HomePage.P#)
 Y=(#Set.P#+#Sec.selector_height#)
 W=(#Set.W#-#HomePage.P#*2)
 ClipString=2
-Text=MosaicShell is a configurable desktop shell built from composable surfaces.#CRLF##CRLF#Build your desktop from the pieces that matter — widgets, utilities, and workflows you control.#CRLF##CRLF#This project is a hard fork of JaxCore by EnhancedJax (archived November 2024). Issues and contributions are welcome on GitHub.
+Text=MosaicShell is a configurable desktop shell built from composable surfaces.#CRLF##CRLF#Build your desktop from the pieces that matter. Widgets, utilities, and workflows you control.#CRLF##CRLF#This project is a hard fork of JaxCore by EnhancedJax (archived November 2024). Issues and contributions are welcome on GitHub.
 
 [Logo]
 Meter=Image

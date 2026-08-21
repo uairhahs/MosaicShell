@@ -24,7 +24,7 @@ Set.R=10
 Set.WinR=2
 Set.WinB=2
 ; --------------------------- Appearance variables --------------------------- ;
-; Catppuccin Mocha — Sky / Mauve accents from MosaicShell logo
+; Catppuccin Mocha with Sky / Mauve accents from MosaicShell logo
 Set.Style=CoreUIv2
 Set.IconStyle=Normal
 Set.Alpha=255

@@ -1,4 +1,4 @@
-# MosaicShell scale contract — DPI probe + writers
+# MosaicShell scale contract - DPI probe + writers
 # UiScale = DpiScale * UserScale
 
 function Get-DpiScale {

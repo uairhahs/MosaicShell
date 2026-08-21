@@ -27,7 +27,10 @@ public sealed record MediaSessionInfo(
     string? Title,
     string? Artist,
     string? AppId,
-    bool IsPlaying);
+    bool IsPlaying,
+    byte[]? ThumbnailPng = null,
+    double PositionSeconds = 0,
+    double DurationSeconds = 0);
 
 public interface IMediaSessionService : IDisposable
 {
@@ -36,6 +39,7 @@ public interface IMediaSessionService : IDisposable
     Task PlayPauseAsync();
     Task NextAsync();
     Task PreviousAsync();
+    Task SeekAsync(double positionSeconds);
 }
 
 public sealed record HotkeyBinding(string Id, string Gesture);
@@ -101,6 +105,9 @@ public sealed class HostServices : IDisposable
     public required INativeOsdSuppressor OsdSuppressor { get; init; }
     public required ILegacyMediaKeyHook LegacyVolumeKeys { get; init; }
     public required IIdleService Idle { get; init; }
+    public required ILockKeysService LockKeys { get; init; }
+    public required IAirplaneModeService Airplane { get; init; }
+    public required IAudioDeviceService AudioDevices { get; init; }
 
     public void Dispose()
     {
@@ -114,6 +121,9 @@ public sealed class HostServices : IDisposable
         OsdSuppressor.Dispose();
         LegacyVolumeKeys.Dispose();
         Idle.Dispose();
+        LockKeys.Dispose();
+        Airplane.Dispose();
+        AudioDevices.Dispose();
     }
 
     public static HostServices CreateWindowsDefaults()
@@ -133,6 +143,9 @@ public sealed class HostServices : IDisposable
             OsdSuppressor = new WindowsNativeOsdSuppressor(),
             LegacyVolumeKeys = new WindowsLegacyMediaKeyHook(),
             Idle = new WindowsIdleService(),
+            LockKeys = new WindowsLockKeysService(),
+            Airplane = new WindowsAirplaneModeService(),
+            AudioDevices = new WindowsAudioDeviceService(),
         };
     }
 }

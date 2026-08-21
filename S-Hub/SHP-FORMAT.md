@@ -1,7 +1,7 @@
 # SHP Format Specification (.shp)
 
 > **MosaicShell Setup Package Format (`.shp`)**
-> The `.shp` format packages a complete, reproducible Windows desktop environment—including Rainmeter layout, MosaicShell tiles, wallpapers, application themes, and visual styles.
+> The `.shp` format packages a complete, reproducible Windows desktop environment, including Rainmeter layout, MosaicShell tiles, wallpapers, application themes, and visual styles.
 
 ---
 

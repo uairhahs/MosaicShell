@@ -1,13 +1,13 @@
 using Avalonia;
+using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Services;
-using MosaicShell.Core.Settings;
-using MosaicShell.Core.Styles;
 using MosaicShell.Host.Tiles.Tessera;
 
 namespace MosaicShell.Host.Capabilities;
@@ -21,21 +21,27 @@ public sealed class AvaloniaCapabilityUiBridge : ICapabilityUiBridge
 public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
 {
     private readonly HostServices _services;
+    private readonly object _gate = new();
     private readonly Dictionary<string, FlyoutWindow> _windows = new(StringComparer.OrdinalIgnoreCase);
 
     public AvaloniaFlyoutPresenter(HostServices services) => _services = services;
 
-    public void Show(FlyoutRequest request)
-    {
-        Dispatcher.UIThread.Post(() => ShowCore(request));
-    }
+    public void Show(FlyoutRequest request) =>
+        Dispatcher.UIThread.Post(() => SafeShowOrUpdate(request));
+
+    public void Update(FlyoutRequest request) =>
+        Dispatcher.UIThread.Post(() => SafeShowOrUpdate(request));
 
     public void Hide(string moduleId)
     {
         Dispatcher.UIThread.Post(() =>
         {
-            if (_windows.Remove(moduleId, out var w))
-                w.Close();
+            FlyoutWindow? w;
+            lock (_gate)
+            {
+                if (!_windows.Remove(moduleId, out w)) return;
+            }
+            try { w.Close(); } catch { /* ignore */ }
         });
     }
 
@@ -43,139 +49,292 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
     {
         Dispatcher.UIThread.Post(() =>
         {
-            foreach (var id in _windows.Keys.ToList())
+            List<string> ids;
+            lock (_gate) ids = _windows.Keys.ToList();
+            foreach (var id in ids)
                 Hide(id);
         });
     }
 
-    private void ShowCore(FlyoutRequest request)
+    public bool IsVisible(string moduleId)
     {
-        if (_windows.TryGetValue(request.ModuleId, out var existing))
+        lock (_gate)
+            return _windows.TryGetValue(moduleId, out var w) && w.IsVisible;
+    }
+
+    private void SafeShowOrUpdate(FlyoutRequest request)
+    {
+        try { ShowOrUpdateCore(request); }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Tessera flyout] {ex}"); }
+    }
+
+    private void ShowOrUpdateCore(FlyoutRequest request)
+    {
+        lock (_gate)
         {
-            existing.Close();
-            _windows.Remove(request.ModuleId);
+            if (_windows.TryGetValue(request.ModuleId, out var existing) && existing.IsVisible)
+            {
+                // Same kind/style → update track/percent in place for realtime feel
+                if (existing.TryApplyLive(request, _services))
+                    return;
+                existing.ApplyRequest(request, BuildContent(request));
+                return;
+            }
+
+            if (_windows.TryGetValue(request.ModuleId, out var old))
+            {
+                try { old.Close(); } catch { /* ignore */ }
+                _windows.Remove(request.ModuleId);
+            }
         }
 
-        Control content = request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase)
-            ? TesseraStyleFactory.Create(request.StyleId ?? "Fluent", BuildTesseraVm(request.Kind))
-            : BuildGeneric(request);
-
-        var window = new FlyoutWindow(request.ModuleId, content, request.AutoDismissMs);
-        Position(window, request.Anchor ?? "BR");
-        window.Closed += (_, _) => _windows.Remove(request.ModuleId);
-        _windows[request.ModuleId] = window;
+        var content = BuildContent(request);
+        var window = new FlyoutWindow(request, content);
+        window.Closed += (_, _) => { lock (_gate) _windows.Remove(request.ModuleId); };
+        lock (_gate) _windows[request.ModuleId] = window;
         window.Show();
+        window.PlayShowAnimation();
     }
 
-    private TesseraFlyoutViewModel BuildTesseraVm(string kind)
+    private Control BuildContent(FlyoutRequest request)
     {
-        var settings = MosaicShell.Core.Runtime.ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
-        return new TesseraFlyoutViewModel(_services, kind, settings.Style);
-    }
+        if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+        {
+            var vm = TesseraFlyoutViewModel.FromRequest(_services, request);
+            return TesseraStyleFactory.Create(request.StyleId ?? "Fluent", vm);
+        }
 
-    private static Control BuildGeneric(FlyoutRequest request)
-    {
-        var style = request.StyleId ?? StyleCatalog.DefaultFor(request.ModuleId);
         return new Border
         {
-            Background = new SolidColorBrush(Color.Parse("#E61e1e2e")),
+            Background = new SolidColorBrush(Color.Parse("#E6202020")),
             CornerRadius = new CornerRadius(12),
-            BorderBrush = new SolidColorBrush(Color.Parse("#45475a")),
-            BorderThickness = new Thickness(1),
             Padding = new Thickness(20),
-            MinWidth = 280,
-            Child = new StackPanel
+            Child = new TextBlock
             {
-                Spacing = 8,
-                Children =
-                {
-                    new TextBlock
-                    {
-                        Text = request.ModuleId,
-                        FontSize = 18,
-                        FontWeight = FontWeight.SemiBold,
-                        Foreground = new SolidColorBrush(Color.Parse("#cdd6f4"))
-                    },
-                    new TextBlock
-                    {
-                        Text = $"{request.Kind} · style {style}",
-                        FontSize = 13,
-                        Foreground = new SolidColorBrush(Color.Parse("#a6adc8"))
-                    }
-                }
+                Text = $"{request.ModuleId} · {request.Kind}",
+                Foreground = Brushes.White
             }
         };
-    }
-
-    private static void Position(Window window, string anchor)
-    {
-        var screen = window.Screens?.Primary?.WorkingArea
-                     ?? new PixelRect(0, 0, 1920, 1080);
-        const int pad = 24;
-        var w = (int)window.Width;
-        var h = (int)window.Height;
-        var x = anchor.ToUpperInvariant() switch
-        {
-            "TL" or "TC" or "TR" => screen.X + pad,
-            "CL" => screen.X + pad,
-            "CR" => screen.X + screen.Width - w - pad,
-            "BL" or "BC" or "BR" => screen.X + screen.Width - w - pad,
-            _ => screen.X + screen.Width - w - pad
-        };
-        if (anchor.Equals("TC", StringComparison.OrdinalIgnoreCase)
-            || anchor.Equals("BC", StringComparison.OrdinalIgnoreCase)
-            || anchor.Equals("Center", StringComparison.OrdinalIgnoreCase))
-            x = screen.X + (screen.Width - w) / 2;
-        if (anchor.Equals("TL", StringComparison.OrdinalIgnoreCase)
-            || anchor.Equals("BL", StringComparison.OrdinalIgnoreCase)
-            || anchor.Equals("CL", StringComparison.OrdinalIgnoreCase))
-            x = screen.X + pad;
-        if (anchor.Equals("TR", StringComparison.OrdinalIgnoreCase)
-            || anchor.Equals("BR", StringComparison.OrdinalIgnoreCase)
-            || anchor.Equals("CR", StringComparison.OrdinalIgnoreCase))
-            x = screen.X + screen.Width - w - pad;
-
-        var y = anchor.ToUpperInvariant() switch
-        {
-            "TL" or "TC" or "TR" => screen.Y + pad,
-            "CL" or "CR" or "CENTER" => screen.Y + (screen.Height - h) / 2,
-            _ => screen.Y + screen.Height - h - pad
-        };
-        window.Position = new PixelPoint(x, y);
     }
 }
 
 internal sealed class FlyoutWindow : Window
 {
-    private readonly DispatcherTimer? _dismiss;
+    private FlyoutRequest _request;
+    private DispatcherTimer? _dismiss;
     private bool _hover;
+    private Size _lastSize;
 
-    public FlyoutWindow(string moduleId, Control content, int autoDismissMs)
+    public FlyoutWindow(FlyoutRequest request, Control content)
     {
-        Title = $"MosaicShell — {moduleId}";
-        Width = 360;
-        Height = 160;
+        _request = request;
+        Title = $"MosaicShell — {request.ModuleId}";
+        SizeToContent = SizeToContent.WidthAndHeight;
         CanResize = false;
         SystemDecorations = SystemDecorations.None;
         Topmost = true;
         ShowInTaskbar = false;
         ShowActivated = false;
-        TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
+        var styleLooksAcrylic = StyleLooksAcrylic(request);
+        TransparencyLevelHint = styleLooksAcrylic
+            ? [WindowTransparencyLevel.AcrylicBlur, WindowTransparencyLevel.Transparent]
+            : [WindowTransparencyLevel.Transparent];
         Background = Brushes.Transparent;
         Content = content;
-        PointerEntered += (_, _) => _hover = true;
-        PointerExited += (_, _) => _hover = false;
+        Opacity = 1;
+        PointerEntered += (_, _) => { _hover = true; };
+        PointerExited += (_, _) => { _hover = false; };
+        PointerWheelChanged += OnWheel;
+        Opened += (_, _) => Relayout();
+        LayoutUpdated += OnLayoutUpdated;
+        ResetDismissTimer();
+    }
 
-        if (autoDismissMs > 0)
+    private static bool StyleLooksAcrylic(FlyoutRequest request)
+    {
+        if (!request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase)) return false;
+        var s = (request.StyleId ?? "Fluent").ToLowerInvariant();
+        return s is "fluent" or "win11" or "modern" or "coreui";
+    }
+
+    public bool TryApplyLive(FlyoutRequest request, HostServices services)
+    {
+        if (!request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase)) return false;
+        if (!string.Equals(_request.Kind, request.Kind, StringComparison.OrdinalIgnoreCase)) return false;
+        if (!string.Equals(_request.StyleId ?? "", request.StyleId ?? "", StringComparison.OrdinalIgnoreCase)) return false;
+        if (Content is not Visual root) return false;
+
+        var vm = TesseraFlyoutViewModel.FromRequest(services, request);
+        var track = FindNamed<TesseraTrack>(root, "TesseraTrack");
+        var percent = FindNamed<TextBlock>(root, "TesseraPercent");
+        var glyph = FindNamed<Control>(root, "TesseraGlyph");
+        if (track is null && percent is null) return false;
+
+        // Prefer live endpoint level (ModernFlyouts pattern) over stale payload parse
+        var value = request.Kind.Equals("bright", StringComparison.OrdinalIgnoreCase)
+            ? vm.Brightness
+            : services.Audio.MasterVolume;
+        var muted = services.Audio.IsMuted;
+        track?.SetValueSilent(value);
+        if (percent is not null)
         {
-            _dismiss = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(autoDismissMs) };
-            _dismiss.Tick += (_, _) =>
-            {
-                if (_hover) return;
-                _dismiss.Stop();
-                Close();
-            };
-            _dismiss.Start();
+            percent.Text = request.Kind.Equals("bright", StringComparison.OrdinalIgnoreCase)
+                ? $"{(int)(value * 100)}"
+                : muted ? "Mute" : $"{(int)(value * 100)}";
         }
+        if (glyph is not null && !request.Kind.Equals("bright", StringComparison.OrdinalIgnoreCase))
+        {
+            var kind = muted || value <= 0.001
+                ? Material.Icons.MaterialIconKind.VolumeOff
+                : value < 0.20 ? Material.Icons.MaterialIconKind.VolumeLow
+                : value < 0.50 ? Material.Icons.MaterialIconKind.VolumeMedium
+                : Material.Icons.MaterialIconKind.VolumeHigh;
+            if (glyph is Material.Icons.Avalonia.MaterialIcon mi)
+                mi.Kind = kind;
+        }
+
+        _request = request;
+        ResetDismissTimer();
+        return true;
+    }
+
+    private static T? FindNamed<T>(Visual root, string name) where T : class
+    {
+        if (root is Control { Name: { } n } && n == name && root is T direct)
+            return direct;
+        foreach (var child in root.GetVisualChildren())
+        {
+            if (child is Control c && c.Name == name && child is T match)
+                return match;
+            if (child is Visual nested)
+            {
+                var found = FindNamed<T>(nested, name);
+                if (found is not null) return found;
+            }
+        }
+        return null;
+    }
+
+    public void ApplyRequest(FlyoutRequest request, Control content)
+    {
+        _request = request;
+        Content = content;
+        _lastSize = default;
+        ResetDismissTimer();
+        Relayout();
+    }
+
+    private void OnLayoutUpdated(object? sender, EventArgs e)
+    {
+        var s = Bounds.Size;
+        if (s.Width < 2 || s.Height < 2) return;
+        if (Math.Abs(s.Width - _lastSize.Width) < 0.5 && Math.Abs(s.Height - _lastSize.Height) < 0.5)
+            return;
+        _lastSize = s;
+        RelayoutImmediate();
+    }
+
+    public void Relayout() =>
+        Dispatcher.UIThread.Post(RelayoutImmediate, DispatcherPriority.Loaded);
+
+    private void RelayoutImmediate()
+    {
+        try
+        {
+            InvalidateMeasure();
+            UpdateLayout();
+            var w = (int)Math.Ceiling(Math.Max(Bounds.Width, DesiredSize.Width));
+            var h = (int)Math.Ceiling(Math.Max(Bounds.Height, DesiredSize.Height));
+            if (w < 40 || h < 24) return; // wait for real measure — do not invent BR-sized fallbacks
+
+            var screens = Screens?.All;
+            var count = screens?.Count ?? 0;
+            var idx = count == 0 ? 0 : Math.Clamp(_request.MonitorIndex - 1, 0, count - 1);
+            var screen = count > 0 ? screens![idx] : Screens?.Primary;
+            var area = screen?.WorkingArea ?? new PixelRect(0, 0, 1920, 1080);
+            var (x, y) = FlyoutAnchor.Compute(
+                area.X, area.Y, area.Width, area.Height,
+                w, h,
+                _request.Anchor ?? "TL",
+                _request.XPad,
+                _request.YPad);
+            Position = new PixelPoint(x, y);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Tessera position] {ex.Message}");
+        }
+    }
+
+    public void PlayShowAnimation()
+    {
+        try
+        {
+            Relayout();
+            if (_request.Ani <= 0)
+            {
+                Opacity = 0;
+                AnimateDouble(this, OpacityProperty, 0, 1, 160);
+                return;
+            }
+
+            var dir = (_request.AniDir ?? "Left").ToLowerInvariant();
+            var dist = _request.Ani >= 2 ? 28.0 : 14.0;
+            double dx = 0, dy = 0;
+            switch (dir)
+            {
+                case "right": dx = dist; break;
+                case "top": dy = -dist; break;
+                case "bottom": dy = dist; break;
+                default: dx = -dist; break;
+            }
+
+            var tt = new TranslateTransform(dx, dy);
+            RenderTransform = tt;
+            Opacity = 0;
+            AnimateDouble(this, OpacityProperty, 0, 1, 180);
+            AnimateDouble(tt, TranslateTransform.XProperty, dx, 0, 200);
+            AnimateDouble(tt, TranslateTransform.YProperty, dy, 0, 200);
+        }
+        catch
+        {
+            Opacity = 1;
+            RenderTransform = null;
+        }
+    }
+
+    private void ResetDismissTimer()
+    {
+        _dismiss?.Stop();
+        if (_request.AutoDismissMs <= 0) return;
+        _dismiss = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(_request.AutoDismissMs) };
+        _dismiss.Tick += (_, _) =>
+        {
+            if (_hover) return;
+            _dismiss.Stop();
+            try { Close(); } catch { /* ignore */ }
+        };
+        _dismiss.Start();
+    }
+
+    private void OnWheel(object? sender, PointerWheelEventArgs e)
+    {
+        if (!_request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase)) return;
+        ResetDismissTimer();
+    }
+
+    private static void AnimateDouble(Animatable target, AvaloniaProperty property, double from, double to, int ms)
+    {
+        var animation = new Animation
+        {
+            Duration = TimeSpan.FromMilliseconds(ms),
+            FillMode = FillMode.Forward,
+            Children =
+            {
+                new KeyFrame { Cue = new Cue(0.0), Setters = { new Setter(property, from) } },
+                new KeyFrame { Cue = new Cue(1.0), Setters = { new Setter(property, to) } }
+            }
+        };
+        _ = animation.RunAsync(target);
     }
 }

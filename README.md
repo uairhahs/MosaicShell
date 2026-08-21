@@ -17,7 +17,7 @@
 
 ## About
 
-MosaicShell is a configurable desktop shell built from composable surfaces — widgets, utilities, and workflows you arrange to fit how you work.
+MosaicShell is a configurable desktop shell built from composable surfaces. It includes widgets, utilities, and workflows you arrange to fit how you work.
 
 The hub handles settings, module management, and updates. Each tile installs and updates on its own.
 
@@ -44,7 +44,7 @@ dotnet run --project MosaicShell.Host
 
 See [docs/architecture-native.md](docs/architecture-native.md) and [docs/native-rewrite.md](docs/native-rewrite.md).
 
-The classic Rainmeter + `RunMosaicist.ps1 -Local` path remains available for legacy skins. **Do not use `iwr|iex`** — that path is blocked in shipping installs.
+The classic Rainmeter + `RunMosaicist.ps1 -Local` path remains available for legacy skins. **Do not use `iwr|iex`** (that path is blocked in shipping installs)
 
 ## Installation
 

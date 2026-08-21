@@ -48,12 +48,12 @@ public partial class MainViewModel : ViewModelBase
 
         HomeCards =
         [
-            new("Tiles", "Install widgets or arm capability hosts (Tessera flyouts, launchers).", "Tiles", "/Assets/Modules/Tessera.png"),
             new("Welcome", "First-run picks, batch install, startup.", "Welcome", "/Assets/Modules/Inlay.png"),
-            new("About", "MosaicShell native host — CapabilityDaemon, no Rainmeter.", "About", "/Assets/logo-256.png"),
+            new("Tiles", "Install widgets or set tiles (Tessera flyouts, launchers).", "Tiles", "/Assets/Modules/Tessera.png"),
+            new("About", "MosaicShell is a native host re-write. The app allows for desktop customisation and tool suite to tailor your experience and relies solely on the background CapabilityDaemon for persistence. Th app is fully self-contained and extensible.", "About", "/Assets/logo-256.png"),
         ];
 
-        ModuleStyleOptions = [];
+        ModuleStyleOptions = new ObservableCollection<string>();
 
         RefreshLibrary();
         SyncScaleProps();
@@ -71,6 +71,26 @@ public partial class MainViewModel : ViewModelBase
     public ObservableCollection<LibraryItemViewModel> Modules { get; } = [];
     public ObservableCollection<LibraryItemViewModel> Widgets { get; } = [];
     public ObservableCollection<string> ModuleStyleOptions { get; }
+    public ObservableCollection<TesseraNamedChoice> TesseraPositionChoices { get; } =
+    [
+        new("TL", "Top left"),
+        new("TC", "Top center"),
+        new("TR", "Top right"),
+        new("CL", "Center left"),
+        new("CC", "Center"),
+        new("CR", "Center right"),
+        new("BL", "Bottom left"),
+        new("BC", "Bottom center"),
+        new("BR", "Bottom right"),
+    ];
+    public ObservableCollection<TesseraAniChoice> TesseraAniChoices { get; } =
+    [
+        new(0, "None (fade only)"),
+        new(1, "Fast slide"),
+        new(2, "Fancy slide"),
+    ];
+    public ObservableCollection<string> TesseraAniDirOptions { get; } =
+        ["Left", "Right", "Top", "Bottom"];
     public HubSettings Hub { get; }
 
     [ObservableProperty] private string _selectedPage = "Home";
@@ -94,8 +114,23 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private string _moduleStyle = "DEFAULT";
     [ObservableProperty] private bool _chronoSeconds = true;
     [ObservableProperty] private bool _showChronoExtras;
-    [ObservableProperty] private bool _tesseraLegacyVol;
+    [ObservableProperty] private bool _tesseraLegacyVol = true;
     [ObservableProperty] private bool _showTesseraExtras;
+    [ObservableProperty] private TesseraNamedChoice? _selectedTesseraPosition;
+    [ObservableProperty] private string _tesseraPosition = "TL";
+    [ObservableProperty] private decimal _tesseraMonitorIndex = 1;
+    [ObservableProperty] private decimal _tesseraXPad = 20;
+    [ObservableProperty] private decimal _tesseraYPad = 20;
+    [ObservableProperty] private decimal _tesseraAutoDismissMs = 2000;
+    [ObservableProperty] private TesseraAniChoice? _selectedTesseraAni;
+    [ObservableProperty] private int _tesseraAni = 2;
+    [ObservableProperty] private string _tesseraAniDir = "Left";
+    [ObservableProperty] private bool _tesseraAniDirEnabled = true;
+    [ObservableProperty] private bool _tesseraMediaFlyouts = true;
+    [ObservableProperty] private bool _tesseraLockFlyouts = true;
+    [ObservableProperty] private bool _tesseraFlightFlyouts = true;
+    [ObservableProperty] private bool _tesseraMediaStrip = true;
+    [ObservableProperty] private decimal _tesseraLegacyStep = 0.05m;
     [ObservableProperty] private bool _autostartEnabled;
     [ObservableProperty] private bool _closeMinimizesToTray = true;
     [ObservableProperty] private string _updateStatus = "";
@@ -170,6 +205,23 @@ public partial class MainViewModel : ViewModelBase
             var s = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
             ModuleStyle = s.Style;
             TesseraLegacyVol = s.UseLegacyVolumeHooks;
+            TesseraPosition = string.IsNullOrWhiteSpace(s.Position) ? "TL" : s.Position.ToUpperInvariant();
+            SelectedTesseraPosition = TesseraPositionChoices.FirstOrDefault(c => c.Code == TesseraPosition)
+                                      ?? TesseraPositionChoices[0];
+            TesseraMonitorIndex = s.MonitorIndex;
+            TesseraXPad = s.XPad;
+            TesseraYPad = s.YPad;
+            TesseraAutoDismissMs = s.AutoDismissMs;
+            TesseraAni = s.Ani;
+            SelectedTesseraAni = TesseraAniChoices.FirstOrDefault(c => c.Value == TesseraAni)
+                                 ?? TesseraAniChoices[^1];
+            TesseraAniDir = s.AniDir;
+            TesseraAniDirEnabled = TesseraAni > 0;
+            TesseraMediaFlyouts = s.EnableMediaFlyouts;
+            TesseraLockFlyouts = s.EnableLockFlyouts;
+            TesseraFlightFlyouts = s.EnableFlightFlyouts;
+            TesseraMediaStrip = s.ShowMediaStripOnVolume;
+            TesseraLegacyStep = (decimal)s.LegacyVolumeStep;
         }
         else
         {
@@ -203,6 +255,49 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void PreviewTesseraFlyout()
+    {
+        if (ShowTesseraExtras)
+            PersistTesseraFromUi();
+        MosaicShell.Host.Tiles.Tessera.TesseraHostBridge.PreviewVolumeFlyout?.Invoke();
+        StatusMessage = "Tessera preview shown (uses current placement & style).";
+    }
+
+    private void PersistTesseraFromUi()
+    {
+        var s = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
+        s.Style = ModuleStyle;
+        s.Position = SelectedTesseraPosition?.Code ?? TesseraPosition;
+        s.MonitorIndex = (int)TesseraMonitorIndex;
+        s.XPad = (int)TesseraXPad;
+        s.YPad = (int)TesseraYPad;
+        s.AutoDismissMs = (int)TesseraAutoDismissMs;
+        s.Ani = SelectedTesseraAni?.Value ?? TesseraAni;
+        s.AniDir = TesseraAniDir;
+        s.EnableMediaFlyouts = TesseraMediaFlyouts;
+        s.EnableLockFlyouts = TesseraLockFlyouts;
+        s.EnableFlightFlyouts = TesseraFlightFlyouts;
+        s.ShowMediaStripOnVolume = TesseraMediaStrip;
+        s.UseLegacyVolumeHooks = TesseraLegacyVol;
+        s.LegacyVolumeStep = (double)TesseraLegacyStep;
+        ModuleSettingsStore.Save("Tessera", s);
+        TesseraPosition = s.Position;
+        TesseraAni = s.Ani;
+    }
+
+    partial void OnSelectedTesseraPositionChanged(TesseraNamedChoice? value)
+    {
+        if (value is not null) TesseraPosition = value.Code;
+    }
+
+    partial void OnSelectedTesseraAniChanged(TesseraAniChoice? value)
+    {
+        if (value is null) return;
+        TesseraAni = value.Value;
+        TesseraAniDirEnabled = value.Value > 0;
+    }
+
+    [RelayCommand]
     private void SaveModuleConfig()
     {
         if (string.IsNullOrWhiteSpace(ConfigModuleId)) return;
@@ -215,16 +310,13 @@ public partial class MainViewModel : ViewModelBase
                 s.Style = ModuleStyle;
                 s.ShowSeconds = ChronoSeconds;
                 ModuleSettingsStore.Save("Chrono", s);
-                StatusMessage = "Chrono settings saved — relaunch widget to apply.";
+                StatusMessage = "Chrono settings saved! Relaunch widget to apply.";
                 break;
             }
             case "tessera":
             {
-                var s = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
-                s.Style = ModuleStyle;
-                s.UseLegacyVolumeHooks = TesseraLegacyVol;
-                ModuleSettingsStore.Save("Tessera", s);
-                StatusMessage = "Tessera settings saved — re-arm to apply legacy hooks.";
+                PersistTesseraFromUi();
+                StatusMessage = "Tessera settings saved — re-arm if you changed legacy hooks or flyout sources.";
                 break;
             }
             case "phono":
@@ -461,7 +553,7 @@ public partial class MainViewModel : ViewModelBase
                     var ok = await _daemon.ArmAsync(item.Id);
                     item.ApplyArmed(ok);
                     StatusMessage = ok
-                        ? $"Armed {item.Name} — runs in background while Host is in tray."
+                        ? $"Armed {item.Name}! Runs in background while Host is in tray."
                         : $"Could not arm {item.Name}.";
                 }
                 return;
@@ -540,7 +632,7 @@ public partial class MainViewModel : ViewModelBase
     {
         ScaleSettingsStore.Save(_scale.ToSettings());
         SyncScaleProps();
-        StatusMessage = $"Scale saved — layout ×{LayoutScale:0.##}";
+        StatusMessage = $"Scale saved! Layout ×{LayoutScale:0.##}";
     }
 
     private void SyncScaleProps()
@@ -676,4 +768,14 @@ public partial class LibraryItemViewModel : ObservableObject
             ActionIcon = icon
         };
     }
+}
+
+public sealed record TesseraNamedChoice(string Code, string Label)
+{
+    public override string ToString() => Label;
+}
+
+public sealed record TesseraAniChoice(int Value, string Label)
+{
+    public override string ToString() => Label;
 }

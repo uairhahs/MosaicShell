@@ -138,7 +138,7 @@ public sealed class TileOverlayWindow : Window
     public TileOverlayWindow(ModuleInfo info, Control surface, double userScale)
     {
         ModuleId = info.Id;
-        Title = $"MosaicShell — {info.DisplayName}";
+        Title = $"MosaicShell: {info.DisplayName}";
         Width = 380;
         Height = 300;
         MinWidth = 240;

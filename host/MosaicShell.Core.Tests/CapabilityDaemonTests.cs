@@ -120,7 +120,9 @@ public class CapabilityDaemonTests : IDisposable
     private sealed class FakeFlyouts : IFlyoutPresenter
     {
         public void Show(FlyoutRequest request) { }
+        public void Update(FlyoutRequest request) { }
         public void Hide(string moduleId) { }
         public void HideAll() { }
+        public bool IsVisible(string moduleId) => false;
     }
 }

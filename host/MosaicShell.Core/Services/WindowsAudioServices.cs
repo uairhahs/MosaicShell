@@ -11,6 +11,8 @@ public sealed class WindowsAudioService : IAudioService
     public WindowsAudioService()
     {
         _device = _enum.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+        _lastVol = _device.AudioEndpointVolume.MasterVolumeLevelScalar;
+        _lastMute = _device.AudioEndpointVolume.Mute;
         _device.AudioEndpointVolume.OnVolumeNotification += OnVol;
     }
 
@@ -32,7 +34,22 @@ public sealed class WindowsAudioService : IAudioService
 
     public event EventHandler? Changed;
 
-    private void OnVol(AudioVolumeNotificationData data) => Changed?.Invoke(this, EventArgs.Empty);
+    private float _lastVol = float.NaN;
+    private bool _lastMute;
+
+    private void OnVol(AudioVolumeNotificationData data)
+    {
+        // Ignore no-op notifications some drivers emit without a real change
+        var vol = data.MasterVolume;
+        var mute = data.Muted;
+        if (!float.IsNaN(_lastVol)
+            && Math.Abs(vol - _lastVol) < 0.0005f
+            && mute == _lastMute)
+            return;
+        _lastVol = vol;
+        _lastMute = mute;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
 
     public void Dispose()
     {

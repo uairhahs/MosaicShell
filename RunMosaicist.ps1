@@ -879,7 +879,7 @@ LastUiScale=1
                 }
 
                 if ($scale -eq 1) {
-                    debug "UiScale is 1 — tile Scale aliases unchanged from defaults."
+                    debug "UiScale is 1, tile Scale aliases unchanged from defaults."
                 } else {
                     Write-Task "Applying UiScale aliases to module config files"
                     $varsfile = "$s_RMSkinFolder\$skin_name\@Resources\Vars.inc"

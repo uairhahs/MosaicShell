@@ -47,7 +47,7 @@ X=r
 Y=(10*[Set.S])R
 W=(#Set.W#-350*[Set.S])
 ClipString=2
-Text=Not released yet — follow development on GitHub.
+Text=Not released yet (follow development on GitHub)
 InlinePattern=Not released yet
 inlinesetting=Color | #Set.Accent_Color_2#
 

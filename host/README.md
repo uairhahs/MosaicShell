@@ -10,4 +10,4 @@ dotnet run --project Mosaicist -- list
 dotnet run --project Mosaicist -- install-module Canvas
 ```
 
-Parity is driven by tests — see [docs/testing-native.md](../docs/testing-native.md).
+Parity is driven by tests - see [docs/testing-native.md](../docs/testing-native.md).

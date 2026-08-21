@@ -16,6 +16,8 @@ public interface INativeOsdSuppressor : IDisposable
     void Stop();
     /// <summary>Attempt a one-shot hide of currently visible OS flyouts.</summary>
     void SuppressOnce();
+    /// <summary>High-rate hide burst for ~durationMs after a volume/brightness event.</summary>
+    void SuppressBurst(int durationMs = 1500);
 }
 
 /// <summary>Optional steal of Volume_Up/Down/Mute (LegacyVol path).</summary>

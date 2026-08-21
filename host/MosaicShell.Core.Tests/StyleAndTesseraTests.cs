@@ -66,7 +66,9 @@ public class TesseraCapabilityTests : IDisposable
     private sealed class CaptureFlyouts(List<FlyoutRequest> shown) : IFlyoutPresenter
     {
         public void Show(FlyoutRequest request) => shown.Add(request);
+        public void Update(FlyoutRequest request) => shown.Add(request);
         public void Hide(string moduleId) { }
         public void HideAll() { }
+        public bool IsVisible(string moduleId) => shown.Any(r => r.ModuleId == moduleId);
     }
 }

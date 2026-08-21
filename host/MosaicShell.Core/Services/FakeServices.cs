@@ -60,6 +60,7 @@ public sealed class FakeMediaSessionService : IMediaSessionService
     }
     public Task NextAsync() => Task.CompletedTask;
     public Task PreviousAsync() => Task.CompletedTask;
+    public Task SeekAsync(double positionSeconds) => Task.CompletedTask;
     public void Dispose() { }
 }
 
@@ -114,5 +115,8 @@ public static class HostServicesFakes
         OsdSuppressor = new NullNativeOsdSuppressor(),
         LegacyVolumeKeys = new NullLegacyMediaKeyHook(),
         Idle = new NullIdleService(),
+        LockKeys = new NullLockKeysService(),
+        Airplane = new NullAirplaneModeService(),
+        AudioDevices = new NullAudioDeviceService(),
     };
 }

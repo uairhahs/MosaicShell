@@ -4,7 +4,7 @@ using MosaicShell.Core.Modules;
 namespace MosaicShell.Core.Tests;
 
 /// <summary>
-/// Living checklist — flip to true only when MVP acceptance for that slice lands.
+/// Living checklist: flip to true only when MVP acceptance for that slice lands.
 /// </summary>
 public class HubParityBacklogTests
 {
@@ -27,6 +27,10 @@ public class HubParityBacklogTests
         { "capability_daemon", true },
         { "tessera_osd_flyout", true },
         { "tessera_named_styles", true },
+        { "tessera_locks_flight", true },
+        { "tessera_layout_fidelity", true },
+        { "tessera_live_update_multimonitor", true },
+        { "tessera_fluent_yourflyouts", true },
         { "style_catalog_jaxcore_ids", true },
 
         // Phase 1 services
@@ -46,7 +50,7 @@ public class HubParityBacklogTests
         { "library_uninstall", true },
         { "tile_user_scale_applied", true },
 
-        // Phase 3 — widgets service-bound; Tessera is capability host not tile window
+        // Phase 3 - widgets service-bound; Tessera is capability host not tile window
         { "tile_chrono_mvp", true },
         { "tile_canvas_mvp", true },
         { "tile_phono_mvp", true },
@@ -65,7 +69,7 @@ public class HubParityBacklogTests
         { "update_check_against_github_releases", true },
         { "context_menu_and_hotkeys_host_services", true },
 
-        // Phase 5–6
+        // Phase 5-6
         { "shp_import_in_host", true },
         { "product_cutover_no_iex", true },
     };

@@ -213,7 +213,7 @@ Meter=String
 Text=What MosaicShell is and how the composable desktop layer fits together.
 MeterStyle=Set.String:S | Discover.Card.Body:S
 
-; Title easter egg kept subtle via right-click on header string in Home.ini — Discover title is not a hidden door.
+; Title easter egg kept subtle via right-click on header string in Home.ini - Discover title is not a hidden door.
 
 [DevLink]
 Meter=String

@@ -1,5 +1,5 @@
 ; ============================================================================
-; Scale contract — host-agnostic UI scale for MosaicShell
+; Scale contract is a host-agnostic UI scale for MosaicShell
 ; UiScale = DpiScale × UserScale
 ; Design space: logical px at 96 DPI / 100%. Multiply layout by #UiScale#.
 ; Set.W/Set.H are resized with UiScale via LastUiScale in ScaleContract.ps1.
