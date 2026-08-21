@@ -26,5 +26,6 @@
 
     <Application.Styles>
         <FluentTheme />
+        <StyleInclude Source="avares://Material.Icons.Avalonia/MaterialIconStyles.xaml" />
     </Application.Styles>
 </Application>

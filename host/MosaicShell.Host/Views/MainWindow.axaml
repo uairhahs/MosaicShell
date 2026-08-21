@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:MosaicShell.Host.ViewModels"
+        xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="750"
@@ -51,6 +52,33 @@
       <Setter Property="CornerRadius" Value="8" />
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
+    <Style Selector="Button.icon">
+      <Setter Property="Width" Value="36" />
+      <Setter Property="Height" Value="36" />
+      <Setter Property="MinWidth" Value="36" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.icon.action">
+      <Setter Property="Background" Value="#313244" />
+      <Setter Property="Foreground" Value="#cdd6f4" />
+    </Style>
+    <Style Selector="Button.icon.action:pointerover">
+      <Setter Property="Background" Value="#45475a" />
+    </Style>
+    <Style Selector="Button.icon.primary">
+      <Setter Property="Background" Value="#89dceb" />
+      <Setter Property="Foreground" Value="#11111b" />
+    </Style>
+    <Style Selector="Button.icon.primary:pointerover">
+      <Setter Property="Background" Value="#b4f0f8" />
+    </Style>
+    <Style Selector="Button.icon /template/ ContentPresenter">
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
     <Style Selector="Border.card">
       <Setter Property="Background" Value="#1e1e2e" />
       <Setter Property="CornerRadius" Value="12" />
@@ -65,6 +93,25 @@
       <Setter Property="CornerRadius" Value="10" />
       <Setter Property="Padding" Value="12" />
       <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+    <Style Selector="Border.section">
+      <Setter Property="Background" Value="#1e1e2e" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="20" />
+      <Setter Property="Margin" Value="0,0,0,14" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="TextBlock.sectionTitle">
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="#cdd6f4" />
+      <Setter Property="Margin" Value="0,0,0,4" />
+    </Style>
+    <Style Selector="TextBlock.sectionHint">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="#6c7086" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Margin" Value="0,0,0,12" />
     </Style>
   </Window.Styles>
 
@@ -95,12 +142,9 @@
                        Foreground="#cdd6f4" VerticalAlignment="Center" />
           </StackPanel>
           <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
-            <Button Classes="nav" Content="Discover"
-                    Classes.active="{Binding IsDiscover}"
-                    Command="{Binding NavigateCommand}" CommandParameter="Discover" />
-            <Button Classes="nav" Content="Library"
-                    Classes.active="{Binding IsLibrary}"
-                    Command="{Binding NavigateCommand}" CommandParameter="Library" />
+            <Button Classes="nav" Content="Home"
+                    Classes.active="{Binding IsHome}"
+                    Command="{Binding NavigateCommand}" CommandParameter="Home" />
             <Button Classes="nav" Content="Settings"
                     Classes.active="{Binding IsSettings}"
                     Command="{Binding NavigateCommand}" CommandParameter="Settings" />
@@ -111,34 +155,36 @@
       </Border>
 
       <Grid Margin="40,20">
-        <!-- Discover -->
-        <DockPanel IsVisible="{Binding IsDiscover}">
+        <!-- Home -->
+        <DockPanel IsVisible="{Binding IsHome}">
           <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
             <StackPanel Orientation="Horizontal" Spacing="14">
               <Image Source="/Assets/logo-256.png" Width="48" Height="48" />
               <StackPanel VerticalAlignment="Center">
-                <TextBlock Text="Discover" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
+                <TextBlock Text="Home" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
                 <TextBlock Text="Compose your desktop from modules and widgets." Foreground="#a6adc8" FontSize="13" />
               </StackPanel>
             </StackPanel>
             <Button Grid.Column="1" Classes="action" Content="Check catalog"
                     Command="{Binding CheckUpdatesCommand}" VerticalAlignment="Center" />
           </Grid>
-          <ItemsControl ItemsSource="{Binding DiscoverCards}">
+          <ItemsControl ItemsSource="{Binding HomeCards}"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>
-                <UniformGrid Columns="2" Rows="2" />
+                <UniformGrid Columns="1" Rows="3" />
               </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:DiscoverCard">
-                <Border Classes="card" Margin="8" MinHeight="150" PointerPressed="OnDiscoverCardPressed">
-                  <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,*">
-                    <Image Width="36" Height="36" Margin="0,0,14,0" VerticalAlignment="Top"
+                <Border Classes="card" Margin="0,0,0,12" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                        PointerPressed="OnDiscoverCardPressed">
+                  <Grid ColumnDefinitions="Auto,*" Margin="8,0">
+                    <Image Width="48" Height="48" Margin="0,0,20,0" VerticalAlignment="Center"
                            Source="{Binding IconPath}" />
-                    <StackPanel Grid.Column="1" Spacing="8">
-                      <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="SemiBold" Foreground="#cdd6f4" />
-                      <TextBlock Text="{Binding Body}" FontSize="13" Foreground="#a6adc8" TextWrapping="Wrap" />
+                    <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold" Foreground="#cdd6f4" />
+                      <TextBlock Text="{Binding Body}" FontSize="14" Foreground="#a6adc8" TextWrapping="Wrap" />
                     </StackPanel>
                   </Grid>
                 </Border>
@@ -147,18 +193,26 @@
           </ItemsControl>
         </DockPanel>
 
-        <!-- Library -->
-        <DockPanel IsVisible="{Binding IsLibrary}">
-          <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
-            <StackPanel>
-              <TextBlock Text="Library" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
-              <TextBlock Text="Install → ▶ launch native overlay → ■ stop. Checkbox + Batch installs multiple. − uninstalls."
+        <!-- Tiles -->
+        <DockPanel IsVisible="{Binding IsTiles}">
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,16">
+            <Button Classes="action" Command="{Binding GoBackCommand}"
+                    VerticalAlignment="Center" Margin="0,0,16,0" Padding="10,8"
+                    ToolTip.Tip="Back">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <icons:MaterialIcon Kind="ArrowLeft" Width="18" Height="18" />
+                <TextBlock Text="Back" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+            <StackPanel Grid.Column="1">
+              <TextBlock Text="Tiles" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
+              <TextBlock Text="Capabilities: install, arm/disarm background hosts. Widgets: play/stop overlays. Cog opens tile settings."
                          Foreground="#6c7086" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0" />
             </StackPanel>
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
               <Button Classes="action" Content="Batch install" Command="{Binding BatchInstallCommand}" />
               <Button Classes="action" Content="Refresh"
-                      Command="{Binding NavigateCommand}" CommandParameter="Library" />
+                      Command="{Binding NavigateCommand}" CommandParameter="Tiles" />
             </StackPanel>
           </Grid>
           <Grid ColumnDefinitions="*,24,*">
@@ -166,12 +220,11 @@
               <TextBlock DockPanel.Dock="Top" Text="Modules" FontSize="16" FontWeight="SemiBold"
                          Foreground="#cdd6f4" Margin="0,0,0,8" />
               <ScrollViewer>
-                <ItemsControl ItemsSource="{Binding Modules}"
-                              x:Name="ModulesList">
+                <ItemsControl ItemsSource="{Binding Modules}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:LibraryItemViewModel">
                       <Border Classes="row">
-                        <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
+                        <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto">
                           <CheckBox IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center" Margin="0,0,8,0" />
                           <Image Grid.Column="1" Width="32" Height="32" Margin="0,0,12,0"
                                  Source="{Binding IconPath}" VerticalAlignment="Center" />
@@ -183,17 +236,25 @@
                             <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#6c7086"
                                        TextWrapping="Wrap" Margin="0,4,0,0" />
                           </StackPanel>
-                          <Button Grid.Column="3" Classes="action" MinWidth="36" Padding="8,6" Margin="0,0,6,0"
-                                  Content="−"
+                          <Button Grid.Column="3" Classes="icon action" Margin="0,0,6,0"
+                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
+                                  CommandParameter="{Binding}"
+                                  ToolTip.Tip="Tile settings">
+                            <icons:MaterialIcon Kind="Cog" Width="18" Height="18" />
+                          </Button>
+                          <Button Grid.Column="4" Classes="icon action" Margin="0,0,6,0"
                                   Command="{Binding #Root.((vm:MainViewModel)DataContext).UninstallModuleCommand}"
                                   CommandParameter="{Binding}"
-                                  ToolTip.Tip="Uninstall" />
-                          <Button Grid.Column="4" Classes="primary" MinWidth="40" Padding="10,6"
-                                  Content="{Binding ActionGlyph}"
+                                  ToolTip.Tip="Uninstall">
+                            <icons:MaterialIcon Kind="Minus" Width="18" Height="18" />
+                          </Button>
+                          <Button Grid.Column="5" Classes="icon primary"
                                   IsEnabled="{Binding !IsInstalling}"
                                   Command="{Binding #Root.((vm:MainViewModel)DataContext).InstallModuleCommand}"
                                   CommandParameter="{Binding}"
-                                  ToolTip.Tip="Install / launch / stop" />
+                                  ToolTip.Tip="Install / arm / disarm">
+                            <icons:MaterialIcon Kind="{Binding ActionIcon}" Width="18" Height="18" />
+                          </Button>
                         </Grid>
                       </Border>
                     </DataTemplate>
@@ -209,7 +270,7 @@
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:LibraryItemViewModel">
                       <Border Classes="row">
-                        <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
+                        <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto">
                           <CheckBox IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center" Margin="0,0,8,0" />
                           <Image Grid.Column="1" Width="32" Height="32" Margin="0,0,12,0"
                                  Source="{Binding IconPath}" VerticalAlignment="Center" />
@@ -221,17 +282,25 @@
                             <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#6c7086"
                                        TextWrapping="Wrap" Margin="0,4,0,0" />
                           </StackPanel>
-                          <Button Grid.Column="3" Classes="action" MinWidth="36" Padding="8,6" Margin="0,0,6,0"
-                                  Content="−"
+                          <Button Grid.Column="3" Classes="icon action" Margin="0,0,6,0"
+                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
+                                  CommandParameter="{Binding}"
+                                  ToolTip.Tip="Tile settings">
+                            <icons:MaterialIcon Kind="Cog" Width="18" Height="18" />
+                          </Button>
+                          <Button Grid.Column="4" Classes="icon action" Margin="0,0,6,0"
                                   Command="{Binding #Root.((vm:MainViewModel)DataContext).UninstallModuleCommand}"
                                   CommandParameter="{Binding}"
-                                  ToolTip.Tip="Uninstall" />
-                          <Button Grid.Column="4" Classes="primary" MinWidth="40" Padding="10,6"
-                                  Content="{Binding ActionGlyph}"
+                                  ToolTip.Tip="Uninstall">
+                            <icons:MaterialIcon Kind="Minus" Width="18" Height="18" />
+                          </Button>
+                          <Button Grid.Column="5" Classes="icon primary"
                                   IsEnabled="{Binding !IsInstalling}"
                                   Command="{Binding #Root.((vm:MainViewModel)DataContext).InstallModuleCommand}"
                                   CommandParameter="{Binding}"
-                                  ToolTip.Tip="Install / launch / stop" />
+                                  ToolTip.Tip="Install / launch / stop">
+                            <icons:MaterialIcon Kind="{Binding ActionIcon}" Width="18" Height="18" />
+                          </Button>
                         </Grid>
                       </Border>
                     </DataTemplate>
@@ -243,56 +312,185 @@
         </DockPanel>
 
         <!-- Settings -->
-        <StackPanel IsVisible="{Binding IsSettings}" Spacing="12" MaxWidth="640" HorizontalAlignment="Left">
-          <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,0,0,8">
+        <DockPanel IsVisible="{Binding IsSettings}">
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="12" Margin="0,0,0,16">
             <Image Source="/Assets/logo-256.png" Width="40" Height="40" />
             <TextBlock Text="Settings" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4"
                        VerticalAlignment="Center" />
           </StackPanel>
-          <TextBlock Text="Services probe" FontSize="14" FontWeight="SemiBold" Foreground="#cdd6f4" />
-          <TextBlock Text="{Binding ServiceProbe}" Foreground="#a6adc8" TextWrapping="Wrap" />
-          <TextBlock Text="UI scale" FontSize="14" FontWeight="SemiBold" Foreground="#cdd6f4" Margin="0,12,0,0" />
-          <TextBlock Text="{Binding ScaleSummary}" Foreground="#a6adc8" TextWrapping="Wrap" />
-          <StackPanel Orientation="Horizontal" Spacing="12">
-            <Slider Width="280" Minimum="0.75" Maximum="2" TickFrequency="0.05" IsSnapToTickEnabled="True"
-                    Value="{Binding UserScale}" />
-            <Button Classes="primary" Content="Apply" Command="{Binding ApplyUserScaleCommand}" />
-          </StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Classes="action" Content="Match Windows" Command="{Binding MatchWindowsCommand}" />
-            <Button Classes="action" Content="Re-detect DPI" Command="{Binding RedetectDpiCommand}" />
-          </StackPanel>
-          <TextBlock Text="Chrono module settings" FontSize="14" FontWeight="SemiBold" Foreground="#cdd6f4" Margin="0,16,0,0" />
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <TextBox Width="140" Text="{Binding ChronoStyle}" Watermark="Style (Center/Minimal)" />
-            <CheckBox Content="Seconds" IsChecked="{Binding ChronoSeconds}" VerticalAlignment="Center" />
-            <Button Classes="action" Content="Save" Command="{Binding SaveChronoSettingsCommand}" />
-          </StackPanel>
-          <TextBlock Text="Startup" FontSize="14" FontWeight="SemiBold" Foreground="#cdd6f4" Margin="0,16,0,0" />
-          <Button Classes="action" Content="{Binding AutostartEnabled, StringFormat=Autostart: {0}}"
-                  Command="{Binding ToggleAutostartCommand}" HorizontalAlignment="Left" />
-          <TextBlock Text="Updates" FontSize="14" FontWeight="SemiBold" Foreground="#cdd6f4" Margin="0,16,0,0" />
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Classes="action" Content="Check GitHub releases" Command="{Binding CheckUpdatesCommand}" />
-            <TextBlock Text="{Binding UpdateStatus}" Foreground="#a6adc8" VerticalAlignment="Center" />
-          </StackPanel>
-          <TextBlock Text="%LocalAppData%\MosaicShell" Foreground="#6c7086" FontSize="12" Margin="0,16,0,0" />
-        </StackPanel>
+          <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                        VerticalScrollBarVisibility="Visible"
+                        AllowAutoHide="False">
+            <StackPanel Spacing="0" HorizontalAlignment="Stretch" Margin="0,0,8,8">
+
+              <Border Classes="section">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="sectionTitle" Text="Display &amp; scale" />
+                  <TextBlock Classes="sectionHint"
+                             Text="User scale multiplies OS DPI for hub chrome and tile overlays." />
+                  <TextBlock Text="{Binding ScaleSummary}" Foreground="#a6adc8" TextWrapping="Wrap" />
+                  <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Slider MinWidth="280" HorizontalAlignment="Stretch" Minimum="0.75" Maximum="2"
+                            TickFrequency="0.05" IsSnapToTickEnabled="True"
+                            Value="{Binding UserScale}" VerticalAlignment="Center" />
+                    <Button Classes="primary" Content="Apply" Command="{Binding ApplyUserScaleCommand}" />
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Classes="action" Content="Match Windows" Command="{Binding MatchWindowsCommand}" />
+                    <Button Classes="action" Content="Re-detect DPI" Command="{Binding RedetectDpiCommand}" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+
+              <Border Classes="section">
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="sectionTitle" Text="Services" />
+                  <TextBlock Classes="sectionHint"
+                             Text="Live probe of audio, metrics, media, and armed capabilities." />
+                  <TextBlock Text="{Binding ServiceProbe}" Foreground="#a6adc8" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+
+              <Border Classes="section">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="sectionTitle" Text="Window close" />
+                  <TextBlock Classes="sectionHint"
+                             Text="What the window close button does. Tray menu Exit always quits and stops tiles." />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Classes="action" Content="Minimize to tray"
+                            Command="{Binding SetCloseMinimizesToTrayCommand}" CommandParameter="tray"
+                            Classes.active="{Binding CloseMinimizesToTray}" />
+                    <Button Classes="action" Content="Exit application"
+                            Command="{Binding SetCloseMinimizesToTrayCommand}" CommandParameter="exit"
+                            Classes.active="{Binding !CloseMinimizesToTray}" />
+                  </StackPanel>
+                  <TextBlock IsVisible="{Binding CloseMinimizesToTray}" Foreground="#a6adc8" FontSize="12"
+                             Text="Close hides the hub; capabilities keep running in the tray." />
+                  <TextBlock IsVisible="{Binding !CloseMinimizesToTray}" Foreground="#a6adc8" FontSize="12"
+                             Text="Close exits MosaicShell and stops armed tiles." />
+                </StackPanel>
+              </Border>
+
+              <Border Classes="section">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="sectionTitle" Text="Startup" />
+                  <TextBlock Classes="sectionHint"
+                             Text="Launch MosaicShell Host when you sign in to Windows." />
+                  <Button Classes="action" Content="{Binding AutostartEnabled, StringFormat=Autostart: {0}}"
+                          Command="{Binding ToggleAutostartCommand}" HorizontalAlignment="Left" />
+                </StackPanel>
+              </Border>
+
+              <Border Classes="section">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="sectionTitle" Text="Updates" />
+                  <TextBlock Classes="sectionHint"
+                             Text="Compare the installed host version against the latest GitHub release." />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Classes="action" Content="Check GitHub releases" Command="{Binding CheckUpdatesCommand}" />
+                    <TextBlock Text="{Binding UpdateStatus}" Foreground="#a6adc8" VerticalAlignment="Center"
+                               TextWrapping="Wrap" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+
+              <Border Classes="section">
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="sectionTitle" Text="Data location" />
+                  <TextBlock Classes="sectionHint"
+                             Text="Config, modules, sessions, and capability arm state live here." />
+                  <TextBlock Text="%LocalAppData%\MosaicShell" Foreground="#a6adc8" FontSize="13"
+                             FontFamily="Cascadia Mono, Consolas, monospace" />
+                </StackPanel>
+              </Border>
+
+            </StackPanel>
+          </ScrollViewer>
+        </DockPanel>
+
+        <!-- Module config (from tile cog) -->
+        <DockPanel IsVisible="{Binding IsModuleConfig}">
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" Margin="0,0,0,16">
+            <Button Classes="action" Command="{Binding GoBackCommand}"
+                    VerticalAlignment="Center" Margin="0,0,16,0" Padding="10,8"
+                    ToolTip.Tip="Back to Tiles">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <icons:MaterialIcon Kind="ArrowLeft" Width="18" Height="18" />
+                <TextBlock Text="Back" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+              <TextBlock FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4">
+                <TextBlock.Text>
+                  <MultiBinding StringFormat="{}{0} settings">
+                    <Binding Path="ConfigModuleTitle" />
+                  </MultiBinding>
+                </TextBlock.Text>
+              </TextBlock>
+            </StackPanel>
+          </Grid>
+          <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Visible"
+                        AllowAutoHide="False">
+            <StackPanel HorizontalAlignment="Stretch" Margin="0,0,8,8" Spacing="0">
+              <Border Classes="section">
+                <StackPanel Spacing="12">
+                  <TextBlock Classes="sectionTitle" Text="Appearance" />
+                  <TextBlock Classes="sectionHint"
+                             Text="Named styles match JaxCore ids. Changes apply on next launch or re-arm." />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <ComboBox MinWidth="220" HorizontalAlignment="Stretch"
+                              ItemsSource="{Binding ModuleStyleOptions}"
+                              SelectedItem="{Binding ModuleStyle}" />
+                  </StackPanel>
+
+                  <StackPanel Spacing="8" IsVisible="{Binding ShowChronoExtras}">
+                    <Border Height="1" Background="#313244" Margin="0,4" />
+                    <CheckBox Content="Show seconds" IsChecked="{Binding ChronoSeconds}" />
+                  </StackPanel>
+
+                  <StackPanel Spacing="8" IsVisible="{Binding ShowTesseraExtras}">
+                    <Border Height="1" Background="#313244" Margin="0,4" />
+                    <CheckBox Content="Legacy volume key hooks" IsChecked="{Binding TesseraLegacyVol}" />
+                    <TextBlock Classes="sectionHint" Margin="0"
+                               Text="Use when Windows volume notifications are unreliable (Win11 22H2+)." />
+                  </StackPanel>
+
+                  <Button Classes="primary" Content="Save" HorizontalAlignment="Left" Margin="0,8,0,0"
+                          Command="{Binding SaveModuleConfigCommand}" />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </DockPanel>
 
         <!-- Welcome -->
         <StackPanel IsVisible="{Binding IsWelcome}" Spacing="14" MaxWidth="640" HorizontalAlignment="Left">
+          <Button Classes="action" Command="{Binding GoBackCommand}"
+                  HorizontalAlignment="Left" IsVisible="{Binding ShowBackButton}" Padding="10,8">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <icons:MaterialIcon Kind="ArrowLeft" Width="18" Height="18" />
+              <TextBlock Text="Back" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
           <Image Source="/Assets/logo-hero.png" MaxWidth="280" HorizontalAlignment="Left" />
           <TextBlock Text="Welcome" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
           <TextBlock TextWrapping="Wrap" Foreground="#a6adc8" FontSize="14" LineHeight="22"
-                     Text="Native host — no Rainmeter. Open Library, check modules to batch-install, then finish welcome. Overlays restore after restart." />
+                     Text="Native host — CapabilityDaemon arms Tessera/Mixdeck/etc. in the tray process. Widgets launch as overlays. Prefer Mosaicist over iwr|iex." />
           <StackPanel Orientation="Horizontal" Spacing="8">
             <Button Classes="primary" Content="Finish welcome" Command="{Binding CompleteWelcomeCommand}" />
-            <Button Classes="action" Content="Open Library" Command="{Binding NavigateCommand}" CommandParameter="Library" />
+            <Button Classes="action" Content="Open Tiles" Command="{Binding NavigateCommand}" CommandParameter="Tiles" />
           </StackPanel>
         </StackPanel>
 
         <!-- About -->
         <StackPanel IsVisible="{Binding IsAbout}" Spacing="14" MaxWidth="640" HorizontalAlignment="Left">
+          <Button Classes="action" Command="{Binding GoBackCommand}"
+                  HorizontalAlignment="Left" Padding="10,8">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <icons:MaterialIcon Kind="ArrowLeft" Width="18" Height="18" />
+              <TextBlock Text="Back" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
           <StackPanel Orientation="Horizontal" Spacing="16">
             <Image Source="/Assets/logo-256.png" Width="72" Height="72" />
             <StackPanel VerticalAlignment="Center">
@@ -301,7 +499,7 @@
             </StackPanel>
           </StackPanel>
           <TextBlock TextWrapping="Wrap" Foreground="#a6adc8" FontSize="14" LineHeight="22"
-                     Text="Native Avalonia hub + OS services + tile overlays. Packages are assets/settings — not Rainmeter entrypoints. Prefer Mosaicist over iwr|iex." />
+                     Text="Native Avalonia hub + CapabilityDaemon + named style catalogs. Tessera replaces OS volume OSD while armed. Modules plug in via ICapabilityFactory (+ optional capability.dll)." />
           <Button Classes="action" Content="View on GitHub" HorizontalAlignment="Left"
                   Command="{Binding OpenGitHubCommand}" />
         </StackPanel>

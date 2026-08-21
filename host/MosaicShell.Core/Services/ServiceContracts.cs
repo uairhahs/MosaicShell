@@ -97,6 +97,10 @@ public sealed class HostServices : IDisposable
     public required ISystemMetricsService Metrics { get; init; }
     public required IAudioLevelService AudioLevels { get; init; }
     public required IAutostartService Autostart { get; init; }
+    public required IBrightnessChangeSource BrightnessChanges { get; init; }
+    public required INativeOsdSuppressor OsdSuppressor { get; init; }
+    public required ILegacyMediaKeyHook LegacyVolumeKeys { get; init; }
+    public required IIdleService Idle { get; init; }
 
     public void Dispose()
     {
@@ -106,17 +110,29 @@ public sealed class HostServices : IDisposable
         Hotkeys.Dispose();
         Metrics.Dispose();
         AudioLevels.Dispose();
+        BrightnessChanges.Dispose();
+        OsdSuppressor.Dispose();
+        LegacyVolumeKeys.Dispose();
+        Idle.Dispose();
     }
 
-    public static HostServices CreateWindowsDefaults() => new()
+    public static HostServices CreateWindowsDefaults()
     {
-        Audio = new WindowsAudioService(),
-        AppAudio = new WindowsAppAudioService(),
-        Brightness = new WindowsBrightnessService(),
-        Media = new WindowsMediaSessionService(),
-        Hotkeys = new WindowsHotkeyService(),
-        Metrics = new WindowsSystemMetricsService(),
-        AudioLevels = new WindowsAudioLevelService(),
-        Autostart = new WindowsAutostartService(),
-    };
+        var brightness = new WindowsBrightnessService();
+        return new HostServices
+        {
+            Audio = new WindowsAudioService(),
+            AppAudio = new WindowsAppAudioService(),
+            Brightness = brightness,
+            Media = new WindowsMediaSessionService(),
+            Hotkeys = new WindowsHotkeyService(),
+            Metrics = new WindowsSystemMetricsService(),
+            AudioLevels = new WindowsAudioLevelService(),
+            Autostart = new WindowsAutostartService(),
+            BrightnessChanges = new WindowsBrightnessChangeSource(brightness),
+            OsdSuppressor = new WindowsNativeOsdSuppressor(),
+            LegacyVolumeKeys = new WindowsLegacyMediaKeyHook(),
+            Idle = new WindowsIdleService(),
+        };
+    }
 }

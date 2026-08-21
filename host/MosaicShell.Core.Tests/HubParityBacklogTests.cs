@@ -23,6 +23,12 @@ public class HubParityBacklogTests
         // Product "full" overlay runtime still false (visual DLC / every RM feature)
         { "native_tile_overlay_runtime", false },
 
+        // Capability daemon + Tessera OSD path
+        { "capability_daemon", true },
+        { "tessera_osd_flyout", true },
+        { "tessera_named_styles", true },
+        { "style_catalog_jaxcore_ids", true },
+
         // Phase 1 services
         { "service_audio", true },
         { "service_app_audio", true },
@@ -40,12 +46,12 @@ public class HubParityBacklogTests
         { "library_uninstall", true },
         { "tile_user_scale_applied", true },
 
-        // Phase 3 MVPs (service-bound surfaces)
+        // Phase 3 — widgets service-bound; Tessera is capability host not tile window
         { "tile_chrono_mvp", true },
         { "tile_canvas_mvp", true },
         { "tile_phono_mvp", true },
         { "tile_pulse_mvp", true },
-        { "tile_tessera_mvp", true },
+        { "tile_tessera_mvp", true }, // armed flyout + named styles (not Library slider window)
         { "tile_mixdeck_mvp", true },
         { "tile_inlay_mvp", true },
         { "tile_chord_mvp", true },

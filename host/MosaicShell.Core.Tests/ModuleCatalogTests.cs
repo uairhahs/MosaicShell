@@ -58,7 +58,7 @@ public class ModuleCatalogTests : IDisposable
     {
         ModuleCatalog.TryGet("Mixdeck", out var info).Should().BeTrue();
         info!.DisplayName.Should().Be("Mixdeck");
-        info.Kind.Should().Be(ModuleKind.Module);
+        info.Kind.Should().Be(ModuleKind.Capability);
         info.Description.Should().NotBeNullOrWhiteSpace();
     }
 

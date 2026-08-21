@@ -3,9 +3,12 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
+using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.BuiltIn;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Scale;
 using MosaicShell.Core.Services;
+using MosaicShell.Host.Capabilities;
 using MosaicShell.Host.Tiles;
 using MosaicShell.Host.ViewModels;
 using MosaicShell.Host.Views;
@@ -18,6 +21,7 @@ public partial class App : Application
     private TileRuntime? _tileRuntime;
     private AvaloniaTileSurfaceHost? _tileHost;
     private HostServices? _services;
+    private CapabilityDaemon? _daemon;
     private MainViewModel? _vm;
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
@@ -31,21 +35,35 @@ public partial class App : Application
 
             double UserScale() => _vm?.UserScale ?? 1.0;
 
+            var flyouts = new AvaloniaFlyoutPresenter(_services);
+            var uiBridge = new AvaloniaCapabilityUiBridge(flyouts);
+            var registry = new CapabilityRegistry();
+            BuiltInCapabilityFactories.RegisterAll(registry);
+            _daemon = new CapabilityDaemon(registry, _services, uiBridge);
+
             _tileHost = new AvaloniaTileSurfaceHost(_services, UserScale, id =>
                 _tileRuntime?.NotifySurfaceClosed(id));
             _tileRuntime = new TileRuntime(new RestoringSurfaceHost(_tileHost));
 
-            _vm = new MainViewModel(_tileRuntime, _services, _tileHost);
+            _vm = new MainViewModel(_tileRuntime, _services, _tileHost, _daemon);
             _mainWindow = new MainWindow { DataContext = _vm };
             _mainWindow.Closing += OnMainWindowClosing;
             desktop.MainWindow = _mainWindow;
 
-            Dispatcher.UIThread.Post(() => _vm.RestoreSessions());
+            Dispatcher.UIThread.Post(async () =>
+            {
+                await _daemon.RestoreAsync();
+                _vm.RestoreSessions();
+                _vm.RefreshArmedState();
+            });
 
-            desktop.Exit += (_, _) =>
+            desktop.Exit += async (_, _) =>
             {
                 _tileHost.PersistAll();
                 _tileRuntime.StopAll();
+                if (_daemon is not null)
+                    await _daemon.DisarmAllAsync();
+                _daemon?.Dispose();
                 _services.Dispose();
             };
         }
@@ -56,18 +74,29 @@ public partial class App : Application
     private void OnMainWindowClosing(object? sender, WindowClosingEventArgs e)
     {
         if (Equals(_mainWindow?.Tag, "force-close")) return;
-        e.Cancel = true;
-        _mainWindow?.Hide();
-        _tileHost?.PersistAll();
+
+        var minimizeToTray = _vm?.Hub.CloseMinimizesToTray ?? true;
+        if (minimizeToTray)
+        {
+            e.Cancel = true;
+            _mainWindow?.Hide();
+            _tileHost?.PersistAll();
+            _daemon?.Persist();
+            return;
+        }
+
+        // Exit on close — same teardown as tray Exit
+        e.Cancel = true; // cancel first so we can dispose async-safe then force-close
+        _ = ExitApplicationAsync();
     }
 
-    private void TrayOpen_OnClick(object? sender, EventArgs e) => ShowMainWindow();
-    private void TrayIcon_OnClicked(object? sender, EventArgs e) => ShowMainWindow();
-
-    private void TrayExit_OnClick(object? sender, EventArgs e)
+    private async Task ExitApplicationAsync()
     {
         _tileHost?.PersistAll();
         _tileRuntime?.StopAll();
+        if (_daemon is not null)
+            await _daemon.DisarmAllAsync();
+        _daemon?.Dispose();
         _services?.Dispose();
         if (_mainWindow is not null)
         {
@@ -79,6 +108,12 @@ public partial class App : Application
             desktop.Shutdown();
     }
 
+    private void TrayOpen_OnClick(object? sender, EventArgs e) => ShowMainWindow();
+    private void TrayIcon_OnClicked(object? sender, EventArgs e) => ShowMainWindow();
+
+    private async void TrayExit_OnClick(object? sender, EventArgs e) =>
+        await ExitApplicationAsync();
+
     private void ShowMainWindow()
     {
         if (_mainWindow is null) return;
@@ -87,7 +122,6 @@ public partial class App : Application
         _mainWindow.Activate();
     }
 
-    /// <summary>Wraps host so TileRuntime.Show restores last geometry when present.</summary>
     private sealed class RestoringSurfaceHost(AvaloniaTileSurfaceHost inner) : ITileSurfaceHost
     {
         public bool Show(string moduleId, out string? error)

@@ -1,6 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Material.Icons;
 using MosaicShell.Core;
+using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Runtime;
@@ -8,6 +10,7 @@ using MosaicShell.Core.Scale;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
 using MosaicShell.Core.Shp;
+using MosaicShell.Core.Styles;
 using MosaicShell.Core.Update;
 using MosaicShell.Host.Tiles;
 using System.Collections.ObjectModel;
@@ -22,13 +25,19 @@ public partial class MainViewModel : ViewModelBase
     private readonly ModuleLauncher _launcher;
     private readonly HostServices _services;
     private readonly AvaloniaTileSurfaceHost? _tileHost;
+    private readonly CapabilityDaemon? _daemon;
 
-    public MainViewModel(ITileRuntime runtime, HostServices services, AvaloniaTileSurfaceHost? tileHost)
+    public MainViewModel(
+        ITileRuntime runtime,
+        HostServices services,
+        AvaloniaTileSurfaceHost? tileHost,
+        CapabilityDaemon? daemon = null)
     {
         _runtime = runtime;
         _launcher = new ModuleLauncher(runtime);
         _services = services;
         _tileHost = tileHost;
+        _daemon = daemon;
 
         AppPaths.EnsureLayout();
         var settings = ScaleSettingsStore.Load();
@@ -37,38 +46,41 @@ public partial class MainViewModel : ViewModelBase
         ScaleSettingsStore.Save(_scale.ToSettings());
         Hub = ModuleSettingsStore.Load("Hub", () => new HubSettings());
 
-        DiscoverCards =
+        HomeCards =
         [
-            new("Library", "Install, launch, and uninstall native tiles.", "Library", "/Assets/Modules/Tessera.png"),
-            new("Settings", "Scale, appearance, autostart, services probe.", "Settings", "/Assets/Modules/Slate.png"),
+            new("Tiles", "Install widgets or arm capability hosts (Tessera flyouts, launchers).", "Tiles", "/Assets/Modules/Tessera.png"),
             new("Welcome", "First-run picks, batch install, startup.", "Welcome", "/Assets/Modules/Inlay.png"),
-            new("About", "MosaicShell native host — no Rainmeter runtime.", "About", "/Assets/logo-256.png"),
+            new("About", "MosaicShell native host — CapabilityDaemon, no Rainmeter.", "About", "/Assets/logo-256.png"),
         ];
+
+        ModuleStyleOptions = [];
 
         RefreshLibrary();
         SyncScaleProps();
-        SyncServiceProbe();
-        Navigate(Hub.WelcomeCompleted ? "Discover" : "Welcome");
+        Navigate(Hub.WelcomeCompleted ? "Home" : "Welcome");
     }
 
     public MainViewModel() : this(
         new TileRuntime(new NullTileHost()),
         HostServicesFakes.Create(),
-        null!)
+        null)
     {
     }
 
-    public ObservableCollection<DiscoverCard> DiscoverCards { get; }
+    public ObservableCollection<DiscoverCard> HomeCards { get; }
     public ObservableCollection<LibraryItemViewModel> Modules { get; } = [];
     public ObservableCollection<LibraryItemViewModel> Widgets { get; } = [];
+    public ObservableCollection<string> ModuleStyleOptions { get; }
     public HubSettings Hub { get; }
 
-    [ObservableProperty] private string _selectedPage = "Discover";
-    [ObservableProperty] private bool _isDiscover = true;
-    [ObservableProperty] private bool _isLibrary;
+    [ObservableProperty] private string _selectedPage = "Home";
+    [ObservableProperty] private bool _isHome = true;
+    [ObservableProperty] private bool _isTiles;
     [ObservableProperty] private bool _isSettings;
     [ObservableProperty] private bool _isAbout;
     [ObservableProperty] private bool _isWelcome;
+    [ObservableProperty] private bool _isModuleConfig;
+    [ObservableProperty] private bool _showBackButton;
     [ObservableProperty] private double _layoutScale = 1.0;
     [ObservableProperty] private double _dpiScale = 1.0;
     [ObservableProperty] private double _userScale = 1.0;
@@ -77,43 +89,213 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private string _statusMessage = "Ready";
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private string _serviceProbe = "";
-    [ObservableProperty] private string _chronoStyle = "Center";
+    [ObservableProperty] private string _configModuleId = "";
+    [ObservableProperty] private string _configModuleTitle = "";
+    [ObservableProperty] private string _moduleStyle = "DEFAULT";
     [ObservableProperty] private bool _chronoSeconds = true;
+    [ObservableProperty] private bool _showChronoExtras;
+    [ObservableProperty] private bool _tesseraLegacyVol;
+    [ObservableProperty] private bool _showTesseraExtras;
     [ObservableProperty] private bool _autostartEnabled;
+    [ObservableProperty] private bool _closeMinimizesToTray = true;
     [ObservableProperty] private string _updateStatus = "";
 
     public void RestoreSessions()
     {
         foreach (var s in SessionStore.Load())
         {
-            if (ModuleCatalog.IsInstalled(s.ModuleId))
-                _runtime.Start(s.ModuleId);
+            if (!ModuleCatalog.IsInstalled(s.ModuleId)) continue;
+            if (ModuleCatalog.IsCapability(s.ModuleId)) continue; // capabilities use daemon, not tile sessions
+            _runtime.Start(s.ModuleId);
         }
         RefreshLibrary();
     }
 
+    public void RefreshArmedState() => RefreshLibrary();
+
     [RelayCommand]
     private void Navigate(string page)
     {
+        // Accept legacy Discover/Library names from older links
+        if (page == "Discover") page = "Home";
+        if (page == "Library") page = "Tiles";
+
         SelectedPage = page;
-        IsDiscover = page == "Discover";
-        IsLibrary = page == "Library";
+        IsHome = page == "Home";
+        IsTiles = page == "Tiles";
         IsSettings = page == "Settings";
         IsAbout = page == "About";
         IsWelcome = page == "Welcome";
-        if (IsLibrary) RefreshLibrary();
+        IsModuleConfig = page == "ModuleConfig";
+        ShowBackButton = IsTiles || IsWelcome || IsAbout || IsModuleConfig;
+        if (IsTiles) RefreshLibrary();
         if (IsSettings)
         {
             SyncScaleProps();
             SyncServiceProbe();
-            var chrono = ModuleSettingsStore.Load("Chrono", () => new ChronoSettings());
-            ChronoStyle = chrono.Style;
-            ChronoSeconds = chrono.ShowSeconds;
             AutostartEnabled = _services.Autostart.IsEnabled;
         }
     }
 
     [RelayCommand] private void OpenCard(DiscoverCard? card) { if (card is not null) Navigate(card.TargetPage); }
+
+    [RelayCommand]
+    private void GoBack()
+    {
+        if (IsModuleConfig) Navigate("Tiles");
+        else Navigate("Home");
+    }
+
+    [RelayCommand]
+    private void OpenModuleConfig(LibraryItemViewModel? item)
+    {
+        if (item is null) return;
+        ConfigModuleId = item.Id;
+        ConfigModuleTitle = item.Name;
+        ModuleStyleOptions.Clear();
+        foreach (var id in StyleCatalog.IdsFor(item.Id))
+            ModuleStyleOptions.Add(id);
+
+        ShowChronoExtras = item.Id.Equals("Chrono", StringComparison.OrdinalIgnoreCase);
+        ShowTesseraExtras = item.Id.Equals("Tessera", StringComparison.OrdinalIgnoreCase);
+
+        if (ShowChronoExtras)
+        {
+            var s = ModuleSettingsStore.Load("Chrono", () => new ChronoSettings());
+            ModuleStyle = s.Style;
+            ChronoSeconds = s.ShowSeconds;
+        }
+        else if (ShowTesseraExtras)
+        {
+            var s = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
+            ModuleStyle = s.Style;
+            TesseraLegacyVol = s.UseLegacyVolumeHooks;
+        }
+        else
+        {
+            ModuleStyle = LoadStylePreference(item.Id, ModuleStyleOptions.FirstOrDefault() ?? StyleCatalog.DefaultFor(item.Id));
+        }
+
+        if (ModuleStyleOptions.Count > 0 && !ModuleStyleOptions.Contains(ModuleStyle))
+            ModuleStyle = ModuleStyleOptions[0];
+
+        Navigate("ModuleConfig");
+    }
+
+    private static string LoadStylePreference(string moduleId, string fallback)
+    {
+        try
+        {
+            return moduleId.ToLowerInvariant() switch
+            {
+                "phono" => ModuleSettingsStore.Load("Phono", () => new PhonoSettings()).Style,
+                "pulse" => ModuleSettingsStore.Load("Pulse", () => new PulseSettings()).Style,
+                "canvas" => ModuleSettingsStore.Load("Canvas", () => new CanvasSettings()).Style,
+                "mixdeck" => ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings()).Style,
+                "inlay" => ModuleSettingsStore.Load("Inlay", () => new InlaySettings()).Style,
+                "chord" => ModuleSettingsStore.Load("Chord", () => new ChordSettings()).Style,
+                "slate" => ModuleSettingsStore.Load("Slate", () => new SlateSettings()).Style,
+                "substrate" => ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings()).Style,
+                _ => fallback
+            };
+        }
+        catch { return fallback; }
+    }
+
+    [RelayCommand]
+    private void SaveModuleConfig()
+    {
+        if (string.IsNullOrWhiteSpace(ConfigModuleId)) return;
+        var id = ConfigModuleId;
+        switch (id.ToLowerInvariant())
+        {
+            case "chrono":
+            {
+                var s = ModuleSettingsStore.Load("Chrono", () => new ChronoSettings());
+                s.Style = ModuleStyle;
+                s.ShowSeconds = ChronoSeconds;
+                ModuleSettingsStore.Save("Chrono", s);
+                StatusMessage = "Chrono settings saved — relaunch widget to apply.";
+                break;
+            }
+            case "tessera":
+            {
+                var s = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
+                s.Style = ModuleStyle;
+                s.UseLegacyVolumeHooks = TesseraLegacyVol;
+                ModuleSettingsStore.Save("Tessera", s);
+                StatusMessage = "Tessera settings saved — re-arm to apply legacy hooks.";
+                break;
+            }
+            case "phono":
+            {
+                var s = ModuleSettingsStore.Load("Phono", () => new PhonoSettings());
+                s.Style = ModuleStyle;
+                ModuleSettingsStore.Save("Phono", s);
+                StatusMessage = "Phono style saved.";
+                break;
+            }
+            case "pulse":
+            {
+                var s = ModuleSettingsStore.Load("Pulse", () => new PulseSettings());
+                s.Style = ModuleStyle;
+                ModuleSettingsStore.Save("Pulse", s);
+                StatusMessage = "Pulse style saved.";
+                break;
+            }
+            case "canvas":
+            {
+                var s = ModuleSettingsStore.Load("Canvas", () => new CanvasSettings());
+                s.Style = ModuleStyle;
+                ModuleSettingsStore.Save("Canvas", s);
+                StatusMessage = "Canvas style saved.";
+                break;
+            }
+            case "mixdeck":
+            {
+                var s = ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings());
+                s.Style = ModuleStyle;
+                ModuleSettingsStore.Save("Mixdeck", s);
+                StatusMessage = "Mixdeck style saved.";
+                break;
+            }
+            case "inlay":
+            {
+                var s = ModuleSettingsStore.Load("Inlay", () => new InlaySettings());
+                s.Style = ModuleStyle;
+                ModuleSettingsStore.Save("Inlay", s);
+                StatusMessage = "Inlay style saved.";
+                break;
+            }
+            case "chord":
+            {
+                var s = ModuleSettingsStore.Load("Chord", () => new ChordSettings());
+                s.Style = ModuleStyle;
+                ModuleSettingsStore.Save("Chord", s);
+                StatusMessage = "Chord style saved.";
+                break;
+            }
+            case "slate":
+            {
+                var s = ModuleSettingsStore.Load("Slate", () => new SlateSettings());
+                s.Style = ModuleStyle;
+                ModuleSettingsStore.Save("Slate", s);
+                StatusMessage = "Slate style saved.";
+                break;
+            }
+            case "substrate":
+            {
+                var s = ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings());
+                s.Style = ModuleStyle;
+                ModuleSettingsStore.Save("Substrate", s);
+                StatusMessage = "Substrate style saved.";
+                break;
+            }
+            default:
+                StatusMessage = $"No settings store for {id}.";
+                return;
+        }
+    }
 
     [RelayCommand]
     private void OpenGitHub()
@@ -157,16 +339,6 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void SaveChronoSettings()
-    {
-        var s = ModuleSettingsStore.Load("Chrono", () => new ChronoSettings());
-        s.Style = ChronoStyle;
-        s.ShowSeconds = ChronoSeconds;
-        ModuleSettingsStore.Save("Chrono", s);
-        StatusMessage = "Chrono settings saved — relaunch tile to apply.";
-    }
-
-    [RelayCommand]
     private void ToggleAutostart()
     {
         AutostartEnabled = !AutostartEnabled;
@@ -174,6 +346,26 @@ public partial class MainViewModel : ViewModelBase
         Hub.AutostartHost = AutostartEnabled;
         ModuleSettingsStore.Save("Hub", Hub);
         StatusMessage = AutostartEnabled ? "Host will start at logon." : "Autostart disabled.";
+    }
+
+    [RelayCommand]
+    private void SetCloseMinimizesToTray(string? value)
+    {
+        var minimize = !string.Equals(value, "exit", StringComparison.OrdinalIgnoreCase);
+        CloseMinimizesToTray = minimize;
+        Hub.CloseMinimizesToTray = minimize;
+        ModuleSettingsStore.Save("Hub", Hub);
+        StatusMessage = minimize
+            ? "Close button minimizes to tray."
+            : "Close button exits the app.";
+    }
+
+    partial void OnCloseMinimizesToTrayChanged(bool value)
+    {
+        // Keep Hub in sync when bound ToggleButton/CheckBox flips the property
+        if (Hub.CloseMinimizesToTray == value) return;
+        Hub.CloseMinimizesToTray = value;
+        ModuleSettingsStore.Save("Hub", Hub);
     }
 
     [RelayCommand]
@@ -217,7 +409,7 @@ public partial class MainViewModel : ViewModelBase
                 await _installer.InstallAsync(id);
         }
         RefreshLibrary();
-        Navigate("Discover");
+        Navigate("Home");
         StatusMessage = selected.Count == 0 ? "Welcome completed." : $"Installed {selected.Count} module(s).";
     }
 
@@ -227,7 +419,7 @@ public partial class MainViewModel : ViewModelBase
         var selected = Modules.Concat(Widgets).Where(m => m.IsSelectedForBatch && !m.IsInstalled).ToList();
         if (selected.Count == 0)
         {
-            StatusMessage = "Select modules in Library (checkbox) first.";
+            StatusMessage = "Select modules in Tiles (checkbox) first.";
             return;
         }
         IsBusy = true;
@@ -237,7 +429,7 @@ public partial class MainViewModel : ViewModelBase
             {
                 StatusMessage = $"Installing {item.Name}…";
                 await _installer.InstallAsync(item.Id);
-                item.ApplyInstalled();
+                item.ApplyInstalled(_daemon?.IsArmed(item.Id) == true);
             }
             StatusMessage = $"Batch installed {selected.Count} module(s).";
         }
@@ -251,6 +443,30 @@ public partial class MainViewModel : ViewModelBase
         if (item is null || IsBusy) return;
         if (item.IsInstalled)
         {
+            if (item.IsCapability)
+            {
+                if (_daemon is null)
+                {
+                    StatusMessage = "Capability daemon not available.";
+                    return;
+                }
+                if (_daemon.IsArmed(item.Id))
+                {
+                    await _daemon.DisarmAsync(item.Id);
+                    item.ApplyArmed(false);
+                    StatusMessage = $"Disarmed {item.Name}.";
+                }
+                else
+                {
+                    var ok = await _daemon.ArmAsync(item.Id);
+                    item.ApplyArmed(ok);
+                    StatusMessage = ok
+                        ? $"Armed {item.Name} — runs in background while Host is in tray."
+                        : $"Could not arm {item.Name}.";
+                }
+                return;
+            }
+
             if (_runtime.IsRunning(item.Id))
             {
                 _runtime.Stop(item.Id);
@@ -269,13 +485,23 @@ public partial class MainViewModel : ViewModelBase
         try
         {
             await _installer.InstallAsync(item.Id);
-            item.ApplyInstalled();
-            StatusMessage = $"Installed {item.Name}. ▶ launches native overlay.";
+            var manifest = ModuleManifest.TryLoad(item.Id);
+            item.ApplyInstalled(false);
+            StatusMessage = item.IsCapability
+                ? $"Installed {item.Name}. Use the flash button to arm the capability host."
+                : $"Installed {item.Name}. Use play to launch the overlay.";
+
+            if (manifest?.DefaultArmed == true && _daemon is not null)
+            {
+                var ok = await _daemon.ArmAsync(item.Id);
+                item.ApplyArmed(ok);
+                if (ok) StatusMessage = $"Installed and armed {item.Name}.";
+            }
         }
         catch (Exception ex)
         {
             item.StatusText = "(Not Installed)";
-            item.ActionGlyph = "+";
+            item.ActionIcon = MaterialIconKind.Plus;
             StatusMessage = $"Install failed: {ex.Message}";
         }
         finally
@@ -286,20 +512,20 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void UninstallModule(LibraryItemViewModel? item)
+    private async Task UninstallModule(LibraryItemViewModel? item)
     {
         if (item is null || !item.IsInstalled) return;
-        if (ModuleUninstaller.Uninstall(item.Id, _runtime))
+        if (ModuleUninstaller.Uninstall(item.Id, _runtime, _daemon))
         {
             StatusMessage = $"Uninstalled {item.Name}.";
             RefreshLibrary();
         }
+        await Task.CompletedTask;
     }
 
     [RelayCommand]
     private void ImportShp()
     {
-        // Path via env for headless; Host can set StatusMessage with instruction
         var path = Environment.GetEnvironmentVariable("MOSAICSHELL_SHP");
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
         {
@@ -332,8 +558,9 @@ public partial class MainViewModel : ViewModelBase
         {
             var m = _services.Metrics.Sample();
             var media = _services.Media.Current?.Title ?? "(none)";
+            var armed = _daemon is null ? "0" : string.Join(",", _daemon.ArmedModuleIds);
             ServiceProbe =
-                $"CPU {m.CpuPercent:0}% · RAM {m.RamUsedPercent:0}% · Vol {_services.Audio.MasterVolume:0%} · Media {media}";
+                $"CPU {m.CpuPercent:0}% · RAM {m.RamUsedPercent:0}% · Vol {_services.Audio.MasterVolume:0%} · Media {media} · Armed [{armed}]";
         }
         catch (Exception ex)
         {
@@ -346,9 +573,12 @@ public partial class MainViewModel : ViewModelBase
         Modules.Clear();
         Widgets.Clear();
         foreach (var m in ModuleCatalog.Modules)
-            Modules.Add(LibraryItemViewModel.From(m, _runtime.IsRunning(m.Id)));
+        {
+            var armed = _daemon?.IsArmed(m.Id) == true;
+            Modules.Add(LibraryItemViewModel.From(m, running: false, armed: armed));
+        }
         foreach (var w in ModuleCatalog.Widgets)
-            Widgets.Add(LibraryItemViewModel.From(w, _runtime.IsRunning(w.Id)));
+            Widgets.Add(LibraryItemViewModel.From(w, running: _runtime.IsRunning(w.Id), armed: false));
     }
 
     private sealed class NullTileHost : ITileSurfaceHost
@@ -367,43 +597,83 @@ public partial class LibraryItemViewModel : ObservableObject
     public required string Name { get; init; }
     public required string Description { get; init; }
     public required string IconPath { get; init; }
+    public bool IsCapability { get; init; }
 
     [ObservableProperty] private bool _isInstalled;
     [ObservableProperty] private bool _isInstalling;
     [ObservableProperty] private bool _isRunning;
+    [ObservableProperty] private bool _isArmed;
     [ObservableProperty] private bool _isSelectedForBatch;
     [ObservableProperty] private string _statusText = "(Not Installed)";
-    [ObservableProperty] private string _actionGlyph = "+";
+    [ObservableProperty] private MaterialIconKind _actionIcon = MaterialIconKind.Plus;
 
-    public void ApplyInstalled()
+    public void ApplyInstalled(bool armed = false)
     {
         IsInstalled = true;
         IsRunning = false;
-        StatusText = "Ready";
-        ActionGlyph = "▶";
+        IsArmed = armed;
+        if (IsCapability)
+        {
+            StatusText = armed ? "Armed" : "Ready to arm";
+            ActionIcon = armed ? MaterialIconKind.StopCircle : MaterialIconKind.Flash;
+        }
+        else
+        {
+            StatusText = "Ready";
+            ActionIcon = MaterialIconKind.Play;
+        }
     }
 
     public void ApplyRunning(bool running)
     {
         IsRunning = running;
-        if (!IsInstalled) return;
+        if (!IsInstalled || IsCapability) return;
         StatusText = running ? "Running" : "Ready";
-        ActionGlyph = running ? "■" : "▶";
+        ActionIcon = running ? MaterialIconKind.Stop : MaterialIconKind.Play;
     }
 
-    public static LibraryItemViewModel From(ModuleInfo info, bool running = false)
+    public void ApplyArmed(bool armed)
+    {
+        IsArmed = armed;
+        if (!IsInstalled || !IsCapability) return;
+        StatusText = armed ? "Armed" : "Ready to arm";
+        ActionIcon = armed ? MaterialIconKind.StopCircle : MaterialIconKind.Flash;
+    }
+
+    public static LibraryItemViewModel From(ModuleInfo info, bool running = false, bool armed = false)
     {
         var installed = ModuleCatalog.IsInstalled(info.Id);
+        var isCap = info.Kind is ModuleKind.Capability or ModuleKind.Hybrid;
+        string status;
+        MaterialIconKind icon;
+        if (!installed)
+        {
+            status = "(Not Installed)";
+            icon = MaterialIconKind.Plus;
+        }
+        else if (isCap)
+        {
+            status = armed ? "Armed" : "Ready to arm";
+            icon = armed ? MaterialIconKind.StopCircle : MaterialIconKind.Flash;
+        }
+        else
+        {
+            status = running ? "Running" : "Ready";
+            icon = running ? MaterialIconKind.Stop : MaterialIconKind.Play;
+        }
+
         return new LibraryItemViewModel
         {
             Id = info.Id,
             Name = info.DisplayName,
             Description = info.Description,
             IconPath = $"/Assets/Modules/{info.Id}.png",
+            IsCapability = isCap,
             IsInstalled = installed,
-            IsRunning = running && installed,
-            StatusText = !installed ? "(Not Installed)" : running ? "Running" : "Ready",
-            ActionGlyph = !installed ? "+" : running ? "■" : "▶"
+            IsRunning = running && installed && !isCap,
+            IsArmed = armed && installed && isCap,
+            StatusText = status,
+            ActionIcon = icon
         };
     }
 }

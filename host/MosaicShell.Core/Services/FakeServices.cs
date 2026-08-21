@@ -2,8 +2,29 @@ namespace MosaicShell.Core.Services;
 
 public sealed class FakeAudioService : IAudioService
 {
-    public double MasterVolume { get; set; } = 0.5;
-    public bool IsMuted { get; set; }
+    private double _volume = 0.5;
+    private bool _muted;
+
+    public double MasterVolume
+    {
+        get => _volume;
+        set
+        {
+            _volume = value;
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    public bool IsMuted
+    {
+        get => _muted;
+        set
+        {
+            _muted = value;
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
     public event EventHandler? Changed;
     public void Dispose() { }
 }
@@ -89,5 +110,9 @@ public static class HostServicesFakes
         Metrics = new FakeSystemMetricsService(),
         AudioLevels = new FakeAudioLevelService(),
         Autostart = new FakeAutostartService(),
+        BrightnessChanges = new NullBrightnessChangeSource(),
+        OsdSuppressor = new NullNativeOsdSuppressor(),
+        LegacyVolumeKeys = new NullLegacyMediaKeyHook(),
+        Idle = new NullIdleService(),
     };
 }
