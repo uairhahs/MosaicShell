@@ -3,8 +3,8 @@
 ; ---------------------------------------------------------------------------- ;
 [Variables]
 @includeModuleVariable=Vars\Weather.inc
-@includegVar2=#SKINSPATH##JaxCore\@Resources\gVars\Weather.inc
-@includegVar3=#SKINSPATH##JaxCore\@Resources\gVars\WeatherAPIKey.inc
+@includegVar2=#SKINSPATH##MosaicShell\@Resources\gVars\Weather.inc
+@includegVar3=#SKINSPATH##MosaicShell\@Resources\gVars\WeatherAPIKey.inc
 WeatherHeight=165
 WeatherUnitsMetric=m
 WeatherUnitsImperial=e

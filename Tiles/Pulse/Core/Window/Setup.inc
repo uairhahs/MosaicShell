@@ -105,11 +105,11 @@ H=(300*[S])
 LeftMouseUpAction=[!WriteKeyValue Variables Sec.arg2 "1" "#CURRENTPATH#Main.ini"][!Refresh]
 DynamicVariables=1
 Container=ContentContainer
-ImageName=#SKINSPATH#ModularVisualizer\@Resources\Images\ModularVisualizer.png
+ImageName=#SKINSPATH#Pulse\@Resources\Images\Pulse.png
 
 [Header.String]
 Meter=String
-Text=ModularVisualizer Setup
+Text=Pulse Setup
 X=(300*[S]/2)r
 Y=R
 FontSize=(32*[S])
@@ -130,4 +130,4 @@ InlineSetting=Color | #Set.Positive_Color#
 MeterStyle=Sec.String:S
 
 
-@includeContent=#SKINSPATH#ModularVisualizer\Core\Window\Setup\#Sec.Arg2#.inc
+@includeContent=#SKINSPATH#Pulse\Core\Window\Setup\#Sec.Arg2#.inc

@@ -6,7 +6,7 @@ Shape=Rectangle 0,0,(#W#-50*#Scale#),(130*#Scale#),(#R#*#Scale#) | StrokeWidth 2
 This=Stroke color #Border#,#Alpha# | Fill Color #Pri_color#,#Alpha#
 MouseOverAction=[!SetOption #CURRENTSECTION# This "Stroke color #BoxBorder# | Fill Color #BoxColor#,#Alpha#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# This "Stroke color #Border#,#Alpha# | Fill Color #Pri_color#,#Alpha#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
-LeftMouseUpAction=[!DeactivateConfig "#JaxCore\Main"][!Delay 100][!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##JaxCore\@Resources\SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page Layout "#SKINSPATH##JaxCore\@Resources\SecVar.inc"][!ActivateConfig "#JaxCore\Main" "Settings.ini"]
+LeftMouseUpAction=[!DeactivateConfig "#MosaicShell\Main"][!Delay 100][!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page Layout "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"]
 [Info.Container]
 Meter=SHape
 X=r
@@ -21,7 +21,7 @@ PreserveAspectRatio=2
 Container=Info.Container
 [Info.String]
 Meter=String
-Text=Welcome to ValliStart#CRLF#ValliStart comes with numerous different modules for you to use in your new start menu. Click here to select a layout!
+Text=Welcome to Inlay#CRLF#Inlay comes with numerous different modules for you to use in your new start menu. Click here to select a layout!
 StringAlign=LeftCenter
 X=(25*#Scale#)r
 Y=(130/2*#Scale#)r
@@ -41,7 +41,7 @@ Shape=Rectangle 0,0,(#W#-50*#Scale#),(130*#Scale#),(#R#*#Scale#) | StrokeWidth 2
 This=Stroke color #Border#,#Alpha# | Fill Color #Pri_color#,#Alpha#
 MouseOverAction=[!SetOption #CURRENTSECTION# This "Stroke color #BoxBorder# | Fill Color #BoxColor#,#Alpha#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# This "Stroke color #Border#,#Alpha# | Fill Color #Pri_color#,#Alpha#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
-LeftMouseUpAction=[!DeactivateConfig "#JaxCore\Main"][!Delay 100][!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##JaxCore\@Resources\SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page Appearance "#SKINSPATH##JaxCore\@Resources\SecVar.inc"][!ActivateConfig "#JaxCore\Main" "Settings.ini"]
+LeftMouseUpAction=[!DeactivateConfig "#MosaicShell\Main"][!Delay 100][!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page Appearance "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"]
 [Info2.Container]
 Meter=SHape
 X=r
@@ -56,7 +56,7 @@ PreserveAspectRatio=2
 Container=Info2.Container
 [Info2.String]
 Meter=String
-Text=YOUR start menu#CRLF#ValliStart is extremely customizable (unlike it's counterpart), change the position, dimension, colors and more!
+Text=YOUR start menu#CRLF#Inlay is extremely customizable (unlike it's counterpart), change the position, dimension, colors and more!
 StringAlign=LeftCenter
 X=(225*#Scale#)r
 Y=(130/2*#Scale#)r
@@ -76,10 +76,10 @@ Shape=Rectangle 0,0,(#W#-50*#Scale#),(60*#Scale#),(#R#*#Scale#) | StrokeWidth 2 
 This=Stroke color #Border#,#Alpha# | Fill Color #Pri_color#,#Alpha#
 MouseOverAction=[!SetOption #CURRENTSECTION# This "Stroke color #BoxBorder# | Fill Color #BoxColor#,#Alpha#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# This "Stroke color #Border#,#Alpha# | Fill Color #Pri_color#,#Alpha#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
-LeftMouseUpAction=[!DeactivateConfig "#JaxCore\Main"][!Delay 100][!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##JaxCore\@Resources\SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page Position "#SKINSPATH##JaxCore\@Resources\SecVar.inc"][!ActivateConfig "#JaxCore\Main" "Settings.ini"]
+LeftMouseUpAction=[!DeactivateConfig "#MosaicShell\Main"][!Delay 100][!WriteKeyvalue Variables Skin.Name #ROOTCONFIG# "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page Position "#SKINSPATH##MosaicShell\@Resources\SecVar.inc"][!ActivateConfig "#MosaicShell\Main" "Settings.ini"]
 [Info3.String]
 Meter=String
-Text=ValliStart's on the wrong monitor? Change the monitor index in the position settings!
+Text=Inlay's on the wrong monitor? Change the monitor index in the position settings!
 StringAlign=LeftCenter
 X=(25*#Scale#)r
 Y=(60/2*#Scale#)r

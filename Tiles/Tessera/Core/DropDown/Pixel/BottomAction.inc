@@ -14,12 +14,12 @@ Tooltiptitle=#CURRENTSECTION#
 ;                                    Content                                   ;
 ; ---------------------------------------------------------------------------- ;
 
-[YourMixer]
+[Mixdeck]
 Meter=String
 Y=(#Sec.P#)
-ToolTipText=Launches JaxCore's YourMixer. Recommended.
+ToolTipText=Launches MosaicShell's Mixdeck. Recommended.
 MeterStyle=String:S
-LeftMouseUpAction=[!WriteKeyValue Variables BottomActionBang """[!UpdateMeasure mToggle "YourMixer\Main"]""" "#SaveLocation#"][!WriteKeyValue Variables BottomActionName "#CURRENTSECTION#" "#SaveLocation#"][!Refresh "YourFlyouts\Main"][!Refresh "#JaxCore\Main"][!DeactivateConfig]
+LeftMouseUpAction=[!WriteKeyValue Variables BottomActionBang """[!UpdateMeasure mToggle "Mixdeck\Main"]""" "#SaveLocation#"][!WriteKeyValue Variables BottomActionName "#CURRENTSECTION#" "#SaveLocation#"][!Refresh "Tessera\Main"][!Refresh "#MosaicShell\Main"][!DeactivateConfig]
 [Div:0]
 Meter=Shape
 MeterStyle=Div:S
@@ -27,4 +27,4 @@ MeterStyle=Div:S
 Meter=String
 ToolTipText=Launches the default windows application mixer
 MeterStyle=String:S
-LeftMouseUpAction=[!WriteKeyValue Variables BottomActionBang """[SndVol.exe]""" "#SaveLocation#"][!WriteKeyValue Variables BottomActionName "#CURRENTSECTION#" "#SaveLocation#"][!Refresh "YourFlyouts\Main"][!Refresh "#JaxCore\Main"][!DeactivateConfig]
+LeftMouseUpAction=[!WriteKeyValue Variables BottomActionBang """[SndVol.exe]""" "#SaveLocation#"][!WriteKeyValue Variables BottomActionName "#CURRENTSECTION#" "#SaveLocation#"][!Refresh "Tessera\Main"][!Refresh "#MosaicShell\Main"][!DeactivateConfig]

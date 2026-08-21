@@ -3,7 +3,7 @@
 Text=Warning!
 
 [Description.String]
-Text=IdleStyle uses Windows' idle timer to check if you're away from your device. If this counter is not supported on your device, IdleStyle can only be turned on manually using a hotkey.
+Text=Slate uses Windows' idle timer to check if you're away from your device. If this counter is not supported on your device, Slate can only be turned on manually using a hotkey.
 InlinePattern=Windows' idle timer|manually using a hotkey
 
 [Button.1.Shape]

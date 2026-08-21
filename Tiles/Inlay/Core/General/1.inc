@@ -59,7 +59,7 @@ Text=[\xe8fc]
 MeterStyle=Set.String:S | Item.StringIcon:S
 [Item1.String]
 Meter=String
-Text=Activation settings for ValliStart
+Text=Activation settings for Inlay
 MeterStyle=Set.String:S | Item.String:S
 [Item1.Arrow.String]
 Meter=String
@@ -74,7 +74,7 @@ Text=[\xe8fb]
 MeterStyle=Set.String:S | Item.StringIcon:S
 [Item2.String]
 Meter=String
-Text=Make ValliStart replace the default start button
+Text=Make Inlay replace the default start button
 MeterStyle=Set.String:S | Item.String:S
 [Item2.Arrow.String]
 Meter=String
@@ -223,7 +223,7 @@ MeterStyle=Set.String:S | Set.Value:S
 Meter=Shape
 MeterStyle=Set.DropDown:S
 Y=([Option33:Y]-#Set.P#+(-30/2+8)*[Set.S])
-Leftmouseupaction=[!CommandMeasure Func "startDrop('AniDir', '#CURRENTSECTION#', 'JaxCore', 'AniDir')"]
+Leftmouseupaction=[!CommandMeasure Func "startDrop('AniDir', '#CURRENTSECTION#', 'MosaicShell', 'AniDir')"]
 Hidden=(1-#Animated#)
 [Value33]
 Meter=String

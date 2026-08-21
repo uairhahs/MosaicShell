@@ -6,7 +6,7 @@
 ; ---------------------------------------------------------------------------- ;
 
 [Description.String]
-Text=Welcome to ModularVisualizer!
+Text=Welcome to Pulse!
 
 [Button.1.Shape]
 Meter=Shape

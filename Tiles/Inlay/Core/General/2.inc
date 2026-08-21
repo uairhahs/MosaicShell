@@ -16,7 +16,7 @@ DynamicVariables=1
 ScriptFile=#SKINSPATh##Skin.name#\Core\ValliPseudo.ps1
 
 [Auto_Refresh:M]
-OnUpdateAction=[!Refresh "#Skin.Name#\Main"][!Refresh "ValliStart\WinBlock"]
+OnUpdateAction=[!Refresh "#Skin.Name#\Main"][!Refresh "Inlay\WinBlock"]
 
 ; ---------------------------------------------------------------------------- ;
 ;                                    Content                                   ;
@@ -29,7 +29,7 @@ MeterStyle=Set.String:S | Set.OptionCat:S
 
 [Option01]
 Meter=String
-Text=How should ValliStart behave?
+Text=How should Inlay behave?
 MeterStyle=Set.String:S | Set.OptionName:S
 [Set.Div:S19131238]
 Meter=Shape

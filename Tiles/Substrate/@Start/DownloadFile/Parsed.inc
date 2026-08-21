@@ -13,12 +13,12 @@ OnUpdateAction=[!WriteKeyValue Variables RMPATH "#PROGRAMPATH#Rainmeter.exe" "#@
 [CheckModular]
 Measure=String
 String=#ROOTCONFIG#
-IFmatch=ModularClocks|ModularPlayers
+IFmatch=Chrono|Phono
 IfNotMatchAction=[!HideMeter Dep2][!HideMeter Deptext2][!Redraw]
 
 [Variables]
 @includeVersion=#@#Version.inc
-@includeJaxCoreChecker=#SKINSPATH#\#JaxCore\@Resources\Version.inc
+@includeJaxCoreChecker=#SKINSPATH#\#MosaicShell\@Resources\Version.inc
 Sec.W=800
 Sec.H=500
 Sec.P=40
@@ -149,7 +149,7 @@ Y=20R
 MEterStyle=Dep.Shape:S
 [DepText1]
 Meter=String
-Text=JaxCore // Checking...
+Text=MosaicShell // Checking...
 MeterStyle=Dep.Text:S
 
 [Dep3]
@@ -177,7 +177,7 @@ X=(#Sec.P#+50)
 Y=(#Sec.H#-#Sec.P#-40)
 DynamicVariables=1
 Shape=Rectangle 0,0,120,40,(#Sec.R#/3) | StrokeWidth 0 | Fill COlor 0,255,50,200
-Leftmouseupaction=[!ActivateConfig "#JaxCore\Main" "Home.ini"][!DeactivateConfig]
+Leftmouseupaction=[!ActivateConfig "#MosaicShell\Main" "Home.ini"][!DeactivateConfig]
 Hidden=1
 Group=Button
 [ContinueText]
@@ -200,10 +200,10 @@ Group=Button
 [WebParser]
 Measure=Calc
 Formula=40000
-;URL=https://raw.githubusercontent.com/Jax-Core/JaxCore/main/%40Resources/Version.inc
+;URL=https://raw.githubusercontent.com/uairhahs/MosaicShell/main/%40Resources/Version.inc
 ;RegExp==(.*)$
 OnUpdateAction=[!Delay 1000][!CommandMeasure LogicalScript "check()"]
-OnConnectionErrorAction=[!SetOption Dep1 MeterStyle "Dep.Shape:S | Dep.ShapeNo:S"][!SetOption DepText1 Text "//Failed to connect to JaxCore github, if this is an issue please report to me"][!UpdateMEter *][!Redraw]
+OnConnectionErrorAction=[!SetOption Dep1 MeterStyle "Dep.Shape:S | Dep.ShapeNo:S"][!SetOption DepText1 Text "//Failed to connect to MosaicShell github, if this is an issue please report to me"][!UpdateMEter *][!Redraw]
 OnRegExpErrorAction=[!Log Developer:RegExpFalse]
 Disabled=1
 
@@ -217,7 +217,7 @@ Measure=PLUGIN
 Plugin=SysInfo
 SysInfoType=INTERNET_CONNECTIVITY
 IfCondition=InternetStatus = -1
-ifTrueaction=[!SetOption Dep1 MeterStyle "Dep.Shape:S | Dep.ShapeNo:S"][!SetOption DepText1 Text "JaxCore // connection error, please check internet connection"][!UpdateMEter *][!Redraw]
+ifTrueaction=[!SetOption Dep1 MeterStyle "Dep.Shape:S | Dep.ShapeNo:S"][!SetOption DepText1 Text "MosaicShell // connection error, please check internet connection"][!UpdateMEter *][!Redraw]
 
 [mVer]
 Measure=Calc
@@ -234,10 +234,10 @@ ScriptFile=Logic.lua
 Measure=String
 Group=NUOL
 Disabled=1
-OnUpdateAction=[!SetOption Dep1 MeterStyle "Dep.Shape:S | Dep.ShapeYes:S"][!SetOption DepText1 Text "JaxCore // v#Core.Ver# installed"][!ShowMeterGroup Button][!UpdateMEter *][!Redraw]
+OnUpdateAction=[!SetOption Dep1 MeterStyle "Dep.Shape:S | Dep.ShapeYes:S"][!SetOption DepText1 Text "MosaicShell // v#Core.Ver# installed"][!ShowMeterGroup Button][!UpdateMEter *][!Redraw]
 
 [JaxCoreNo]
 Measure=String
 Group=NUOL
 Disabled=1
-OnUpdateAction=[!SetOption Dep1 MeterStyle "Dep.Shape:S | Dep.ShapeNo:S"][!SetOption DepText1 Text "JaxCore // click here to install"][!SetOption Dep1 Leftmouseupaction """["#@#Actions\AHKv1.exe" "#@#Actions\Installer.ahk"][!SetOption DepText1 Text "JaxCore // download here if it doesn't automatically install"][!SetOption Dep1 Leftmouseupaction """["https://github.com/Jax-Core/JaxCore/releases/latest"][!UpdateMEter *][!Redraw]"""][!UpdateMEter *][!Redraw]"""][!UpdateMEter *][!Redraw]
+OnUpdateAction=[!SetOption Dep1 MeterStyle "Dep.Shape:S | Dep.ShapeNo:S"][!SetOption DepText1 Text "MosaicShell // click here to install"][!SetOption Dep1 Leftmouseupaction """["#@#Actions\AHKv1.exe" "#@#Actions\Installer.ahk"][!SetOption DepText1 Text "MosaicShell // download here if it doesn't automatically install"][!SetOption Dep1 Leftmouseupaction """["https://github.com/uairhahs/MosaicShell/releases/latest"][!UpdateMEter *][!Redraw]"""][!UpdateMEter *][!Redraw]"""][!UpdateMEter *][!Redraw]

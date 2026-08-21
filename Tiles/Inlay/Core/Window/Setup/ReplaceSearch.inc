@@ -26,4 +26,4 @@ Meter=String
 Text=Refresh
 MeterStyle=Sec.String:S | Button.String:S
 
-@includeKeys=#SKINSPATH#ValliStart\@Resources\Actions\HotKeys.ini
+@includeKeys=#SKINSPATH#Inlay\@Resources\Actions\HotKeys.ini

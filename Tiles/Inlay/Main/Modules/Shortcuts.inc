@@ -40,7 +40,7 @@ DynamicVariables=1
 X=(#W#/2-(#module_shortcuts.shortcut_shape_w#*(Clamp(#module_shortcuts.totalitems_count#,0,#module_shortcuts.rowitems_count#))+#module_shortcuts.items.p#*(Clamp(#module_shortcuts.totalitems_count#,0,#module_shortcuts.rowitems_count#)-1))/2)
 Y=(25*#scale#)r
 
-@includeShortcuts=#SKINSPATH#..\CoreData\ValliStart\Shortcuts.inc
+@includeShortcuts=#SKINSPATH#..\CoreData\Inlay\Shortcuts.inc
 
 [ShortcutsAnchor]
 Meter=String

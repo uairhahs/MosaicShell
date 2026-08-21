@@ -254,7 +254,7 @@ function WriteTo {
     }
     WriteAll -arg1 $t -arg2 ($t+1) -arg3 ($t+2)
 
-    $RmAPI.Bang('[!Refresh "#JaxCore\Accessories\GenericInteractionBox"]')
+    $RmAPI.Bang('[!Refresh "#MosaicShell\Accessories\GenericInteractionBox"]')
 }
 
 function WriteHotkey {
@@ -274,7 +274,7 @@ function WriteHotkey {
     Set-IniContent -ini $Ini -filePath $file3
     WriteAll -arg1 $t -arg2 ($t+1) -arg3 ($t+2)
 
-    # $RmAPI.Bang('[!UpdateMeasure Auto_Refresh:M "#JaxCore\Main"][!Refresh "#JaxCore\Main"]')
+    # $RmAPI.Bang('[!UpdateMeasure Auto_Refresh:M "#MosaicShell\Main"][!Refresh "#MosaicShell\Main"]')
 }
 
 function WriteAdd {

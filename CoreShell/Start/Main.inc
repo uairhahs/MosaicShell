@@ -49,13 +49,13 @@ IfNotMatchAction=[!HideMeter Dep.PS.Shape][!HideMeter Dep.PS.String][!Redraw]
 [CheckHotkey]
 Measure=String
 String=#ROOTCONFIG#
-IFmatch=MIUI-Shade|Keystrokes|ValliStart|QuickNote|Keylaunch|IdleStyle|YourMixer|YourFlyouts
+IFmatch=Substrate|Keystrokes|ValliStart|QuickNote|Keylaunch|IdleStyle|YourMixer|YourFlyouts
 IfMatchaction=[!WriteKeyValue Variables RMPATH "#PROGRAMPATH#Rainmeter.exe" "#@#Actions\Hotkeys.ini"]
 
 [CheckScale]
 Measure=String
 String=#ROOTCONFIG#
-IFmatch=MIUI-Shade|Keystrokes|ValliStart|QuickNote|IdleStyle|YourMixer|YourFlyouts
+IFmatch=Substrate|Keystrokes|ValliStart|QuickNote|IdleStyle|YourMixer|YourFlyouts
 IfMatchaction=[!WriteKeyValue Variables Scale "((#SCREENAREAWIDTH#/1920) < (#SCREENAREAHEIGHT#/1080) ? (#SCREENAREAWIDTH#/1920) : (#SCREENAREAHEIGHT#/1080))" "#@#Vars.inc"]
 
 [CheckModular]

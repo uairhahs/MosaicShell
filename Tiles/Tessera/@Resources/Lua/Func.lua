@@ -183,7 +183,7 @@ function actionLoad(actiontype, legacyaction)
             if SKIN:GetVariable('CurrentSlider') ~= 'mBrightness' then 
                 SKIN:Bang('[!SetVariable CurrentSlider "mBrightness"][!DisableMeasure mVolume][!EnableMeasure mBrightness][!UpdateMeasure mBrightness][!UpdateMeterGroup Dynamic][!Redraw]')
                 if RequireBrightnessHook then 
-                    SKIN:Bang('[!ActivateConfig "YourFlyouts\\Main\\Accessories\\BrightnessHook"]')
+                    SKIN:Bang('[!ActivateConfig "Tessera\\Main\\Accessories\\BrightnessHook"]')
                     ActiveBrightnessHook = true
                 end
             end
@@ -194,10 +194,10 @@ function actionLoad(actiontype, legacyaction)
             end
             if RequireBrightnessHook then
                 if not ActiveBrightnessHook then
-                    SKIN:Bang('[!ActivateConfig "YourFlyouts\\Main\\Accessories\\BrightnessHook"]')
+                    SKIN:Bang('[!ActivateConfig "Tessera\\Main\\Accessories\\BrightnessHook"]')
                     ActiveBrightnessHook = true
                 end
-                SKIN:Bang('[!UpdateMeasure mBrightness "YourFlyouts\\Main\\Accessories\\BrightnessHook"]')
+                SKIN:Bang('[!UpdateMeasure mBrightness "Tessera\\Main\\Accessories\\BrightnessHook"]')
             else 
                 SKIN:Bang('[!UpdateMeasure mBrightness]')
             end
@@ -216,7 +216,7 @@ function actionUnload()
     moveY = tonumber(SKIN:GetY()) + anchorYD * SKIN:GetH()
     -- -------------------------- Close brightnesshook -------------------------- --
     if RequireBrightnessHook and ActiveBrightnessHook then
-        SKIN:Bang('[!DeactivateConfig "YourFlyouts\\Main\\Accessories\\BrightnessHook"]')
+        SKIN:Bang('[!DeactivateConfig "Tessera\\Main\\Accessories\\BrightnessHook"]')
         ActiveBrightnessHook = false
     end
 end

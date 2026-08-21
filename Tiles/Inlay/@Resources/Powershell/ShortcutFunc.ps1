@@ -1,6 +1,6 @@
-﻿﻿$file = "$($RmAPI.VariableStr('SKINSPATH'))..\CoreData\ValliStart\Shortcuts.inc"
-$imageDirectory = "$($RmAPI.VariableStr('SKINSPATH'))..\CoreData\ValliStart\IconCache\"
-$mainConfig = "ValliStart\Main\Accessories\ShortcutsEditor"
+﻿﻿$file = "$($RmAPI.VariableStr('SKINSPATH'))..\CoreData\Inlay\Shortcuts.inc"
+$imageDirectory = "$($RmAPI.VariableStr('SKINSPATH'))..\CoreData\Inlay\IconCache\"
+$mainConfig = "Inlay\Main\Accessories\ShortcutsEditor"
 
 function debug {
     param(
@@ -9,7 +9,7 @@ function debug {
         $message
     )
 
-    $RmAPI.Bang("[!Log `"`"`"ValliStart: " + $message + "`"`"`" Debug]")
+    $RmAPI.Bang("[!Log `"`"`"Inlay: " + $message + "`"`"`" Debug]")
 }
 
 
@@ -250,6 +250,6 @@ function ShortcutFixNewLine {
         $Ini["Shortcut$i.Shape"]['MeterStyle'] = $shapestyle
     }
     Set-IniContent $Ini $file
-    $RmAPI.Bang("[!Refresh ValliStart\Main][!DeactivateConfig]")
+    $RmAPI.Bang("[!Refresh Inlay\Main][!DeactivateConfig]")
 
 }

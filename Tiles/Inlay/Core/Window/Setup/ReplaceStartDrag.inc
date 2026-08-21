@@ -3,7 +3,7 @@
 ; ---------------------------------------------------------------------------- ;
 
 [Variables]
-Sec.SaveLocation=#SKINSPATH#ValliStart\WinBlock\Vars\Winblock.inc
+Sec.SaveLocation=#SKINSPATH#Inlay\WinBlock\Vars\Winblock.inc
 
 ; ---------------------------------------------------------------------------- ;
 ;                                    Content                                   ;
@@ -18,7 +18,7 @@ InlineSetting=Color | 255,0,0
 Meter=Shape
 X=(#W#/2-(300*[S])/2)
 Y=(#Set.P#)R
-LeftMouseUpAction=[!WriteKeyValue Variables "Mode" "1" "#Sec.Savelocation#"][!Refresh "ValliStart\WinBlock"][!WriteKeyValue Variables Sec.arg2 "ReplaceStartAgain" "#CURRENTPATH#Main.ini"][!Refresh]
+LeftMouseUpAction=[!WriteKeyValue Variables "Mode" "1" "#Sec.Savelocation#"][!Refresh "Inlay\WinBlock"][!WriteKeyValue Variables Sec.arg2 "ReplaceStartAgain" "#CURRENTPATH#Main.ini"][!Refresh]
 MeterStyle=Pos_Button.Shape:S
 [Button.1.String]
 Meter=String

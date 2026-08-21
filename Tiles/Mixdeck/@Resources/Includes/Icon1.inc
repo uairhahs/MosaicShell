@@ -1,3 +1,3 @@
 ﻿[AppVolumeParent]
-IconsPath=#SKINSPATH#\YourMixer\@Resources\Images\AppIcons\
+IconsPath=#SKINSPATH#\Mixdeck\@Resources\Images\AppIcons\
 IconSize=48

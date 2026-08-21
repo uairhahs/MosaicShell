@@ -1,6 +1,6 @@
 ﻿﻿[Item1.Shape]
 Meter=Shape
-LeftMouseUpAction=["https://ko-fi.com/jaxoriginals/shop"]
+LeftMouseUpAction=["https://ko-fi.com/mosaicshell/shop"]
 MeterStyle=Item.Shape:S
 [Item1.StringIcon]
 Meter=String

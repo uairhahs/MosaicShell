@@ -2,11 +2,11 @@
 Text=Position
 
 [Description]
-Text=Configure the position of IdleStyle.
+Text=Configure the position of Slate.
 
 [Description2]
 Meter=String
-Text=Screen to display on - the index of the screen to display the main section of IdleStyle
+Text=Screen to display on - the index of the screen to display the main section of Slate
 X=r
 Y=(#sec.P#)R
 FontSize=(12*#Sec.S#)
@@ -14,7 +14,7 @@ MeterStyle=Sec.String:S
 
 [Description3]
 Meter=String
-Text=Number of screens - the number of screens that you want IdleStyle to cover. If you only want it to cover your primary monitor, set this value to 0.
+Text=Number of screens - the number of screens that you want Slate to cover. If you only want it to cover your primary monitor, set this value to 0.
 X=r
 Y=(#sec.P#)R
 FontSize=(12*#Sec.S#)

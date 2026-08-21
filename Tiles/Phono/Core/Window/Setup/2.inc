@@ -5,14 +5,14 @@ Y=(50*[S])
 Text=Music info
 
 [Description.String]
-Text=ModularPlayers can work with both NowPlaying or the Windows API. Which one do you want to use?
+Text=Phono can work with both NowPlaying or the Windows API. Which one do you want to use?
 InlinePattern=NowPlaying|Windows API
 
 [Box.1.Shape]
 Meter=Shape
 X=(#W#/2-(620*[S])/2)
 Y=R
-LeftMouseUpAction=[!WriteKeyValue Variables MediaType "Modern" "#SKINSPATH#ModularPlayers\@Resources\Vars.inc"][!WriteKeyValue Variables Sec.arg2 "3" "#CURRENTPATH#Main.ini"][!Refresh]
+LeftMouseUpAction=[!WriteKeyValue Variables MediaType "Modern" "#SKINSPATH#Phono\@Resources\Vars.inc"][!WriteKeyValue Variables Sec.arg2 "3" "#CURRENTPATH#Main.ini"][!Refresh]
 MeterStyle=Pos_Box.Shape:S
 [Box.2.String]
 Meter=String
@@ -21,7 +21,7 @@ MeterStyle=Sec.String:S | Box.String:S
 
 [Box.2.Shape]
 Meter=Shape
-LeftMouseUpAction=[!WriteKeyValue Variables MediaType "Auto" "#SKINSPATH#ModularPlayers\@Resources\Vars.inc"][!WriteKeyValue Variables Sec.arg2 "3" "#CURRENTPATH#Main.ini"][!Refresh]
+LeftMouseUpAction=[!WriteKeyValue Variables MediaType "Auto" "#SKINSPATH#Phono\@Resources\Vars.inc"][!WriteKeyValue Variables Sec.arg2 "3" "#CURRENTPATH#Main.ini"][!Refresh]
 MeterStyle=Box.Shape:S
 [Box.1.String]
 Meter=String

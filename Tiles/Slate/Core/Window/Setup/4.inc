@@ -1,8 +1,8 @@
 ﻿﻿[Header.String]
-Text=Stuck while using IdleStyle?
+Text=Stuck while using Slate?
 
 [Description.String]
-Text=Simply press ESC key or CTRL + Right Click -> Unload to close IdleStyle if it malfunctions
+Text=Simply press ESC key or CTRL + Right Click -> Unload to close Slate if it malfunctions
 InlinePattern=extremely customizable
 
 [Button.1.Shape]

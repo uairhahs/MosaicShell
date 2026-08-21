@@ -28,7 +28,7 @@ OnUpdateAction=[!Delay 100][!CommandMeasure Crafter "[#VisualizerType]"][!Refres
 [DragNDrop]
 Measure=Plugin
 Plugin=Drag&Drop
-; FilePath=#SKINSPATH#ModularVisualizer\@Resources\UserImages
+; FilePath=#SKINSPATH#Pulse\@Resources\UserImages
 OnDropAction=[!SetVariable ImageUnderlayName "$Path$"][!WriteKeyValue Variables ImageUnderlayName "$Path$" "#Sec.SaveLocation3#"][!SetVariable ImageUnderlayFileName "$Name$"][!WriteKeyValue Variables ImageUnderlayFileName "$Name$" "#Sec.SaveLocation3#"][!UpdateMeasure Auto_Refresh:M][!UpdateMeter *][!Redraw]
 Disabled=(1-#ImageUnderlay#)
 
@@ -40,7 +40,7 @@ GetTarget=0
 AllowNonstorageFolder=1
 GetIcon=0
 ReturnValue=WholePath
-FileInitialDirectory=#SKINSPATH#ModularVisualizer\@Resources\UserImages
+FileInitialDirectory=#SKINSPATH#Pulse\@Resources\UserImages
 DynamicVariables=1
 Command1=[!SetVariable ImageUnderlayName "$Path$"][!WriteKeyValue Variables ImageUnderlayName "$Path$" "#Sec.SaveLocation3#"][!SetVariable ImageUnderlayFileName "$Name$"][!WriteKeyValue Variables ImageUnderlayFileName "$Name$" "#Sec.SaveLocation3#"][!UpdateMeasure Auto_Refresh:M][!UpdateMeter *][!Redraw]
 Disabled=(1-#ImageUnderlay#)

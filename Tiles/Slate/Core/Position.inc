@@ -58,7 +58,7 @@ X=(30*[Set.S])
 MeterStyle=Set.Div:S
 [Option12]
 Meter=String
-Text=Screen to display IdleStyle on
+Text=Screen to display Slate on
 MeterStyle=Set.String:S | Set.OptionName:S
 [Set.Div:1233]
 Meter=Shape
@@ -109,7 +109,7 @@ MeterStyle=Set.Textbox:S
 Y=([Option12:Y]-#Set.P#+(-30/2+8)*[Set.S])
 Type=Int|1|10
 ToolTipTitle=Screen to display on
-ToolTipText=The index of the screen to display the main section of IdleStyle
+ToolTipText=The index of the screen to display the main section of Slate
 [Value12]
 Meter=String
 Text=#Location#
@@ -119,7 +119,7 @@ MeterStyle=Set.String:S | Set.Value:S
 Meter=Shape
 MeterStyle=Set.Textbox:S
 ToolTipTitle=Number of screens to stretch
-ToolTipText=The number of screens that you want IdleStyle to cover. If you only want it to cover your primary monitor, set this value to 0.
+ToolTipText=The number of screens that you want Slate to cover. If you only want it to cover your primary monitor, set this value to 0.
 Y=([Option13:Y]-#Set.P#+(-30/2+8)*[Set.S])
 Type=Int|0|10
 Hidden=(1-#SmartOverlayDetection#)
@@ -160,7 +160,7 @@ MeterStyle=Set.Button:S
 Y=([Option15:Y]-#Set.P#+(-30/2+8)*[Set.S])
 OverColor=#Set.Accent_color#,150
 LeaveColor=#Set.Accent_color#,50
-Act=[!ActivateConfig "IdleStyle\Launch\Addons\ExtenderEditor"]
+Act=[!ActivateConfig "Slate\Launch\Addons\ExtenderEditor"]
 Hidden=(#SmartOverlayDetection#)
 [Value15]
 Meter=String

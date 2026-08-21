@@ -125,7 +125,7 @@ MeterStyle=Box
 
 [Side]
 Meter=Image
-Imagename=#SKINSPATH#ModularPlayers\@Resources\Images\Preview\#CURRENTSECTION#.png
+Imagename=#SKINSPATH#Phono\@Resources\Images\Preview\#CURRENTSECTION#.png
 X=([Box1:X]-[ContentContainer:X])
 Y=([Box1:Y]-[ContentContainer:Y])
 W=(([ContentContainer:W]-120*[Set.S])/5)

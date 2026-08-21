@@ -1,13 +1,13 @@
 ﻿﻿
 [Description.String]
-Text=ValliStart is all yours!
+Text=Inlay is all yours!
 InlinePattern=.*
 
 [Button.1.Shape]
 Meter=Shape
 X=(#W#/2-300*[S]/2)
 Y=(#Set.P#)R
-LeftMouseUpAction=[!WriteKeyValue Variables Sec.arg2 "1" "#CURRENTPATH#Main.ini"][!WriteKeyValue Variables "Core.WelcomeCheck" 1 "#SKINSPATH#ValliStart\@Resources\WelcomeVar.inc"][!ActivateConfig  "ValliStart\Main"][!Refresh "#JaxCore\Main"][!DeactivateConfig]
+LeftMouseUpAction=[!WriteKeyValue Variables Sec.arg2 "1" "#CURRENTPATH#Main.ini"][!WriteKeyValue Variables "Core.WelcomeCheck" 1 "#SKINSPATH#Inlay\@Resources\WelcomeVar.inc"][!ActivateConfig  "Inlay\Main"][!Refresh "#MosaicShell\Main"][!DeactivateConfig]
 MeterStyle=Pos_Button.Shape:S
 [Button.1.String]
 Meter=String

@@ -55,7 +55,7 @@ function ShortcutMove(direction)
         local handler = SKIN:GetMeter('Shortcut'..G_CurrentIndex..'.Shape')
         SKIN:Bang('[!MoveMeter '..handler:GetX()..' '..handler:GetY()..' Overlay.Background.Shape]')
             
-        SKIN:Bang('[!CommandMeasure p.PSRM "ShortcutSwapBetween -i1 '..i1..' -i2 '..i2..' "ValliStart\\Main\\Accessories\\ShortcutsEditor\\Background""]')
+        SKIN:Bang('[!CommandMeasure p.PSRM "ShortcutSwapBetween -i1 '..i1..' -i2 '..i2..' "Inlay\\Main\\Accessories\\ShortcutsEditor\\Background""]')
     end
 end
 
@@ -85,5 +85,5 @@ end
 function ShortcutRemove()
     local rowitems = tonumber(SKIN:GetVariable('process.module_shortcuts.rowitems_count'))
     local totalitems = tonumber(SKIN:GetVariable('module_shortcuts.totalitems_count'))
-    SKIN:Bang('[!CommandMeasure p.PSRM """ShortcutRemove -index '..G_CurrentIndex..' -ti '..totalitems..' -ri '..rowitems..'""" "ValliStart\\Main\\Accessories\\ShortcutsEditor\\Background"]')
+    SKIN:Bang('[!CommandMeasure p.PSRM """ShortcutRemove -index '..G_CurrentIndex..' -ti '..totalitems..' -ri '..rowitems..'""" "Inlay\\Main\\Accessories\\ShortcutsEditor\\Background"]')
 end

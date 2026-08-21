@@ -2,11 +2,11 @@
 Text=Idle checks
 
 [Description]
-Text=Configure how IdleStyle treats activities.
+Text=Configure how Slate treats activities.
 
 [Description2]
 Meter=String
-Text=Fullscreen check - checks if there are any full screen applications to prevent IdleStyle from showing when, for example you're gaming
+Text=Fullscreen check - checks if there are any full screen applications to prevent Slate from showing when, for example you're gaming
 X=r
 Y=(#sec.P#)R
 FontSize=(12*#Sec.S#)

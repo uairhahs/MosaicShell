@@ -29,8 +29,8 @@ function ChangeModuleTo(name)
         bang = bang .. '[!CommandMEasure Func "interactionBox([[#SKINSPATH##Skin.Name#\\Core\\InteractionBox\\ValliError.inc]])"]'
     else
         bang = bang .. '[!WriteKeyValue Variables #Sec.Arg1# '..name..' "#SKINSPATH#valliStart\\@Resources\\Vars.inc"]'
-        bang = bang .. '[!SetVariable #Sec.Arg1# '..name..' "#JaxCore\\Main"]'
-        bang = bang .. '[!UpdateMeter * "#JaxCore\\Main"][!Redraw "#JaxCore\\Main"][!CommandMeasure LogicLua "CheckIfNone()" "#JaxCore\\Main"][!UpdateMeasure Auto_Refresh:M "#JaxCore\\Main"][!DeactivateConfig]'
+        bang = bang .. '[!SetVariable #Sec.Arg1# '..name..' "#MosaicShell\\Main"]'
+        bang = bang .. '[!UpdateMeter * "#MosaicShell\\Main"][!Redraw "#MosaicShell\\Main"][!CommandMeasure LogicLua "CheckIfNone()" "#MosaicShell\\Main"][!UpdateMeasure Auto_Refresh:M "#MosaicShell\\Main"][!DeactivateConfig]'
 
     end
     SKIN:Bang(bang)
@@ -45,7 +45,7 @@ function TakeDrag(handler)
     Module2Index = handler:gsub('.Image',''):gsub('Module','')
     local module1Name = SKIN:GetVariable('Module'..Module1Index)
     local module2Name = SKIN:GetVariable('Module'..Module2Index)
-    local saveLocation = SKIN:GetVariable('SKINSPATH')..'ValliStart\\@Resources\\Vars.inc'
+    local saveLocation = SKIN:GetVariable('SKINSPATH')..'Inlay\\@Resources\\Vars.inc'
     if module1Name == module2Name then
         -- SKIN:Bang('[!CommandMEasure Func "window([[#SKINSPATH##Skin.Name#\\Core\\Window\\ValliModule.inc]], \'Module'..Module2Index..'\', \'1\')"]')
         SKIN:Bang('[!WriteKeyvalue Variables page.subpagemodule "[#Module'..Module2Index..']" "#SKINSPATH##Skin.Name#\\Core\\Modules.inc"][!WriteKeyvalue Variables page.page 2 "#SKINSPATH##Skin.Name#\\Core\\Modules.inc"][!Refresh]')
@@ -67,8 +67,8 @@ function TakeDragApps(handler)
     local HotApp2Bool = SKIN:GetVariable('HotApp'..HotApp2Index..'Bool')
     local HotApp1Actual = SKIN:GetVariable('HotApp'..HotApp1Index..'Actual')
     local HotApp2Actual = SKIN:GetVariable('HotApp'..HotApp2Index..'Actual')
-    local saveLocation = SKIN:GetVariable('SKINSPATH')..'ValliStart\\Main\\Modules\\Vars\\Hotapps.inc'
-    local saveLocationBool = SKIN:GetVariable('SKINSPATH')..'ValliStart\\@Resources\\HotApps.inc'
+    local saveLocation = SKIN:GetVariable('SKINSPATH')..'Inlay\\Main\\Modules\\Vars\\Hotapps.inc'
+    local saveLocationBool = SKIN:GetVariable('SKINSPATH')..'Inlay\\@Resources\\HotApps.inc'
     local bang = ''
     if HotApp1Name == HotApp2Name then
         if HotApp1Bool == '1' then
