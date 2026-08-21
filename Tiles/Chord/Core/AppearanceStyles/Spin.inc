@@ -1,4 +1,4 @@
-[Option01]
+﻿[Option01]
 Meter=String
 Text=Application name font size
 MeterStyle=Set.String:S | Set.OptionName:S

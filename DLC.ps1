@@ -108,7 +108,7 @@ MeterStyle=Set.String:S | Item.Arrow.String:S
         # ----------------------- Write content for Inlay ----------------------- #
         $fileIncluder0_Inlay_content += ""
         $fileIncluder1_Inlay_content += @"
-        
+
 [Item2.Shape]
 Meter=Shape
 MeterStyle=Item.Shape:S
@@ -130,7 +130,7 @@ LeftMouseUpAction=["https://github.com/uairhahs/MosaicShell"]
 MeterStyle=Sec.String:S | Item.Button.StringIcon:S
 "@
 
-        $fileIncluderContent | Out-File -FilePath $fileIncluder -Force -Encoding unicode 
+        $fileIncluderContent | Out-File -FilePath $fileIncluder -Force -Encoding unicode
         If (Test-Path -Path $fileIncluder0_Mixdeck) {$fileIncluder0_Mixdeck_content | Out-File -FilePath $fileIncluder0_Mixdeck -Encoding unicode -Force}
         If (Test-Path -Path $fileIncluder0_Tessera) {$fileIncluder0_Tessera_content | Out-File -FilePath $fileIncluder0_Tessera -Encoding unicode -Force}
         If (Test-Path -Path $fileIncluder0_Inlay) {$fileIncluder0_Inlay_content | Out-File -FilePath $fileIncluder0_Inlay -Encoding unicode -Force}
@@ -152,7 +152,7 @@ MeterStyle=Sec.String:S | Item.Button.StringIcon:S
                 $iInfo = $iName -split '_'
                 # $iInfo[0]: Module
                 # $iInfo[1]: DLC
-                
+
                 $fileInstalledDLCs_content += @"
 
 $iName=$(-join ((48..57) + (97..122) | Get-Random -Count 32 | % {[char]$_}))
@@ -327,7 +327,7 @@ MeterStyle=Sec.String:S
                     for ($j = 1; $j -le $moduleNames.Length; $j++) {
                         $mo = $j % 3
                         $fileIncluder1_Inlay_content += @"
-                
+
 [$($moduleNames[$j-1]).Shape]
 Meter=Shape
 "@
@@ -351,7 +351,7 @@ MEterStyle=Sec.String:S | DLC.STring:S
                     }
 
                     $fileIncluder1_Inlay_content += @"
-                
+
 [AnchorSuppli]
 Meter=String
 Container=ContentContainer
@@ -367,9 +367,9 @@ Y=R
                 If (Test-Path -Path $fileIncluder0_Inlay) {$fileIncluder0_Inlay_content | Out-File -FilePath $fileIncluder0_Inlay -Encoding unicode -Force}
                 If (Test-Path -Path $fileIncluder1_Inlay) {$fileIncluder1_Inlay_content | Out-File -FilePath $fileIncluder1_Inlay -Encoding unicode -Force}
             }
-            $fileInstalledDLCs_content | Out-File -FilePath $fileInstalledDLCs -Force -Encoding unicode 
+            $fileInstalledDLCs_content | Out-File -FilePath $fileInstalledDLCs -Force -Encoding unicode
 
-            
+
             break
         }
     }

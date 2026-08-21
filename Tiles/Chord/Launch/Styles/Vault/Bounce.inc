@@ -1,4 +1,4 @@
-[Variables]
+﻿[Variables]
 TweenTime1=(700)
 TweenTime2=0
 

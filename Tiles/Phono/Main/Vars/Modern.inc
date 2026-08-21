@@ -1,4 +1,4 @@
-[Variables]
+﻿[Variables]
 W=400
 H=190
 P=(15*#Scale#)

@@ -1,4 +1,4 @@
-[Variables]
+﻿[Variables]
 Drag=0
 
 [HotkeysTitle]

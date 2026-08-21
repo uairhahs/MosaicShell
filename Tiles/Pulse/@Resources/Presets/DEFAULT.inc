@@ -1,4 +1,4 @@
-[@Resources\Vars\AudioAnalyzerSettings.inc]
+﻿[@Resources\Vars\AudioAnalyzerSettings.inc]
 MaxSensitivity=50
 MinSensitivity=3
 Attack=0

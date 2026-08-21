@@ -1,4 +1,4 @@
-[Variables]
+﻿[Variables]
 Scale=1
 Blur=Acrylic
 BlurCorner=None

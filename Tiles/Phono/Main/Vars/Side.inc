@@ -1,4 +1,4 @@
-[Variables]
+﻿[Variables]
 MainColor=255,255,255
 HideAlbum=0
 SideGlow=0

@@ -137,7 +137,7 @@ You can now proceed to configure media controls for Spotify. Simply follow the s
 5. Refresh MIUI-Shade and your media controls for Spotify should work.
 
 #### For Web Players:
-For media controls to work with any website, you will have to install the **[WebNowPlaying Companion](https://chrome.google.com/webstore/detail/webnowplaying-companion/jfakgfcdgpghbbefmdfjkbdlibjgnbli) extension for your browser.** 
+For media controls to work with any website, you will have to install the **[WebNowPlaying Companion](https://chrome.google.com/webstore/detail/webnowplaying-companion/jfakgfcdgpghbbefmdfjkbdlibjgnbli) extension for your browser.**
 
 Once you've installed the extension, you can now proceed to configure media controls for Web Players. Simply follow the steps outlined below:
 

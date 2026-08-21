@@ -1,4 +1,4 @@
-��[Rainmeter]
+﻿��[Rainmeter]
 Update=-1
 DefaultAlwaysOnTop=2
 DefaultDraggable=0

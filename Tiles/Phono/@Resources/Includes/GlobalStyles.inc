@@ -1,4 +1,4 @@
-
+﻿
 [S]
 FontFace=Open Sans
 FontColor=#OppositeColor#

@@ -1,4 +1,4 @@
-[Variables]
+﻿[Variables]
 Sec.SaveLocation=#SKINSPATH##SKin.Name#\@Resources\Vars.inc
 
 
@@ -71,7 +71,7 @@ Text=[\xe814]
 MeterStyle=Set.String:S | Item.StringIcon:S
 [Item1.String]
 Meter=String
-Text=For all styles with an icon on the top left, MagickMeter is required. 
+Text=For all styles with an icon on the top left, MagickMeter is required.
 MeterStyle=Set.String:S | Item.String:S
 [Item1.Button]
 Meter=Shape

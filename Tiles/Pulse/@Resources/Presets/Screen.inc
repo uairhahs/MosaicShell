@@ -1,4 +1,4 @@
-[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 VisualizerType=Vector
 ImageUnderlay=1
 ImageUnderlayName=#SKINSPATH#ModularVisualizer\@Resources\UserImages\Alena Aenami.jpg

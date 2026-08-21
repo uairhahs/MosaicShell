@@ -1,4 +1,4 @@
-[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 VisualizerType=Round
 ImageUnderlay=0
 [@Resources\Vars\Round.inc]

@@ -1,4 +1,4 @@
-[Variables]
+﻿[Variables]
 Group1XOffset=0
 Group1YOffset=5
 Group2XOffset=-900

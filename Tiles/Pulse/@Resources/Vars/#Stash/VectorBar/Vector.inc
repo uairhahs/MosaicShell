@@ -1,4 +1,4 @@
-[Variables]
+﻿[Variables]
 LayerCount=4
 VectorBands=9
 VectorWidth=#SCREENAREAWIDTH#

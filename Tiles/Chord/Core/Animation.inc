@@ -1,4 +1,4 @@
-[DefaultStartActions]
+﻿[DefaultStartActions]
 Custom1=[!SetOption #Style#.Shape MeterStyle "Animation.Shape:S | ANimation.Shape.Selected:S"][!UpdateMeter #Style#.Shape][!Redraw]
 
 ; ---------------------------------------------------------------------------- ;

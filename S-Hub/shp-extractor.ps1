@@ -9,7 +9,7 @@ param(
     [Parameter(Mandatory=$true)][Alias("path")][ValidateNotNullOrEmpty()][string]$s_Path,
     [Alias("extracted")][switch]$o_noExtract,
     [Alias("nomove")][switch]$o_noMove
-) 
+)
 
 $ErrorActionPreference = 'SilentlyContinue'
 
@@ -239,29 +239,29 @@ function Get-PluginVersion {
 
 # --------------------------------- Wallpaper -------------------------------- #
 
-function Set-WallPaper($Image) {  
-Add-Type -TypeDefinition @" 
-using System; 
+function Set-WallPaper($Image) {
+Add-Type -TypeDefinition @"
+using System;
 using System.Runtime.InteropServices;
-  
+
 public class Params
-{ 
-    [DllImport("User32.dll",CharSet=CharSet.Unicode)] 
-    public static extern int SystemParametersInfo (Int32 uAction, 
-                                                   Int32 uParam, 
-                                                   String lpvParam, 
+{
+    [DllImport("User32.dll",CharSet=CharSet.Unicode)]
+    public static extern int SystemParametersInfo (Int32 uAction,
+                                                   Int32 uParam,
+                                                   String lpvParam,
                                                    Int32 fuWinIni);
 }
-"@ 
-  
+"@
+
     $SPI_SETDESKWALLPAPER = 0x0014
     $UpdateIniFile = 0x01
     $SendChangeEvent = 0x02
-  
+
     $fWinIni = $UpdateIniFile -bor $SendChangeEvent
-  
+
     $ret = [Params]::SystemParametersInfo($SPI_SETDESKWALLPAPER, 0, $Image, $fWinIni)
- 
+
 }
 
 # ------------------------------- Coords interp ------------------------------ #
@@ -443,7 +443,7 @@ if (!$o_noExtract -or !(Test-Path "$s_cache_location\SHP-data.json")) {
     $ProgressPreference = 'SilentlyContinue'
     Expand-Archive -Path "$s_cache_location\$($s_Path | Split-Path -Leaf).zip" -DestinationPath "$s_cache_location" -Force
     Remove-Item "$s_cache_location\$($s_Path | Split-Path -Leaf).zip"
-} 
+}
 Write-Done
 # --------------------------------- SHP data --------------------------------- #
 $SHPData = Get-Content -Raw "$s_cache_location\SHP-data.json" | ConvertFrom-Json
@@ -507,7 +507,7 @@ if ((($SHPData.Tags -contains 'Rainmeter') -or ($SHPData.Data.CoreModules.Count 
         $h0 = $SHPData.Data.ScreenSizeH
         $m = 250
         Write-Task "Removing illegal sections & interpolating skin coordinates"
-        [string[]]$Ini.Keys | ForEach-Object { 
+        [string[]]$Ini.Keys | ForEach-Object {
             if ($_ -match $s_RMINIFile_filterpattern) {
                 $Ini.Remove($_)
             } elseif ($_ -notmatch $tagged_modules) {
@@ -539,7 +539,7 @@ if ((($SHPData.Tags -contains 'Rainmeter') -or ($SHPData.Data.CoreModules.Count 
         }
         Write-Done
         # ------------------- Saving Rainmeter settings in ini file ------------------ #
-        $Ini.Rainmeter = $RMINI.Rainmeter        
+        $Ini.Rainmeter = $RMINI.Rainmeter
         # ------------------------------ Move and write ------------------------------ #
         Write-Task "Moving & applying Rainmeter layout"
         Set-IniContent $Ini $s_RMINIFile
@@ -631,7 +631,7 @@ if (($SHPData.Data.CoreModules.Count -gt 0) -and ('C', 'A' | ? { $o_toImport -co
             Write-Divider "Install End"
         }
 
-        foreach($m in $SHPData.Data.CoreModules) { 
+        foreach($m in $SHPData.Data.CoreModules) {
             $listInstalledDLCs = "$s_RMSkinFolder\..\CoreData\@DLCs\InstalledDLCs.inc"
             $dlcFound = $null
             foreach ($dlc in $SHPData.Data.DLCs) {
@@ -654,8 +654,8 @@ if (($SHPData.Data.CoreModules.Count -gt 0) -and ('C', 'A' | ? { $o_toImport -co
                         $dlcFound = $false
                     }
                 }
-            } 
-            
+            }
+
             if ($dlcFound -eq $null -or $dlcFound -eq $true) {
                 debug "Importing variables files back to $m"
                 Get-ChildItem -Path "$s_cache_location\Rainmeter\MosaicShell\$m" -Recurse -File | ForEach-Object {
@@ -733,7 +733,7 @@ if (($SHPData.Tags -contains 'Spicetify') -and ('S', 'A' | ? { $o_toImport -cont
             }
             Write-Done
         }
-        
+
         Write-Task "Copying theme assets to themes folder"
         if (!$o_noMove) {
             New-Item -Path "$spicetify_path\Themes\$($SHPData.Spicetify.current_theme)" -Type "Directory"
@@ -769,7 +769,7 @@ if (($SHPData.Tags -contains 'BetterDiscord') -and ('D', 'A' | ? { $o_toImport -
         if (!$o_noMove) {Get-Process | Where-Object -Property ProcessName -match "^Discord.*" | Stop-Process}
 
         $bd_themeconfig = "$bd_path\data\$($bd_selected_folder)\themes.json"
-        
+
         if (Test-Path -Path $bd_themeconfig) {
             $bd_themes = Get-Content -Path $bd_themeconfig | ConvertFrom-Json
         } else {

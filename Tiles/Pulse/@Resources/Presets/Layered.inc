@@ -1,4 +1,4 @@
-[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 VisualizerType=Bar
 ImageUnderlay=0
 [@Resources\Vars\Bar.inc]

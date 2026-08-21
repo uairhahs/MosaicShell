@@ -1,4 +1,4 @@
-
+﻿
 [Option10]
 Meter=String
 X=(35*[Set.S])

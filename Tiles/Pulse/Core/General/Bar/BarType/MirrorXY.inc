@@ -1,4 +1,4 @@
-[Option11]
+﻿[Option11]
 Meter=String
 X=(35*[Set.S])
 Y=([Normal:YH]-#Set.P#/2)

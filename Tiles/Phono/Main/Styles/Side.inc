@@ -1,4 +1,4 @@
-[Rainmeter]
+﻿[Rainmeter]
 OnRefreshAction=
 
 [MeasureOnLoad]
