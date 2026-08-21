@@ -5,7 +5,6 @@ UserNameCheckVariable=mosaicshell
 AlreadyHasImageMagick=0
 ; ---------------------------------- Remote ---------------------------------- ;
 Set.Lang=English
-Set.UseBetaInstaller=0
 Set.UseExtInstaller=0
 ; -------------------------- Window and performance -------------------------- ;
 Set.W=1129

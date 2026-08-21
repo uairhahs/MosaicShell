@@ -1,3 +1,33 @@
+﻿# RunMosaicist.ps1 - MosaicShell installer (GitHub release or local working tree)
+# Hardened with fixes from .local/install-local.ps1.
+#
+# Remote (default):
+#   iwr -useb "https://raw.githubusercontent.com/uairhahs/MosaicShell/master/RunMosaicist.ps1" | iex
+# Local current tree (dev):
+#   powershell -ExecutionPolicy Bypass -File .\RunMosaicist.ps1 -Local
+#   powershell -ExecutionPolicy Bypass -File .\RunMosaicist.ps1 -Local -Force -CoreOnly
+#
+# Legacy $o_* variables still work when pre-set before iex (Installer.ps1 / S-Hub).
+
+param(
+    [switch]$Local,
+    [switch]$Force,
+    [switch]$CoreOnly,
+    [switch]$KeepSkinPath,
+    [switch]$NoLaunch,
+    [switch]$MosaicShellSkinPath,
+    [string]$RainmeterExe,
+    [string]$RainmeterIni = "$env:APPDATA\Rainmeter\Rainmeter.ini"
+)
+
+# Map -File params onto legacy $o_* when not already set by caller
+if ($PSBoundParameters.ContainsKey('Local'))     { $o_Local = [bool]$Local }
+if ($PSBoundParameters.ContainsKey('Force'))     { $o_Force = [bool]$Force }
+if ($PSBoundParameters.ContainsKey('CoreOnly'))  { $o_CoreOnly = [bool]$CoreOnly }
+if ($PSBoundParameters.ContainsKey('KeepSkinPath')) { $o_KeepSkinPath = [bool]$KeepSkinPath }
+if ($PSBoundParameters.ContainsKey('NoLaunch'))  { $o_NoLaunch = [bool]$NoLaunch }
+if ($MosaicShellSkinPath) { $o_MosaicShellSkinPath = $true }
+
 # ---------------------------------------------------------------------------- #
 #                                   Functions                                  #
 # ---------------------------------------------------------------------------- #
@@ -71,7 +101,7 @@ function Get-IniContent ($filePath) {
             while ($ini[$section].Keys -contains ';NotSection' + $notSectionCount) {
                 $notSectionCount++
             }
-            $ini[$section][';NotSection' + $notSectionCount] = $matches[1]
+            $ini[$section][';NotSection' + $notSectionCount] = $line
         }
         elseif ($line -match "^\s*(.+?)\s*=\s*(.+?)$") {
             $key, $value = $matches[1..2]
@@ -110,7 +140,7 @@ function Get-RemoteIniContent ($link) {
             while ($ini[$section].Keys -contains ';NotSection' + $notSectionCount) {
                 $notSectionCount++
             }
-            $ini[$section][';NotSection' + $notSectionCount] = $matches[1]
+            $ini[$section][';NotSection' + $notSectionCount] = $line
         }
         elseif ($line -match "^\s*(.+?)\s*=\s*(.+?)$") {
             $key, $value = $matches[1..2]
@@ -131,7 +161,7 @@ function Get-RemoteIniContent ($link) {
 function Set-IniContent($ini, $filePath) {
     $str = @()
     foreach ($section in $ini.GetEnumerator()) {
-        if ($section -ne ';ItIsNotAFuckingSection;') {
+        if ($section.Key -ne ';ItIsNotAFuckingSection;') {
             $str += "[" + ($section.Key -replace '\|\|ps\d+$', '') + "]"
         }
         foreach ($keyvaluepair in $section.Value.GetEnumerator()) {
@@ -144,7 +174,73 @@ function Set-IniContent($ini, $filePath) {
         }
     }
     $finalStr = $str -join [System.Environment]::NewLine
-    $finalStr | Out-File -filePath $filePath -Force -Encoding unicode
+    # Rainmeter locks Rainmeter.ini while running - retry after stop
+    $ok = $false
+    for ($i = 0; $i -lt 10; $i++) {
+        try {
+            $finalStr | Out-File -LiteralPath $filePath -Force -Encoding unicode -ErrorAction Stop
+            $ok = $true
+            break
+        } catch {
+            Start-Sleep -Milliseconds 300
+        }
+    }
+    if (-not $ok) {
+        throw "File is not writable (still locked?). Stop Rainmeter and retry: $filePath"
+    }
+}
+
+function Stop-RainmeterProcesses {
+    if (Get-Process Rainmeter -ErrorAction SilentlyContinue) {
+        Write-Task "Ending Rainmeter & potential AHKv1 process"
+        Stop-Process -Name Rainmeter -Force -ErrorAction SilentlyContinue
+        if (Get-Process AHKv1 -ErrorAction SilentlyContinue) {
+            Stop-Process -Name AHKv1 -Force -ErrorAction SilentlyContinue
+        }
+        for ($i = 0; $i -lt 20; $i++) {
+            if (-not (Get-Process Rainmeter -ErrorAction SilentlyContinue)) { break }
+            Start-Sleep -Milliseconds 200
+        }
+        Start-Sleep -Milliseconds 400
+        Write-Done
+    }
+}
+
+# Rainmeter Lua rejects UTF-8 BOM (unexpected symbol near char).
+# BOM on @include .inc files can also break the first [Section] header.
+function Strip-Utf8BomTree([string]$root) {
+    $ext = @('.lua', '.inc', '.ini')
+    $n = 0
+    Get-ChildItem -LiteralPath $root -Recurse -File -ErrorAction SilentlyContinue |
+        Where-Object { $ext -contains $_.Extension.ToLowerInvariant() } |
+        ForEach-Object {
+            $bytes = [IO.File]::ReadAllBytes($_.FullName)
+            if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+                [IO.File]::WriteAllBytes($_.FullName, $bytes[3..($bytes.Length - 1)])
+                $n++
+            }
+        }
+    return $n
+}
+
+# CLI bangs use !Bang as separate args - NOT "[!Bang ...]" which Rainmeter
+# treats as a portable settings folder path.
+function Invoke-RainmeterBang {
+    param(
+        [Parameter(Mandatory)][string]$Exe,
+        [Parameter(Mandatory)][string[]]$ArgumentList
+    )
+    Start-Process -FilePath $Exe -ArgumentList $ArgumentList
+}
+
+function Resolve-LoadTarget([string]$skinLoad) {
+    if ([string]::IsNullOrWhiteSpace($skinLoad)) {
+        return @{ Config = '#MosaicShell\Main'; File = 'Home.ini' }
+    }
+    return @{
+        Config = Split-Path -Path $skinLoad -Parent
+        File   = Split-Path -Path $skinLoad -Leaf
+    }
 }
 
 function Wait-ForProcess
@@ -283,6 +379,10 @@ if (!($o_FromCore)) {$o_FromCore = $false}
 if (!($o_FromSHUB)) {$o_FromSHUB = $false}
 if (!($o_Force)) {$o_Force = $false}
 if (!($o_ExtInstall)) {$o_ExtInstall = $false}
+if (!($o_KeepSkinPath)) {$o_KeepSkinPath = $false}
+if (!($o_Local)) {$o_Local = $false}
+if (!($o_CoreOnly)) {$o_CoreOnly = $false}
+if (!($o_NoLaunch)) {$o_NoLaunch = $false}
 if (!($o_PromptBestOption)) {
     if ($o_FromCore -or $o_Force -or $o_NoPostActions) {
         $o_PromptBestOption = $false
@@ -309,7 +409,33 @@ $RMEXEloc = ""
 
 $ProgressPreference = 'SilentlyContinue'
 
-Write-Info "COREINSTALLER REF: Stable v6"
+Write-Info "RUNMOSAICIST REF: Stable v6 (local-hardened)"
+
+# ---------------------------- Local working-tree mode --------------------------- #
+# Dev install without GitHub release - delegates to .local/install-local.ps1 logic
+# (must be run from a clone via -File, not iwr|iex).
+if ($o_Local) {
+    $repoRoot = $null
+    if ($PSScriptRoot) {
+        $repoRoot = $PSScriptRoot
+    } elseif ($PSCommandPath) {
+        $repoRoot = Split-Path -Parent $PSCommandPath
+    }
+    if (-not $repoRoot -or -not (Test-Path -LiteralPath (Join-Path $repoRoot '.local\install-local.ps1'))) {
+        Write-Fail 'Local mode requires a repo checkout. Run: powershell -File .\RunMosaicist.ps1 -Local'
+        exit 1
+    }
+    $localArgs = @{}
+    if ($o_Force) { $localArgs.Force = $true }
+    if ($o_CoreOnly) { $localArgs.CoreOnly = $true }
+    if ($o_KeepSkinPath) { $localArgs.KeepSkinPath = $true }
+    if ($o_NoLaunch) { $localArgs.NoLaunch = $true }
+    if ($o_MosaicShellSkinPath -or $MosaicShellSkinPath) { $localArgs.MosaicShellSkinPath = $true }
+    if ($RainmeterExe) { $localArgs.RainmeterExe = $RainmeterExe }
+    if ($RainmeterIni) { $localArgs.RainmeterIni = $RainmeterIni }
+    & (Join-Path $repoRoot '.local\install-local.ps1') @localArgs
+    exit $LASTEXITCODE
+}
 
 if (!($o_Location)) {
     # ---------------------------------------------------------------------------- #
@@ -329,8 +455,23 @@ if (!($o_Location)) {
         $wasRMInstalled = $true
         # If (Test-Path "$RMEXE32bitloc") {$RMEXEloc = "$RMEXE32bitloc"}
         If (Test-Path $s_RMINIFile) {
+            # Stop before any Rainmeter.ini write - file is locked while RM runs
+            Stop-RainmeterProcesses
             $Ini = Get-IniContent $s_RMINIFile
             $s_RMSkinFolder = $Ini["Rainmeter"]["SkinPath"]
+            # OneDrive eats folders named #MosaicShell - relocate like local installer
+            if (-not $o_KeepSkinPath -and $s_RMSkinFolder -match 'OneDrive') {
+                Write-Info "SkinPath is under OneDrive - relocating to %AppData%\MosaicShell\InstalledComponents"
+                $s_RMSkinFolder = "$env:APPDATA\MosaicShell\InstalledComponents\"
+                if (!(Test-Path -LiteralPath $s_RMSkinFolder)) {
+                    New-Item -ItemType Directory -Force -Path $s_RMSkinFolder | Out-Null
+                }
+                $Ini["Rainmeter"]["SkinPath"] = $s_RMSkinFolder
+                if ($null -eq $Ini["Rainmeter"]["HardwareAcceleration"]) {
+                    $Ini["Rainmeter"]["HardwareAcceleration"] = "1"
+                }
+                Set-IniContent $Ini $s_RMINIFile
+            }
             $hwa = $Ini["Rainmeter"]["HardwareAcceleration"]
             if (($hwa -eq $null) -and ($o_PromptBestOption -eq $true)) {
                 Write-Info "MosaicShell recommends that the HardwareAcceleration option for Rainmeter to be turned on. "
@@ -461,14 +602,7 @@ If (!$bit) {
     If (!(Test-Path $s_RMSkinFolder)) {New-Item -Path $s_RMSkinFolder -Type "Directory" > $null}
     [System.IO.Directory]::SetCurrentDirectory($s_RMSkinFolder)
 
-    If (Get-Process 'Rainmeter' -ErrorAction SilentlyContinue) {
-        Write-Task "Ending Rainmeter & potential AHKv1 process"
-        Stop-Process -Name 'Rainmeter'
-        If (Get-Process 'AHKv1' -ErrorAction SilentlyContinue) {
-            Stop-Process -Name 'AHKv1'
-        }
-        Write-Done
-    }
+    Stop-RainmeterProcesses
 }
 
 # ---------------------------------------------------------------------------- #
@@ -589,7 +723,7 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
 
             $skin_load = $Ini["rmskin"]["Load"]
             $skin_load_path = Split-Path $skin_load
-            if ($skin_name -contains '#MosaicShell') {$isInstallingCore = $true}
+            if ($skin_name -eq '#MosaicShell') {$isInstallingCore = $true}
             $list_of_installations.Add("$skin_name") > $null
 
             debug "$skin_name $skin_ver - by $skin_auth"
@@ -611,12 +745,13 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
                     If (Test-Path "$i_root\Unpacked\$i_name\") { Remove-Item -Path "$i_root\SavedVarFiles" -Force -Recurse > $null }
                     New-Item -Path "$i_root\SavedVarFiles" -Type "Directory" > $null
                     foreach ($varf in $skin_varf) {
-                        if (Test-Path -Path "$s_RMSkinFolder\$varf") {
+                        $varf = ($varf.Trim() -replace '\{#\}', '#')
+                        if (Test-Path -LiteralPath "$s_RMSkinFolder\$varf") {
                             $i_savedir = "$i_root\SavedVarFiles\$(Split-Path $varf)"
                             $i_savelocation = "$i_root\SavedVarFiles\$varf"
                             debug "Saving #$i $($varf) -> $i_savelocation"
-                            If (!(Test-Path "$i_savedir")) { New-Item -Path "$i_savedir" -Type "Directory" > $null }
-                            Copy-Item -Path "$s_RMSkinFolder\$varf" -Destination "$i_savelocation" -Force > $null
+                            If (!(Test-Path -LiteralPath "$i_savedir")) { New-Item -Path "$i_savedir" -ItemType Directory > $null }
+                            Copy-Item -LiteralPath "$s_RMSkinFolder\$varf" -Destination "$i_savelocation" -Force > $null
                         }
                     }
                 } else {
@@ -629,20 +764,30 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
             # ---------------------------------- Process --------------------------------- #
             debug "> Moving skin files"
             Get-ChildItem -Path "$i_root\Skins\" | ForEach-Object {
+                $destSkin = Join-Path $s_RMSkinFolder $_.Name
                 If ($new_install) {
-                    New-Item -Path "$s_RMSkinFolder\$($_.Name)\" -Type "Directory" -Force > $null
+                    New-Item -Path $destSkin -ItemType Directory -Force > $null
                 } else {
-                    Get-ChildItem -Path "$s_RMSkinFolder\$($_.Name)\" -Recurse | Remove-Item -Recurse
+                    if (Test-Path -LiteralPath $destSkin) {
+                        Get-ChildItem -LiteralPath $destSkin -Recurse | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+                    } else {
+                        New-Item -Path $destSkin -ItemType Directory -Force > $null
+                    }
                 }
-                Move-Item -Path "$i_root\Skins\$($_.Name)\*" -Destination "$s_RMSkinFolder\$($_.Name)\" -Force
+                Get-ChildItem -LiteralPath $_.FullName -Force | ForEach-Object {
+                    Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $destSkin $_.Name) -Recurse -Force
+                }
+                $bomN = Strip-Utf8BomTree $destSkin
+                debug "Stripped UTF-8 BOM from $bomN files in $($_.Name)"
             }
             # ------------------------------ Variable files ------------------------------ #
             If ((-not $new_install) -and ($confirmation -match '^y$')) {
                 debug "> Writing saved variables files back to skin"
                 foreach ($varf in $skin_varf) {
+                    $varf = ($varf.Trim() -replace '\{#\}', '#')
                     $i_savelocation = "$i_root\SavedVarFiles\$varf"
                     $i_targetlocation = "$s_RMSkinFolder\$varf"
-                    If (Test-Path "$i_savelocation") {
+                    If (Test-Path -LiteralPath "$i_savelocation") {
                         debug "Writing keys and values from saved variables to local"
                         $Ini = Get-IniContent $i_savelocation;$oldvars = $Ini
                         $Ini = Get-IniContent $i_targetlocation;$newvars = $Ini
@@ -746,7 +891,7 @@ If (($o_ExtInstall -eq $true) -and ($s_InstallIsBatch -eq $false)) {
 
 Start-Sleep -Milliseconds 500
 If (!$wasRMInstalled) {
-    Stop-Process -Name 'Rainmeter'
+    Stop-RainmeterProcesses
     Remove-Item -Path "$($s_RMSettingsFolder)Rainmeter.ini"
     New-Item -Path "$s_RMSettingsFolder" -Name "Rainmeter.ini" -ItemType "file" -Force -Value @"
 [Rainmeter]
@@ -770,11 +915,15 @@ Active=1
     Start-Sleep -Milliseconds 500
 } elseif ($isInstallingCore -or $o_NoPostActions) {
     if ($o_ExtInstall -eq $false) {
-        & "$RMEXEloc" [!ActivateConfig $skin_load_path]
+        $load = Resolve-LoadTarget $skin_load
+        if (-not $o_NoLaunch) {
+            Invoke-RainmeterBang -Exe $RMEXEloc -ArgumentList @('!ActivateConfig', $load.Config, $load.File)
+        }
     }
 } else {
     If ($o_ExtInstall) {
-        & "$RMEXEloc" [!DeactivateConfig $skin_load_path]
+        $load = Resolve-LoadTarget $skin_load
+        Invoke-RainmeterBang -Exe $RMEXEloc -ArgumentList @('!DeactivateConfig', $load.Config)
     }
     $dlcINCFile = "$s_RMSkinFolder\..\CoreData\@DLCs\InstalledDLCs.inc"
     $isPostWebviewCore = Test-Path "$s_RMSkinFolder\#MosaicShell\@Resources\CacheVars\Configurator.inc"
@@ -798,9 +947,19 @@ Active=1
                             debug "Found $i_name in installed DLCs"
                             # Preserve legacy DLC reinstall action
                             if ($isPostWebviewCore) {
-                                & "$RMEXEloc" [!WriteKeyValue Variables Sec.Page "1" "$s_RMSkinFolder\#MosaicShell\@Resources\CacheVars\Supporter.inc"][!WriteKeyValue Variables Page.Complete_Reinstallation "1" "$s_RMSkinFolder\#MosaicShell\@Resources\CacheVars\Supporter.inc"][!WriteKeyValue Variables Page.Reinstallation_isSingle "$([Bool]($list_of_installations.Count -eq 1))" "$s_RMSkinFolder\#MosaicShell\@Resources\CacheVars\Supporter.inc"][!ActivateConfig "#MosaicShell\Main" "Supporter.Ini"]
+                                $supporterInc = Join-Path $s_RMSkinFolder '#MosaicShell\@Resources\CacheVars\Supporter.inc'
+                                $isSingle = [Bool]($list_of_installations.Count -eq 1)
+                                Invoke-RainmeterBang -Exe $RMEXEloc -ArgumentList @('!WriteKeyValue', 'Variables', 'Sec.Page', '1', $supporterInc)
+                                Invoke-RainmeterBang -Exe $RMEXEloc -ArgumentList @('!WriteKeyValue', 'Variables', 'Page.Complete_Reinstallation', '1', $supporterInc)
+                                Invoke-RainmeterBang -Exe $RMEXEloc -ArgumentList @('!WriteKeyValue', 'Variables', 'Page.Reinstallation_isSingle', "$isSingle", $supporterInc)
+                                Invoke-RainmeterBang -Exe $RMEXEloc -ArgumentList @('!ActivateConfig', '#MosaicShell\Main', 'Supporter.ini')
                             } else {
-                                & "$RMEXEloc" [!WriteKeyValue Variables Sec.Page "1" "$s_RMSkinFolder\#MosaicShell\@Resources\CacheVars\Supporter.inc"][!WriteKeyValue Variables Page.Complete_Reinstallation "1" "$s_RMSkinFolder\#MosaicShell\@Resources\CacheVars\Supporter.inc"][!WriteKeyValue Variables Page.Reinstallation_isSingle "$([Bool]($list_of_installations.Count -eq 1))" "$s_RMSkinFolder\#MosaicShell\@Resources\CacheVars\Supporter.inc"][!ActivateConfig "#MosaicShell\Main" "Supporter.Ini"]
+                                $supporterInc = Join-Path $s_RMSkinFolder '#MosaicShell\@Resources\CacheVars\Supporter.inc'
+                                $isSingle = [Bool]($list_of_installations.Count -eq 1)
+                                Invoke-RainmeterBang -Exe $RMEXEloc -ArgumentList @('!WriteKeyValue', 'Variables', 'Sec.Page', '1', $supporterInc)
+                                Invoke-RainmeterBang -Exe $RMEXEloc -ArgumentList @('!WriteKeyValue', 'Variables', 'Page.Complete_Reinstallation', '1', $supporterInc)
+                                Invoke-RainmeterBang -Exe $RMEXEloc -ArgumentList @('!WriteKeyValue', 'Variables', 'Page.Reinstallation_isSingle', "$isSingle", $supporterInc)
+                                Invoke-RainmeterBang -Exe $RMEXEloc -ArgumentList @('!ActivateConfig', '#MosaicShell\Main', 'Supporter.ini')
                             }
                             Return
                         }
@@ -812,9 +971,11 @@ Active=1
         If ($s_InstallIsBatch) {
             # Preserve legacy post action
             If ($isPostWebviewCore) {
-                & "$RMEXEloc" [!ActivateConfig "#MosaicShell\Main" "Home.Ini"]
+                Invoke-RainmeterBang -Exe $RMEXEloc -ArgumentList @('!ActivateConfig', '#MosaicShell\Main', 'Home.ini')
             } else {
-                & "$RMEXEloc" [!WriteKeyValue Variables Sec.Page "1" "$s_RMSkinFolder\#MosaicShell\Main\Home.ini"][!ActivateConfig "#MosaicShell\Main" "Home.Ini"]
+                $homeIni = Join-Path $s_RMSkinFolder '#MosaicShell\Main\Home.ini'
+                Invoke-RainmeterBang -Exe $RMEXEloc -ArgumentList @('!WriteKeyValue', 'Variables', 'Sec.Page', '1', $homeIni)
+                Invoke-RainmeterBang -Exe $RMEXEloc -ArgumentList @('!ActivateConfig', '#MosaicShell\Main', 'Home.ini')
             }
         } else {
             # Preserve legacy secvar path
@@ -825,7 +986,10 @@ Active=1
                 $cachevars_configurator = 'SecVar.inc'
                 $coreini_toload = 'Settings.ini'
             }
-            & "$RMEXEloc" [!WriteKeyvalue Variables Skin.Name "$skin_name" "$s_RMSkinFolder\#MosaicShell\@Resources\$cachevars_configurator"][!WriteKeyvalue Variables Skin.Set_Page Info "$s_RMSkinFolder\#MosaicShell\@Resources\$cachevars_configurator"][!ActivateConfig "#MosaicShell\Main" "$coreini_toload"]
+            $cfgInc = Join-Path $s_RMSkinFolder "#MosaicShell\@Resources\$cachevars_configurator"
+            Invoke-RainmeterBang -Exe $RMEXEloc -ArgumentList @('!WriteKeyValue', 'Variables', 'Skin.Name', "$skin_name", $cfgInc)
+            Invoke-RainmeterBang -Exe $RMEXEloc -ArgumentList @('!WriteKeyValue', 'Variables', 'Skin.Set_Page', 'Info', $cfgInc)
+            Invoke-RainmeterBang -Exe $RMEXEloc -ArgumentList @('!ActivateConfig', '#MosaicShell\Main', $coreini_toload)
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿[Rainmeter]
+[Rainmeter]
 OnRefreshAction=[!ZPos 1][!Draggable 0][!Move (#SCREENAREAWIDTH#/2-#Sec.W#/2) (#SCREENAREAHEIGHT#/2-#Sec.H#/2)][!UpdateMEter *][!Redraw]
 AccurateText=1
 
@@ -18,13 +18,13 @@ Sec.R=10
 Sec.B=1
 Sec.TB=10
 
-Sec.Pri_Color=18,18,18
-Sec.Sec_Color=28,28,28
-Sec.Ter_Color=35,35,35
-Sec.Accent_Color=242, 52, 0
-Sec.Accent_Color_2=255, 183, 0
-Sec.Text_Color=242,240,255
-Sec.SubText_Color=120,120,120
+Sec.Pri_Color=17,17,27
+Sec.Sec_Color=30,30,46
+Sec.Ter_Color=49,50,68
+Sec.Accent_Color=137,220,235
+Sec.Accent_Color_2=203,166,247
+Sec.Text_Color=205,214,244
+Sec.SubText_Color=166,173,200
 
 ; ---------------------------------------------------------------------------- ;
 ;                                   Function                                   ;

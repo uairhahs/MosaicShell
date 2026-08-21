@@ -1,4 +1,4 @@
-﻿[Rainmeter]
+[Rainmeter]
 OnRefreshAction=[!ZPos 1][!Move (#SCREENAREAWIDTH#/2-#Sec.W#/2) (#SCREENAREAHEIGHT#/2-#Sec.H#/2)][!SetOption Dep3 MeterStyle "Dep.Shape:S | Dep.ShapeYes:S"][!UpdateMEter *][!Redraw]
 
 ; ---------------------------------------------------------------------------- ;
@@ -120,7 +120,7 @@ LeftMouseUpAction=[!DeactivateConfig]
 Meter=String
 X=(#Sec.P#)
 Y=#Sec.P#
-Text=#ROOTCONFIG# by Jax | #Version#
+Text=#ROOTCONFIG# | #Version#
 StringAlign=LEftTOp
 FontFace=Roboto Bold
 FontSize=25

@@ -1,4 +1,4 @@
-﻿[Title]
+[Title]
 Text=Position
 
 [Description]
@@ -25,7 +25,7 @@ Meter=String
 Text=Alignment of screensaver - direction of the stretched screens
 X=r
 Y=(#sec.P#)R
-; FontColor=255, 183, 0
+; FontColor=137,220,235
 FontSize=(12*#Sec.S#)
 MeterStyle=Sec.String:S
 
@@ -34,6 +34,6 @@ Meter=String
 Text=EXAMPLES:#CRLF#if you have 2 monitors and want to have it stretch from right, input '2 1 right'.#CRLF#If you have 2 screens and stretch from left, input '1 1 left'#CRLF#If you just have one monitor, input '1 0 left'
 X=r
 Y=(#sec.P#)R
-FontColor=255, 183, 0
+FontColor=137,220,235
 FontSize=(12*#Sec.S#)
 MeterStyle=Sec.String:S

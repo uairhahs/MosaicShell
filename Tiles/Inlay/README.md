@@ -62,7 +62,7 @@ Run the following command in Powershell to download the latest version of Mosaic
 (To launch Powershell as an Admin: `Win + R` -> `powershell` -> Press `CTRL + SHIFT + ENTER` on your keyboard. Powershell can also be launched via Windows Search.)
 
 ```
-iwr -useb "https://raw.githubusercontent.com/uairhahs/MosaicShell/master/CoreInstaller.ps1" | iex
+iwr -useb "https://raw.githubusercontent.com/uairhahs/MosaicShell/master/RunMosaicist.ps1" | iex
 ```
 
 > Alternatively you can download it from the [website](https://jax-core.github.io/)

@@ -1,12 +1,12 @@
-﻿[@Resources\Vars.inc]
+[@Resources\Vars.inc]
 name_width=200
 IconTheme=Material
 SliderStyle=CoreUI
 BackgroundMod=1
 MixerIcon=1
 
-Accent=242, 52, 0
-AccentNode=242,52,0
+Accent=137,220,235
+AccentNode=137,220,235
 AccentNodeHover=255,175,153
 Alpha=255
 background_color=12,12,12
