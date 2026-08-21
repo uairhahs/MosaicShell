@@ -1,4 +1,4 @@
-﻿﻿[Main\Vars\Pixel.inc]
+﻿[Main\Vars\Pixel.inc]
 color_theme=You Blue
 PrimaryColor=27, 27, 30
 PrimaryOpacity=255

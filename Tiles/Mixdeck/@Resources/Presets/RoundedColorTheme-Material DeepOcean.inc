@@ -1,4 +1,4 @@
-﻿﻿[Main\Elements\ControlScreen\Vars\Rounded.inc]
+﻿[Main\Elements\ControlScreen\Vars\Rounded.inc]
 color_theme=Material DeepOcean
 bar_color=130, 170, 255
 background_color=15, 17, 26

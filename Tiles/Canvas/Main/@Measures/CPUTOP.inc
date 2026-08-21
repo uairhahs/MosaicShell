@@ -1,4 +1,4 @@
-﻿﻿[MeasureTopUsage1CPU]
+﻿[MeasureTopUsage1CPU]
 Measure=Plugin
 Plugin=UsageMonitor
 Alias=CPU

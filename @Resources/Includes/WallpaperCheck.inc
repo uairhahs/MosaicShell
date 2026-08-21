@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeCoreData=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
 
 [WallpaperPath]

@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeWelcomeVar=#SKINSPATH##Skin.Name#\@Resources\WelcomeVar.inc
 [ImageContainer]
 Hidden=1

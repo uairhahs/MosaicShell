@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 UpdateRate=1000
 @includeConfigurableVariables=#ROOTCONFIGPATH#Launch\Vars\#Style#.inc
 
@@ -13,11 +13,11 @@ Type=#Blur#
 [mActions]
 ActionList1=Start
 ActionList2=End | Deactivate
-Deactivate=[!DeactivateConfig "IdleStyle\Launch\Addons\ExtenderDisplay"][!DeactivateConfig]
+Deactivate=[!DeactivateConfig "Slate\Launch\Addons\ExtenderDisplay"][!DeactivateConfig]
 Start=[!CommandMeasure Func "activateConfigGroup()"]
 End=[!CommandMeasure Func "deactivateConfigGroup()"]
 [mPreview]
 ActionList2=Start | Wait 1000 | End | Deactivate
-Deactivate=[!DeactivateConfig "IdleStyle\Launch\Addons\ExtenderDisplay"][!DeactivateConfig]
+Deactivate=[!DeactivateConfig "Slate\Launch\Addons\ExtenderDisplay"][!DeactivateConfig]
 Start=[!CommandMeasure Func "activateConfigGroup()"]
 End=[!CommandMeasure Func "deactivateConfigGroup()"]

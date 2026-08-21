@@ -1,4 +1,4 @@
-﻿﻿[Header.String]
+﻿[Header.String]
 Text=Installed DLCs
 [Header.Button.Icon.String]
 Text=[\xe627]
@@ -52,7 +52,7 @@ Container=#Sec.Container#
 Fill=Fill Color #Set.Positive_Color#
 [List.Item.Shape:CoreGrad]
 Fill=Fill LinearGradient CoreGrad
-CoreGrad=45 | #SEt.Accent_Color# ; 1.5 | #Set.Accent_color_2# ; -0.5
+CoreGrad=45 | #Set.Accent_Color# ; 1.5 | #Set.Accent_Color_2# ; -0.5
 [List.Item.StringIcon:S]
 X=(#Page.Items.H#/2)r
 Y=(#Page.Items.H#/2)r

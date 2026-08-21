@@ -1,4 +1,4 @@
-﻿﻿[Header.String]
+﻿[Header.String]
 Text=The most customization visualizer
 
 [Description.String]

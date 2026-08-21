@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [AppVol1]
 Measure=Plugin
 Plugin=AppVolume

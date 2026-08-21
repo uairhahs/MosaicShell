@@ -35,7 +35,7 @@ function Initialize()
             if CurrentNumberPerRow ~= NewNumberPerRow then
                 local ri = NewNumberPerRow
                 local ti = SKIN:GetVariable('module_shortcuts.totalitems_count')
-                SKIN:Bang('[!WriteKeyValue Variables module_shortcuts.rowitems_count '..NewNumberPerRow..' "#ROOTCONFIGPATH#Main\\Modules\\Vars\\Shortcuts.inc"][!WriteKeyValue m.OnLoad Disabled 1 "Accessories\\ShortcutsEditor\\Background\\Main.ini"][!ActivateConfig "ValliStart\\Main\\Accessories\\ShortcutsEditor\\Background"][!Delay 100][!CommandMeasure p.PSRM """ShortcutFixNewLine -ri '..NewNumberPerRow..' -ti '..ti..'""" "ValliStart\\Main\\Accessories\\ShortcutsEditor\\Background"]')
+                SKIN:Bang('[!WriteKeyValue Variables module_shortcuts.rowitems_count '..NewNumberPerRow..' "#ROOTCONFIGPATH#Main\\Modules\\Vars\\Shortcuts.inc"][!WriteKeyValue m.OnLoad Disabled 1 "Accessories\\ShortcutsEditor\\Background\\Main.ini"][!ActivateConfig "Inlay\\Main\\Accessories\\ShortcutsEditor\\Background"][!Delay 100][!CommandMeasure p.PSRM """ShortcutFixNewLine -ri '..NewNumberPerRow..' -ti '..ti..'""" "Inlay\\Main\\Accessories\\ShortcutsEditor\\Background"]')
                 return
             end
         end
@@ -150,11 +150,11 @@ function valliStartAHK()
     local ShowTaskbar = SKIN:GetVariable('ShowTaskbar')
     local ThisHotkeyString = Key .. ReplaceWin .. Position .. ShowTaskbar
     if measure:GetValue() == 1 then
-        SKIN:Bang('[!Delay 600]["#@#Actions\\AHKv1.exe" "#@#Actions\\Source Code\\Close.ahk"][!Delay 600]["#@#Actions\\AHKv1.exe" "#@#Actions\\Source Code\\ValliStart.ahk"]')
-        print('Starting ValliStart.AHK')
+        SKIN:Bang('[!Delay 600]["#@#Actions\\AHKv1.exe" "#@#Actions\\Source Code\\Close.ahk"][!Delay 600]["#@#Actions\\AHKv1.exe" "#@#Actions\\Source Code\\Inlay.ahk"]')
+        print('Starting Inlay.AHK')
     elseif ThisHotkeyString ~= LastHotkeyString then
-        SKIN:Bang('["#@#Actions\\AHKv1.exe" "#@#Actions\\Source Code\\ValliStart.ahk"][!WriteKeyValue m.OnLoad LastHotkey '..ThisHotkeyString..']')
-        print('Restarting ValliStart.AHK: '..ThisHotkeyString..' <-> '..LastHotkeyString)
+        SKIN:Bang('["#@#Actions\\AHKv1.exe" "#@#Actions\\Source Code\\Inlay.ahk"][!WriteKeyValue m.OnLoad LastHotkey '..ThisHotkeyString..']')
+        print('Restarting Inlay.AHK: '..ThisHotkeyString..' <-> '..LastHotkeyString)
     end
 end
 
@@ -203,24 +203,24 @@ function initActions(type, reset)
     
     if RequireVolumeHook then
         if type == 1 then
-            SKIN:Bang('[!ActivateConfig "ValliStart\\Main\\Accessories\\VolumeHook"]')
+            SKIN:Bang('[!ActivateConfig "Inlay\\Main\\Accessories\\VolumeHook"]')
         else
-            SKIN:Bang('[!DeactivateConfig "ValliStart\\Main\\Accessories\\VolumeHook"]')
+            SKIN:Bang('[!DeactivateConfig "Inlay\\Main\\Accessories\\VolumeHook"]')
         end
     end
 
     if tonumber(SKIN:GetVariable('BackgroundMod')) == 1 and SKIN:GetVariable('IsPageAccessory') == nil then
         if type == 1 and GlobalInit == 0 then
-            SKIN:Bang('[!ActivateConfig "ValliStart\\Main\\Accessories\\Unload"]')
+            SKIN:Bang('[!ActivateConfig "Inlay\\Main\\Accessories\\Unload"]')
         elseif type == -1 and GlobalInit == 0 then
-            SKIN:Bang('[!DeactivateConfig "ValliStart\\Main\\Accessories\\Unload"]')
+            SKIN:Bang('[!DeactivateConfig "Inlay\\Main\\Accessories\\Unload"]')
         end
     else
         if type == -1 and SKIN:GetVariable('IsPageAccessory') ~= nil then
             if tonumber(SKIN:GetVariable('BackgroundMod')) == 1 then
-                SKIN:Bang('[!DeactivateConfig "ValliStart\\Main\\Accessories\\Unload"]')
+                SKIN:Bang('[!DeactivateConfig "Inlay\\Main\\Accessories\\Unload"]')
             end
-            SKIN:Bang('[!CommandMeasure Func "initActions(2, 1)" "ValliStart\\Main"][!DeactivateConfig]')
+            SKIN:Bang('[!CommandMeasure Func "initActions(2, 1)" "Inlay\\Main"][!DeactivateConfig]')
         end
     end
 end
@@ -262,7 +262,7 @@ function StartEditMode()
     bang = bang .. '[!WriteKeyValue Variables process.Y '..Y..' "#ROOTCONFIGPATH#Main\\Accessories\\ShortcutsEditor\\Main.ini"]'
     bang = bang .. '[!WriteKeyValue Variables process.W '..W..' "#ROOTCONFIGPATH#Main\\Accessories\\ShortcutsEditor\\Main.ini"]'
     bang = bang .. '[!WriteKeyValue Variables process.module_shortcuts.rowitems_count '..rowitems_count..' "#ROOTCONFIGPATH#Main\\Accessories\\ShortcutsEditor\\Main.ini"]'
-    bang = bang .. '[!UpdateMeasure mToggle][!ActivateConfig "ValliStart\\Main\\Accessories\\ShortcutsEditor\\Background"][!DeactivateConfig]'
+    bang = bang .. '[!UpdateMeasure mToggle][!ActivateConfig "Inlay\\Main\\Accessories\\ShortcutsEditor\\Background"][!DeactivateConfig]'
     SKIN:Bang(bang)
 end
 
@@ -293,9 +293,9 @@ function goToPage(variant)
         end
     end
 
-    SKIN:Bang('[!WriteKeyValue Variables Sec.rows ' .. rows .. ' "' .. saveLocation .. '"][!WriteKeyValue Variables Sec.Variant ' .. variant .. ' "' .. saveLocation .. '"][!Activateconfig "ValliStart\\Main\\Accessories\\Page"]')
+    SKIN:Bang('[!WriteKeyValue Variables Sec.rows ' .. rows .. ' "' .. saveLocation .. '"][!WriteKeyValue Variables Sec.Variant ' .. variant .. ' "' .. saveLocation .. '"][!Activateconfig "Inlay\\Main\\Accessories\\Page"]')
     if pos == 'MousePosition' then
-        SKIN:Bang('[!Move ' .. SKIN:GetX() .. ' ' .. SKIN:GetY() .. ' "ValliStart\\Main\\Accessories\\Page"][!CommandMeasure Func "saveLocation()" "ValliStart\\Main\\Accessories\\Page"]')
+        SKIN:Bang('[!Move ' .. SKIN:GetX() .. ' ' .. SKIN:GetY() .. ' "Inlay\\Main\\Accessories\\Page"][!CommandMeasure Func "saveLocation()" "Inlay\\Main\\Accessories\\Page"]')
     end
 end
 
@@ -303,7 +303,7 @@ function LaunchPopup(posX, posY, variant)
     posX = posX + SKIN:GetX()
     posY = posY + SKIN:GetY()
     local saveLocation = SKIN:GetVariable('ROOTCONFIGPATH') .. 'Main\\Accessories\\Popup\\Main.ini'
-    SKIN:Bang('[!WriteKeyValue Variables Sec.LastX ' .. posX .. ' "' .. saveLocation .. '"][!WriteKeyValue Variables Sec.LastY ' .. posY .. ' "' .. saveLocation .. '"][!WriteKeyValue Variables Sec.Variant ' .. variant .. ' "' .. saveLocation .. '"][!WriteKeyValue Variables Sec.Variant ' .. variant .. ' "' .. saveLocation .. '"][!ZPos 1][!DisableMeasure mToggle][!Activateconfig "ValliStart\\Main\\Accessories\\Popup"]')
+    SKIN:Bang('[!WriteKeyValue Variables Sec.LastX ' .. posX .. ' "' .. saveLocation .. '"][!WriteKeyValue Variables Sec.LastY ' .. posY .. ' "' .. saveLocation .. '"][!WriteKeyValue Variables Sec.Variant ' .. variant .. ' "' .. saveLocation .. '"][!WriteKeyValue Variables Sec.Variant ' .. variant .. ' "' .. saveLocation .. '"][!ZPos 1][!DisableMeasure mToggle][!Activateconfig "Inlay\\Main\\Accessories\\Popup"]')
 end
 
 function GetMaxPages()

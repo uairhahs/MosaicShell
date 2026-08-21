@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 MaxSensitivity=50
 MinSensitivity=3
 Attack=0

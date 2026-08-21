@@ -1,4 +1,4 @@
-﻿﻿[ImageUnderlay]
+﻿[ImageUnderlay]
 Meter=Image
 Container=Shape
 ImageName="[#ImageUnderlayName]"

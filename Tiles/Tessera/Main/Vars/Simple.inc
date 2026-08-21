@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Height=130
 
 R=8

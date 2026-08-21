@@ -1,4 +1,4 @@
-﻿﻿[TimeUnderlay]
+﻿[TimeUnderlay]
 Meter=
 [Time]
 Meter=String

@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Sec.W=(600*#Sec.S#)
 Sec.H=(800*#Sec.S#)
 AniDir=Top
@@ -82,7 +82,7 @@ Shape=Rectangle 0,0,(#Sec.W#-#Sec.P#*2),(50*#Sec.S#),(#Sec.R#/2) | Extend Fill |
 Fill=Fill Color #Set.Sec_Color#
 Stroke=StrokeWidth 0
 Scale=Scale 1,1
-CoreGrad=45 | #SEt.Accent_Color_2# ; 1 | #Set.Accent_color# ;0
+CoreGrad=45 | #Set.Accent_Color_2# ; 1 | #Set.Accent_Color# ;0
 MouseOverAction=[!SetOption #CURRENTSECTION# Fill "Fill Color #Set.Ter_Color#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# Fill "Fill Color #Set.Sec_Color#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 DynamicVariables=1
@@ -312,16 +312,16 @@ MeterStyle=Sec.String:S | ListItem.String:S
 Meter=String
 MeterStyle=Sec.String:S | ListItem.Button.String:S
 
-[MIUI-Shade.Shape]
+[Substrate.Shape]
 Meter=Shape
 MeterStyle=ListItem.Shape:S
-[MIUI-Shade.Image]
+[Substrate.Image]
 Meter=Image
 MeterStyle=ListItem.Image:S
-[MIUI-Shade.String]
+[Substrate.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.String:S
-[MIUI-Shade.Button.String]
+[Substrate.Button.String]
 Meter=String
 MeterStyle=Sec.String:S | ListItem.Button.String:S
 

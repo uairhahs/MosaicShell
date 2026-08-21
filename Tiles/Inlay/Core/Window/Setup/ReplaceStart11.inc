@@ -1,14 +1,14 @@
-﻿﻿; ---------------------------------------------------------------------------- ;
+﻿; ---------------------------------------------------------------------------- ;
 ;                                   Function                                   ;
 ; ---------------------------------------------------------------------------- ;
 
 [Variables]
-Sec.SaveLocation=#SKINSPATH#ValliStart\WinBlock\Vars\Winblock.inc
+Sec.SaveLocation=#SKINSPATH#Inlay\WinBlock\Vars\Winblock.inc
 
 [p.PSRM]
 Measure=Plugin
 Plugin=powershellrm
-ScriptFile=#SKINSPATH#ValliStart\@Resources\Powershell\StartToLeft.ps1
+ScriptFile=#SKINSPATH#Inlay\@Resources\Powershell\StartToLeft.ps1
 
 ; ---------------------------------------------------------------------------- ;
 ;                                    Content                                   ;
@@ -21,7 +21,7 @@ Text=Replacing the start button is only possible for left-aligned start button. 
 Meter=Shape
 X=(#W#/2-(600*[S]+10*[S])/2)
 Y=(#Set.P#)R
-LeftMouseUpAction=[!WriteKeyValue Variables "WinblockDisplay" "1" "#Sec.Savelocation#"][!ActivateConfig "ValliStart\WinBlock"][!Move 0 (#SCREENAREAHEIGHT#-40) "ValliStart\WinBlock"][!CommandMeasure p.PSRM Set-TaskbarAlignment][!WriteKeyValue Variables Sec.arg2 "3" "#CURRENTPATH#Main.ini"][!Refresh]
+LeftMouseUpAction=[!WriteKeyValue Variables "WinblockDisplay" "1" "#Sec.Savelocation#"][!ActivateConfig "Inlay\WinBlock"][!Move 0 (#SCREENAREAHEIGHT#-40) "Inlay\WinBlock"][!CommandMeasure p.PSRM Set-TaskbarAlignment][!WriteKeyValue Variables Sec.arg2 "3" "#CURRENTPATH#Main.ini"][!Refresh]
 MeterStyle=Neu_Button.Shape:S
 [Button.1.String]
 Meter=String

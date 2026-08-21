@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Page.Subpage=1
 Page.Complete_Reinstallation=0
 Sec.AnchorName=AnchorSuppli
@@ -29,7 +29,7 @@ FontFace=Material Icons Round
 X=(#Set.W#-#HomePage.P#)
 Y=r
 Text=[\xf091]
-InlineSetting=GradientColor | 45 | #SEt.Accent_Color_2# ; 1 | #Set.Accent_color# ;0
+InlineSetting=GradientColor | 45 | #Set.Accent_Color_2# ; 1 | #Set.Accent_Color# ;0
 StringAlign=RightCenter
 FontSize=(32*[Set.S])
 LeftMouseUpAction=[!WriteKeyValue Variables Page.SubPage "2" "#ROOTCONFIGPATH#CoreShell\Home\Page2.inc"][!Refresh]

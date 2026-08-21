@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeWinBlockVars=#SKINSPATH##Skin.Name#\WinBlock\Vars\Winblock.inc
 Sec.SaveLocation2=#SKINSPATH##Skin.Name#\WinBlock\Vars\Winblock.inc
 WinBlock=0
@@ -16,7 +16,7 @@ DynamicVariables=1
 ScriptFile=#SKINSPATh##Skin.name#\Core\ValliPseudo.ps1
 
 [Auto_Refresh:M]
-OnUpdateAction=[!Refresh "#Skin.Name#\Main"][!Refresh "ValliStart\WinBlock"]
+OnUpdateAction=[!Refresh "#Skin.Name#\Main"][!Refresh "Inlay\WinBlock"]
 
 ; ---------------------------------------------------------------------------- ;
 ;                                    Content                                   ;
@@ -29,7 +29,7 @@ MeterStyle=Set.String:S | Set.OptionCat:S
 
 [Option01]
 Meter=String
-Text=How should ValliStart behave?
+Text=How should Inlay behave?
 MeterStyle=Set.String:S | Set.OptionName:S
 [Set.Div:S19131238]
 Meter=Shape
@@ -239,8 +239,8 @@ Leftmouseupaction=[!DeactivateConfig "#Skin.Name#\WinBlock"][!Refresh "#Skin.Nam
 Meter=Shape
 MeterStyle=Set.Button:S
 Y=([Option12:Y]-#Set.P#+(-30/2+8)*[Set.S])
-OverColor=#Set.Accent_color#,150
-LeaveColor=#Set.Accent_color#,50
+OverColor=#Set.Accent_Color#,150
+LeaveColor=#Set.Accent_Color#,50
 LeftMouseUpAction=[!CommandMeasure ValliPseudo "Create-Shortcut"]
 Hidden=(1-#WinBlock#)
 [Icon12]
@@ -298,7 +298,7 @@ MeterStyle=Set.Button:S
 Y=([Option15:Y]-#Set.P#+(-30/2+8)*[Set.S])
 OverColor=#Set.Positive_color#,150
 LeaveColor=#Set.Positive_color#,50
-LeftMouseUpAction=["https://jaxcore.gitbook.io/core/modules/vallistart#replacing-the-native-windows-button-and-key"]
+LeftMouseUpAction=["https://docs.mosaicshell.io/core/modules/vallistart#replacing-the-native-windows-button-and-key"]
 Hidden=(1-#WinBlock#)
 [Icon15]
 Meter=String

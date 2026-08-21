@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 UpdateRate=0
 TweenNode3=0
 TweenNode4=0

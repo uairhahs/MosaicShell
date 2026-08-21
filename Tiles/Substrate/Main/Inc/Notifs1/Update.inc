@@ -13,7 +13,7 @@ Hidden=1
 Meter=Shape
 Shape=Rectangle 0,0,#ShadeW#,#SimpleH# | StrokeWidth 0 | Fill Color #MainColor#
 Container=UpdateC
-Leftmouseupaction=[https://github.com/EnhancedJax/MIUI-Shade/releases/latest]
+Leftmouseupaction=[https://github.com/EnhancedJax/Substrate/releases/latest]
 Hidden=1
 Group=UpdateC
 
@@ -72,7 +72,7 @@ Group=UpdateC
 
 [WebParser]
 Measure=WebParser
-URL=https://raw.githubusercontent.com/EnhancedJax/MIUI-Shade/main/%40Resources/Version.inc
+URL=https://raw.githubusercontent.com/EnhancedJax/Substrate/main/%40Resources/Version.inc
 RegExp==(.*)$
 FinishAction=[!Delay 1000][!EnableMeasure mC4U][!UpdateMeasure mC4U]
 
@@ -88,7 +88,7 @@ DynamicVariables=1
 Disabled=1
 IfconditionMode=1
 Ifcondition=mC4U = #Version#
-IfTrueAction=[!Log "MIUI-Shade up2Date"]
+IfTrueAction=[!Log "Substrate up2Date"]
 IfCondition2=mC4U < #Version#
 IfTrueAction2=[!ShowMeterGroup UpdateC][!SetOption UpdateMAin Text "You are currently on a beta build.#CRLF#Build might not be stable"][!UpdateMEter UpdateMAin][!Redraw]
 IfCondition3=mC4U > #Version#

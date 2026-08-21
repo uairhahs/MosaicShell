@@ -1,5 +1,5 @@
-﻿﻿[Description.String]
-Text=Great! YourFlyouts works properly on your device.
+﻿[Description.String]
+Text=Great! Tessera works properly on your device.
 InlinePattern=Windows' idle timer|manually using a hotkey
 
 [Button.1.Shape]

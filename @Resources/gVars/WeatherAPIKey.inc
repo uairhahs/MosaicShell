@@ -1,2 +1,2 @@
-﻿﻿[Variables]
+﻿[Variables]
 gVar.WeatherAPIKey=21d8a80b3d6b444998a80b3d6b1449d3

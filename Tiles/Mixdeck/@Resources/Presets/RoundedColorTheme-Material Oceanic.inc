@@ -1,4 +1,4 @@
-﻿﻿[Main\Elements\ControlScreen\Vars\Rounded.inc]
+﻿[Main\Elements\ControlScreen\Vars\Rounded.inc]
 color_theme=Material Oceanic
 bar_color=0, 150, 136
 background_color=38, 50, 56

@@ -1,4 +1,4 @@
-﻿﻿[ActionTimer]
+﻿[ActionTimer]
 Measure=Plugin
 Plugin=ActionTimer
 ActionList1=Showfade

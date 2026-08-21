@@ -1,4 +1,4 @@
-﻿﻿$DesktopPath = [Environment]::GetFolderPath("Desktop")
+﻿$DesktopPath = [Environment]::GetFolderPath("Desktop")
 $Startpath = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs"
 
 # ---------------------------------------------------------------------------- #

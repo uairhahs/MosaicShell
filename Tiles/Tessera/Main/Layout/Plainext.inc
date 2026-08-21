@@ -1,4 +1,4 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 SkinWidth=(600*#scale#)
 
 [Variables]

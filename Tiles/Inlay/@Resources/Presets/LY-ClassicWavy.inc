@@ -1,4 +1,4 @@
-﻿﻿[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 
 BackgroundMod=0
 

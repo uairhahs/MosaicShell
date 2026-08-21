@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeModulevars=#SKINSPATH##Skin.Name#\Main\Modules\Vars\#Page.SubpageModule#.inc
 Sec.SaveLocation=#SKINSPATH##Skin.Name#\Main\Modules\Vars\#Page.SubpageModule#.inc
 
@@ -115,8 +115,8 @@ Y=([Option13:Y]-#Set.P#+(-20/2+8)*[Set.S])
 Meter=Shape
 MeterStyle=Set.Button:S
 Y=([Option14:Y]-#Set.P#+(-30/2+8)*[Set.S])
-OverColor=#Set.Accent_color#,150
-LeaveColor=#Set.Accent_color#,50
+OverColor=#Set.Accent_Color#,150
+LeaveColor=#Set.Accent_Color#,50
 Act=[!CommandMEasure Func "interactionBox([[#SKINSPATH##Skin.Name#\Core\InteractionBox\ValliOrb.inc]], '#IconName#')"]
 Hidden=(1-#StartIconBool#)
 [Icon14]

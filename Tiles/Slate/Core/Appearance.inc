@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Sec.SaveLocation=#SKINSPATH##Skin.Name#\Launch\Vars\#Style#.inc
 @includeSaveLocation=#SKINSPATH##Skin.Name#\Launch\Vars\#Style#.inc
 Sec.ForceWriteVariables=0
@@ -26,7 +26,7 @@ Meter=Shape
 MeterStyle=Set.Div:S
 [Option00]
 Meter=String
-Text=Preview IdleStyle
+Text=Preview Slate
 MeterStyle=Set.String:S | Set.OptionName:S
 [Set.Div:1123123]
 Meter=Shape
@@ -38,7 +38,7 @@ MeterStyle=Set.Button:S
 Y=([Option00:Y]-#Set.P#+(-30/2+8)*[Set.S])
 OverColor=26, 158, 72
 LeaveColor=17, 107, 48
-Act=[!WriteKeyValue Variables PreviewStyle "#Style#" "#SKINSPATH##Skin.Name#\Launch\Preview.ini"][!ActivateConfig "IdleStyle\Launch" "Preview.ini"]
+Act=[!WriteKeyValue Variables PreviewStyle "#Style#" "#SKINSPATH##Skin.Name#\Launch\Preview.ini"][!ActivateConfig "Slate\Launch" "Preview.ini"]
 [Value00]
 Meter=String
 Text=Activate

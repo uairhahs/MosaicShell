@@ -1,4 +1,4 @@
-﻿﻿; ---------------------------------------------------------------------------- ;
+﻿; ---------------------------------------------------------------------------- ;
 ;                                  MeterStyles                                 ;
 ; ---------------------------------------------------------------------------- ;
 
@@ -70,11 +70,11 @@ H=(300*[S])
 LeftMouseUpAction=[!WriteKeyValue Variables Sec.arg2 "1" "#CURRENTPATH#Main.ini"][!Refresh]
 DynamicVariables=1
 Container=ContentContainer
-ImageName=#SKINSPATH#IdleStyle\@Resources\Images\IdleStyle.png
+ImageName=#SKINSPATH#Slate\@Resources\Images\Slate.png
 
 [Header.String]
 Meter=String
-Text=IdleStyle Setup
+Text=Slate Setup
 X=(300*[S]/2)r
 Y=R
 FontSize=(32*[S])
@@ -95,4 +95,4 @@ InlineSetting=Color | #Set.Positive_Color#
 MeterStyle=Sec.String:S
 
 
-@includeContent=#SKINSPATH#IdleStyle\Core\Window\Setup\#Sec.Arg2#.inc
+@includeContent=#SKINSPATH#Slate\Core\Window\Setup\#Sec.Arg2#.inc

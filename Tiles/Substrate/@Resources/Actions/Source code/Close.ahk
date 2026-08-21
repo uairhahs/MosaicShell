@@ -19,5 +19,5 @@ CloseScript(Name)
 		return Name . " not found"
 	}
 
-CloseScript("MIUI-Shade.ahk")
+CloseScript("Substrate.ahk")
 ExitApp

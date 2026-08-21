@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [Item2.Shape]
 Meter=Shape
 MeterStyle=Item.Shape:S
@@ -16,5 +16,5 @@ MeterStyle=Item.Button.Shape:S
 [Item2.Button.StringIcon]
 Meter=String
 Text=[\xe89e]
-LeftMouseUpAction=["https://ko-fi.com/jaxoriginals/shop"]
+LeftMouseUpAction=["https://ko-fi.com/mosaicshell/shop"]
 MeterStyle=Sec.String:S | Item.Button.StringIcon:S

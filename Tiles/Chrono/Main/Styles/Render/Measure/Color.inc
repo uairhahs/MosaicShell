@@ -1,4 +1,4 @@
-﻿﻿[Hour]
+﻿[Hour]
 FontColor=#FontDefaultColor#,#FontDefaultOpacity#
 [Hour2]
 FontColor=#FontOverColor#,#FontOverOpacity#

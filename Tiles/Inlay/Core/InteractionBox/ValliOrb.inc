@@ -1,11 +1,11 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 SkinWidth=#Sec.W#
 
 [Variables]
 Sec.W=(500*#Sec.S#)
 Sec.H=(700*#Sec.S#)
 AniDir=Bottom
-@includeSecVars=#@#SecVar.inc
+@includeSecVars=#@#CacheVars\Configurator.inc
 Sec.SaveLocation=#SKINSPATH##Skin.Name#\Main\Modules\Vars\GenericHeader.inc
 @includeSkinvars=#SKINSPATH##Skin.Name#\@Resources\Vars.inc
 @includeGenericHeader=#SKINSPATH##Skin.Name#\Main\Modules\Vars\GenericHeader.inc
@@ -68,7 +68,7 @@ Command1=[!SetVariable #Editing# "$UserInput$"][!UpdateMeasure SaveAndLoad:M]
 [SaveAndLoad:M]
 Measure=Calc
 DynamicVariables=1
-OnUpdateAction=[!WriteKeyvalue Variables #Editing# "[##Editing#]" "#Sec.SaveLocation#"][!SetVariable #Editing# "[##Editing#]"][!UpdateMeter *][!Redraw][!Refresh "#JaxCore\Main"][!Refresh "ValliStart\Main"]
+OnUpdateAction=[!WriteKeyvalue Variables #Editing# "[##Editing#]" "#Sec.SaveLocation#"][!SetVariable #Editing# "[##Editing#]"][!UpdateMeter *][!Redraw][!Refresh "#MosaicShell\Main"][!Refresh "Inlay\Main"]
 Disabled=1
 Group=NUOL
 
@@ -87,7 +87,7 @@ W=((#Sec.W#-#sec.P#*6)/5-#Sec.P#*2)
 H=((#Sec.W#-#sec.P#*6)/5-#Sec.P#*2)
 Padding=(#Sec.P#),(#Sec.P#),(#Sec.P#),(#Sec.P#)
 ImageName=#SKINSPATH#valliStart\@Resources\Images\Orbs\#CURRENTSECTION#.png
-LeftMouseUpAction=[!WriteKeyValue Variables IconName "#CURRENTSECTION#" "#Sec.SaveLocation#"][!Refresh "#JaxCore\Main"][!Refresh "ValliStart\Main"][!Refresh]
+LeftMouseUpAction=[!WriteKeyValue Variables IconName "#CURRENTSECTION#" "#Sec.SaveLocation#"][!Refresh "#MosaicShell\Main"][!Refresh "Inlay\Main"][!Refresh]
 [Image2:S]
 Greyscale=1
 ImageTint=#Set.Accent_Color#
@@ -101,7 +101,7 @@ X=(#Sec.W#/2)
 Y=(#Sec.P#)
 FontSize=((10*#Sec.S#)*#FontSizeModifier#)
 FontColor=#Set.Subtext_Color#
-Text=Select an orb for ValliStart!
+Text=Select an orb for Inlay!
 inlinepattern=#CRLF#.*
 inlinesetting=Size | (8*#Sec.S#)
 DynamicVariables=1

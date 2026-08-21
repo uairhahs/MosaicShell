@@ -1,4 +1,4 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 RightMouseUpAction=[!UpdateMeasureGroup CurPos.XY][!CommandMeasure Ctx.Gen:M "StartCtx()"]
 
 [CurPos.X]

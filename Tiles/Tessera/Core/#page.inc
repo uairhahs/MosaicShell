@@ -1,4 +1,4 @@
-﻿﻿[PageList.Configuration]
+﻿[PageList.Configuration]
 Meter=String
 MeterStyle=Set.String:S | PageList.Category:S
 Text=CONFIGURATION
@@ -70,7 +70,7 @@ Text=LOOK N' FEEL
 
 [Layout.Shape]
 Meter=Shape
-LeftMouseUpAction=[!WriteKeyvalue Variables Page.page 1 "#SKINSPATH##Skin.Name#\Core\Layout.inc"][!WriteKeyvalue Variables "Skin.Set_Page" "[&Func:trim('#CURRENTSECTION#', '.Shape', '')]" "#@#SecVar.inc"][!Refresh]
+LeftMouseUpAction=[!WriteKeyvalue Variables Page.page 1 "#SKINSPATH##Skin.Name#\Core\Layout.inc"][!WriteKeyvalue Variables "Skin.Set_Page" "[&Func:trim('#CURRENTSECTION#', '.Shape', '')]" "#@#CacheVars\Configurator.inc"][!Refresh]
 MeterStyle=PageList.Item.Shape:S
 [Layout.Icon.String]
 Meter=String

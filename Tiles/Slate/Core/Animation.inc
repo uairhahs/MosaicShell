@@ -1,4 +1,4 @@
-﻿﻿[Header]
+﻿[Header]
 Text=Animation layout
 Y=(20*[Set.S]+#Scroll#)
 
@@ -20,7 +20,7 @@ DynamicVariables=1
 ; MouseOverAction=[!SetOption #CURRENTSECTION# H "(155*[Set.S])"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 ; MouseLeaveAction=[!SetOption #CURRENTSECTION# H "(150*[Set.S])"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 Leftmouseupaction=[!WriteKeyValue Variables Style "#CURRENTSECTION#" "#Sec.SaveLocatioN#"][!UpdateMeasure Auto_Refresh:M][!Refresh]
-Rightmouseupaction=[!WriteKeyValue Variables PreviewStyle "#CURRENTSECTION#" "#SKINSPATH##Skin.Name#\Launch\Preview.ini"][!ActivateConfig "IdleStyle\Launch" "Preview.ini"]
+Rightmouseupaction=[!WriteKeyValue Variables PreviewStyle "#CURRENTSECTION#" "#SKINSPATH##Skin.Name#\Launch\Preview.ini"][!ActivateConfig "Slate\Launch" "Preview.ini"]
 PreserveAspectRatio=2
 DynamicVariables=1
 MaskImageName=#@#Images\LayoutMask.png

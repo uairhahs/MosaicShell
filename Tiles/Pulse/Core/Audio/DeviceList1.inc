@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [DeviceBox0]
 Meter=Shape
 MeterStyle=Device:S

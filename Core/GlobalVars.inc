@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Sec.SaveLocation2="#@#gVars\Weather.inc"
 Sec.SaveLocation3="#@#gVars\WeatherAPIKey.inc"
 @includegVar1=#@#gVars\Time.inc

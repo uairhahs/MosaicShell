@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 RMPATH=C:\Program Files\Rainmeter\Rainmeter.exe
 CurrentKey=
 WinBool=0

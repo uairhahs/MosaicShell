@@ -1,4 +1,4 @@
-﻿﻿$SkinsPath = $RmAPI.VariableStr('SKINSPATH')
+﻿$SkinsPath = $RmAPI.VariableStr('SKINSPATH')
 
 function Update {
     Check-Data

@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 SkinRow=Select
 Group=IdleStyleSkinGroup
 BackgroundColor=18,18,18

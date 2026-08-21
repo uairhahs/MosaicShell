@@ -1,2 +1,2 @@
-﻿﻿[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 Layout=Simple

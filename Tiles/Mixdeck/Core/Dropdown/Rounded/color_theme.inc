@@ -1,5 +1,5 @@
-﻿﻿[Variables]
-@includeSecvars=#@#SecVar.inc
+﻿[Variables]
+@includeSecvars=#@#CacheVars\Configurator.inc
 
 ; ---------------------------------------------------------------------------- ;
 ;                                   Functions                                  ;
@@ -11,7 +11,7 @@ Plugin=PowershellRM
 ScriptFile=#@#Powershell\PresetLoad.ps1
 
 [String:S]
-LeftMouseUpAction=[!CommandMeasure Preset:M "ChangeToFiles -theme 'RoundedColorTheme-#CURRENTSECTION#'"][!Refresh "#JaxCore\Main"][!DeactivateConfig]
+LeftMouseUpAction=[!CommandMeasure Preset:M "ChangeToFiles -theme 'RoundedColorTheme-#CURRENTSECTION#'"][!Refresh "#MosaicShell\Main"][!DeactivateConfig]
 
 ; ---------------------------------------------------------------------------- ;
 ;                                    Content                                   ;

@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 @includeHotkeys=#SKINSPATH##Skin.Name#\@Resources\Actions\HotKeys.ini
 @include19Custom=#SKINSPATH##Skin.Name#\Main\Elements\Unload\Vars.inc
 
@@ -13,7 +13,7 @@ Text=Activation
 MeterStyle=Set.String:S | Set.OptionCat:S
 [Option01]
 Meter=String
-Text=Use hotkey to activate YourMixer
+Text=Use hotkey to activate Mixdeck
 FontColor=#Set.Text_Color#,(#StayOnDesktop# = 0 ? 255 : 150)
 MeterStyle=Set.String:S | Set.OptionName:S
 [Divider01]
@@ -193,9 +193,9 @@ Meter=Shape
 MeterStyle=Set.Bool:S | StayOnDesktop:#StayOnDesktop#
 Y=([Option03:Y]-#Set.P#+(-20/2+8)*[Set.S])
 [StayOnDesktop:0]
-LeftMouseUpAction=[!WriteKeyValue "YourMixer\Main\Elements\ControlScreen" "SavePosition" "1" "#SETTINGSPATH#Rainmeter.ini"][!WriteKeyValue "YourMixer\Main\Elements\ControlScreen" "AlphaValue" "255" "#SETTINGSPATH#Rainmeter.ini"][!SetVariable StayOnDesktop 1][!WriteKeyValue Variables StayOnDesktop "1" "#Sec.SaveLocation#"][!UpdateMeasure Auto_Refresh:M][!UpdateMeter *][!Redraw]
+LeftMouseUpAction=[!WriteKeyValue "Mixdeck\Main\Elements\ControlScreen" "SavePosition" "1" "#SETTINGSPATH#Rainmeter.ini"][!WriteKeyValue "Mixdeck\Main\Elements\ControlScreen" "AlphaValue" "255" "#SETTINGSPATH#Rainmeter.ini"][!SetVariable StayOnDesktop 1][!WriteKeyValue Variables StayOnDesktop "1" "#Sec.SaveLocation#"][!UpdateMeasure Auto_Refresh:M][!UpdateMeter *][!Redraw]
 [StayOnDesktop:1]
-LeftMouseUpAction=[!WriteKeyValue "YourMixer\Main\Elements\ControlScreen" "SavePosition" "0" "#SETTINGSPATH#Rainmeter.ini"][!WriteKeyValue "YourMixer\Main\Elements\ControlScreen" "AlphaValue" "1" "#SETTINGSPATH#Rainmeter.ini"][!WriteKeyValue "YourMixer\Main\Elements\ControlScreen" "WindowX" "" "#SETTINGSPATH#Rainmeter.ini"][!WriteKeyValue "YourMixer\Main\Elements\ControlScreen" "WindowY" "" "#SETTINGSPATH#Rainmeter.ini"][!SetVariable StayOnDesktop 0][!WriteKeyValue Variables StayOnDesktop "0" "#Sec.SaveLocation#"][!UpdateMeasure Auto_Refresh:M][!UpdateMeter *][!Redraw]
+LeftMouseUpAction=[!WriteKeyValue "Mixdeck\Main\Elements\ControlScreen" "SavePosition" "0" "#SETTINGSPATH#Rainmeter.ini"][!WriteKeyValue "Mixdeck\Main\Elements\ControlScreen" "AlphaValue" "1" "#SETTINGSPATH#Rainmeter.ini"][!WriteKeyValue "Mixdeck\Main\Elements\ControlScreen" "WindowX" "" "#SETTINGSPATH#Rainmeter.ini"][!WriteKeyValue "Mixdeck\Main\Elements\ControlScreen" "WindowY" "" "#SETTINGSPATH#Rainmeter.ini"][!SetVariable StayOnDesktop 0][!WriteKeyValue Variables StayOnDesktop "0" "#Sec.SaveLocation#"][!UpdateMeasure Auto_Refresh:M][!UpdateMeter *][!Redraw]
 
 
 ; ------------------------ Applications and operation ------------------------ ;
@@ -216,7 +216,7 @@ MeterStyle=Set.Textbox:S
 Y=([Option12:Y]-#Set.P#+(-30/2+8)*[Set.S])
 ; ----------Tooltip
 ToolTipTitle=#CURRENTSECTION#
-ToolTipText=Apps to exclude from showing up in YourMixer
+ToolTipText=Apps to exclude from showing up in Mixdeck
 [Value12]
 Meter=String
 Text=#ExcludeApp#
@@ -246,8 +246,8 @@ Y=([Option22:Y]-#Set.P#+(-20/2+8)*[Set.S])
 Meter=Shape
 MeterStyle=Set.Button:S
 Y=([Option23:Y]-#Set.P#+(-30/2+8)*[Set.S])
-OverColor=#Set.Accent_color#,150
-LeaveColor=#Set.Accent_color#,50
+OverColor=#Set.Accent_Color#,150
+LeaveColor=#Set.Accent_Color#,50
 Act=[!CommandMeasure Func "interactionBox([[#SKINSPATH##Skin.Name#\Core\InteractionBox\MixerIconTheme.inc]], '#IconTheme#')"]
 Hidden=(#Tray# = 0 || #StayOnDesktop# = 1 ? 1 : 0)
 [Icon23]
@@ -279,8 +279,8 @@ Y=([Option32:Y]-#Set.P#+(-20/2+8)*[Set.S])
 Meter=Shape
 MeterStyle=Set.Button:S
 Y=([Option33:Y]-#Set.P#+(-30/2+8)*[Set.S])
-OverColor=#Set.Accent_color#,150
-LeaveColor=#Set.Accent_color#,50
+OverColor=#Set.Accent_Color#,150
+LeaveColor=#Set.Accent_Color#,50
 Act=[!CommandMeasure Func "startSide('Ease')"]
 Hidden=(#Animated# = 0 || #StayOnDesktop# = 1 ? 1 : 0)
 [Icon33]
@@ -301,7 +301,7 @@ MeterStyle=Set.String:S | Set.Value:S
 Meter=Shape
 MeterStyle=Set.DropDown:S
 Y=([Option34:Y]-#Set.P#+(-30/2+8)*[Set.S])
-Leftmouseupaction=[!CommandMeasure Func "startDrop('AniDir', '#CURRENTSECTION#', 'JaxCore', 'AniDir')"]
+Leftmouseupaction=[!CommandMeasure Func "startDrop('AniDir', '#CURRENTSECTION#', 'MosaicShell', 'AniDir')"]
 Hidden=(#Animated# = 0 || #StayOnDesktop# = 1 ? 1 : 0)
 [Value34]
 Meter=String
@@ -330,7 +330,7 @@ Hidden=(#Animated# = 0 || #StayOnDesktop# = 1 ? 1 : 0)
 Y=([Option36:Y]-#Set.P#+(-30/2+8)*[Set.S])
 ; ----------Tooltip
 ToolTipTitle=#CURRENTSECTION#
-ToolTipText=How much distance YourMixer travels during the animation
+ToolTipText=How much distance Mixdeck travels during the animation
 [Value36]
 Meter=String
 Text=#AnimationDisplacement#

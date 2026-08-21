@@ -1,4 +1,4 @@
-﻿﻿[LogicLua]
+﻿[LogicLua]
 Measure=Script
 ScriptFile=#SKINSPATH##Skin.name#\Core\Module\Logic.lua
 
@@ -103,7 +103,7 @@ Container=ContentContainer
 [Module.Button2.Shape:S]
 X=(-40*[Set.S]/2)r
 Y=((40/2+10)*[Set.S])r
-LeftMouseUpAction=[!WriteKeyValue Variables [&Func:trim('#CURRENTSECTIOn#','.Button2.Shape','')] "None" "#SKINSPATh##Skin.Name#\@Resources\Vars.inc"][!SetVariable [&Func:trim('#CURRENTSECTIOn#','.Button2.Shape','')] "None"][!CommandMeasure LogicLua "CheckIfNone()" "#JaxCore\Main"][!UpdateMeter *][!Redraw][!UpdateMeasure Auto_Refresh:M]
+LeftMouseUpAction=[!WriteKeyValue Variables [&Func:trim('#CURRENTSECTIOn#','.Button2.Shape','')] "None" "#SKINSPATh##Skin.Name#\@Resources\Vars.inc"][!SetVariable [&Func:trim('#CURRENTSECTIOn#','.Button2.Shape','')] "None"][!CommandMeasure LogicLua "CheckIfNone()" "#MosaicShell\Main"][!UpdateMeter *][!Redraw][!UpdateMeasure Auto_Refresh:M]
 ToolTipText=Remove module
 [Module.Button2.String:S]
 Text=[\xe8bb]
@@ -141,7 +141,7 @@ Text=[\xe719]
 MeterStyle=Set.String:S | Item.StringIcon:S
 [Item2.String]
 Meter=String
-Text=Discover more ValliStart 3.0 modules on my ko-fi store!
+Text=Discover more Inlay 3.0 modules on my ko-fi store!
 MeterStyle=Set.String:S | Item.String:S
 [Item2.Button]
 Meter=Shape
@@ -149,7 +149,7 @@ MeterStyle=Item.Button.Shape:S
 [Item2.Button.StringIcon]
 Meter=String
 Text=[\xe89e]
-LeftMouseUpAction=["https://ko-fi.com/jaxoriginals/shop"]
+LeftMouseUpAction=["https://ko-fi.com/mosaicshell/shop"]
 MeterStyle=Set.String:S | Item.Button.StringIcon:S
 
 [Module0.Shape]

@@ -1,7 +1,7 @@
 ﻿[Variables]
-@includegVar1=#SKINSPATH##JaxCore\@Resources\gVars\Time.inc
-@includegVar2=#SKINSPATH##JaxCore\@Resources\gVars\Weather.inc
-@includegVar3=#SKINSPATH##JaxCore\@Resources\gVars\WeatherAPIKey.inc
+@includegVar1=#SKINSPATH##MosaicShell\@Resources\gVars\Time.inc
+@includegVar2=#SKINSPATH##MosaicShell\@Resources\gVars\Weather.inc
+@includegVar3=#SKINSPATH##MosaicShell\@Resources\gVars\WeatherAPIKey.inc
 Scale=1
 2412=I
 ;I H

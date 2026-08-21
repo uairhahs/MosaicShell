@@ -1,6 +1,6 @@
-﻿﻿[Variables]
+﻿[Variables]
 ImagePath=#@#Images\Logo256.png
-ImageName=JaxCore logo
+ImageName=MosaicShell logo
 LineOneStyle=Time
 LineTwoStyle=IdleDuration
 Color1=0C0C0C

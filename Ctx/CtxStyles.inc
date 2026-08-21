@@ -1,4 +1,4 @@
-﻿﻿; ---------------------------------------------------------------------------- ;
+﻿; ---------------------------------------------------------------------------- ;
 ;                                   Functions                                  ;
 ; ---------------------------------------------------------------------------- ;
 
@@ -65,7 +65,7 @@ DynamicVariables=1
 Group=Ctx.SideButtons
 Fill=Fill Color #Set.Pri_Color#,0
 MouseOverAction=[!SetOption #CURRENTSECTION# Fill "Fill Color #Set.Ter_Color#"][!SetOption #CURRENTSECTION#Icon ImageTint "#Set.Accent_Color#"][!SetOption #CURRENTSECTION#Text FontColor "#Set.Accent_Color#"][!UpdateMeter *][!Redraw]
-MouseLeaveAction=[!SetOption #CURRENTSECTION# Fill "Fill Color #Set.Sec_color#,0"][!SetOption #CURRENTSECTION#Icon ImageTint "#Set.Text_Color#"][!SetOption #CURRENTSECTION#Text FontColor "#Set.Text_Color#"][!UpdateMeter *][!Redraw]
+MouseLeaveAction=[!SetOption #CURRENTSECTION# Fill "Fill Color #Set.Sec_Color#,0"][!SetOption #CURRENTSECTION#Icon ImageTint "#Set.Text_Color#"][!SetOption #CURRENTSECTION#Text FontColor "#Set.Text_Color#"][!UpdateMeter *][!Redraw]
 
 [CtxIcon:S]
 ImageName=#@#Icons\Context\#CURRENTSECTION#.png

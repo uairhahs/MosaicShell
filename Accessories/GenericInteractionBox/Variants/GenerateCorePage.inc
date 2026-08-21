@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 LastSelectedFile=C:\Users\enhan\Desktop\RmPackage\Test.ini
 LastOutputSkin=YourMixer
 LastOutputPage=General

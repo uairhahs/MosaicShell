@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Sec.W=(500*#Sec.S#)
 Sec.H=(700*#Sec.S#)
 Sec.HideEsc=1

@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 BarHandler=5.5
 
 [Header]

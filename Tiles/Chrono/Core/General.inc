@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 
 [m.StartAction]
 Measure=String
@@ -66,7 +66,7 @@ MeterStyle=Set.String:S | Set.OptionCat:S
 
 [Item01.Shape]
 Meter=Shape
-LeftMouseUpAction=[!WriteKeyvalue Variables Skin.Name """#JaxCore""" "#@#SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#SecVar.inc"][!Refresh]
+LeftMouseUpAction=[!WriteKeyvalue Variables Skin.Name """#MosaicShell""" "#@#CacheVars\Configurator.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#CacheVars\Configurator.inc"][!Refresh]
 MeterStyle=Item.Shape:S
 [Item01.StringIcon]
 Meter=String
@@ -74,7 +74,7 @@ Text=[\xe775]
 MeterStyle=Set.String:S | Item.StringIcon:S
 [Item01.String]
 Meter=String
-Text=Change time format in JaxCore global settings.
+Text=Change time format in MosaicShell global settings.
 MeterStyle=Set.String:S | Item.String:S
 [Item01.Arrow.String]
 Meter=String
@@ -82,7 +82,7 @@ MeterStyle=Set.String:S | Item.Arrow.String:S
 
 [Item02.Shape]
 Meter=Shape
-LeftMouseUpAction=[!WriteKeyvalue Variables Skin.Name """#JaxCore""" "#@#SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#SecVar.inc"][!Refresh]
+LeftMouseUpAction=[!WriteKeyvalue Variables Skin.Name """#MosaicShell""" "#@#CacheVars\Configurator.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#CacheVars\Configurator.inc"][!Refresh]
 MeterStyle=Item.Shape:S
 [Item02.StringIcon]
 Meter=String
@@ -90,7 +90,7 @@ Text=[\xe774]
 MeterStyle=Set.String:S | Item.StringIcon:S
 [Item02.String]
 Meter=String
-Text=Change weather location & units in JaxCore global settings.
+Text=Change weather location & units in MosaicShell global settings.
 MeterStyle=Set.String:S | Item.String:S
 [Item02.Arrow.String]
 Meter=String
@@ -204,7 +204,7 @@ MeterStyle=Box
 
 [Center]
 Meter=Image
-Imagename=#SKINSPATH#ModularClocks\@Resources\Images\Preview\#CURRENTSECTION#Preview.png
+Imagename=#SKINSPATH#Chrono\@Resources\Images\Preview\#CURRENTSECTION#Preview.png
 X=([#CURRENTSECTION#Box:X]-[ContentContainer:X])
 Y=([#CURRENTSECTION#Box:Y]-[ContentContainer:Y])
 W=(([ContentContainer:W]-120*[Set.S])/5)
@@ -233,7 +233,7 @@ MeterStyle=Center
 
 [CircTech]
 Meter=Image
-Imagename=#SKINSPATH#ModularClocks\@Resources\Images\Preview\#CURRENTSECTION#Preview.png
+Imagename=#SKINSPATH#Chrono\@Resources\Images\Preview\#CURRENTSECTION#Preview.png
 X=([#CURRENTSECTION#Box:X]-[ContentContainer:X])
 Y=([#CURRENTSECTION#Box:Y]-[ContentContainer:Y])
 W=(([ContentContainer:W]-120*[Set.S])/5)
@@ -271,7 +271,7 @@ MeterStyle=Set.String:S | Set.OptionCat:S
 
 [Item21.Shape]
 Meter=Shape
-LeftMouseUpAction=[!WriteKeyvalue Variables "Skin.Set_Page" "Appearance" "#@#SecVar.inc"][!Refresh]
+LeftMouseUpAction=[!WriteKeyvalue Variables "Skin.Set_Page" "Appearance" "#@#CacheVars\Configurator.inc"][!Refresh]
 MeterStyle=Item.Shape:S
 [Item21.StringIcon]
 Meter=String

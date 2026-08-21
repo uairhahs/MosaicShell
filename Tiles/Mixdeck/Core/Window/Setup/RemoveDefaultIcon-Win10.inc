@@ -1,4 +1,4 @@
-﻿﻿[Description.String]
+﻿[Description.String]
 Text=You can hide the default windows volume icon from the windows settings.#CRLF#Taskbar - Turn system icons on or off
 InlinePattern=hide the default windows volume icon
 InlinePattern2=#CRLF#.*

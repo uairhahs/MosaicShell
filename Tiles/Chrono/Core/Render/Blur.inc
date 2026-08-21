@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 
 [Item02.Shape]
 Meter=Shape

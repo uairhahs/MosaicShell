@@ -1,4 +1,4 @@
-﻿﻿[DisableHidden]
+﻿[DisableHidden]
 Measure=Calc
 OnUpdateAction=[!DisableMeasureGroup NonOverview]
 Group=NonOverview

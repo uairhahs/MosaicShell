@@ -1,7 +1,7 @@
-﻿﻿[Variables]
+﻿[Variables]
 BarHandler=1
 
-DeviantArtLinks=881177085|881628513|883898019|885183361|886577256|889349339|890749449|893506095|894951390|899004964|903806619|905969076|919259685:Combilaunch|Plainext|ModularClocks|MIUI-Shade|ModularPlayers|Keystrokes|Keylaunch|ValliStart|QuickNote|IdleStyle|ModularVisualizer|YourMixer|YourFlyouts
+DeviantArtLinks=881177085|881628513|883898019|885183361|886577256|889349339|890749449|893506095|894951390|899004964|903806619|905969076|919259685:Combilaunch|Plainext|ModularClocks|Substrate|ModularPlayers|Keystrokes|Keylaunch|ValliStart|QuickNote|IdleStyle|ModularVisualizer|YourMixer|YourFlyouts
 
 BetaSkinlist=
 

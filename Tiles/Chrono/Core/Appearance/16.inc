@@ -1,4 +1,4 @@
-﻿﻿; ---------------------------------------------------------------------------- ;
+﻿; ---------------------------------------------------------------------------- ;
 ;                                   Functions                                  ;
 ; ---------------------------------------------------------------------------- ;
 
@@ -61,7 +61,7 @@ MeterStyle=Set.Div:S
 
 [Item01.Shape]
 Meter=Shape
-Leftmouseupaction=["https://jaxcore.gitbook.io/core/getting-started/additional-requisites#imagemagick"]
+Leftmouseupaction=["https://docs.mosaicshell.io/core/getting-started/additional-requisites#imagemagick"]
 MeterStyle=Item.Shape:S
 [Item01.StringIcon]
 Meter=String

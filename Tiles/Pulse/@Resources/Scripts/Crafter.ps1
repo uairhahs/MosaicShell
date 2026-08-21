@@ -1,4 +1,4 @@
-﻿﻿$SkinsPath = $RmAPI.VariableStr('SKINSPATH')
+﻿$SkinsPath = $RmAPI.VariableStr('SKINSPATH')
 $SkinName = $RmAPI.VariableStr('Skin.Name')
 $CurrentPage = $RmAPI.VariableStr('Skin.Set_Page')
 $rootConfig = $RmAPI.VariableStr('Skin.Name') + '\Main'

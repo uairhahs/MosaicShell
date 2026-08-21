@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 [PrefixTextHeader]
 Meter=String
 Text=Prefix Text
@@ -88,7 +88,7 @@ Y=([Option01:Y]-#Set.P#+(-30/2+8)*[Set.S])
 Leftmouseupaction=["#SKINSPATH##Skin.Name#\@Resources\Vars.inc"][!CommandMEasure CoreBridge "start('', 'Edit in file', [[Please edit the variables file directly.]], '', '1500')"]
 [CoreBridge]
 Measure=Script
-ScriptFile=#SKINSPATH##JaxCore\@Resources\Lua\CoreElements\Toast.lua
+ScriptFile=#SKINSPATH##MosaicShell\@Resources\Lua\CoreElements\Toast.lua
 [Value01]
 Meter=String
 Text=#BreakerString#
@@ -98,7 +98,7 @@ MeterStyle=Set.String:S | Set.Value:S
 Meter=Shape
 MeterStyle=Set.Button:S
 Y=([Option11:Y]-#Set.P#+(-30/2+8)*[Set.S])
-Act=[!WriteKeyvalue Variables Skin.Name """#JaxCore""" "#@#SecVar.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#SecVar.inc"][!Refresh]
+Act=[!WriteKeyvalue Variables Skin.Name """#MosaicShell""" "#@#CacheVars\Configurator.inc"][!WriteKeyvalue Variables Skin.Set_Page GlobalVars "#@#CacheVars\Configurator.inc"][!Refresh]
 [Icon11]
 Meter=String
 Text=[\xe895]

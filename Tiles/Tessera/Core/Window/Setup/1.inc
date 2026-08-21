@@ -1,12 +1,12 @@
-﻿﻿; ---------------------------------------------------------------------------- ;
+﻿; ---------------------------------------------------------------------------- ;
 ;                                   Functions                                  ;
 ; ---------------------------------------------------------------------------- ;
 
 [Variables]
-Sec.SaveLocation=#SKINSPATH#YourFlyouts\Main\Vars\Center.inc
-Sec.SaveLocation2=#SKINSPATH#YourFlyouts\Main\Vars\Fluent.inc
-Sec.SaveLocation3=#SKINSPATH#YourFlyouts\Main\Vars\Win11.inc
-Sec.SaveLocation4=#SKINSPATH#YourFlyouts\@Resources\Vars.inc
+Sec.SaveLocation=#SKINSPATH#Tessera\Main\Vars\Center.inc
+Sec.SaveLocation2=#SKINSPATH#Tessera\Main\Vars\Fluent.inc
+Sec.SaveLocation3=#SKINSPATH#Tessera\Main\Vars\Win11.inc
+Sec.SaveLocation4=#SKINSPATH#Tessera\@Resources\Vars.inc
 
 [MeasureSysInfo]
 Measure=SysInfo
@@ -30,7 +30,7 @@ UpdateDivider=-1
 ; ---------------------------------------------------------------------------- ;
 
 [Description.String]
-Text=Welcome to YourFlyouts!
+Text=Welcome to Tessera!
 
 [Button.1.Shape]
 Meter=Shape

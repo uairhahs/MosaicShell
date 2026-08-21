@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 Scale=1
 PrimaryColor=255,255,255
 PrimaryOpacity=255

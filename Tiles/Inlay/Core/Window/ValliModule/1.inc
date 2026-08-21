@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 
 [Top.Div]
 Meter=Shape
@@ -47,7 +47,7 @@ Meter=String
 MEterStyle=Sec.String:S | Module.STring:S
 [GenericHeader.Description.String]
 Meter=String
-Text=The default header module for ValliStart.
+Text=The default header module for Inlay.
 MEterStyle=Sec.String:S | Module.Description.STring:S
 
 [SearchBar.Shape]

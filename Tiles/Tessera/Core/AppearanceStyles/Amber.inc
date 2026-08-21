@@ -1,4 +1,4 @@
-﻿﻿[Option01]
+﻿[Option01]
 Meter=String
 Text="Border width"
 MeterStyle=Set.String:S | Set.OptionName:S

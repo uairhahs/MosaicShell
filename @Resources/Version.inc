@@ -1,2 +1,2 @@
-﻿﻿[Variables]
+﻿[Variables]
 Core.Ver=50410

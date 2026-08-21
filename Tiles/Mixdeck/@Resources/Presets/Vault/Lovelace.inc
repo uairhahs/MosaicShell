@@ -1,4 +1,4 @@
-﻿﻿[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 Accent=209, 94, 234
 Alpha=255
 background_color=43, 53, 68

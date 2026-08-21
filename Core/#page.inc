@@ -1,4 +1,4 @@
-﻿﻿[PageList.Configuration]
+﻿[PageList.Configuration]
 Meter=String
 MeterStyle=Set.String:S | PageList.Category:S
 Text=BEHAVIORAL

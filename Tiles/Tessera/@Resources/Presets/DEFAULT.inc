@@ -1,4 +1,4 @@
-﻿﻿[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 Position=TL
 xpad=20
 ypad=20

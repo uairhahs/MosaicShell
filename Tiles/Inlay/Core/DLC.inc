@@ -1,4 +1,4 @@
-﻿﻿; ---------------------------------------------------------------------------- ;
+﻿; ---------------------------------------------------------------------------- ;
 ;                                   Function                                   ;
 ; ---------------------------------------------------------------------------- ;
 
@@ -114,7 +114,7 @@ Shape=Rectangle 0,0,200,40,#set.r# | StrokeWidth 0 | Extend Fill | Scale [Set.S]
 Fill=Fill Color [&Func:LocalVar('#CURRENTSECTION#', 'LeaveColor')],#Set.Alpha#
 MouseOverAction=[!SetOption #CURRENTSECTION# Fill "Fill Color [&Func:LocalVar('#CURRENTSECTION#', 'OverColor')],#Set.Alpha#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
 MouseLeaveAction=[!SetOption #CURRENTSECTION# Fill "Fill Color [&Func:LocalVar('#CURRENTSECTION#', 'LeaveColor')],#Set.Alpha#"][!UpdateMeter #CURRENTSECTION#][!Redraw]
-LeftMouseUpAction=["https://ko-fi.com/jaxoriginals/shop"]
+LeftMouseUpAction=["https://ko-fi.com/mosaicshell/shop"]
 Container=#Sec.Container#
 [Spotlight.Button1.String]
 Meter=String
@@ -153,7 +153,7 @@ Fontcolor=2FB0CD
 MeterStyle=Set.String:S | Item.StringIcon:S
 [Item2.String]
 Meter=String
-Text=Get multiple ValliStart modules from 1 DLC!
+Text=Get multiple Inlay modules from 1 DLC!
 MeterStyle=Set.String:S | Item.String:S
 
 [Item3.Shape]

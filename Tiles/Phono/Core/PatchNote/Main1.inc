@@ -1,4 +1,4 @@
-﻿﻿[Title.2_5]
+﻿[Title.2_5]
 Meter=String
 Text="Change log v2.5"
 MeterStyle=Sec.String:S | Style.Title:S

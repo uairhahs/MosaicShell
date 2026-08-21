@@ -1,4 +1,4 @@
-﻿﻿[@Resources\Vars.inc]
+﻿[@Resources\Vars.inc]
 Set.Style=Light
 Set.IconStyle=Normal
 Set.Pri_Color=250, 250, 250

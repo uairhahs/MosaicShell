@@ -1,4 +1,4 @@
-﻿﻿; ---------------------------------------------------------------------------- ;
+﻿; ---------------------------------------------------------------------------- ;
 ;                                    Styles                                    ;
 ; ---------------------------------------------------------------------------- ;
 
@@ -69,7 +69,7 @@ X=r
 Y=r
 Shape=Rectangle 0,0,([ContentContainer:W]/2-22*[Set.S]),(([ContentContainer:W]/2-22*[Set.S])/1.625),(8*[Set.S]) | StrokeWidth (2*[Set.S]) | Extend Stroke | Fill Color 0,0,0,0
 Stroke=Stroke Color 0,0,0,0
-CoreGrad=45 | #SEt.Accent_Color_2# ; 1 | #Set.Accent_color# ;0
+CoreGrad=45 | #Set.Accent_Color_2# ; 1 | #Set.Accent_Color# ;0
 Container=#sec.Container#
 DynamicVariables=1
 MouseOverAction=[!SetOption "#CURRENTSECTION#" Stroke "Stroke Color #Set.Text_Color#"][!UpdateMeter "#CURRENTSECTION#"][!Redraw]

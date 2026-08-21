@@ -1,2 +1,2 @@
-﻿﻿[Variables]
+﻿[Variables]
 Version=1.1

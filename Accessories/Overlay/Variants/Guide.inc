@@ -1,4 +1,4 @@
-﻿﻿[Rainmeter]
+﻿[Rainmeter]
 ; OnUnfocusAction=[!UpdateMeasure UnloadHandler2]
 
 [Variables]
@@ -69,7 +69,7 @@ Meter=Shape
 X=([#Sec.Pos[#Sec.Prog]]+[#SEc.W[#Sec.Prog]])
 MeterStyle=Card.Shape.#Sec.Prog#:S
 Group=Tweenable
-CoreGrad=45 | #SEt.Accent_Color# ; 1 | #Set.Accent_color_2# ;0
+CoreGrad=45 | #Set.Accent_Color# ; 1 | #Set.Accent_Color_2# ;0
 DynamicVariables=1
 [Card.Container]
 Meter=Shape

@@ -1,4 +1,4 @@
-﻿﻿[Variables]
+﻿[Variables]
 [Header01]
 Meter=String
 Text=Presets
@@ -142,8 +142,8 @@ MeterStyle=Set.String:S | Set.OptionName:S
 Meter=Shape
 MeterStyle=Set.Button:S
 Y=([Option02:Y]-#Set.P#+(-30/2+8)*[Set.S])
-OverColor=#Set.Accent_color#,150
-LeaveColor=#Set.Accent_color#,50
+OverColor=#Set.Accent_Color#,150
+LeaveColor=#Set.Accent_Color#,50
 Act=[!commandMeasure Func "startDrop('Style', '#CURRENTSECTION#', 'MosaicShell')"]
 
 [Icon02]
