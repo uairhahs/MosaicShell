@@ -2,6 +2,11 @@
 
 Rainmeter **Slate** promised stylized **idle / screensaver** overlays.
 
+## Archive reference
+
+- Upstream: [Jax-Core/IdleStyle](https://github.com/Jax-Core/IdleStyle)
+- Promised behavior below is derived from upstream README + skin structure, not Host implementation.
+
 ## Promised behavior
 
 - Idle timeout before showing the overlay

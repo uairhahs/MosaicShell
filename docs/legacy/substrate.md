@@ -2,6 +2,11 @@
 
 Rainmeter **Substrate** (formerly MIUI Shade) promised a PC **control-center / notification shade**.
 
+## Archive reference
+
+- Upstream: [Jax-Core/MIUI-Shade](https://github.com/Jax-Core/MIUI-Shade)
+- Promised behavior below is derived from upstream README + skin structure, not Host implementation.
+
 ## Promised behavior
 
 - Slide-down / hotkey shade with quick toggles

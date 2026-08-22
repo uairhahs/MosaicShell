@@ -19,7 +19,7 @@
 
 MosaicShell is a configurable desktop shell built from composable surfaces. The **Avalonia Host** manages settings, module install, and armed capabilities; each tile is a native capability or widget.
 
-Forked from [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore), archived November 2024. Rainmeter-era promises are archived under [docs/legacy/](docs/legacy/).
+Forked from [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore), archived November 2024. Rainmeter-era sources live in the [Jax-Core archives](https://github.com/Jax-Core); promised behavior is documented under [docs/legacy/](docs/legacy/).
 
 ---
 
@@ -42,6 +42,8 @@ dotnet run --project MosaicShell.Host
 ```
 
 See [docs/architecture-native.md](docs/architecture-native.md), [docs/native-rewrite.md](docs/native-rewrite.md), and [docs/parity/README.md](docs/parity/README.md).
+
+**Honest MVP vs fidelity:** Catalog `tile_*_mvp` flags mean wiring, settings, and flagship behavior slices are in place — not full Jax-Core visual parity. Layout fidelity flags (`*_layout_fidelity`) stay false until screenshot proofs land in [docs/parity/screenshots/](docs/parity/screenshots/). Install modules from the bundled `Tiles/{Id}/` native stub via `Mosaicist install-module <id>` — no Rainmeter or `.rmskin` required.
 
 ---
 

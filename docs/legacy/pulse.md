@@ -2,6 +2,11 @@
 
 Rainmeter **Pulse** promised a desktop **audio visualizer**.
 
+## Archive reference
+
+- Upstream: [Jax-Core/ModularVisualizer](https://github.com/Jax-Core/ModularVisualizer)
+- Promised behavior below is derived from upstream README + skin structure, not Host implementation.
+
 ## Promised behavior
 
 - Spectrum / bar / round visualizer driven by audio analysis plugins

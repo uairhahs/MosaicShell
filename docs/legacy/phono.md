@@ -2,6 +2,11 @@
 
 Rainmeter **Phono** promised a desktop **media player widget**.
 
+## Archive reference
+
+- Upstream: [Jax-Core/ModularPlayers](https://github.com/Jax-Core/ModularPlayers)
+- Promised behavior below is derived from upstream README + skin structure, not Host implementation.
+
 ## Promised behavior
 
 - Now-playing title / artist / art from Rainmeter media plugins (incl. multi-player Auto)

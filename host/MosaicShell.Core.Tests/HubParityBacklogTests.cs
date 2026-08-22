@@ -17,7 +17,7 @@ public class HubParityBacklogTests
     public static TheoryData<string, bool> HubCapabilities => new()
     {
         { "library_lists_all_skinlist_modules", true },
-        { "library_install_from_local_or_release", true },
+        { "library_install_from_local_stub", true },
         { "library_shows_installed_state", true },
         { "discover_navigates_to_library_settings_about", true },
         { "branding_logo_assets_shipped_with_host", true },
@@ -42,6 +42,17 @@ public class HubParityBacklogTests
         { "tessera_media_smtc_only", false },
         { "tessera_media_wnp", true },
         { "style_catalog_jaxcore_ids", true },
+
+        // Phase C layout fidelity (false until screenshot-level proofs; see docs/parity)
+        { "chrono_layout_fidelity", false },
+        { "phono_layout_fidelity", false },
+        { "pulse_layout_fidelity", false },
+        { "canvas_layout_fidelity", false },
+        { "mixdeck_layout_fidelity", false },
+        { "inlay_layout_fidelity", false },
+        { "chord_layout_fidelity", false },
+        { "substrate_layout_fidelity", false },
+        { "slate_layout_fidelity", false },
 
         { "service_audio", true },
         { "service_app_audio", true },
@@ -102,19 +113,19 @@ public class HubParityBacklogTests
         ["tessera_media_wnp"] = nameof(WebNowPlayingMergeTests.Merge_overlays_wnp_cover_when_smtc_thumbnail_missing),
         ["tile_tessera_mvp"] = nameof(TesseraCapabilityTests.Armed_tessera_shows_flyout_on_volume_change),
         ["tile_mixdeck_skeleton"] = nameof(HonestyGateTests.Mixdeck_is_capability_with_app_audio_surface),
-        ["tile_mixdeck_mvp"] = nameof(HonestyGateTests.Mixdeck_mvp_bar_documented_and_capability_opens_via_bridge),
-        ["tile_chrono_mvp"] = nameof(HonestyGateTests.Widget_mvp_bars_documented_and_services_exist),
-        ["tile_phono_mvp"] = nameof(HonestyGateTests.Widget_mvp_bars_documented_and_services_exist),
-        ["tile_pulse_mvp"] = nameof(HonestyGateTests.Widget_mvp_bars_documented_and_services_exist),
-        ["tile_canvas_mvp"] = nameof(HonestyGateTests.Widget_mvp_bars_documented_and_services_exist),
+        ["tile_mixdeck_mvp"] = nameof(OverlayBehaviorTests.CloseOnEscape_honors_capability_settings),
+        ["tile_chrono_mvp"] = nameof(StyleCatalogCoverageTests.Flagship_styles_are_documented_without_flipping_fidelity_flags),
+        ["tile_phono_mvp"] = nameof(StyleCatalogCoverageTests.Flagship_styles_are_documented_without_flipping_fidelity_flags),
+        ["tile_pulse_mvp"] = nameof(StyleCatalogCoverageTests.Flagship_styles_are_documented_without_flipping_fidelity_flags),
+        ["tile_canvas_mvp"] = nameof(StyleCatalogCoverageTests.Flagship_styles_are_documented_without_flipping_fidelity_flags),
         ["tile_chrono_skeleton"] = nameof(HonestyGateTests.Widget_modules_are_catalog_widgets),
         ["tile_phono_skeleton"] = nameof(HonestyGateTests.Widget_modules_are_catalog_widgets),
         ["tile_pulse_skeleton"] = nameof(HonestyGateTests.Widget_modules_are_catalog_widgets),
         ["tile_canvas_skeleton"] = nameof(HonestyGateTests.Widget_modules_are_catalog_widgets),
         ["tile_inlay_skeleton"] = nameof(HonestyGateTests.Hotkey_caps_register_in_catalog),
-        ["tile_inlay_mvp"] = nameof(HonestyGateTests.Inlay_mvp_bar_documented_and_capability_opens_via_bridge),
-        ["tile_chord_mvp"] = nameof(HonestyGateTests.Chord_mvp_bar_documented_and_capability_opens_via_bridge),
-        ["tile_substrate_mvp"] = nameof(HonestyGateTests.Substrate_mvp_bar_documented_and_capability_opens_via_bridge),
+        ["tile_inlay_mvp"] = nameof(OverlayBehaviorTests.Inlay_catalog_search_finds_builtins_and_pins),
+        ["tile_chord_mvp"] = nameof(OverlayBehaviorTests.CloseOnEscape_honors_capability_settings),
+        ["tile_substrate_mvp"] = nameof(WidgetChromeTests.Tile_overlay_context_menu_contract_lists_required_actions),
         ["tile_slate_mvp"] = nameof(HonestyGateTests.Slate_mvp_bar_documented_and_idle_opens_via_bridge),
         ["style_catalog_jaxcore_ids"] = nameof(StyleCatalogTests.Catalog_covers_widget_modules),
     };
@@ -159,6 +170,15 @@ public class HubParityBacklogTests
         map["tile_phono_mvp"].Should().BeTrue();
         map["tile_pulse_mvp"].Should().BeTrue();
         map["tile_canvas_mvp"].Should().BeTrue();
+        map["chrono_layout_fidelity"].Should().BeFalse();
+        map["phono_layout_fidelity"].Should().BeFalse();
+        map["pulse_layout_fidelity"].Should().BeFalse();
+        map["canvas_layout_fidelity"].Should().BeFalse();
+        map["mixdeck_layout_fidelity"].Should().BeFalse();
+        map["inlay_layout_fidelity"].Should().BeFalse();
+        map["chord_layout_fidelity"].Should().BeFalse();
+        map["substrate_layout_fidelity"].Should().BeFalse();
+        map["slate_layout_fidelity"].Should().BeFalse();
     }
 }
 
@@ -191,10 +211,11 @@ public class HonestyGateTests
     }
 
     [Fact]
-    public void Inlay_mvp_bar_documented_and_capability_opens_via_bridge()
+    public void Inlay_mvp_bar_documented_and_catalog_behavior_proven()
     {
         StyleCatalog.IdsFor("Inlay").Should().Contain("Win11");
         typeof(InlaySettings).GetProperty(nameof(InlaySettings.Pins)).Should().NotBeNull();
+        LaunchTargetCatalog.Search("notepad").Should().NotBeEmpty();
         InlayHostBridgeAccessor.OpenOverlayAsync = () => Task.CompletedTask;
         try { InlayHostBridgeAccessor.OpenOverlayAsync.Should().NotBeNull(); }
         finally { InlayHostBridgeAccessor.OpenOverlayAsync = null; }

@@ -2,6 +2,12 @@
 
 Rainmeter **Tessera** promised YourFlyouts-class volume / brightness / media / lock / airplane **flyouts** that replace the stock Windows OSD while the skin was active.
 
+## Archive reference
+
+- Upstream: [Jax-Core/YourFlyouts](https://github.com/Jax-Core/YourFlyouts)
+- Screenshots: [YourFlyouts/Screenshots.md](https://github.com/Jax-Core/YourFlyouts/blob/main/Screenshots.md)
+- Promised behavior below is derived from upstream README + skin structure, not Host implementation.
+
 ## Promised behavior
 
 - Volume, brightness, media, caps/num/scroll lock, and airplane-mode flyouts

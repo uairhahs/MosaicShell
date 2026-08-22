@@ -28,6 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Mosaicist\Mosaicist.csproj" />
     <ProjectReference Include="..\MosaicShell.Core\MosaicShell.Core.csproj" />
   </ItemGroup>
 
@@ -36,13 +37,8 @@
     If MosaicShell.Host.exe is still running (tray), that PE can be truncated mid-write and
     the next build fails with MSB4018 BadImageFormatException "Image is too small".
   -->
-  <Target Name="StopRunningHostBeforeCreateAppHost"
-          BeforeTargets="CreateAppHost"
-          Condition="'$(OS)' == 'Windows_NT' and '$(Configuration)' == 'Debug'">
-    <Exec Command="taskkill /F /IM MosaicShell.Host.exe /T &gt;NUL 2&gt;&amp;1 &amp; exit /B 0"
-          IgnoreExitCode="true"
-          StandardOutputImportance="low"
-          StandardErrorImportance="low" />
+  <Target Name="StopRunningHostBeforeCreateAppHost" BeforeTargets="CreateAppHost" Condition="'$(OS)' == 'Windows_NT' and '$(Configuration)' == 'Debug'">
+    <Exec Command="taskkill /F /IM MosaicShell.Host.exe /T &gt;NUL 2&gt;&amp;1 &amp; exit /B 0" IgnoreExitCode="true" StandardOutputImportance="low" StandardErrorImportance="low" />
   </Target>
 
   <Target Name="EnsureAppHostSourceAssemblyIsValid" BeforeTargets="CreateAppHost">
@@ -50,8 +46,6 @@
       <_AppHostSourceDll Condition="Exists('$(IntermediateOutputPath)Avalonia\$(TargetName)$(TargetExt)')">$(IntermediateOutputPath)Avalonia\$(TargetName)$(TargetExt)</_AppHostSourceDll>
       <_AppHostSourceDll Condition="'$(_AppHostSourceDll)' == ''">$(IntermediateOutputPath)$(TargetName)$(TargetExt)</_AppHostSourceDll>
     </PropertyGroup>
-    <Error
-      Condition="Exists('$(_AppHostSourceDll)') And $([System.IO.FileInfo]::new('$(_AppHostSourceDll)').Length) &lt; 512"
-      Text="Intermediate assembly is truncated ($(_AppHostSourceDll)). Close MosaicShell.Host, then run: dotnet clean --project MosaicShell.Host &amp;&amp; dotnet build --project MosaicShell.Host" />
+    <Error Condition="Exists('$(_AppHostSourceDll)') And $([System.IO.FileInfo]::new('$(_AppHostSourceDll)').Length) &lt; 512" Text="Intermediate assembly is truncated ($(_AppHostSourceDll)). Close MosaicShell.Host, then run: dotnet clean --project MosaicShell.Host &amp;&amp; dotnet build --project MosaicShell.Host" />
   </Target>
 </Project>

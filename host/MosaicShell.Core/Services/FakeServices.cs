@@ -39,19 +39,32 @@ public sealed class FakeAppAudioService : IAppAudioService
         var i = Sessions.FindIndex(s => s.Id == sessionId);
         if (i < 0) return;
         Sessions[i] = Sessions[i] with { Volume = volume };
+        SessionsChanged?.Invoke(this, EventArgs.Empty);
     }
     public void SetMuted(string sessionId, bool muted)
     {
         var i = Sessions.FindIndex(s => s.Id == sessionId);
         if (i < 0) return;
         Sessions[i] = Sessions[i] with { IsMuted = muted };
+        SessionsChanged?.Invoke(this, EventArgs.Empty);
     }
     public void Dispose() { }
 }
 
 public sealed class FakeMediaSessionService : IMediaSessionService
 {
-    public MediaSessionInfo? Current { get; set; }
+    private MediaSessionInfo? _current;
+
+    public MediaSessionInfo? Current
+    {
+        get => _current;
+        set
+        {
+            _current = value;
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
     public event EventHandler? Changed;
     public event EventHandler? ProgressChanged;
     public void PumpTimeline()

@@ -50,4 +50,19 @@ Each module follows the Tessera pattern: thin `Tiles/{Id}` stub + real code in `
 | **B4** | Slate | MVP | Idle overlay |
 | **B5** | Hub / repo | **Done** | Host-only docs; Rainmeter trees removed |
 
-Further fidelity (StyleCatalog skins, YourFlyouts pixel parity) remains iterative — not blocked on Rainmeter trees.
+Further fidelity (StyleCatalog skins, YourFlyouts pixel parity) remains iterative — not blocked on Rainmeter trees. Upstream Rainmeter reference: [Jax-Core org](https://github.com/Jax-Core) (archives are reference, not runtime).
+
+## Phase C (post-B5 fidelity)
+
+Archives on GitHub replace in-repo Rainmeter trees. Phase C is **optional polish** gated by `*_layout_fidelity` flags — do not flip true without screenshot-level companion proofs.
+
+| Phase | Focus | Reference archive | Exit signal |
+|-------|--------|-------------------|-------------|
+| **C0** | Archive cross-refs in `docs/legacy/` | [Jax-Core](https://github.com/Jax-Core) | Every legacy page links upstream repo |
+| **C1** | Tessera named styles beyond Fluent/Win11/Center | [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) | `tessera_layout_fidelity` (still false until pixel proofs) |
+| **C2** | Widget StyleCatalog skins | ModularClocks / ModularPlayers / ModularVisualizer / Plainext | Per-widget `*_layout_fidelity` flags |
+| **C3** | Capability overlay polish | YourMixer / ValliStart / Keylaunch / MIUI-Shade / IdleStyle | Richer Mixdeck/Inlay UX; Chord motion; Substrate tiles; Slate idle |
+| **C4** | Installer / release | Local `Tiles/` stubs + Host zip | Mosaicist copies native stub only; no `.rmskin` |
+
+**Non-goals:** Rainmeter plugins, CoreShell hub, remote `iwr|iex`, MagickMeter wallpaper blur, full JaxCore GitBook settings parity. See [`docs/legacy/README.md`](legacy/README.md).
+

@@ -53,7 +53,7 @@ public partial class MainViewModel : ViewModelBase
         [
             new("Welcome", "First-run picks, batch install, startup.", "Welcome", "/Assets/Modules/Inlay.png"),
             new("Tiles", "Install widgets or set tiles (Tessera flyouts, launchers).", "Tiles", "/Assets/Modules/Tessera.png"),
-            new("About", "MosaicShell is a native host re-write. The app allows for desktop customisation and tool suite to tailor your experience and relies solely on the background CapabilityDaemon for persistence. Th app is fully self-contained and extensible.", "About", "/Assets/MosaicShell.png"),
+            new("About", "MosaicShell is a native host re-write. The app adds desktop customisation and a tool suite to tailor your experience which rely solely on the background CapabilityDaemon for persistence.", "About", "/Assets/MosaicShell.png"),
         ];
 
         ModuleStyleOptions = new ObservableCollection<string>();

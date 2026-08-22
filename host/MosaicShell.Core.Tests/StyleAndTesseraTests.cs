@@ -17,6 +17,20 @@ public class StyleCatalogTests
     }
 
     [Fact]
+    public void Tessera_layout_coverage_partitions_style_catalog()
+    {
+        TesseraLayoutCoverage.CoversCatalog().Should().BeTrue();
+        foreach (var id in StyleCatalog.IdsFor("Tessera"))
+        {
+            var polished = TesseraLayoutCoverage.IsPolished(id);
+            var approx = TesseraLayoutCoverage.IsApproximate(id);
+            (polished ^ approx).Should().BeTrue($"style {id} must be polished or approximate");
+        }
+        TesseraLayoutCoverage.IsPolished("Fluent").Should().BeTrue();
+        TesseraLayoutCoverage.IsApproximate("Plainext").Should().BeTrue();
+    }
+
+    [Fact]
     public void Catalog_covers_widget_modules()
     {
         StyleCatalog.IdsFor("Chrono").Should().NotBeEmpty();

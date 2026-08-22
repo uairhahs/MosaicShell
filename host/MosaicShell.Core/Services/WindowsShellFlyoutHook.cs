@@ -193,7 +193,7 @@ public sealed class WindowsShellFlyoutHook : IShellFlyoutTriggerSource
 public sealed class NullShellFlyoutTriggerSource : IShellFlyoutTriggerSource
 {
     public bool IsActive => false;
-    public event EventHandler<ShellFlyoutKind>? Triggered;
+    public event EventHandler<ShellFlyoutKind>? Triggered { add { } remove { } }
     public void Start() { }
     public void Stop() { }
     public void Dispose() { }

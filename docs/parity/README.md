@@ -141,3 +141,25 @@ True flags map to named tests in `HubParityBacklogTests.CompanionProof` (e.g. `A
 ## Supersession waves
 
 See [native-rewrite.md](../native-rewrite.md). B5 (Host-only repo) is complete.
+
+## Phase C layout fidelity flags
+
+Flip to **true** only when a module meets screenshot-level parity vs its [Jax-Core archive](../legacy/README.md). All default **false** in `HubParityBacklogTests`.
+
+| Flag | Module | Upstream archive |
+|------|--------|------------------|
+| `tessera_layout_fidelity` | Tessera | YourFlyouts |
+| `mixdeck_layout_fidelity` | Mixdeck | YourMixer |
+| `inlay_layout_fidelity` | Inlay | ValliStart |
+| `chord_layout_fidelity` | Chord | Keylaunch |
+| `substrate_layout_fidelity` | Substrate | MIUI-Shade |
+| `slate_layout_fidelity` | Slate | IdleStyle |
+| `chrono_layout_fidelity` | Chrono | ModularClocks |
+| `phono_layout_fidelity` | Phono | ModularPlayers |
+| `pulse_layout_fidelity` | Pulse | ModularVisualizer |
+| `canvas_layout_fidelity` | Canvas | Plainext |
+
+Tessera Phase C1 maturity tiers live in `TesseraLayoutCoverage` (polished vs approximate). `tessera_layout_fidelity` remains false until all StyleCatalog ids pass visual proofs.
+
+| `native_tile_overlay_runtime` | **false** — full StyleCatalog pixel skins as dedicated runtime; not a Rainmeter interpreter |
+

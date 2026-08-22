@@ -8,8 +8,7 @@ using MosaicShell.Core.Shp;
 namespace Mosaicist;
 
 /// <summary>
-/// MosaicShell installer CLI - downloads release assets and extracts modules.
-/// Never uses iwr|iex or ExecutionPolicy Bypass remote script execution.
+/// MosaicShell installer CLI — copies native Tiles/ stubs into the modules directory.
 /// </summary>
 public static class Program
 {
@@ -44,26 +43,22 @@ public static class Program
     private static void PrintHelp()
     {
         Console.WriteLine("""
-            Mosaicist - MosaicShell installer (fully local)
+            Mosaicist - MosaicShell native module installer
 
             Commands:
               list
               scale [--reset-user]
               hash <file>
               install-module <id>
-              install-module <id> --zip <path>
-              install-module <id> --url <https> --sha256 <hex>
               uninstall-module <id>
               import-shp <file.shp>
 
             Examples:
               Mosaicist list
-              Mosaicist hash .\Tessera.zip
+              Mosaicist hash .\release.zip
               Mosaicist install-module Canvas
               Mosaicist uninstall-module Canvas
               Mosaicist import-shp .\Nordic{0}.shp
-              Mosaicist install-module Tessera --zip .\Tessera.zip
-              Mosaicist install-module Canvas --url https://example/Canvas.zip --sha256 abc...
             """);
     }
 
@@ -109,42 +104,15 @@ public static class Program
 
     private static async Task<int> CmdInstallModuleAsync(string[] args)
     {
-        if (args.Length < 1) return Fail("Usage: install-module <id> [--zip <path> | --url <https> --sha256 <hex>]");
+        if (args.Length < 1) return Fail("Usage: install-module <id>");
         var id = args[0];
         AppPaths.EnsureLayout();
 
         if (!ModuleCatalog.TryGet(id, out _))
             return Fail($"Unknown module id '{id}'.");
 
-        string? zip = GetOpt(args, "--zip");
-        string? url = GetOpt(args, "--url");
-        string? sha = GetOpt(args, "--sha256");
-        var installer = new ModuleInstaller();
-
-        if (!string.IsNullOrWhiteSpace(zip))
-        {
-            if (!File.Exists(zip)) return Fail($"Zip not found: {zip}");
-            var zipPath = Path.GetFullPath(zip);
-            Console.WriteLine($"Using local package: {zipPath}");
-            await installer.InstallPackageAsync(zipPath, id);
-        }
-        else if (!string.IsNullOrWhiteSpace(url))
-        {
-            if (string.IsNullOrWhiteSpace(sha))
-                return Fail("--sha256 is required when using --url (integrity check).");
-            Console.WriteLine($"Downloading {url} …");
-            var downloader = new ReleaseDownloader();
-            var zipPath = await downloader.DownloadAsync(
-                new ReleaseAsset { Url = url, Sha256 = sha, FileName = $"{id}.zip" },
-                AppPaths.CacheDirectory);
-            Console.WriteLine($"Verified SHA-256 and saved to {zipPath}");
-            await installer.InstallPackageAsync(zipPath, id);
-        }
-        else
-        {
-            Console.WriteLine($"Installing {id} from source tree or GitHub release…");
-            await installer.InstallAsync(id);
-        }
+        Console.WriteLine($"Installing {id} from Tiles/{id}/ native stub…");
+        await new ModuleInstaller().InstallAsync(id);
 
         Console.WriteLine($"Installed {id} → {Path.Combine(AppPaths.ModulesDirectory, id)}");
         return 0;
@@ -168,13 +136,5 @@ public static class Program
         if (result.ImportedModules.Count > 0)
             Console.WriteLine("Modules: " + string.Join(", ", result.ImportedModules));
         return result.Success ? 0 : 1;
-    }
-
-    private static string? GetOpt(string[] args, string name)
-    {
-        for (var i = 0; i < args.Length - 1; i++)
-            if (args[i].Equals(name, StringComparison.OrdinalIgnoreCase))
-                return args[i + 1];
-        return null;
     }
 }

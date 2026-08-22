@@ -61,6 +61,8 @@ public sealed class TesseraSettings
 public sealed class MixdeckSettings
 {
     public string Style { get; set; } = "Fluent";
+    /// <summary>YourMixer-inspired palette (Default, Dark, Light, Accent, Frost, Midnight, Sunset).</summary>
+    public string ColorScheme { get; set; } = "Default";
     public string HotkeyGesture { get; set; } = "Ctrl+Alt+M";
     public bool CloseOnEscape { get; set; } = true;
 }
@@ -69,6 +71,7 @@ public sealed class InlaySettings
 {
     public string Style { get; set; } = "Win11";
     public string HotkeyGesture { get; set; } = "Ctrl+Alt+I";
+    public bool CloseOnEscape { get; set; } = true;
     public List<string> Pins { get; set; } = ["notepad", "calc"];
 }
 
@@ -76,6 +79,7 @@ public sealed class ChordSettings
 {
     public string Style { get; set; } = "Center";
     public string HotkeyGesture { get; set; } = "Ctrl+Alt+K";
+    public bool CloseOnEscape { get; set; } = true;
     public List<ChordAction> Actions { get; set; } =
     [
         new() { Name = "Notepad", Target = "notepad" },
@@ -95,6 +99,7 @@ public sealed class SubstrateSettings
     public string Style { get; set; } = "DEFAULT";
     public string HotkeyGesture { get; set; } = "Ctrl+Alt+Q";
     public bool ShowMute { get; set; } = true;
+    public bool CloseOnEscape { get; set; } = true;
 }
 
 public sealed class SlateSettings

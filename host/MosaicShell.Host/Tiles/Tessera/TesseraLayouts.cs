@@ -615,9 +615,9 @@ internal static class TesseraLayouts
             HorizontalAlignment = HorizontalAlignment.Center,
             Children =
             {
-                IconBtn(MaterialIconKind.Shuffle, () => { }),
+                IconBtn(MaterialIconKind.Shuffle, () => _ = vm.ToggleShuffleAsync()),
                 IconBtn(MaterialIconKind.HeartOutline, () => { }),
-                IconBtn(MaterialIconKind.Repeat, () => { })
+                IconBtn(MaterialIconKind.Repeat, () => _ = vm.ToggleRepeatAsync())
             }
         }, 28, new Thickness(8), w: 52, h: 130);
 
@@ -647,11 +647,21 @@ internal static class TesseraLayouts
 
         var right = new StackPanel { Spacing = 10, Children = { volPill, eq } };
         var left = new StackPanel { Spacing = 10, Children = { transport, extras } };
-        return new StackPanel
+        var row = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 10,
             Children = { left, right }
+        };
+        if (!vm.ShowMediaStrip) return row;
+        return new StackPanel
+        {
+            Spacing = 10,
+            Children =
+            {
+                TesseraMediaPanel.Create(vm, TesseraMediaMode.ModernCard),
+                row
+            }
         };
     }
 

@@ -2,6 +2,11 @@
 
 Rainmeter **Chrono** promised a desktop **clock collection** with multiple visual styles.
 
+## Archive reference
+
+- Upstream: [Jax-Core/ModularClocks](https://github.com/Jax-Core/ModularClocks)
+- Promised behavior below is derived from upstream README + skin structure, not Host implementation.
+
 ## Promised behavior
 
 - Live clock and date

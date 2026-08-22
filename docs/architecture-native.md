@@ -14,7 +14,7 @@
 | Install stub | `Tiles/Tessera/` (`module.native.json` + README) → copied to `%…/Modules/Tessera` |
 | Arm gate | `ModuleCatalog.IsInstalled` = directory exists under `Modules/` |
 
-`ModuleInstaller` treats `module.native.json` / `native.marker` as a valid module root. Local `Tiles/{Id}` installs are always native stubs (B5 Host-only repo).
+`ModuleInstaller` copies native stubs from `Tiles/{Id}/` (`module.native.json` required). Mosaicist is the only install path — no Rainmeter, no `.rmskin`, no remote skin download (see Phase C4 in [`native-rewrite.md`](native-rewrite.md)).
 
 ## Install stubs
 

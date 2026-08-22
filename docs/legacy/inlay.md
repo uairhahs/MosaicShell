@@ -2,6 +2,12 @@
 
 Rainmeter **Inlay** promised a customizable **Start menu replacement**.
 
+## Archive reference
+
+- Upstream: [Jax-Core/ValliStart](https://github.com/Jax-Core/ValliStart)
+- Screenshots: [ValliStart/Screenshots.md](https://github.com/Jax-Core/ValliStart/blob/main/Screenshots.md)
+- Promised behavior below is derived from upstream README + skin structure, not Host implementation.
+
 ## Promised behavior
 
 - Pinned apps / shortcuts and module shortcuts

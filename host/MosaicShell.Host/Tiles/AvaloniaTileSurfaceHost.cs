@@ -211,7 +211,8 @@ public sealed class TileOverlayWindow : Window
 
         KeyDown += (_, e) =>
         {
-            if (e.Key == Key.Escape && !IsDesktopWidget)
+            if (e.Key == Key.Escape && !IsDesktopWidget
+                && ModuleOverlaySettings.CloseOnEscape(ModuleId))
             {
                 e.Handled = true;
                 Close();

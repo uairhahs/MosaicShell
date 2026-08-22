@@ -2,6 +2,11 @@
 
 Rainmeter **Canvas** (Plainext) promised a minimal **plain-text system information** widget.
 
+## Archive reference
+
+- Upstream: [Jax-Core/Plainext](https://github.com/Jax-Core/Plainext)
+- Promised behavior below is derived from upstream README + skin structure, not Host implementation.
+
 ## Promised behavior
 
 - Live CPU / RAM / disk / host (and related) text sections

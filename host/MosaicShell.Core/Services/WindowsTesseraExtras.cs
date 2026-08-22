@@ -125,7 +125,7 @@ public sealed class NullLockKeysService : ILockKeysService
     public LockKeyState Caps => new(LockKeyKind.CapsLock, false);
     public LockKeyState Num => new(LockKeyKind.NumLock, false);
     public LockKeyState Scroll => new(LockKeyKind.ScrollLock, false);
-    public event EventHandler<LockKeyState>? Changed;
+    public event EventHandler<LockKeyState>? Changed { add { } remove { } }
     public void Start() { }
     public void Stop() { }
     public void Dispose() { }
@@ -135,7 +135,7 @@ public sealed class NullAirplaneModeService : IAirplaneModeService
 {
     public bool IsSupported => false;
     public bool IsEnabled => false;
-    public event EventHandler? Changed;
+    public event EventHandler? Changed { add { } remove { } }
     public void Start() { }
     public void Stop() { }
     public void Dispose() { }

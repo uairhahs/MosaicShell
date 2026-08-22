@@ -2,6 +2,11 @@
 
 Rainmeter **Chord** (JaxCore **Keylaunch**) promised an animated **macro-based app launcher**.
 
+## Archive reference
+
+- Upstream: [Jax-Core/Keylaunch](https://github.com/Jax-Core/Keylaunch)
+- Promised behavior below is derived from upstream README + skin structure, not Host implementation.
+
 ## Promised behavior
 
 - Hotkey opens a launcher UI

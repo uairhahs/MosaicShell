@@ -13,11 +13,11 @@ public static class TileSurfaceFactory
         "Phono" => new PhonoTileView(services.Media),
         "Pulse" => new PulseTileView(services.AudioLevels),
         "Tessera" => new TesseraTileView(services.Audio, services.Brightness, services.Media),
-        "Mixdeck" => new MixdeckTileView(services.AppAudio),
+        "Mixdeck" => new MixdeckTileView(services.AppAudio, services.Audio),
         "Inlay" => new InlayTileView(),
         "Slate" => new SlateTileView(),
         "Chord" => new ChordTileView(),
-        "Substrate" => new SubstrateTileView(services.Audio, services.Brightness),
+        "Substrate" => new SubstrateTileView(services.Audio, services.Brightness, services.Media),
         _ => new GenericTileView(info)
     };
 }
