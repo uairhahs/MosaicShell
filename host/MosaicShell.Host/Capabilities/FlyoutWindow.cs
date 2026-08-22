@@ -16,7 +16,7 @@ namespace MosaicShell.Host.Capabilities;
 /// <summary>
 /// Tessera flyout surface. Configured per Avalonia window docs:
 /// TransparencyLevelHint + Transparent Background + TransparencyBackgroundFallback,
-/// SizeToContent, Show(owner), Topmost, Screens for placement.
+/// SizeToContent, unowned Show(), Topmost, Screens for placement.
 /// </summary>
 internal sealed class FlyoutWindow : Window
 {
@@ -28,9 +28,7 @@ internal sealed class FlyoutWindow : Window
     private bool _hover;
     private Size _lastSize;
     private bool _clientSizeLocked;
-
-    private static readonly IBrush FallbackBrush =
-        new SolidColorBrush(Color.FromArgb(245, 0x11, 0x11, 0x1b));
+    private bool _relayouting;
 
     public FlyoutWindow(FlyoutRequest request, Control content, HostServices services)
     {
@@ -38,6 +36,7 @@ internal sealed class FlyoutWindow : Window
         _services = services;
         _material = TesseraFlyoutMaterialFactory.FromPayload(request.Payload);
         TesseraPalette.ApplyMaterial(_material);
+        // Win32 title is for HWND identity only — SystemDecorations.None; never a visible chrome strip.
         Title = $"MosaicShell - {request.ModuleId}";
 
         // docs: SizeToContent for content-sized tool windows
@@ -50,11 +49,21 @@ internal sealed class FlyoutWindow : Window
         Focusable = true;
         IsHitTestVisible = true;
 
-        // Soft frost uses Transparent (not AcrylicBlur) so rounded Tessera panels aren't
-        // backed by a hard OS acrylic rectangle. Background must stay Transparent.
-        TransparencyLevelHint = new[] { WindowTransparencyLevel.Transparent };
-        Background = Brushes.Transparent;
-        TransparencyBackgroundFallback = FallbackBrush;
+        // Soft frost (4fcc41a): Transparent HWND + Skia glass. Opaque mocha + LWA_ALPHA=255
+        // was the empty-HWND recovery path (SoftFrostHwndReady=false).
+        var shellAlpha = TesseraFlyoutWindowPolicy.ResolveWindowBackgroundAlpha(_material);
+        var shell = new SolidColorBrush(Color.FromArgb(shellAlpha, 0x11, 0x11, 0x1b));
+        TransparencyLevelHint = ParseTransparencyHints(
+            TesseraFlyoutWindowPolicy.ResolveTransparencyHints(_material));
+        Background = TesseraFlyoutWindowPolicy.WindowBackgroundBrushIsTransparent
+            ? Brushes.Transparent
+            : shell;
+
+        // Soft frost: composition fallback must be Transparent (α≥170 mocha matte-slabs glass).
+        var fallbackAlpha = TesseraFlyoutWindowPolicy.ResolveCompositionFallbackAlpha(_material);
+        TransparencyBackgroundFallback = fallbackAlpha == 0
+            ? Brushes.Transparent
+            : new SolidColorBrush(Color.FromArgb(fallbackAlpha, 0x11, 0x11, 0x1b));
 
         Content = content;
         Opacity = 1;
@@ -71,6 +80,9 @@ internal sealed class FlyoutWindow : Window
         ResetDismissTimer();
     }
 
+    public string Kind => _request.Kind;
+    public string? StyleId => _request.StyleId;
+
     public void EnsureLivePump() => StartLivePump();
 
     private void StartLivePump()
@@ -79,8 +91,6 @@ internal sealed class FlyoutWindow : Window
             return;
         if (_live is not null) return;
         _live = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
-        double lastVol = double.NaN;
-        bool lastMute = false;
         _live.Tick += (_, _) =>
         {
             try
@@ -92,23 +102,9 @@ internal sealed class FlyoutWindow : Window
                     return;
                 }
 
-                _services.Media.PumpTimeline();
-
-                var vol = _services.Audio.MasterVolume;
-                var mute = _services.Audio.IsMuted;
-                var volPct = (int)Math.Round(Math.Clamp(vol, 0, 1) * 100);
-                var lastPct = double.IsNaN(lastVol) ? int.MinValue : (int)Math.Round(Math.Clamp(lastVol, 0, 1) * 100);
-                if (double.IsNaN(lastVol) || volPct != lastPct || mute != lastMute)
-                {
-                    lastVol = vol;
-                    lastMute = mute;
-                    ResetDismissTimer();
-                }
-
-                if (Content is not Control root || TesseraLiveHost.FindIn(root) is not { } host)
-                    return;
-
-                host.ApplyLive(_services, _request);
+                // Single volume owner = coalesced Patch (PumpMayWriteVolumeBindings = false).
+                if (TesseraFlyoutLiveSyncPolicy.PumpMayAdvanceMediaTimeline)
+                    _services.Media.PumpTimeline();
             }
             catch (Exception ex)
             {
@@ -164,16 +160,9 @@ internal sealed class FlyoutWindow : Window
         if (TesseraLiveHost.FindIn(root) is not { } liveHost)
             return false;
 
-        if (request.Kind.Equals("vol", StringComparison.OrdinalIgnoreCase)
-            || request.Kind.Equals("bright", StringComparison.OrdinalIgnoreCase))
-        {
-            var vm = TesseraFlyoutViewModel.FromRequest(services, request);
-            var hasMediaStrip = liveHost.Bindings.MediaTitle is not null
-                                || liveHost.Bindings.MediaScrub is not null;
-            if (vm.ShowMediaStrip != hasMediaStrip)
-                return false;
-        }
-
+        // Do NOT force a full rebuild when media-strip presence flips mid-volume.
+        // Rebuild + PresentFlyout (Win32 restack ×3) on every Audio.Changed freezes the app.
+        // Strip structure can catch up on the next cold Show.
         liveHost.ApplyLive(services, request);
         _request = request;
         if (resetDismiss) ResetDismissTimer();
@@ -199,6 +188,7 @@ internal sealed class FlyoutWindow : Window
 
     private void OnLayoutUpdated(object? sender, EventArgs e)
     {
+        if (_relayouting) return;
         var s = Bounds.Size;
         if (s.Width < 2 || s.Height < 2) return;
         if (Math.Abs(s.Width - _lastSize.Width) < 0.5 && Math.Abs(s.Height - _lastSize.Height) < 0.5)
@@ -214,6 +204,8 @@ internal sealed class FlyoutWindow : Window
 
     private void RelayoutImmediate()
     {
+        if (_relayouting) return;
+        _relayouting = true;
         try
         {
             InvalidateMeasure();
@@ -249,10 +241,15 @@ internal sealed class FlyoutWindow : Window
                 xPad,
                 yPad);
             Position = new PixelPoint(x, y);
+            _lastSize = Bounds.Size;
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[Tessera position] {ex.Message}");
+        }
+        finally
+        {
+            _relayouting = false;
         }
     }
 
@@ -318,6 +315,52 @@ internal sealed class FlyoutWindow : Window
     {
         if (!_request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase)) return;
         ResetDismissTimer();
+    }
+
+    // Avalonia 11: WindowTransparencyLevel is a struct, not an enum — Enum.TryParse throws
+    // "Type provided must be an Enum" and aborts flyout construction (see flyout.log).
+    private static WindowTransparencyLevel[] ParseTransparencyHints(IReadOnlyList<string> hints)
+    {
+        var list = new List<WindowTransparencyLevel>();
+        foreach (var hint in hints)
+        {
+            if (TryMapTransparencyHint(hint, out var level))
+                list.Add(level);
+        }
+
+        if (list.Count == 0)
+            list.Add(TesseraFlyoutWindowPolicy.MustRequestOpaqueToolWindow
+                ? WindowTransparencyLevel.None
+                : WindowTransparencyLevel.Transparent);
+        return list.ToArray();
+    }
+
+    private static bool TryMapTransparencyHint(string? hint, out WindowTransparencyLevel level)
+    {
+        level = WindowTransparencyLevel.None;
+        if (string.IsNullOrWhiteSpace(hint))
+            return false;
+
+        switch (hint.Trim().ToLowerInvariant())
+        {
+            case "none":
+                level = WindowTransparencyLevel.None;
+                return true;
+            case "transparent":
+                level = WindowTransparencyLevel.Transparent;
+                return true;
+            case "blur":
+                level = WindowTransparencyLevel.Blur;
+                return true;
+            case "acrylicblur":
+                level = WindowTransparencyLevel.AcrylicBlur;
+                return true;
+            case "mica":
+                level = WindowTransparencyLevel.Mica;
+                return true;
+            default:
+                return false;
+        }
     }
 
     private static void AnimateDouble(Animatable target, AvaloniaProperty property, double from, double to, int ms)

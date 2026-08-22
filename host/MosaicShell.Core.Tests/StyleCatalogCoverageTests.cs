@@ -42,5 +42,7 @@ public class StyleCatalogCoverageTests
         TesseraLayoutCoverage.IsPolished("Pixel").Should().BeTrue();
         TesseraLayoutCoverage.UsesStackedMediaStrip("Pixel").Should().BeFalse();
         TesseraLayoutCoverage.UsesStackedMediaStrip("Modern").Should().BeTrue();
+        TesseraLayoutCoverage.RequiresLiveVolumePercentLabel("Amber").Should().BeTrue();
+        TesseraLayoutCoverage.RequiresLiveVolumePercentLabel("Fluent").Should().BeFalse();
     }
 }

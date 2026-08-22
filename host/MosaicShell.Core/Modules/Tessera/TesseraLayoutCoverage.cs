@@ -62,4 +62,11 @@ public static class TesseraLayoutCoverage
     /// <summary>Styles that embed media controls in-layout (no Modern-style stacked strip on volume).</summary>
     public static bool UsesStackedMediaStrip(string styleId) =>
         !styleId.Equals("Pixel", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Amber’s volume chrome is a glass meter with no glyph — Host must register a live percent
+    /// so Patch/ApplyLive has readable feedback (otherwise the pill reads as a static block).
+    /// </summary>
+    public static bool RequiresLiveVolumePercentLabel(string styleId) =>
+        styleId.Equals("Amber", StringComparison.OrdinalIgnoreCase);
 }

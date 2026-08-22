@@ -8,7 +8,6 @@ using MosaicShell.Core.Capabilities.BuiltIn;
 using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Runtime;
-using MosaicShell.Core.Scale;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
 using MosaicShell.Core.Shp;
@@ -25,7 +24,6 @@ namespace MosaicShell.Host.ViewModels;
 
 public partial class MainViewModel : ViewModelBase
 {
-    private readonly ScaleContract _scale;
     private readonly ModuleInstaller _installer = new();
     private readonly ITileRuntime _runtime;
     private readonly ModuleLauncher _launcher;
@@ -52,9 +50,6 @@ public partial class MainViewModel : ViewModelBase
         _hostUi = hostUi ?? NullHostUiBridge.Instance;
 
         AppPaths.EnsureLayout();
-        var settings = ScaleSettingsStore.Load();
-        _scale = ScaleContract.FromSettings(settings);
-        ScaleSettingsStore.Save(_scale.ToSettings());
         Hub = ModuleSettingsStore.Load("Hub", () => new HubSettings());
 
         HomeCards =
@@ -67,7 +62,6 @@ public partial class MainViewModel : ViewModelBase
         ModuleStyleOptions = new ObservableCollection<string>();
 
         RefreshLibrary();
-        SyncScaleProps();
         Navigate(Hub.WelcomeCompleted ? "Home" : "Welcome");
     }
 
@@ -112,11 +106,6 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _isWelcome;
     [ObservableProperty] private bool _isModuleConfig;
     [ObservableProperty] private bool _showBackButton;
-    [ObservableProperty] private double _layoutScale = 1.0;
-    [ObservableProperty] private double _userScale = 1.0;
-    [ObservableProperty] private double _uiScale = 1.0;
-    [ObservableProperty] private string _scaleSummary = "";
-    [ObservableProperty] private string _userScalePercentLabel = "100%";
     [ObservableProperty] private string _statusMessage = "Ready";
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private string _serviceProbe = "";
@@ -210,8 +199,7 @@ public partial class MainViewModel : ViewModelBase
         if (IsTiles) RefreshLibrary();
         if (IsSettings)
         {
-            SyncScaleProps();
-            SyncServiceProbe();
+                SyncServiceProbe();
             AutostartEnabled = _services.Autostart.IsEnabled;
         }
     }
@@ -402,10 +390,36 @@ public partial class MainViewModel : ViewModelBase
         if (ShowTesseraExtras)
             PersistTesseraFromUi();
         var settings = TesseraFlyoutRequestBuilder.LoadSettings();
+        // Preview: no FocusDim (Z-order fights Transparent/Topmost), land on Host's monitor.
+        settings.UseFocusDim = false;
         var request = new TesseraFlyoutRequestBuilder().Build(_services, settings, "vol");
+        request = request with { MonitorIndex = ResolveHostMonitorIndex(settings.MonitorIndex) };
         _hostUi.PreviewFlyout(request);
         StatusMessage =
-            "Tessera preview requested — if nothing appears, check %LocalAppData%\\MosaicShell\\Cache\\flyout.log";
+            $"Tessera preview → monitor {request.MonitorIndex}. If blank, check %LocalAppData%\\MosaicShell\\Cache\\flyout.log";
+    }
+
+    private static int ResolveHostMonitorIndex(int fallback)
+    {
+        try
+        {
+            if (Avalonia.Application.Current?.ApplicationLifetime
+                is not Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+                || desktop.MainWindow is not { } main)
+                return Math.Clamp(fallback, 1, 8);
+
+            var screens = main.Screens?.All?.ToList() ?? [];
+            if (screens.Count == 0)
+                return Math.Clamp(fallback, 1, 8);
+
+            var screen = main.Screens?.ScreenFromWindow(main) ?? screens.FirstOrDefault(s => s.IsPrimary) ?? screens[0];
+            var idx = screens.FindIndex(s => s.WorkingArea == screen.WorkingArea && Math.Abs(s.Scaling - screen.Scaling) < 0.001);
+            return idx >= 0 ? idx + 1 : Math.Clamp(fallback, 1, 8);
+        }
+        catch
+        {
+            return Math.Clamp(fallback, 1, 8);
+        }
     }
 
     private void PersistTesseraFromUi()
@@ -726,36 +740,6 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void ResetUserScale()
-    {
-        _scale.ResetUserScale();
-        PersistScale();
-        _tileHost?.ApplyUserScale(_scale.UserScale);
-    }
-
-    [RelayCommand]
-    private void ApplyUserScale()
-    {
-        try
-        {
-            _scale.SetUserScale(UserScale);
-            PersistScale();
-            _tileHost?.ApplyUserScale(UserScale);
-        }
-        catch (ArgumentOutOfRangeException) { UserScale = _scale.UserScale; }
-    }
-
-    partial void OnUserScaleChanged(double value)
-    {
-        // Live preview while dragging; Apply still commits LayoutScale / tiles.
-        // LayoutScale is user preference only — Avalonia already applies per-monitor DPI.
-        UserScalePercentLabel = $"{value * 100:0}%";
-        LayoutScale = Math.Clamp(value, 0.5, 2.0);
-        UiScale = Math.Clamp(value, 0.75, 2.0);
-        ScaleSummary = $"User zoom ×{value:0.##} (OS DPI handled by Avalonia DIPs)";
-    }
-
-    [RelayCommand]
     private void ToggleAutostart()
     {
         AutostartEnabled = !AutostartEnabled;
@@ -956,22 +940,6 @@ public partial class MainViewModel : ViewModelBase
         }
         var result = ShpImporter.Import(path);
         StatusMessage = result.Message;
-    }
-
-    private void PersistScale()
-    {
-        ScaleSettingsStore.Save(_scale.ToSettings());
-        SyncScaleProps();
-        StatusMessage = $"Scale saved! Layout ×{LayoutScale:0.##}";
-    }
-
-    private void SyncScaleProps()
-    {
-        UserScale = _scale.UserScale; // also refreshes percent label + ScaleSummary via OnUserScaleChanged
-        UiScale = _scale.UiScale;
-        LayoutScale = Math.Clamp(_scale.UserScale, 0.5, 2.0);
-        UserScalePercentLabel = $"{UserScale * 100:0}%";
-        ScaleSummary = $"User zoom ×{_scale.UserScale:0.##} (OS DPI handled by Avalonia DIPs)";
     }
 
     private void SyncServiceProbe()

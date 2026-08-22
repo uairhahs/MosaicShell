@@ -9,5 +9,7 @@
     "sarif-viewer.connectToGithubCodeScanning": "off",
     "csharp-dev-tools.solutionViewer.selectedWorkspaceSolutions": [
         "host/MosaicShell.sln"
-    ]
+    ],
+    "csharp-dev-tools.build.configuration": "Debug",
+    "dotnet.defaultSolution": "host/MosaicShell.App.sln"
 }

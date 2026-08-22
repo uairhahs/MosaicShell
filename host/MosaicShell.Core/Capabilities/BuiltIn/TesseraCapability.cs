@@ -193,30 +193,30 @@ public sealed class TesseraCapability : IModuleCapability
     {
         try
         {
+            string openKind;
+            string style;
             lock (_gate)
             {
                 EnsureSettingsFresh();
-                var now = DateTimeOffset.UtcNow;
-                var isStatus = kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
-                               || kind.Equals("flight", StringComparison.OrdinalIgnoreCase);
-                if (!isStatus
-                    && kind == _lastKind
-                    && (now - _lastShowUtc).TotalMilliseconds < 40
-                    && _ui.Flyouts.IsVisible(ModuleId))
-                {
-                    _ui.Flyouts.Update(BuildRequest(kind, payload));
-                    return;
-                }
+                openKind = _lastKind;
+                style = _settings.Style;
                 _lastKind = kind;
-                _lastShowUtc = now;
+                _lastShowUtc = DateTimeOffset.UtcNow;
             }
 
             try { _services.OsdSuppressor.SuppressBurst(3500); } catch { /* soft-fail */ }
+
+            var visible = _ui.Flyouts.IsVisible(ModuleId);
+            var action = TesseraFlyoutLiveSyncPolicy.ResolveAction(
+                visible, openKind, kind, style, style);
             var request = BuildRequest(kind, payload);
-            if (_ui.Flyouts.IsVisible(ModuleId))
-                _ui.Flyouts.Update(request);
-            else
+
+            // Present when cold or structural; Patch when visible same kind/style.
+            // Host coalesces Patch and must not Present/restack on that path.
+            if (action == TesseraFlyoutSyncAction.Present && !visible)
                 _ui.Flyouts.Show(request);
+            else
+                _ui.Flyouts.Update(request);
         }
         catch (Exception ex)
         {

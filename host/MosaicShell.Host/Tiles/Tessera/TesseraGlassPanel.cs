@@ -6,6 +6,7 @@ using Avalonia.Platform;
 using Avalonia.Rendering.SceneGraph;
 using Avalonia.Skia;
 using Avalonia.VisualTree;
+using MosaicShell.Core.Modules.Tessera;
 using SkiaSharp;
 
 namespace MosaicShell.Host.Tiles.Tessera;
@@ -48,9 +49,10 @@ public static class TesseraGlass
 /// <summary>Skia glass shell shared by Tessera chrome.</summary>
 public static class TesseraGlassPanel
 {
-    public const double DefaultBlurRadius = 14;
-    internal const byte BlurredTintAlphaMax = 34;
-    internal const byte FallbackTintAlphaMax = 72;
+    // Pre-consolidation (4fcc41a) values — consolidation crushed these and Soft frost vanished.
+    public const double DefaultBlurRadius = 11;
+    internal const byte BlurredTintAlphaMax = 48;
+    internal const byte FallbackTintAlphaMax = 80;
 
     /// <summary>Cap shell tint so backdrop blur stays visible (true glass, not matte slab).</summary>
     public static Color NormalizeTint(Color color)
@@ -276,7 +278,13 @@ internal sealed class TesseraGlassBackground : Control
         set => SetValue(LightTintOnlyProperty, value);
     }
 
-    protected override Size MeasureOverride(Size availableSize) => default;
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        // Contract: GlassBackgroundClaimsAvailableSize must stay false (4fcc41a paint-only).
+        // Claiming available height Y-stretches Stretch tracks in Amber/CoreUI/Fluent/Win11.
+        _ = TesseraFlyoutGlassPolicy.GlassBackgroundClaimsAvailableSize;
+        return default;
+    }
 
     protected override Size ArrangeOverride(Size finalSize) => finalSize;
 
@@ -285,10 +293,7 @@ internal sealed class TesseraGlassBackground : Control
         if (Bounds.Width <= 0 || Bounds.Height <= 0)
             return;
 
-        // Always paint an opaque-enough base so transparent HWND composition has pixels.
-        var fallback = new SolidColorBrush(Color.FromArgb(220, 0x11, 0x11, 0x1b));
-        context.DrawRectangle(fallback, null, Bounds);
-
+        // 4fcc41a: Custom Skia only — no Avalonia mocha underlay (that made Soft frost look matte/black).
         context.Custom(new TesseraGlassDrawOperation(
             this,
             Bounds,
@@ -377,30 +382,32 @@ internal sealed class TesseraGlassBackground : Control
         var rect = SKRect.Create(0, 0, w, h);
         var round = new SKRoundRect(rect, (float)cornerRadius, (float)cornerRadius);
 
+        // Always paint translucent frost chrome. Do NOT GDI/BitBlt or shared-capture into
+        // this layer — that self-captures the flyout as opaque black (Soft frost → black boxes).
+        // Real wallpaper shows through Transparent HWND + alpha frost (4fcc41a fake-glass recipe).
+        TesseraGlassDrawOperation.DrawFallbackGlass(lc, round, w, h, tint);
+
         var drewBackdrop = false;
-        if (UseSharedBackdrop)
+        var maySample = TesseraGlass.UseBackdropBlur
+            && !TesseraGlass.PreviewMode
+            && !TesseraGlass.IsEmbeddedPreviewContext(this)
+            && !TesseraFlyoutGlassPolicy.ForbidLiveBackdropPixelSampling;
+
+        if (maySample && UseSharedBackdrop)
         {
             var shared = TesseraSharedBackdropHost.FindAncestor(this);
             if (shared?.TryBlitSubrect(lc, round, this, bounds, blurRadius) == true)
                 drewBackdrop = true;
         }
 
-        var liveBackdrop = TesseraGlass.UseBackdropBlur
-            && !TesseraGlass.PreviewMode
-            && !TesseraGlass.IsEmbeddedPreviewContext(this);
-
-        if (!drewBackdrop && liveBackdrop)
+        if (maySample && !drewBackdrop)
         {
-            using var screen = TesseraScreenBackdrop.TryCapture(this, bounds);
-            if (screen is not null)
-                drewBackdrop = TesseraGlassDrawOperation.TryDrawImageBackdropBlur(lc, screen, round, blurRadius);
+            // 4fcc41a: blur Avalonia's Skia surface (not GDI). Still gated — can sample empty buffer.
+            drewBackdrop = TesseraGlassDrawOperation.TryDrawBackdropBlur(
+                lc, targetCanvas, sourceSurface, rect, round, blurRadius);
         }
 
-        // Transparent flyout windows have no useful in-window back-buffer — screen or fallback only.
-        if (!drewBackdrop)
-            TesseraGlassDrawOperation.DrawFallbackGlass(lc, round, w, h, tint);
-
-        TesseraGlassDrawOperation.DrawShellTint(lc, round, tint, drewBackdrop, LightTintOnly);
+        TesseraGlassDrawOperation.DrawShellTint(lc, round, tint, drewBackdrop, lightTintOnly: false);
         TesseraGlassDrawOperation.DrawGlassChrome(lc, round, w, h);
 
         _layerCache.Image = layerSurface.Snapshot();
@@ -536,31 +543,31 @@ internal sealed class TesseraGlassDrawOperation : ICustomDrawOperation
 
     internal static void DrawFallbackGlass(SKCanvas canvas, SKRoundRect round, int w, int h, Color tint)
     {
-        var crust = TesseraPalette.Crust;
+        // Recipe from 4fcc41a (pre-consolidation) — dark slab + highlight so Soft frost reads.
         using var basePaint = new SKPaint
         {
-            Color = new SKColor(crust.R, crust.G, crust.B, 88),
+            Color = new SKColor(17, 17, 27, 96),
             IsAntialias = true
         };
         canvas.DrawRoundRect(round, basePaint);
 
-        using var tintWash = new SKPaint
+        using var highlight = new SKPaint
         {
             Shader = SKShader.CreateLinearGradient(
-                new SKPoint(0, h),
-                new SKPoint(w, 0),
-                [new SKColor(tint.R, tint.G, tint.B, 48), new SKColor(tint.R, tint.G, tint.B, 16)],
+                new SKPoint(0, 0),
+                new SKPoint(w * 0.55f, h * 0.55f),
+                [new SKColor(255, 255, 255, 28), new SKColor(255, 255, 255, 6)],
                 [0f, 1f],
                 SKShaderTileMode.Clamp),
             IsAntialias = true,
             BlendMode = SKBlendMode.Plus
         };
-        canvas.DrawRoundRect(round, tintWash);
+        canvas.DrawRoundRect(round, highlight);
 
         using var noisePaint = new SKPaint
         {
             Shader = SKShader.CreatePerlinNoiseFractalNoise(0.85f, 0.6f, 2, 0),
-            Color = new SKColor(255, 255, 255, 6),
+            Color = new SKColor(255, 255, 255, 10),
             IsAntialias = true,
             BlendMode = SKBlendMode.Overlay
         };
@@ -582,12 +589,12 @@ internal sealed class TesseraGlassDrawOperation : ICustomDrawOperation
         if (sk.Alpha == 0)
             return;
 
-        // Light SrcOver tint — keeps blurred wallpaper hue visible.
+        // SoftLight (4fcc41a) — SrcOver over dark frost reads as a matte tint slab.
         using var tintPaint = new SKPaint
         {
             Color = sk,
             IsAntialias = true,
-            BlendMode = SKBlendMode.SrcOver
+            BlendMode = SKBlendMode.SoftLight
         };
         canvas.DrawRoundRect(round, tintPaint);
     }
@@ -595,7 +602,7 @@ internal sealed class TesseraGlassDrawOperation : ICustomDrawOperation
     internal static void DrawGlassChrome(SKCanvas canvas, SKRoundRect round, int w, int h)
     {
         // Uniform edge only — no radial specular (reads as a spotlight on small panels).
-        var edgeAlpha = (byte)(TesseraPalette.UseEdgeBlend ? 22 : 32);
+        var edgeAlpha = (byte)(TesseraPalette.UseEdgeBlend ? 48 : 64);
         using var edgePaint = new SKPaint
         {
             Color = new SKColor(255, 255, 255, edgeAlpha),

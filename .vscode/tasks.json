@@ -9,19 +9,23 @@
                 "build",
                 "${workspaceFolder}/host/MosaicShell.Host/MosaicShell.Host.csproj",
                 "-c",
-                "Debug",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary;ForceNoAlign"
+                "Debug"
             ],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "problemMatcher": "$msCompile"
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true,
+                "close": true
+            }
         },
         {
             "label": "run-host",
-            "dependsOn": "build-host",
             "command": "dotnet",
             "type": "process",
             "args": [
@@ -29,10 +33,14 @@
                 "--project",
                 "${workspaceFolder}/host/MosaicShell.Host/MosaicShell.Host.csproj",
                 "-c",
-                "Debug",
-                "--no-launch-profile"
+                "Debug"
             ],
-            "problemMatcher": "$msCompile"
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "focus": false
+            }
         },
         {
             "label": "build",
@@ -40,7 +48,6 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/host/MosaicShell.Core.Tests/MosaicShell.Core.Tests.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -52,7 +59,6 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/host/MosaicShell.Core.Tests/MosaicShell.Core.Tests.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -64,9 +70,7 @@
             "type": "process",
             "args": [
                 "watch",
-                "run",
-                "--project",
-                "${workspaceFolder}/host/MosaicShell.Core.Tests/MosaicShell.Core.Tests.csproj"
+                "run"
             ],
             "problemMatcher": "$msCompile"
         }

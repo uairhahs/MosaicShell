@@ -2,7 +2,6 @@
 using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Runtime;
-using MosaicShell.Core.Scale;
 using MosaicShell.Core.Shp;
 
 namespace Mosaicist;
@@ -25,7 +24,6 @@ public static class Program
             return args[0] switch
             {
                 "list" => CmdList(),
-                "scale" => CmdScale(args.Skip(1).ToArray()),
                 "hash" => await CmdHashAsync(args.Skip(1).ToArray()),
                 "install-module" => await CmdInstallModuleAsync(args.Skip(1).ToArray()),
                 "install-package" => await CmdInstallPackageAsync(args.Skip(1).ToArray()),
@@ -48,7 +46,6 @@ public static class Program
 
             Commands:
               list
-              scale [--reset-user]
               hash <file>
               install-module <id>
               install-package <folder-or.zip>
@@ -80,17 +77,6 @@ public static class Program
             Console.WriteLine($"{m.Id,-12} {m.Kind,-8} {state}");
         }
         Console.WriteLine($"Modules root: {AppPaths.ModulesDirectory}");
-        return 0;
-    }
-
-    private static int CmdScale(string[] args)
-    {
-        AppPaths.EnsureLayout();
-        var settings = ScaleSettingsStore.Load();
-        if (args.Contains("--reset-user")) settings.UserScale = 1.0;
-        ScaleSettingsStore.Save(settings);
-        Console.WriteLine($"UserScale={settings.UserScale} (OS DPI handled by Avalonia)");
-        Console.WriteLine($"Wrote {ScaleSettingsStore.DefaultPath}");
         return 0;
     }
 

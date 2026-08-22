@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
 using Avalonia.Threading;
 using MosaicShell.Core;
@@ -31,6 +30,11 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
     private readonly Dictionary<string, FlyoutWindow> _windows = new(StringComparer.OrdinalIgnoreCase);
     private FocusDimWindow? _focusDim;
     private TesseraOutsideClickWatcher? _outsideClick;
+    private DispatcherTimer? _outsideClickArm;
+    private readonly TesseraFlyoutLiveSyncCoalescer _patchCoalesce = new();
+    private DispatcherTimer? _deferredPatch;
+    private FlyoutRequest? _pendingPatch;
+    private bool _pendingResetDismiss;
     private static readonly string LogPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "MosaicShell", "Cache", "flyout.log");
@@ -94,6 +98,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
             {
                 StopOutsideClickWatcher();
                 CloseFocusDim();
+                CancelDeferredPatch();
             }
         });
     }
@@ -108,6 +113,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
                 Hide(id);
             StopOutsideClickWatcher();
             CloseFocusDim();
+            CancelDeferredPatch();
         });
     }
 
@@ -127,6 +133,8 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         }
     }
 
+    private static TimeSpan MonoNow() => TimeSpan.FromMilliseconds(Environment.TickCount64);
+
     private void ShowOrUpdateCore(FlyoutRequest request, bool resetDismiss = true)
     {
         Log($"ShowOrUpdateCore enter kind={request.Kind}");
@@ -134,12 +142,29 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         {
             if (_windows.TryGetValue(request.ModuleId, out var existing) && existing.IsVisible)
             {
-                if (existing.TryApplyLive(request, _services, resetDismiss))
+                var action = TesseraFlyoutLiveSyncPolicy.ResolveAction(
+                    isVisible: true,
+                    openKind: existing.Kind,
+                    nextKind: request.Kind,
+                    openStyle: existing.StyleId,
+                    nextStyle: request.StyleId);
+
+                if (action == TesseraFlyoutSyncAction.Patch)
                 {
-                    existing.EnsureLivePump();
-                    PresentFlyout(existing, request);
-                    return;
+                    if (!_patchCoalesce.TryBeginFlush(MonoNow(), out var retryAfter))
+                    {
+                        _pendingPatch = request;
+                        _pendingResetDismiss = resetDismiss;
+                        ScheduleDeferredPatch(retryAfter);
+                        return;
+                    }
+
+                    if (TryPatchLive(existing, request, resetDismiss))
+                        return;
+
+                    Log($"live-apply missed kind={request.Kind} style={request.StyleId} — rebuilding");
                 }
+
                 existing.ApplyRequest(request, BuildContent(request));
                 existing.EnsureLivePump();
                 PresentFlyout(existing, request);
@@ -162,6 +187,15 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         {
             Log($"BuildContent failed, using fallback: {ex}");
             content = BuildFallbackContent(request, ex.Message);
+            Log("FALLBACK content — Tessera live session unsuccessful");
+        }
+
+        if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+        {
+            var hasHost = content is Control c && TesseraLiveHost.FindIn(c) is not null;
+            var isFallback = content is Border { Child: TextBlock };
+            if (!TesseraFlyoutLiveSyncPolicy.IsSuccessfulTesseraContent(hasHost, isFallback))
+                Log($"live session unsuccessful hasLiveHost={hasHost} fallback={isFallback}");
         }
 
         var window = new FlyoutWindow(request, content, _services);
@@ -172,65 +206,132 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
             {
                 StopOutsideClickWatcher();
                 CloseFocusDim();
+                CancelDeferredPatch();
             }
         };
         lock (_gate) _windows[request.ModuleId] = window;
 
-        var owner = ResolveOwnerWindow();
-        if (owner is not null)
-            window.Show(owner);
-        else
-            window.Show();
+        // Two unowned Topmost windows: the one shown LAST usually wins Z-order on Win32.
+        // Show FocusDim first (if enabled), then the flyout, then HWND-stack as belt-and-suspenders.
+        SyncFocusDim(request);
+
+        // Consolidation (60e883e) used unowned Show(). Show(owner) from 83a9e57 made the
+        // flyout lose Z-order to unowned FocusDim and often paint as an empty Transparent HWND.
+        window.Show();
 
         window.EnsureLivePump();
         window.PlayShowAnimation();
         PresentFlyout(window, request);
     }
 
-    private static Window? ResolveOwnerWindow()
+    private bool TryPatchLive(FlyoutWindow existing, FlyoutRequest request, bool resetDismiss)
     {
-        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            return desktop.MainWindow;
-        return null;
+        if (!existing.TryApplyLive(request, _services, resetDismiss))
+            return false;
+
+        // Patch path: no PresentFlyout / RestackAboveDim / ScheduleOutsideClickArm
+        // (PatchImpliesPresent|Win32Restack|OutsideClickRearm are false — Core tests).
+        existing.EnsureLivePump();
+        _outsideClick?.RefreshBounds(existing);
+        return true;
+    }
+
+    private void ScheduleDeferredPatch(TimeSpan delay)
+    {
+        if (delay <= TimeSpan.Zero)
+            delay = TesseraFlyoutLiveSyncPolicy.MinFlushInterval;
+
+        _deferredPatch?.Stop();
+        _deferredPatch = new DispatcherTimer { Interval = delay };
+        _deferredPatch.Tick += (_, _) =>
+        {
+            _deferredPatch?.Stop();
+            _deferredPatch = null;
+            if (_pendingPatch is not { } pending)
+                return;
+            var reset = _pendingResetDismiss;
+            _pendingPatch = null;
+            SafeShowOrUpdate(pending, reset);
+        };
+        _deferredPatch.Start();
+    }
+
+    private void CancelDeferredPatch()
+    {
+        _deferredPatch?.Stop();
+        _deferredPatch = null;
+        _pendingPatch = null;
     }
 
     private void PresentFlyout(FlyoutWindow window, FlyoutRequest request)
     {
         window.FinishLayout();
-        // Dim after flyout is placed so it never races above an empty flyout.
+        // Keep dim in sync on live updates; first Show already called SyncFocusDim.
         SyncFocusDim(request);
         RestackAboveDim(window);
 
-        // docs: ActualTransparencyLevel reports what the OS actually granted
+        var focusDimOn = TesseraFocusDimPolicy.EnabledFromPayload(request.Payload);
+        var layered = TesseraFlyoutWindowPolicy.MustApplyPresentableLayeredAlpha
+            ? Win32WindowChrome.ForceOpaqueLayer(window)
+            : "skipped";
+        var screen = window.Screens?.ScreenFromWindow(window)
+                     ?? window.Screens?.ScreenFromPoint(window.Position);
         Log(
-            $"presented kind={request.Kind} visible={window.IsVisible} " +
+            $"presented kind={request.Kind} style={request.StyleId} visible={window.IsVisible} " +
             $"bounds={window.Bounds.Width:0}x{window.Bounds.Height:0} " +
             $"desired={window.DesiredSize.Width:0}x{window.DesiredSize.Height:0} " +
-            $"pos={window.Position} scaling={window.RenderScaling:0.##} " +
+            $"pos={window.Position} mon={request.MonitorIndex} focusDim={focusDimOn} " +
+            $"screen=({screen?.WorkingArea.X},{screen?.WorkingArea.Y} {screen?.WorkingArea.Width}x{screen?.WorkingArea.Height}) " +
+            $"scaling={window.RenderScaling:0.##} " +
             $"hint={string.Join('|', window.TransparencyLevelHint)} " +
-            $"actual={window.ActualTransparencyLevel}");
+            $"actual={window.ActualTransparencyLevel} layered={layered}");
 
         if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
-        {
-            Dispatcher.UIThread.Post(
-                () =>
-                {
-                    if (window.IsVisible)
-                        StartOutsideClickWatcher(window);
-                },
-                DispatcherPriority.Background);
-        }
+            ScheduleOutsideClickArm(window);
     }
 
-    private static void RestackAboveDim(Window flyout)
+    private void ScheduleOutsideClickArm(FlyoutWindow window)
     {
-        try
+        // One arm timer only — PresentFlyout used to start a new one per volume tick.
+        _outsideClickArm?.Stop();
+        _outsideClickArm = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1500) };
+        var captured = window;
+        _outsideClickArm.Tick += (_, _) =>
         {
-            flyout.Topmost = false;
-            flyout.Topmost = true;
-            flyout.Activate();
+            _outsideClickArm?.Stop();
+            _outsideClickArm = null;
+            if (captured.IsVisible)
+            {
+                StartOutsideClickWatcher(captured);
+                Log("outside-click armed");
+            }
+        };
+        _outsideClickArm.Start();
+    }
+
+    private void RestackAboveDim(FlyoutWindow flyout)
+    {
+        void Stack(string when)
+        {
+            try
+            {
+                flyout.Topmost = true;
+                if (_focusDim is not null)
+                    _focusDim.Topmost = true;
+
+                var ok = Win32WindowChrome.TryStackAbove(flyout, _focusDim, out var detail);
+                Log($"z-order {when} ok={ok} {detail}");
+            }
+            catch (Exception ex)
+            {
+                Log($"z-order {when} EXCEPTION {ex}");
+            }
         }
-        catch { /* ignore */ }
+
+        Stack("immediate");
+        // Dim click-through / HWND often lands at Loaded — restack then and once more at Input.
+        Dispatcher.UIThread.Post(() => Stack("loaded"), DispatcherPriority.Loaded);
+        Dispatcher.UIThread.Post(() => Stack("input"), DispatcherPriority.Input);
     }
 
     private void SyncFocusDim(FlyoutRequest request)
@@ -245,8 +346,10 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         if (_focusDim is null)
         {
             _focusDim = new FocusDimWindow(request.MonitorIndex);
+            // Show dim BEFORE the flyout (caller order) so the flyout is the later topmost peer.
             _focusDim.Show();
             _focusDim.FadeIn();
+            Log($"focusDim shown mon={request.MonitorIndex}");
         }
         else
         {
@@ -275,12 +378,15 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
 
     private void StopOutsideClickWatcher()
     {
+        _outsideClickArm?.Stop();
+        _outsideClickArm = null;
         _outsideClick?.Dispose();
         _outsideClick = null;
     }
 
     private void DismissTesseraImmediate()
     {
+        Log("outside-click dismiss");
         FlyoutWindow? flyout;
         lock (_gate) _windows.Remove("Tessera", out flyout);
         try { flyout?.Close(); } catch { /* ignore */ }
@@ -294,11 +400,30 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         {
             var material = TesseraFlyoutMaterialFactory.FromPayload(request.Payload);
             TesseraPalette.ApplyMaterial(material);
-            // BitBlt glass is opt-in (AllowGdiScreenCapture); default uses Avalonia transparency + Skia frost.
-            var wantBlur = TesseraFlyoutRequestBuilder.BackdropBlurFromPayload(request.Payload);
-            TesseraGlass.UseBackdropBlur = wantBlur && TesseraGlass.AllowGdiScreenCapture;
+
+            var settingsWantBlur = TesseraFlyoutRequestBuilder.BackdropBlurFromPayload(request.Payload);
+            var softFrostHwnd = TesseraFlyoutWindowPolicy.SoftFrostHwndReady;
+            var glassMode = TesseraFlyoutGlassPolicy.ResolveLiveMode(softFrostHwnd, settingsWantBlur);
+            var useEmbedded = TesseraFlyoutGlassPolicy.ShouldUseEmbeddedPreviewBuild(
+                isConfigOrExportPreview: false,
+                softFrostHwndReady: softFrostHwnd);
+            TesseraGlass.UseBackdropBlur = TesseraFlyoutGlassPolicy.ShouldEnableBackdropBlur(
+                softFrostHwnd,
+                settingsWantBlur);
+            TesseraGlass.AllowGdiScreenCapture = TesseraFlyoutGlassPolicy.ShouldAllowGdiScreenCapture(
+                softFrostHwnd,
+                settingsWantBlur);
+
+            Log(
+                $"glass mode={glassMode} backdrop={TesseraGlass.UseBackdropBlur} " +
+                $"embeddedPreview={useEmbedded} softFrostHwnd={softFrostHwnd}");
+
             var vm = TesseraFlyoutViewModel.FromRequest(_services, request, _hostUi);
-            Control root = TesseraStyleFactory.Create(request.StyleId ?? "Fluent", vm);
+            var root = TesseraStyleFactory.Create(
+                request.StyleId ?? "Fluent",
+                vm,
+                accentColor: null,
+                embeddedPreview: useEmbedded);
             var scale = FlyoutScaleFromPayload(request.Payload);
             if (Math.Abs(scale - 1.0) > 0.01)
             {
@@ -309,8 +434,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
                 };
             }
 
-            // No opaque host wrap — window transparency + Tessera chrome tint provide the surface.
-            return root;
+            return TesseraChrome.WrapFlyoutContent(root);
         }
 
         return BuildFallbackContent(request, null);

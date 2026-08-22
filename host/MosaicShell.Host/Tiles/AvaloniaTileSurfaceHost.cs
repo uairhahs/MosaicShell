@@ -17,18 +17,15 @@ public sealed class AvaloniaTileSurfaceHost : ITileSurfaceHost
     private readonly Dictionary<string, TileOverlayWindow> _windows = new(StringComparer.OrdinalIgnoreCase);
     private readonly HostServices _services;
     private readonly IHostUiBridge _hostUi;
-    private readonly Func<double> _userScale;
     private readonly Action<string>? _onClosedByUser;
 
     public AvaloniaTileSurfaceHost(
         HostServices services,
         IHostUiBridge hostUi,
-        Func<double> userScale,
         Action<string>? onClosedByUser = null)
     {
         _services = services;
         _hostUi = hostUi;
-        _userScale = userScale;
         _onClosedByUser = onClosedByUser;
     }
 
@@ -63,7 +60,7 @@ public sealed class AvaloniaTileSurfaceHost : ITileSurfaceHost
             }
 
             var surface = TileSurfaceFactory.Create(info, _services);
-            var window = new TileOverlayWindow(info, surface, _userScale(), _hostUi);
+            var window = new TileOverlayWindow(info, surface, _hostUi);
             window.Closed += (_, _) =>
             {
                 PersistAll();
@@ -151,12 +148,6 @@ public sealed class AvaloniaTileSurfaceHost : ITileSurfaceHost
             w.Height)).ToList();
         SessionStore.Save(states);
     }
-
-    public void ApplyUserScale(double scale)
-    {
-        foreach (var w in _windows.Values)
-            w.ApplyScale(scale);
-    }
 }
 
 /// <summary>
@@ -168,10 +159,9 @@ public sealed class TileOverlayWindow : Window
     public string ModuleId { get; }
     public bool IsDesktopWidget { get; }
     private readonly IHostUiBridge _hostUi;
-    private readonly LayoutTransformControl _scaler;
     private bool _stuckToDesktop;
 
-    public TileOverlayWindow(ModuleInfo info, Control surface, double userScale, IHostUiBridge hostUi)
+    public TileOverlayWindow(ModuleInfo info, Control surface, IHostUiBridge hostUi)
     {
         ModuleId = info.Id;
         _hostUi = hostUi;
@@ -208,15 +198,7 @@ public sealed class TileOverlayWindow : Window
         };
         shell.PointerPressed += OnSurfacePointerPressed;
         shell.ContextMenu = BuildContextMenu();
-
-        _scaler = new LayoutTransformControl
-        {
-            Child = shell,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Stretch
-        };
-        ApplyScale(userScale);
-        Content = _scaler;
+        Content = shell;
 
         KeyDown += (_, e) =>
         {
@@ -247,12 +229,6 @@ public sealed class TileOverlayWindow : Window
 
         Width = 420;
         Height = 360;
-    }
-
-    public void ApplyScale(double userScale)
-    {
-        var s = Math.Clamp(userScale, 0.75, 2.0);
-        _scaler.LayoutTransform = new ScaleTransform(s, s);
     }
 
     public void SendToDesktop()

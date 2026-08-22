@@ -6,7 +6,6 @@ using Avalonia.Threading;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Capabilities.BuiltIn;
 using MosaicShell.Core.Runtime;
-using MosaicShell.Core.Scale;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
 using MosaicShell.Host.Capabilities;
@@ -35,7 +34,6 @@ public partial class App : Application
             desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
             _services = HostServices.CreateWindowsDefaults();
 
-            double UserScale() => _vm?.UserScale ?? 1.0;
 
             var flyouts = new AvaloniaFlyoutPresenter(_services);
             _hostUi = new AvaloniaHostUiBridge(
@@ -56,7 +54,7 @@ public partial class App : Application
             BuiltInCapabilityFactories.RegisterAll(registry);
             _daemon = new CapabilityDaemon(registry, _services, uiBridge);
 
-            _tileHost = new AvaloniaTileSurfaceHost(_services, _hostUi, UserScale, id =>
+            _tileHost = new AvaloniaTileSurfaceHost(_services, _hostUi, id =>
                 _tileRuntime?.NotifySurfaceClosed(id));
             _tileRuntime = new TileRuntime(new RestoringSurfaceHost(_tileHost));
 
