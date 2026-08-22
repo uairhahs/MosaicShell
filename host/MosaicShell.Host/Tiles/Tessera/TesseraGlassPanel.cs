@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Rendering.SceneGraph;
 using Avalonia.Skia;
+using Avalonia.VisualTree;
 using SkiaSharp;
 
 namespace MosaicShell.Host.Tiles.Tessera;
@@ -22,9 +23,9 @@ public static class TesseraGlass
 /// <summary>Skia glass shell shared by Tessera chrome.</summary>
 public static class TesseraGlassPanel
 {
-    public const double DefaultBlurRadius = 11;
-    internal const byte BlurredTintAlphaMax = 48;
-    internal const byte FallbackTintAlphaMax = 80;
+    public const double DefaultBlurRadius = 14;
+    internal const byte BlurredTintAlphaMax = 34;
+    internal const byte FallbackTintAlphaMax = 72;
 
     /// <summary>Cap shell tint so backdrop blur stays visible (true glass, not matte slab).</summary>
     public static Color NormalizeTint(Color color)
@@ -48,7 +49,9 @@ public static class TesseraGlassPanel
         double? maxWidth = null,
         double? maxHeight = null,
         Color? tint = null,
-        double blurRadius = DefaultBlurRadius)
+        double blurRadius = DefaultBlurRadius,
+        bool useSharedBackdrop = false,
+        bool lightTintOnly = false)
     {
         var content = child;
         if (padding is { } pad && pad != default)
@@ -66,6 +69,8 @@ public static class TesseraGlassPanel
             CornerRadius = cornerRadius,
             BlurRadius = blurRadius,
             Tint = NormalizeTint(tint ?? TesseraPalette.Primary),
+            UseSharedBackdrop = useSharedBackdrop,
+            LightTintOnly = lightTintOnly,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch
         };
@@ -121,22 +126,32 @@ internal sealed class TesseraGlassBackground : Control
     public static readonly StyledProperty<Color> TintProperty =
         AvaloniaProperty.Register<TesseraGlassBackground, Color>(nameof(Tint), TesseraPalette.Primary);
 
+    public static readonly StyledProperty<bool> UseSharedBackdropProperty =
+        AvaloniaProperty.Register<TesseraGlassBackground, bool>(nameof(UseSharedBackdrop));
+
+    public static readonly StyledProperty<bool> LightTintOnlyProperty =
+        AvaloniaProperty.Register<TesseraGlassBackground, bool>(nameof(LightTintOnly));
+
     private sealed class LayerCache : IDisposable
     {
         public SKImage? Image;
         public Rect Bounds;
+        public int ScreenX;
+        public int ScreenY;
         public int Generation;
         public Color Tint;
         public double BlurRadius;
         public double CornerRadius;
 
-        public bool Matches(Rect bounds, int generation, Color tint, double blurRadius, double cornerRadius) =>
+        public bool Matches(Rect bounds, int screenX, int screenY, int generation, Color tint, double blurRadius, double cornerRadius) =>
             Generation == generation
             && Tint == tint
             && Math.Abs(BlurRadius - blurRadius) < 0.01
             && Math.Abs(CornerRadius - cornerRadius) < 0.01
             && Math.Abs(Bounds.Width - bounds.Width) < 1
             && Math.Abs(Bounds.Height - bounds.Height) < 1
+            && ScreenX == screenX
+            && ScreenY == screenY
             && Image is not null;
 
         public void Dispose()
@@ -172,6 +187,18 @@ internal sealed class TesseraGlassBackground : Control
         set => SetValue(TintProperty, value);
     }
 
+    public bool UseSharedBackdrop
+    {
+        get => GetValue(UseSharedBackdropProperty);
+        set => SetValue(UseSharedBackdropProperty, value);
+    }
+
+    public bool LightTintOnly
+    {
+        get => GetValue(LightTintOnlyProperty);
+        set => SetValue(LightTintOnlyProperty, value);
+    }
+
     protected override Size MeasureOverride(Size availableSize) => default;
 
     protected override Size ArrangeOverride(Size finalSize) => finalSize;
@@ -195,7 +222,9 @@ internal sealed class TesseraGlassBackground : Control
         base.OnPropertyChanged(change);
         if (change.Property == CornerRadiusProperty
             || change.Property == BlurRadiusProperty
-            || change.Property == TintProperty)
+            || change.Property == TintProperty
+            || change.Property == UseSharedBackdropProperty
+            || change.Property == LightTintOnlyProperty)
         {
             _glassGeneration++;
             InvalidateVisual();
@@ -222,13 +251,28 @@ internal sealed class TesseraGlassBackground : Control
         Color tint,
         int generation)
     {
-        if (_layerCache?.Matches(bounds, generation, tint, blurRadius, cornerRadius) == true)
+        var screenX = int.MinValue;
+        var screenY = int.MinValue;
+        if (this.GetVisualRoot() is not null)
+        {
+            try
+            {
+                var pt = this.PointToScreen(bounds.TopLeft);
+                screenX = pt.X;
+                screenY = pt.Y;
+            }
+            catch { /* ignore */ }
+        }
+
+        if (_layerCache?.Matches(bounds, screenX, screenY, generation, tint, blurRadius, cornerRadius) == true)
             return _layerCache.Image;
 
         _layerCache?.Dispose();
         _layerCache = new LayerCache
         {
             Bounds = bounds,
+            ScreenX = screenX,
+            ScreenY = screenY,
             Generation = generation,
             Tint = tint,
             BlurRadius = blurRadius,
@@ -251,14 +295,28 @@ internal sealed class TesseraGlassBackground : Control
         var rect = SKRect.Create(0, 0, w, h);
         var round = new SKRoundRect(rect, (float)cornerRadius, (float)cornerRadius);
 
-        var drewBackdrop = TesseraGlass.UseBackdropBlur
-            && !TesseraGlass.PreviewMode
-            && TesseraGlassDrawOperation.TryDrawBackdropBlur(lc, targetCanvas, sourceSurface, rect, round, blurRadius);
+        var drewBackdrop = false;
+        if (UseSharedBackdrop)
+        {
+            var shared = TesseraSharedBackdropHost.FindAncestor(this);
+            if (shared?.TryBlitSubrect(lc, round, this, bounds, blurRadius) == true)
+                drewBackdrop = true;
+        }
+
+        if (!drewBackdrop && TesseraGlass.UseBackdropBlur && !TesseraGlass.PreviewMode)
+        {
+            using var screen = TesseraScreenBackdrop.TryCapture(this, bounds);
+            if (screen is not null)
+                drewBackdrop = TesseraGlassDrawOperation.TryDrawImageBackdropBlur(lc, screen, round, blurRadius);
+        }
+
+        if (!drewBackdrop && TesseraGlass.UseBackdropBlur && !TesseraGlass.PreviewMode)
+            drewBackdrop = TesseraGlassDrawOperation.TryDrawBackdropBlur(lc, targetCanvas, sourceSurface, rect, round, blurRadius);
 
         if (!drewBackdrop)
-            TesseraGlassDrawOperation.DrawFallbackGlass(lc, round, w, h);
+            TesseraGlassDrawOperation.DrawFallbackGlass(lc, round, w, h, tint);
 
-        TesseraGlassDrawOperation.DrawShellTint(lc, round, tint, drewBackdrop);
+        TesseraGlassDrawOperation.DrawShellTint(lc, round, tint, drewBackdrop, LightTintOnly);
         TesseraGlassDrawOperation.DrawGlassChrome(lc, round, w, h);
 
         _layerCache.Image = layerSurface.Snapshot();
@@ -337,6 +395,28 @@ internal sealed class TesseraGlassDrawOperation : ICustomDrawOperation
         canvas.Restore();
     }
 
+    internal static bool TryDrawImageBackdropBlur(
+        SKCanvas dest,
+        SKImage source,
+        SKRoundRect round,
+        double blurRadius)
+    {
+        var blur = (float)Math.Clamp(blurRadius, 4, 28);
+        using var blurFilter = SKImageFilter.CreateBlur(blur, blur, SKShaderTileMode.Clamp);
+        using var paint = new SKPaint
+        {
+            ImageFilter = blurFilter,
+            IsAntialias = true,
+            FilterQuality = SKFilterQuality.Medium
+        };
+
+        dest.Save();
+        dest.ClipRoundRect(round, antialias: true);
+        dest.DrawImage(source, 0, 0, paint);
+        dest.Restore();
+        return true;
+    }
+
     internal static bool TryDrawBackdropBlur(
         SKCanvas dest,
         SKCanvas sourceCanvas,
@@ -370,32 +450,33 @@ internal sealed class TesseraGlassDrawOperation : ICustomDrawOperation
         return true;
     }
 
-    internal static void DrawFallbackGlass(SKCanvas canvas, SKRoundRect round, int w, int h)
+    internal static void DrawFallbackGlass(SKCanvas canvas, SKRoundRect round, int w, int h, Color tint)
     {
+        var crust = TesseraPalette.Crust;
         using var basePaint = new SKPaint
         {
-            Color = new SKColor(17, 17, 27, 96),
+            Color = new SKColor(crust.R, crust.G, crust.B, 88),
             IsAntialias = true
         };
         canvas.DrawRoundRect(round, basePaint);
 
-        using var gradientPaint = new SKPaint
+        using var tintWash = new SKPaint
         {
             Shader = SKShader.CreateLinearGradient(
-                new SKPoint(0, 0),
-                new SKPoint(w * 0.55f, h * 0.55f),
-                [new SKColor(255, 255, 255, 28), new SKColor(255, 255, 255, 6)],
+                new SKPoint(0, h),
+                new SKPoint(w, 0),
+                [new SKColor(tint.R, tint.G, tint.B, 48), new SKColor(tint.R, tint.G, tint.B, 16)],
                 [0f, 1f],
                 SKShaderTileMode.Clamp),
             IsAntialias = true,
             BlendMode = SKBlendMode.Plus
         };
-        canvas.DrawRoundRect(round, gradientPaint);
+        canvas.DrawRoundRect(round, tintWash);
 
         using var noisePaint = new SKPaint
         {
             Shader = SKShader.CreatePerlinNoiseFractalNoise(0.85f, 0.6f, 2, 0),
-            Color = new SKColor(255, 255, 255, 10),
+            Color = new SKColor(255, 255, 255, 6),
             IsAntialias = true,
             BlendMode = SKBlendMode.Overlay
         };
@@ -405,52 +486,39 @@ internal sealed class TesseraGlassDrawOperation : ICustomDrawOperation
         canvas.Restore();
     }
 
-    internal static void DrawShellTint(SKCanvas canvas, SKRoundRect round, Color tint, bool blurred)
+    internal static void DrawShellTint(SKCanvas canvas, SKRoundRect round, Color tint, bool blurred, bool lightTintOnly = false)
     {
         var sk = TesseraGlassPanel.ToSkColor(tint);
-        if (blurred)
-            sk = sk.WithAlpha((byte)Math.Min(sk.Alpha, TesseraGlassPanel.BlurredTintAlphaMax));
-        else
-            sk = sk.WithAlpha((byte)Math.Min(Math.Max((int)sk.Alpha, 36), TesseraGlassPanel.FallbackTintAlphaMax));
-
+        var alpha = blurred
+            ? (byte)Math.Min(sk.Alpha, TesseraGlassPanel.BlurredTintAlphaMax)
+            : (byte)Math.Min(Math.Max((int)sk.Alpha, 28), TesseraGlassPanel.FallbackTintAlphaMax);
+        if (lightTintOnly)
+            alpha = (byte)Math.Max(12, alpha / 2);
+        sk = sk.WithAlpha(alpha);
         if (sk.Alpha == 0)
             return;
 
+        // Light SrcOver tint — keeps blurred wallpaper hue visible.
         using var tintPaint = new SKPaint
         {
             Color = sk,
             IsAntialias = true,
-            BlendMode = SKBlendMode.SoftLight
+            BlendMode = SKBlendMode.SrcOver
         };
         canvas.DrawRoundRect(round, tintPaint);
     }
 
     internal static void DrawGlassChrome(SKCanvas canvas, SKRoundRect round, int w, int h)
     {
-        using var specularPaint = new SKPaint
-        {
-            Shader = SKShader.CreateRadialGradient(
-                new SKPoint(w * 0.2f, h * 0.1f),
-                Math.Max(w, h) * 0.95f,
-                [new SKColor(255, 255, 255, 32), new SKColor(255, 255, 255, 0)],
-                [0f, 1f],
-                SKShaderTileMode.Clamp),
-            IsAntialias = true,
-            BlendMode = SKBlendMode.Screen
-        };
-        canvas.Save();
-        canvas.ClipRoundRect(round, antialias: true);
-        canvas.DrawRoundRect(round, specularPaint);
-        canvas.Restore();
-
-        var edgeAlpha = (byte)(TesseraPalette.UseEdgeBlend ? 48 : 64);
+        // Uniform edge only — no radial specular (reads as a spotlight on small panels).
+        var edgeAlpha = (byte)(TesseraPalette.UseEdgeBlend ? 22 : 32);
         using var edgePaint = new SKPaint
         {
             Color = new SKColor(255, 255, 255, edgeAlpha),
             IsAntialias = true,
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 1,
-            BlendMode = SKBlendMode.Plus
+            BlendMode = SKBlendMode.Overlay
         };
         canvas.DrawRoundRect(round, edgePaint);
     }

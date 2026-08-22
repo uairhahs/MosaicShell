@@ -52,6 +52,7 @@ public class TesseraParityTests : IDisposable
     {
         var s = new TesseraSettings();
         s.FlyoutScalePercent.Should().Be(100);
+        s.UseBackdropBlur.Should().BeTrue();
         s.UseBakedFrost.Should().BeTrue();
         s.UseAcrylicBackdrop.Should().BeTrue();
         s.UseFocusDim.Should().BeTrue();
@@ -123,6 +124,29 @@ public class TesseraParityTests : IDisposable
     }
 
     [Fact]
+    public async Task TesseraCapability_picks_up_settings_changes_without_rearm()
+    {
+        ModuleSettingsStore.Save("Tessera", new TesseraSettings { Style = "Fluent" });
+        var services = HostServicesFakes.Create();
+        var ui = new BridgeUi(new CaptureFlyouts(_shown));
+        var registry = new CapabilityRegistry();
+        BuiltInCapabilityFactories.RegisterAll(registry);
+        var daemon = new CapabilityDaemon(registry, services, ui);
+        (await daemon.ArmAsync("Tessera")).Should().BeTrue();
+
+        services.Audio.MasterVolume = 0.5;
+        _shown.Should().ContainSingle();
+        _shown[0].StyleId.Should().Be("Fluent");
+
+        ModuleSettingsStore.Save("Tessera", new TesseraSettings { Style = "Win11", FlyoutScalePercent = 120 });
+        _shown.Clear();
+        services.Audio.MasterVolume = 0.6;
+        _shown.Should().ContainSingle();
+        _shown[0].StyleId.Should().Be("Win11");
+        _shown[0].Payload!["flyoutScale"].Should().Be("120");
+    }
+
+    [Fact]
     public async Task Armed_tessera_emits_locks_and_flight()
     {
         var lockSvc = new RaisingLockKeys();
@@ -154,7 +178,7 @@ public class TesseraParityTests : IDisposable
             EnableFlightFlyouts = true
         });
 
-        var ui = new CaptureUi(_shown);
+        var ui = new BridgeUi(new CaptureFlyouts(_shown));
         var registry = new CapabilityRegistry();
         BuiltInCapabilityFactories.RegisterAll(registry);
         var daemon = new CapabilityDaemon(registry, services, ui);
@@ -201,21 +225,5 @@ public class TesseraParityTests : IDisposable
             IsEnabled = !IsEnabled;
             Changed?.Invoke(this, EventArgs.Empty);
         }
-    }
-
-    private sealed class CaptureUi(List<FlyoutRequest> shown) : ICapabilityUiBridge
-    {
-        public IFlyoutPresenter Flyouts { get; } = new CaptureFlyouts(shown);
-        public IHostUiBridge HostUi { get; } = NullHostUiBridge.Instance;
-    }
-
-    private sealed class CaptureFlyouts(List<FlyoutRequest> shown) : IFlyoutPresenter
-    {
-        public void Show(FlyoutRequest request) => shown.Add(request);
-        public void Update(FlyoutRequest request) => shown.Add(request);
-        public void SoftRefresh(FlyoutRequest request) { }
-        public void Hide(string moduleId) { }
-        public void HideAll() { }
-        public bool IsVisible(string moduleId) => shown.Any(r => r.ModuleId.Equals(moduleId, StringComparison.OrdinalIgnoreCase));
     }
 }

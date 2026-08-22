@@ -30,6 +30,7 @@ public sealed class TesseraLiveBindings
     public TextBlock? MediaTitle { get; set; }
     public TextBlock? MediaArtist { get; set; }
     public MaterialIcon? PlayPauseIcon { get; set; }
+    public TextBlock? StatusLabel { get; set; }
     /// <summary>Plainext: title uses {@code Title > Playing &lt;} and progress uses slash meter.</summary>
     public bool PlainextMedia { get; set; }
     /// <summary>Hide percent at rest; show while dragging or wheeling (M3-style value indicator).</summary>
@@ -64,6 +65,17 @@ public sealed class TesseraLiveHost : ContentControl
     public void ApplyLive(HostServices services, FlyoutRequest request)
     {
         var b = Bindings;
+        if (request.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
+            || request.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase))
+        {
+            var live = TesseraFlyoutRequestBuilder.RefreshStatusPayload(
+                services, request.Kind, request.Payload);
+            request = request with { Payload = live };
+            if (b.StatusLabel is not null)
+                b.StatusLabel.Text = TesseraStatusLabels.Format(request);
+            return;
+        }
+
         var media = services.Media.Current;
         var isBright = request.Kind.Equals("bright", StringComparison.OrdinalIgnoreCase);
 

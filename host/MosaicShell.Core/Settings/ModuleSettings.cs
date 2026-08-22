@@ -54,8 +54,15 @@ public sealed class TesseraSettings
     public bool UseFocusDim { get; set; } = true;
     /// <summary>Flyout size multiplier percent (50-150). Default 100.</summary>
     public int FlyoutScalePercent { get; set; } = 100;
-    /// <summary>Skia live backdrop blur on Tessera glass (legacy setting key: baked frost).</summary>
-    public bool UseBakedFrost { get; set; } = true;
+    /// <summary>Skia live backdrop blur on Tessera glass.</summary>
+    public bool UseBackdropBlur { get; set; } = true;
+
+    /// <summary>Legacy JSON key; mirrors <see cref="UseBackdropBlur"/>.</summary>
+    public bool UseBakedFrost
+    {
+        get => UseBackdropBlur;
+        set => UseBackdropBlur = value;
+    }
     /// <summary>Custom flyout accent (#RRGGBB). Empty = Windows system accent.</summary>
     public string AccentColor { get; set; } = "";
 }

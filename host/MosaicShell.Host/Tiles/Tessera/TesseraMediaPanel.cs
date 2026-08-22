@@ -311,7 +311,7 @@ public static class TesseraMediaPanel
 
         var row = new Grid
         {
-            Height = height,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
             ColumnDefinitions = new ColumnDefinitions($"{artSize},*")
         };
         Grid.SetColumn(art, 0);
@@ -320,7 +320,7 @@ public static class TesseraMediaPanel
         row.Children.Add(textCol);
 
         TesseraLiveAmbient.RegisterMedia(art, title, artist, null, time, null, null);
-        return TesseraChrome.GlassTinted(row, 8, TesseraStylePalette.CoreUi.TileBrush, new Thickness(pad), h: height);
+        return TesseraChrome.CoreUiTile(row, h: height, pad: new Thickness(pad));
     }
 
     private static Control SmoutiSide(TesseraFlyoutViewModel vm)

@@ -8,6 +8,17 @@ using MosaicShell.Core.Services;
 
 namespace MosaicShell.Host.Tiles.Tessera;
 
+[Flags]
+internal enum TesseraShellOptions
+{
+    None = 0,
+    Tinted = 1 << 0,
+    Solid = 1 << 1,
+    InsetMargin = 1 << 2,
+    SharedBackdrop = 1 << 3,
+    LightTintOnly = 1 << 4,
+}
+
 /// <summary>Shared high-fidelity chrome pieces for Tessera style layouts.</summary>
 internal static class TesseraChrome
 {
@@ -22,9 +33,77 @@ internal static class TesseraChrome
     public static IBrush TileFaceHi => new SolidColorBrush(Color.FromArgb(
         (byte)Math.Clamp(TesseraPalette.ShellAlpha + 25, 120, 240), 0x18, 0x18, 0x25));
 
+    /// <summary>Unified shell entry — glass, tinted glass, solid pill, or inset-margin wrapper.</summary>
+    internal static Control Shell(
+        Control child,
+        double radius,
+        TesseraShellOptions options = TesseraShellOptions.None,
+        IBrush? background = null,
+        Thickness? pad = null,
+        double? w = null,
+        double? h = null,
+        double? minWidth = null,
+        double? maxWidth = null,
+        double? maxHeight = null)
+    {
+        Control result;
+        if (options.HasFlag(TesseraShellOptions.Solid))
+        {
+            result = new Border
+            {
+                Width = w ?? double.NaN,
+                Height = h ?? double.NaN,
+                MinWidth = w ?? double.NaN,
+                MaxWidth = w ?? double.NaN,
+                MinHeight = h ?? double.NaN,
+                MaxHeight = h ?? double.NaN,
+                Background = background ?? DarkSolid,
+                CornerRadius = new CornerRadius(radius),
+                ClipToBounds = true,
+                Padding = pad ?? new Thickness(0),
+                Child = child
+            };
+        }
+        else
+        {
+            Color tint;
+            if (options.HasFlag(TesseraShellOptions.Tinted))
+                tint = background is SolidColorBrush scb ? scb.Color : TesseraPalette.Primary;
+            else if (background is SolidColorBrush primary)
+                tint = primary.Color;
+            else
+                tint = TesseraPalette.Primary;
+
+            result = TesseraGlassPanel.Wrap(
+                child,
+                radius,
+                pad,
+                w,
+                h,
+                minWidth,
+                maxWidth,
+                maxHeight: maxHeight,
+                tint: tint,
+                useSharedBackdrop: options.HasFlag(TesseraShellOptions.SharedBackdrop),
+                lightTintOnly: options.HasFlag(TesseraShellOptions.LightTintOnly));
+        }
+
+        if (!options.HasFlag(TesseraShellOptions.InsetMargin))
+            return result;
+
+        return new Border
+        {
+            Background = Brushes.Transparent,
+            Margin = new Thickness(1),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top,
+            Child = result
+        };
+    }
+
     /// <summary>Skia glass shell (backdrop blur + tint + edge).</summary>
     public static Control Glass(Control child, double radius, Thickness? pad = null, double? w = null, double? h = null) =>
-        TesseraGlassPanel.Wrap(child, radius, pad, w, h, tint: TesseraPalette.Primary);
+        Shell(child, radius, TesseraShellOptions.None, pad: pad, w: w, h: h);
 
     /// <summary>Opaque style pill (Pixel columns) — no frost wash.</summary>
     public static Border SolidPill(
@@ -33,23 +112,8 @@ internal static class TesseraChrome
         double radius,
         double w,
         double? h = null,
-        Thickness? pad = null)
-    {
-        return new Border
-        {
-            Width = w,
-            Height = h ?? double.NaN,
-            MinWidth = w,
-            MaxWidth = w,
-            MinHeight = h ?? double.NaN,
-            MaxHeight = h ?? double.NaN,
-            Background = fill,
-            CornerRadius = new CornerRadius(radius),
-            ClipToBounds = true,
-            Padding = pad ?? new Thickness(0),
-            Child = child
-        };
-    }
+        Thickness? pad = null) =>
+        (Border)Shell(child, radius, TesseraShellOptions.Solid, fill, pad, w, h);
 
     public static Control GlassTinted(
         Control child,
@@ -57,11 +121,57 @@ internal static class TesseraChrome
         IBrush background,
         Thickness? pad = null,
         double? w = null,
-        double? h = null)
+        double? h = null,
+        bool useSharedBackdrop = false,
+        bool lightTintOnly = false)
     {
-        var tint = background is SolidColorBrush scb ? scb.Color : TesseraPalette.Primary;
-        return TesseraGlassPanel.Wrap(child, radius, pad, w, h, tint: tint);
+        var options = TesseraShellOptions.Tinted;
+        if (useSharedBackdrop) options |= TesseraShellOptions.SharedBackdrop;
+        if (lightTintOnly) options |= TesseraShellOptions.LightTintOnly;
+        return Shell(child, radius, options, background, pad, w, h);
     }
+
+    internal static Control GlassTintedWrap(
+        Control child,
+        double radius,
+        IBrush background,
+        Thickness? pad,
+        double? w,
+        double? h,
+        bool useSharedBackdrop,
+        bool lightTintOnly) =>
+        GlassTinted(child, radius, background, pad, w, h, useSharedBackdrop, lightTintOnly);
+
+    /// <summary>CoreUI grid cell — glass tinted tile matching the style reference.</summary>
+    public static Control CoreUiTile(
+        Control child,
+        double? w = null,
+        double? h = null,
+        Thickness? pad = null)
+    {
+        var tile = Shell(
+            child,
+            8,
+            TesseraShellOptions.Tinted | TesseraShellOptions.SharedBackdrop | TesseraShellOptions.LightTintOnly,
+            TesseraStylePalette.CoreUi.TileBrush,
+            pad,
+            w,
+            h);
+        if (w is null)
+            tile.HorizontalAlignment = HorizontalAlignment.Stretch;
+        return tile;
+    }
+
+    /// <summary>Wrap Tessera flyout content with a shared backdrop capture host.</summary>
+    public static Control WrapFlyoutContent(Control content) =>
+        new Grid
+        {
+            Children =
+            {
+                new TesseraSharedBackdropHost(),
+                content
+            }
+        };
 
     /// <summary>Frosted wash: translucent shell + soft art under solid tint (no OS acrylic).</summary>
     public static Control WithArtWash(Control foreground, byte[]? png, double radius, Thickness pad, double? maxWidth = null, double? maxHeight = null)

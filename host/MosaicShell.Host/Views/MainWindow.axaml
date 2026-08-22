@@ -513,7 +513,7 @@
                   </StackPanel>
                   <CheckBox Content="Soft frost tint" IsChecked="{Binding TesseraAcrylicBackdrop}"
                             ToolTip.Tip="Slightly translucent Mocha crust. Off = denser solid panel." />
-                  <CheckBox Content="Skia backdrop blur" IsChecked="{Binding TesseraBakedFrost}"
+                  <CheckBox Content="Skia backdrop blur" IsChecked="{Binding TesseraBackdropBlur}"
                             IsEnabled="{Binding TesseraAcrylicBackdrop}"
                             ToolTip.Tip="Live Skia backdrop blur on Tessera glass panels. Off uses gradient + grain fallback only." />
                   <CheckBox Content="Subtle desktop dim (Focus)" IsChecked="{Binding TesseraFocusDim}"

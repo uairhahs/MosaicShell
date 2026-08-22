@@ -114,17 +114,7 @@ public class CapabilityDaemonTests : IDisposable
 
     private sealed class FakeUiBridge : ICapabilityUiBridge
     {
-        public IFlyoutPresenter Flyouts { get; } = new FakeFlyouts();
+        public IFlyoutPresenter Flyouts { get; } = new NullFlyoutPresenter();
         public IHostUiBridge HostUi { get; } = NullHostUiBridge.Instance;
-    }
-
-    private sealed class FakeFlyouts : IFlyoutPresenter
-    {
-        public void Show(FlyoutRequest request) { }
-        public void Update(FlyoutRequest request) { }
-        public void SoftRefresh(FlyoutRequest request) { }
-        public void Hide(string moduleId) { }
-        public void HideAll() { }
-        public bool IsVisible(string moduleId) => false;
     }
 }

@@ -61,9 +61,12 @@ public sealed class TesseraFlyoutRequestBuilder
         p["acrylic"] = settings.UseAcrylicBackdrop ? "1" : "0";
         p["focusDim"] = settings.UseFocusDim ? "1" : "0";
         p["flyoutScale"] = Math.Clamp(settings.FlyoutScalePercent, 50, 150).ToString();
-        p["bakedFrost"] = settings.UseBakedFrost ? "1" : "0";
+        p["backdropBlur"] = settings.UseBackdropBlur ? "1" : "0";
+        p["bakedFrost"] = settings.UseBackdropBlur ? "1" : "0";
 
-        if (lastLock is not null && kind.Equals("locks", StringComparison.OrdinalIgnoreCase))
+        if (kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
+            && !p.ContainsKey("on")
+            && lastLock is not null)
         {
             p["lock"] = lastLock.Key.ToString();
             p["on"] = lastLock.IsOn ? "1" : "0";
@@ -71,6 +74,39 @@ public sealed class TesseraFlyoutRequestBuilder
 
         if (kind.Equals("flight", StringComparison.OrdinalIgnoreCase) && !p.ContainsKey("on"))
             p["on"] = services.Airplane.IsEnabled ? "1" : "0";
+
+        return p;
+    }
+
+    /// <summary>Refresh locks/flight payload from live service state (open flyout pump).</summary>
+    public static Dictionary<string, string> RefreshStatusPayload(
+        HostServices services,
+        string kind,
+        IReadOnlyDictionary<string, string>? existing = null)
+    {
+        var p = existing is null
+            ? new Dictionary<string, string>()
+            : new Dictionary<string, string>(existing);
+
+        if (kind.Equals("locks", StringComparison.OrdinalIgnoreCase))
+        {
+            var lockName = p.GetValueOrDefault("lock") ?? LockKeyKind.CapsLock.ToString();
+            if (!Enum.TryParse<LockKeyKind>(lockName, out var lk))
+                lk = LockKeyKind.CapsLock;
+
+            var on = lk switch
+            {
+                LockKeyKind.NumLock => services.LockKeys.Num.IsOn,
+                LockKeyKind.ScrollLock => services.LockKeys.Scroll.IsOn,
+                _ => services.LockKeys.Caps.IsOn
+            };
+            p["lock"] = lk.ToString();
+            p["on"] = on ? "1" : "0";
+        }
+        else if (kind.Equals("flight", StringComparison.OrdinalIgnoreCase))
+        {
+            p["on"] = services.Airplane.IsEnabled ? "1" : "0";
+        }
 
         return p;
     }
@@ -89,4 +125,19 @@ public sealed class TesseraFlyoutRequestBuilder
 
     public static TesseraSettings LoadSettings() =>
         ModuleSettingsStore.Load(ModuleId, () => new TesseraSettings());
+
+    /// <summary>Read backdrop blur toggle from flyout payload (supports legacy bakedFrost key).</summary>
+    public static bool BackdropBlurFromPayload(IReadOnlyDictionary<string, string>? payload)
+    {
+        if (payload is null)
+            return true;
+        if (payload.TryGetValue("backdropBlur", out var raw)
+            || payload.TryGetValue("bakedFrost", out raw))
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                return true;
+            return raw is not ("0" or "false" or "False" or "off" or "Off");
+        }
+        return true;
+    }
 }

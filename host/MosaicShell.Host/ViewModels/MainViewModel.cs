@@ -163,7 +163,7 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _tesseraMediaStrip = true;
     [ObservableProperty] private bool _tesseraAcrylicBackdrop = true;
     [ObservableProperty] private bool _tesseraFocusDim = true;
-    [ObservableProperty] private bool _tesseraBakedFrost;
+    [ObservableProperty] private bool _tesseraBackdropBlur;
     [ObservableProperty] private decimal _tesseraFlyoutScalePercent = 100;
     [ObservableProperty] private string _tesseraAccentHex = "";
     [ObservableProperty] private decimal _tesseraLegacyStepPercent = 2;
@@ -287,7 +287,7 @@ public partial class MainViewModel : ViewModelBase
             TesseraMediaStrip = s.ShowMediaStripOnVolume;
             TesseraAcrylicBackdrop = s.UseAcrylicBackdrop;
             TesseraFocusDim = s.UseFocusDim;
-            TesseraBakedFrost = s.UseBakedFrost;
+            TesseraBackdropBlur = s.UseBackdropBlur;
             TesseraFlyoutScalePercent = Math.Clamp(s.FlyoutScalePercent, 50, 150);
             TesseraAccentHex = s.AccentColor ?? "";
             // Stored as 0-1 fraction; UI is percent points out of 100
@@ -392,7 +392,7 @@ public partial class MainViewModel : ViewModelBase
         s.ShowMediaStripOnVolume = TesseraMediaStrip;
         s.UseAcrylicBackdrop = TesseraAcrylicBackdrop;
         s.UseFocusDim = TesseraFocusDim;
-        s.UseBakedFrost = TesseraBakedFrost;
+        s.UseBackdropBlur = TesseraBackdropBlur;
         s.FlyoutScalePercent = (int)Math.Clamp(TesseraFlyoutScalePercent, 50, 150);
         s.AccentColor = TesseraAccentColor.NormalizeOrEmpty(TesseraAccentHex);
         TesseraAccentHex = s.AccentColor;

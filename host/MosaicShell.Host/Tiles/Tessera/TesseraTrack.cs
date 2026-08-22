@@ -292,23 +292,22 @@ public sealed class TesseraTrack : Panel
 
             if (!FatThumb && ShellRadius > 0.5 && thickness >= w * 0.85)
             {
-                ClipToBounds = true;
                 var r = ShellRadius;
+                ApplyShellClip(w, h, r, r);
                 var trackLen = Math.Max(1, h - pad * 2);
                 var accent = AccentBrushOverride ?? TesseraPalette.AccentBrush;
                 var useM3Handle = GlassFill && ShowThumb;
-                var fillH = Math.Max(v > 0.001 ? (useM3Handle ? M3HandleThin : 2) : 0, trackLen * v);
+                var fillH = ComputeVerticalFillHeight(v, trackLen, useM3Handle);
                 var fillTop = pad + trackLen - fillH;
 
                 _back.IsVisible = false;
                 ApplyFillBrush();
 
-                var bottomR = Math.Min(r, Math.Max(0, fillH / 2));
-                var topR = fillH >= trackLen - 1 ? r : (useM3Handle ? M3InsideCorner : 0);
+                var bottomR = fillH >= trackLen - 0.5 ? r : Math.Min(r, Math.Max(0, fillH / 2));
+                var topR = fillH >= trackLen - 0.5 ? r : (useM3Handle ? M3InsideCorner : 0);
                 var fillCorner = new CornerRadius(topR, topR, bottomR, bottomR);
                 _fill.CornerRadius = fillCorner;
-                var fillRect = new Rect(0, fillTop, w, fillH);
-                _fill.Arrange(fillRect);
+                _fill.Arrange(new Rect(0, fillTop, w, fillH));
 
                 if (useM3Handle)
                 {
@@ -329,6 +328,7 @@ public sealed class TesseraTrack : Panel
                 var shellTopR = Math.Max(0, ShellRadius);
                 var shellBottomR = Math.Max(0, ShellEndRadius);
                 var shellClip = shellTopR > 0.5 || shellBottomR > 0.5;
+                ApplyShellClip(w, h, shellTopR, shellBottomR);
                 const double bedInsetX = 4.0;
                 var insetY = shellClip ? 0 : Math.Max(6, TrackPad);
                 var bedW = shellClip
@@ -338,7 +338,7 @@ public sealed class TesseraTrack : Panel
                         : Math.Max(12, w - Math.Max(4, TrackPad) * 2);
                 var bedX = (w - bedW) / 2;
                 var trackLen = Math.Max(1, h - insetY * 2);
-                var fillH = Math.Max(v > 0.001 ? M3HandleThin : 0, trackLen * v);
+                var fillH = ComputeVerticalFillHeight(v, trackLen, useM3Handle: true);
                 var fillTop = insetY + trackLen - fillH;
                 var accent = AccentBrushOverride ?? TesseraPalette.AccentBrush;
 
@@ -347,16 +347,13 @@ public sealed class TesseraTrack : Panel
                 _back.CornerRadius = new CornerRadius(backTopR, backTopR, backBottomR, backBottomR);
                 _back.Arrange(new Rect(bedX, insetY, bedW, trackLen));
 
-                var fillTopR = fillH >= trackLen - 1 ? backTopR : M3InsideCorner;
+                var fillTopR = fillH >= trackLen - 0.5 ? backTopR : M3InsideCorner;
                 var fillBottomR = backBottomR;
                 _fill.CornerRadius = new CornerRadius(fillTopR, fillTopR, fillBottomR, fillBottomR);
                 _fill.Arrange(new Rect(bedX, fillTop, bedW, fillH));
 
                 ArrangeM3VerticalHandle(w, insetY, fillTop, fillH, v, accent, bedW);
                 ArrangeM3Stop(w, insetY, v, accent);
-
-                ClipToBounds = false;
-                Clip = null;
             }
             else if (PixelVerticalFill)
             {
@@ -474,6 +471,25 @@ public sealed class TesseraTrack : Panel
         Value = VolumePercent.Quantize(raw);
     }
 
+    private static double ComputeVerticalFillHeight(double v, double trackLen, bool useM3Handle)
+    {
+        if (v <= 0.001) return 0;
+        if (v >= 0.999) return trackLen;
+        var minFill = useM3Handle ? M3HandleThin : 2.0;
+        return Math.Min(trackLen, Math.Max(minFill, trackLen * v));
+    }
+
+    private void ApplyShellClip(double w, double h, double topR, double bottomR)
+    {
+        ClipToBounds = true;
+        var clipR = Math.Max(topR, bottomR);
+        Clip = new RectangleGeometry(new Rect(0, 0, w, h))
+        {
+            RadiusX = clipR,
+            RadiusY = clipR
+        };
+    }
+
     private void ApplyFillBrush()
     {
         var accent = AccentBrushOverride ?? TesseraPalette.AccentBrush;
@@ -496,7 +512,7 @@ public sealed class TesseraTrack : Panel
         if (ShowThumb && fillH >= M3HandleThin && v < 0.999)
         {
             var handleW = Math.Min(w, Math.Max(M3HandleWide, bedW + 12));
-            var handleY = fillTop - M3ThumbGap - M3HandleThin;
+            var handleY = Math.Max(insetY, fillTop - M3ThumbGap - M3HandleThin);
             if (handleY >= insetY - 0.5)
             {
                 _thumb.IsVisible = true;

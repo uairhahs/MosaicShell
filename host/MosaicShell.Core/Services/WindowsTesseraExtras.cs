@@ -7,6 +7,7 @@ namespace MosaicShell.Core.Services;
 public sealed class WindowsLockKeysService : ILockKeysService
 {
     private System.Threading.Timer? _timer;
+    private System.Threading.Timer? _toggleDebounce;
     private IntPtr _hook;
     private LowLevelKeyboardProc? _proc;
     private readonly object _sync = new();
@@ -23,7 +24,7 @@ public sealed class WindowsLockKeysService : ILockKeysService
         {
             Sample(raise: false);
             InstallHook();
-            _timer ??= new System.Threading.Timer(_ => Sample(raise: true), null, 500, 500);
+            _timer ??= new System.Threading.Timer(_ => Sample(raise: true), null, 250, 250);
         }
     }
 
@@ -33,6 +34,8 @@ public sealed class WindowsLockKeysService : ILockKeysService
         {
             _timer?.Dispose();
             _timer = null;
+            _toggleDebounce?.Dispose();
+            _toggleDebounce = null;
             RemoveHook();
         }
     }
@@ -59,32 +62,45 @@ public sealed class WindowsLockKeysService : ILockKeysService
         if (nCode >= 0)
         {
             var msg = (int)wParam;
-            if (msg is WmKeyup or WmSyskeyup)
+            var vk = Marshal.ReadInt32(lParam);
+            if (vk is VkCapital or VkNumlock or VkScroll
+                && msg is WmKeydown or WmSyskeydown or WmKeyup or WmSyskeyup)
             {
-                var vk = Marshal.ReadInt32(lParam);
-                if (vk is VkCapital or VkNumlock or VkScroll)
-                    Sample(raise: true);
+                ScheduleToggleSample();
             }
         }
         return CallNextHookEx(_hook, nCode, wParam, lParam);
     }
 
-    private void Sample(bool raise)
+    /// <summary>Toggle keys commit state slightly after the key event — sample again after a short delay.</summary>
+    private void ScheduleToggleSample()
     {
         lock (_sync)
+            Sample(raise: true);
+
+        _toggleDebounce?.Dispose();
+        _toggleDebounce = new System.Threading.Timer(_ =>
         {
-            var caps = (GetKeyState(VkCapital) & 1) != 0;
-            var num = (GetKeyState(VkNumlock) & 1) != 0;
-            var scroll = (GetKeyState(VkScroll) & 1) != 0;
-            if (caps != _caps) { _caps = caps; if (raise) Changed?.Invoke(this, Caps); }
-            if (num != _num) { _num = num; if (raise) Changed?.Invoke(this, Num); }
-            if (scroll != _scroll) { _scroll = scroll; if (raise) Changed?.Invoke(this, Scroll); }
-        }
+            lock (_sync)
+                Sample(raise: true);
+        }, null, 20, Timeout.Infinite);
+    }
+
+    private void Sample(bool raise)
+    {
+        var caps = (GetKeyState(VkCapital) & 1) != 0;
+        var num = (GetKeyState(VkNumlock) & 1) != 0;
+        var scroll = (GetKeyState(VkScroll) & 1) != 0;
+        if (caps != _caps) { _caps = caps; if (raise) Changed?.Invoke(this, Caps); }
+        if (num != _num) { _num = num; if (raise) Changed?.Invoke(this, Num); }
+        if (scroll != _scroll) { _scroll = scroll; if (raise) Changed?.Invoke(this, Scroll); }
     }
 
     public void Dispose() => Stop();
 
     private const int WhKeyboardLl = 13;
+    private const int WmKeydown = 0x0100;
+    private const int WmSyskeydown = 0x0104;
     private const int WmKeyup = 0x0101;
     private const int WmSyskeyup = 0x0105;
     private const int VkCapital = 0x14;

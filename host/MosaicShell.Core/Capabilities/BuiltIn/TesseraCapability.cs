@@ -11,6 +11,7 @@ public sealed class TesseraCapability : IModuleCapability
     private readonly ICapabilityUiBridge _ui;
     private readonly TesseraFlyoutRequestBuilder _requests = new();
     private TesseraSettings _settings = new();
+    private DateTime _settingsMtimeUtc = DateTime.MinValue;
     private readonly object _gate = new();
     private DateTimeOffset _lastShowUtc = DateTimeOffset.MinValue;
     private string _lastKind = "";
@@ -28,7 +29,7 @@ public sealed class TesseraCapability : IModuleCapability
     public Task ArmAsync(CancellationToken cancellationToken = default)
     {
         if (IsArmed) return Task.CompletedTask;
-        _settings = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
+        ReloadSettings();
         _services.Audio.Changed += OnVolume;
         _services.Media.Changed += OnMedia;
         _services.Media.ProgressChanged += OnMediaProgress;
@@ -193,7 +194,7 @@ public sealed class TesseraCapability : IModuleCapability
         {
             lock (_gate)
             {
-                _settings = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
+                EnsureSettingsFresh();
                 var now = DateTimeOffset.UtcNow;
                 var isStatus = kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
                                || kind.Equals("flight", StringComparison.OrdinalIgnoreCase);
@@ -222,8 +223,26 @@ public sealed class TesseraCapability : IModuleCapability
         }
     }
 
-    private FlyoutRequest BuildRequest(string kind, IReadOnlyDictionary<string, string>? payload) =>
-        _requests.Build(_services, _settings, kind, payload, _lastLock);
+    private FlyoutRequest BuildRequest(string kind, IReadOnlyDictionary<string, string>? payload)
+    {
+        EnsureSettingsFresh();
+        return _requests.Build(_services, _settings, kind, payload, _lastLock);
+    }
+
+    private void ReloadSettings()
+    {
+        _settings = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
+        var path = ModuleSettingsStore.PathFor("Tessera");
+        _settingsMtimeUtc = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
+    }
+
+    private void EnsureSettingsFresh()
+    {
+        var path = ModuleSettingsStore.PathFor("Tessera");
+        var mtime = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
+        if (mtime != _settingsMtimeUtc)
+            ReloadSettings();
+    }
 
     public void Dispose() => DisarmAsync().GetAwaiter().GetResult();
 }

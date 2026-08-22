@@ -89,7 +89,7 @@ public class TesseraCapabilityTests : IDisposable
     public async Task Armed_tessera_shows_flyout_on_volume_change()
     {
         var services = HostServicesFakes.Create();
-        var ui = new CaptureUi(_shown);
+        var ui = new BridgeUi(new CaptureFlyouts(_shown));
         var registry = new CapabilityRegistry();
         BuiltInCapabilityFactories.RegisterAll(registry);
         var daemon = new CapabilityDaemon(registry, services, ui);
@@ -97,21 +97,5 @@ public class TesseraCapabilityTests : IDisposable
         (await daemon.ArmAsync("Tessera")).Should().BeTrue();
         services.Audio.MasterVolume = 0.8;
         _shown.Should().Contain(r => r.ModuleId == "Tessera" && r.Kind == "vol");
-    }
-
-    private sealed class CaptureUi(List<FlyoutRequest> shown) : ICapabilityUiBridge
-    {
-        public IFlyoutPresenter Flyouts { get; } = new CaptureFlyouts(shown);
-        public IHostUiBridge HostUi { get; } = NullHostUiBridge.Instance;
-    }
-
-    private sealed class CaptureFlyouts(List<FlyoutRequest> shown) : IFlyoutPresenter
-    {
-        public void Show(FlyoutRequest request) => shown.Add(request);
-        public void Update(FlyoutRequest request) => shown.Add(request);
-        public void SoftRefresh(FlyoutRequest request) { }
-        public void Hide(string moduleId) { }
-        public void HideAll() { }
-        public bool IsVisible(string moduleId) => shown.Any(r => r.ModuleId == moduleId);
     }
 }

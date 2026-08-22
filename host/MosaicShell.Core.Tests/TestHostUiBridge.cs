@@ -35,3 +35,14 @@ internal sealed class BridgeUi(IFlyoutPresenter flyouts, IHostUiBridge? hostUi =
     public IFlyoutPresenter Flyouts { get; } = flyouts;
     public IHostUiBridge HostUi { get; } = hostUi ?? NullHostUiBridge.Instance;
 }
+
+internal sealed class CaptureFlyouts(List<FlyoutRequest> shown) : IFlyoutPresenter
+{
+    public void Show(FlyoutRequest request) => shown.Add(request);
+    public void Update(FlyoutRequest request) => shown.Add(request);
+    public void SoftRefresh(FlyoutRequest request) { }
+    public void Hide(string moduleId) { }
+    public void HideAll() { }
+    public bool IsVisible(string moduleId) =>
+        shown.Any(r => r.ModuleId.Equals(moduleId, StringComparison.OrdinalIgnoreCase));
+}

@@ -43,37 +43,3 @@ public static class TesseraVolumeGlyph
             Foreground = TesseraPalette.FontBrush
         };
 }
-
-public static class TesseraShell
-{
-    public static Control Create(
-        Control child,
-        double cornerRadius,
-        Thickness? padding = null,
-        Color? fill = null,
-        double? width = null,
-        double? height = null,
-        double? minWidth = null,
-        double? maxWidth = null)
-    {
-        var shell = TesseraGlassPanel.Wrap(
-            child,
-            cornerRadius,
-            padding,
-            width,
-            height,
-            minWidth,
-            maxWidth,
-            tint: fill ?? TesseraPalette.Primary);
-
-        // 1px inset keeps the glass edge from clipping at flyout window bounds.
-        return new Border
-        {
-            Background = Brushes.Transparent,
-            Margin = new Thickness(1),
-            HorizontalAlignment = HorizontalAlignment.Left,
-            VerticalAlignment = VerticalAlignment.Top,
-            Child = shell
-        };
-    }
-}

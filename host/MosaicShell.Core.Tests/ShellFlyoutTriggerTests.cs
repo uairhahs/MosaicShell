@@ -69,27 +69,11 @@ public class ShellFlyoutTriggerTests : IDisposable
             ShellFlyoutTriggers = hook,
         };
 
-        var ui = new CaptureUi(shown);
+        var ui = new BridgeUi(new CaptureFlyouts(shown));
         var cap = new TesseraCapability(services, ui);
         await cap.ArmAsync();
         hook.Raise(ShellFlyoutKind.Volume);
         shown.Should().Contain(r => r.Kind == "vol");
         await cap.DisarmAsync();
-    }
-
-    private sealed class CaptureUi(List<FlyoutRequest> shown) : ICapabilityUiBridge
-    {
-        public IFlyoutPresenter Flyouts { get; } = new CaptureFlyouts(shown);
-        public IHostUiBridge HostUi { get; } = NullHostUiBridge.Instance;
-    }
-
-    private sealed class CaptureFlyouts(List<FlyoutRequest> shown) : IFlyoutPresenter
-    {
-        public void Show(FlyoutRequest request) => shown.Add(request);
-        public void Update(FlyoutRequest request) => shown.Add(request);
-        public void SoftRefresh(FlyoutRequest request) { }
-        public void Hide(string moduleId) { }
-        public void HideAll() { }
-        public bool IsVisible(string moduleId) => shown.Count > 0;
     }
 }

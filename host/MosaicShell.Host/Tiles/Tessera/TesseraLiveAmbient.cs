@@ -68,4 +68,10 @@ internal static class TesseraLiveAmbient
         _current.MediaArtist = artist;
         _current.MediaPos = progressLine;
     }
+
+    public static void RegisterStatus(TextBlock label)
+    {
+        if (_current is null) return;
+        _current.StatusLabel = label;
+    }
 }
