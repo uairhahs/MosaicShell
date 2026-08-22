@@ -1,0 +1,5 @@
+{
+  "id": "Canvas",
+  "runtime": "avalonia",
+  "capability": false
+}

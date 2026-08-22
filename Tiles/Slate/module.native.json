@@ -1,0 +1,5 @@
+{
+  "id": "Slate",
+  "runtime": "avalonia",
+  "capability": true
+}

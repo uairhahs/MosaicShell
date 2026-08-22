@@ -1,2 +1,0 @@
-﻿[Variables]
-BarHandler=9

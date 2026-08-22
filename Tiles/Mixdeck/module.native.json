@@ -1,0 +1,5 @@
+{
+  "id": "Mixdeck",
+  "runtime": "avalonia",
+  "capability": true
+}

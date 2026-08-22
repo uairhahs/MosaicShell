@@ -1,2 +1,0 @@
-﻿[Variables]
-Core.patchNoteCheckvariable=Jax

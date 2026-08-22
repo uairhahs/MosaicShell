@@ -17,11 +17,9 @@
 
 ## About
 
-MosaicShell is a configurable desktop shell built from composable surfaces — widgets, utilities, and workflows you arrange to fit how you work.
+MosaicShell is a configurable desktop shell built from composable surfaces. The **Avalonia Host** manages settings, module install, and armed capabilities; each tile is a native capability or widget.
 
-The hub handles settings, module management, and updates. Each tile installs and updates on its own.
-
-Forked from [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore), archived November 2024.
+Forked from [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore), archived November 2024. Rainmeter-era promises are archived under [docs/legacy/](docs/legacy/).
 
 ---
 
@@ -30,77 +28,47 @@ Forked from [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore), archived No
 | Requirement | Minimum |
 |-------------|---------|
 | OS | Windows 10 x64 or later |
+| .NET SDK | 8.0 |
 | RAM | 6 GB |
-| CPU | 4 cores |
-| PowerShell | v5.1 or later — [upgrade here](https://docs.microsoft.com/en-us/powershell/scripting/windows-powershell/install/installing-windows-powershell?view=powershell-7.2#upgrading-existing-windows-powershell) |
 
-## Installation
-
-Run the following command in PowerShell to install the latest version of MosaicShell.
-
-> To launch PowerShell as Administrator: `Win + R` → type `powershell` → press `Ctrl + Shift + Enter`
+## Install (Host)
 
 ```powershell
-iwr -useb "https://raw.githubusercontent.com/uairhahs/MosaicShell/master/RunMosaicist.ps1" | iex
+cd host
+dotnet test MosaicShell.Core.Tests
+dotnet run --project Mosaicist -- install-module Tessera
+dotnet run --project Mosaicist -- install-module Mixdeck
+dotnet run --project MosaicShell.Host
 ```
+
+See [docs/architecture-native.md](docs/architecture-native.md), [docs/native-rewrite.md](docs/native-rewrite.md), and [docs/parity/README.md](docs/parity/README.md).
 
 ---
 
 ## Tiles
 
-Tiles are Rainmeter skins bundled with MosaicShell under `Tiles/`.
+Every catalog module ships as a thin `Tiles/{Id}` install stub (`module.native.json` + README). Runtime code lives under `host/`.
 
 | Tile | Description | License |
 |------|-------------|---------|
-| Tessera | System flyout replacements for volume, brightness, and media | MPL-2.0 |
+| Tessera | Volume / brightness / media flyouts (armed capability) | MPL-2.0 |
 | Mixdeck | Per-app audio mixer overlay | MPL-2.0 |
-| Inlay | Start menu replacement with hot apps, shortcuts, and modules | MPL-2.0 |
-| Slate | Idle / lock screen skin | MPL-2.0 |
-| Chord | Keyboard-driven app launcher | MPL-2.0 |
-| Shade | Notification shade inspired by MIUI | MPL-2.0 |
-| Pulse | Audio visualizer with bar, round, and vector styles | MIT |
-| Chrono | Clock collection with multiple display styles | MIT |
-| Phono | Media player widget with multiple layouts | MIT |
-| Canvas | Minimal plain-text information widget | MIT |
+| Inlay | Start-menu launcher (pins + search) | MPL-2.0 |
+| Slate | Idle clock overlay | MPL-2.0 |
+| Chord | Macro app launcher | MPL-2.0 |
+| Substrate | Quick-settings shade | MPL-2.0 |
+| Pulse | Audio visualizer widget | MIT |
+| Chrono | Clock widget | MIT |
+| Phono | SMTC media widget | MIT |
+| Canvas | System-metrics text widget | MIT |
 
 ---
 
 ## Credits
 
-### Plugins
-
-| Plugin | Creator |
-|--------|---------|
-| [AudioAnalyzer](https://forum.rainmeter.net/viewtopic.php?t=31091) | rxtd |
-| [FrostedGlass](https://forum.rainmeter.net/viewtopic.php?t=23106) | theAzack9 |
-| [FileChoose](https://forum.rainmeter.net/viewtopic.php?t=33767) | SetSukka |
-| [magickmeter](https://github.com/khanhas/MagickMeter) | [@khanhas](https://github.com/khanhas) |
-| [ConfigActive](https://forum.rainmeter.net/viewtopic.php?t=28720) | jsMorley |
-| [Focus](https://forum.rainmeter.net/viewtopic.php?t=37989) | [@deathcrafter](https://github.com/deathcrafter) |
-| [Mouse](https://github.com/NighthawkSLO/Mouse.dll/) | [@NighthawkSLO](https://github.com/NighthawkSLO) |
-| [MouseXY](https://forum.rainmeter.net/viewtopic.php?t=22900) | Fawxy |
-| [PowershellRM](https://github.com/khanhas/PowershellRM) | [@khanhas](https://github.com/khanhas) |
-| [ShowInToolbar](https://forum.rainmeter.net/viewtopic.php?t=25334) | theAzack9 |
-| [HotKey](https://github.com/brianferguson/HotKey.dll) | [@brianferguson](https://github.com/brianferguson) |
-| [Chameleon](https://github.com/socks-the-fox/Chameleon) | socks-the-fox |
-| [IsFullScreen](https://forum.rainmeter.net/viewtopic.php?t=28305) | jsMorley |
-| [WebNowPlaying](https://github.com/tjhrulz/WebNowPlaying) | Rainmeter team |
-| [Drag&Drop](https://forum.rainmeter.net/viewtopic.php?t=23107) | theAzack9 |
-| [MediaPlayer](https://github.com/i2002/RainmeterMediaPlayer) | [@i2002](https://github.com/i2002) |
-| [AppVolume](https://github.com/khanhas/AppVolumePlugin) | Original [@khanhas](https://github.com/khanhas), remastered [@deathcrafter](https://github.com/deathcrafter) |
-| [TrayIcon](https://github.com/deathcrafter/PluginTrayIcon) | [@deathcrafter](https://github.com/deathcrafter) |
-| [SysColor](https://github.com/brianferguson/SysColor.dll) | [@brianferguson](https://github.com/brianferguson) |
-
-### Technologies
-
-| Technology | Creator |
-|------------|---------|
-| [AutoHotkey](https://www.autohotkey.com/) | AHK Team |
-| [RainRGB](https://forum.rainmeter.net/viewtopic.php?t=6215) | jsMorley |
-
 ### Original project
 
-MosaicShell is a fork of [JaxCore](https://github.com/Jax-Core/JaxCore) by [@EnhancedJax](https://github.com/EnhancedJax), archived November 2024. The original modules, plugin integrations, and installer architecture are his work.
+MosaicShell is a fork of [JaxCore](https://github.com/Jax-Core/JaxCore) by [@EnhancedJax](https://github.com/EnhancedJax), archived November 2024. Historical Rainmeter plugin credits: [docs/legacy/README.md](docs/legacy/README.md).
 
 ---
 

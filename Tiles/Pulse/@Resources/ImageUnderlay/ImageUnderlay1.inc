@@ -1,9 +1,0 @@
-﻿[ImageUnderlay]
-Meter=Image
-Container=Shape
-ImageName="[#ImageUnderlayName]"
-H=722
-W=446
-PreserveAspectRatio=2
-UpdateDivider=-1
-TransformationMatrix=1;0;0;1;0;0
