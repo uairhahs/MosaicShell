@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace MosaicShell.Core.Settings;
+namespace MosaicShell.Core.Modules.Tessera;
 
 /// <summary>Parse Tessera appearance accent (#RRGGBB). Empty = use system accent.</summary>
 public static class TesseraAccentColor
@@ -21,7 +21,7 @@ public static class TesseraAccentColor
             || !uint.TryParse(s, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var rgb))
             return false;
 
-        r = (byte)(rgb >> 16);
+        r = (byte)((rgb >> 16) & 0xFF);
         g = (byte)((rgb >> 8) & 0xFF);
         b = (byte)(rgb & 0xFF);
         return true;

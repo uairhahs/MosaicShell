@@ -114,6 +114,11 @@ public sealed class ModuleManifest
     public string Id { get; set; } = "";
     public string Version { get; set; } = "0.0.0";
     public string? DisplayName { get; set; }
+    /// <summary>Hub / Library blurb for discovered modules.</summary>
+    public string? Description { get; set; }
+    /// <summary>Optional how-to text for module config (third-party modules).</summary>
+    public string? UsageSummary { get; set; }
+    public string? HowToTrigger { get; set; }
     public Dictionary<string, string>? DefaultSettings { get; set; }
 
     /// <summary>Widget | Capability | Hybrid</summary>

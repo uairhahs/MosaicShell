@@ -1,4 +1,5 @@
-namespace MosaicShell.Core.Styles;
+using MosaicShell.Core.Styles;
+namespace MosaicShell.Core.Modules.Tessera;
 
 /// <summary>
 /// Maps Tessera StyleCatalog ids to Host layout maturity (Phase C1).

@@ -1,9 +1,9 @@
+using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
-using MosaicShell.Core.Styles;
 
-namespace MosaicShell.Core.Capabilities;
+namespace MosaicShell.Core.Modules.Tessera;
 
 /// <summary>Single source of truth for Tessera flyout request payloads and layout metadata.</summary>
 public sealed class TesseraFlyoutRequestBuilder

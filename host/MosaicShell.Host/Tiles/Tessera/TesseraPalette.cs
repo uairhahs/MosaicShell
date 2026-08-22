@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Media;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Settings;
 
 namespace MosaicShell.Host.Tiles.Tessera;

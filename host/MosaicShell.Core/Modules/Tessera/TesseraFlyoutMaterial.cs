@@ -1,4 +1,4 @@
-namespace MosaicShell.Core.Capabilities;
+namespace MosaicShell.Core.Modules.Tessera;
 
 /// <summary>
 /// Flyout material policy. Soft frost = translucent crust + chrome edge blend.

@@ -95,6 +95,32 @@
       <Setter Property="Padding" Value="12" />
       <Setter Property="Margin" Value="0,0,0,8" />
     </Style>
+    <Style Selector="Border.row:pointerover">
+      <Setter Property="Background" Value="#252536" />
+    </Style>
+    <Style Selector="Button.tileCog">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0,0,4,0" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.tileCog:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Border.libraryHit">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
     <Style Selector="Border.section">
       <Setter Property="Background" Value="#1e1e2e" />
       <Setter Property="CornerRadius" Value="12" />
@@ -174,7 +200,7 @@
     </Border>
 
     <!-- Page body: scaled Home/Tiles/… vs unscaled full-width Settings -->
-    <Grid>
+    <Grid ClipToBounds="True">
       <LayoutTransformControl IsVisible="{Binding !IsSettings}"
                               HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
         <LayoutTransformControl.LayoutTransform>
@@ -197,20 +223,22 @@
                       Command="{Binding CheckUpdatesCommand}" VerticalAlignment="Center" />
             </Grid>
             <ItemsControl ItemsSource="{Binding HomeCards}"
-                          HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                          HorizontalAlignment="Stretch" VerticalAlignment="Top">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                  <UniformGrid Columns="1" Rows="3" />
+                  <StackPanel Spacing="12" />
                 </ItemsPanelTemplate>
               </ItemsControl.ItemsPanel>
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:DiscoverCard">
-                  <Border Classes="card" Margin="0,0,0,12" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                  <!-- Content-sized cards — do not stretch to fill a tall window -->
+                  <Border Classes="card" HorizontalAlignment="Stretch" VerticalAlignment="Top"
+                          Padding="20,18"
                           PointerPressed="OnDiscoverCardPressed">
-                    <Grid ColumnDefinitions="Auto,*" Margin="8,0">
+                    <Grid ColumnDefinitions="Auto,*">
                       <Image Width="48" Height="48" Margin="0,0,20,0" VerticalAlignment="Center"
                              Source="{Binding IconPath}" />
-                      <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
+                      <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
                         <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold" Foreground="#cdd6f4" />
                         <TextBlock Text="{Binding Body}" FontSize="14" Foreground="#a6adc8" TextWrapping="Wrap" />
                       </StackPanel>
@@ -252,35 +280,41 @@
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:LibraryItemViewModel">
                       <Border Classes="row">
-                        <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto">
-                          <CheckBox IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                          <Image Grid.Column="1" Width="32" Height="32" Margin="0,0,12,0"
+                        <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
+                          <CheckBox Grid.Column="0" IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                          <Image Grid.Column="1" Width="32" Height="32" Margin="0,0,8,0"
                                  Source="{Binding IconPath}" VerticalAlignment="Center" />
-                          <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                              <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="#cdd6f4" />
-                              <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="#a6adc8" />
-                            </StackPanel>
-                            <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#6c7086"
-                                       TextWrapping="Wrap" Margin="0,4,0,0" />
-                          </StackPanel>
-                          <Button Grid.Column="3" Classes="icon action" Margin="0,0,6,0"
-                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
-                                  CommandParameter="{Binding}"
+                          <Border Grid.Column="2" Classes="libraryHit"
+                                  PointerPressed="OnLibraryTileBodyPressed"
                                   ToolTip.Tip="Tile settings">
-                            <icons:MaterialIcon Kind="Cog" Width="18" Height="18" />
-                          </Button>
-                          <Button Grid.Column="4" Classes="icon action" Margin="0,0,6,0"
+                            <StackPanel VerticalAlignment="Center">
+                              <StackPanel Orientation="Horizontal" Spacing="4">
+                                <Button Classes="tileCog"
+                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
+                                        CommandParameter="{Binding}"
+                                        ToolTip.Tip="Tile settings">
+                                  <icons:MaterialIcon Kind="Cog" Width="16" Height="16" />
+                                </Button>
+                                <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="#cdd6f4" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="#a6adc8"
+                                           VerticalAlignment="Center" />
+                              </StackPanel>
+                              <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#6c7086"
+                                         TextWrapping="Wrap" Margin="0,4,0,0" />
+                            </StackPanel>
+                          </Border>
+                          <Button Grid.Column="3" Classes="icon action" Margin="0,0,6,0"
                                   Command="{Binding #Root.((vm:MainViewModel)DataContext).UninstallModuleCommand}"
                                   CommandParameter="{Binding}"
                                   ToolTip.Tip="Uninstall">
                             <icons:MaterialIcon Kind="Minus" Width="18" Height="18" />
                           </Button>
-                          <Button Grid.Column="5" Classes="icon primary"
+                          <Button Grid.Column="4" Classes="icon primary"
                                   IsEnabled="{Binding !IsInstalling}"
                                   Command="{Binding #Root.((vm:MainViewModel)DataContext).InstallModuleCommand}"
                                   CommandParameter="{Binding}"
-                                  ToolTip.Tip="Install / arm / disarm">
+                                  ToolTip.Tip="{Binding ActionToolTip}">
                             <icons:MaterialIcon Kind="{Binding ActionIcon}" Width="18" Height="18" />
                           </Button>
                         </Grid>
@@ -298,35 +332,41 @@
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:LibraryItemViewModel">
                       <Border Classes="row">
-                        <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto">
-                          <CheckBox IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                          <Image Grid.Column="1" Width="32" Height="32" Margin="0,0,12,0"
+                        <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
+                          <CheckBox Grid.Column="0" IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                          <Image Grid.Column="1" Width="32" Height="32" Margin="0,0,8,0"
                                  Source="{Binding IconPath}" VerticalAlignment="Center" />
-                          <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                              <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="#cdd6f4" />
-                              <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="#a6adc8" />
-                            </StackPanel>
-                            <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#6c7086"
-                                       TextWrapping="Wrap" Margin="0,4,0,0" />
-                          </StackPanel>
-                          <Button Grid.Column="3" Classes="icon action" Margin="0,0,6,0"
-                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
-                                  CommandParameter="{Binding}"
+                          <Border Grid.Column="2" Classes="libraryHit"
+                                  PointerPressed="OnLibraryTileBodyPressed"
                                   ToolTip.Tip="Tile settings">
-                            <icons:MaterialIcon Kind="Cog" Width="18" Height="18" />
-                          </Button>
-                          <Button Grid.Column="4" Classes="icon action" Margin="0,0,6,0"
+                            <StackPanel VerticalAlignment="Center">
+                              <StackPanel Orientation="Horizontal" Spacing="4">
+                                <Button Classes="tileCog"
+                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
+                                        CommandParameter="{Binding}"
+                                        ToolTip.Tip="Tile settings">
+                                  <icons:MaterialIcon Kind="Cog" Width="16" Height="16" />
+                                </Button>
+                                <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="#cdd6f4" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="#a6adc8"
+                                           VerticalAlignment="Center" />
+                              </StackPanel>
+                              <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#6c7086"
+                                         TextWrapping="Wrap" Margin="0,4,0,0" />
+                            </StackPanel>
+                          </Border>
+                          <Button Grid.Column="3" Classes="icon action" Margin="0,0,6,0"
                                   Command="{Binding #Root.((vm:MainViewModel)DataContext).UninstallModuleCommand}"
                                   CommandParameter="{Binding}"
                                   ToolTip.Tip="Uninstall">
                             <icons:MaterialIcon Kind="Minus" Width="18" Height="18" />
                           </Button>
-                          <Button Grid.Column="5" Classes="icon primary"
+                          <Button Grid.Column="4" Classes="icon primary"
                                   IsEnabled="{Binding !IsInstalling}"
                                   Command="{Binding #Root.((vm:MainViewModel)DataContext).InstallModuleCommand}"
                                   CommandParameter="{Binding}"
-                                  ToolTip.Tip="Install / launch / stop">
+                                  ToolTip.Tip="{Binding ActionToolTip}">
                             <icons:MaterialIcon Kind="{Binding ActionIcon}" Width="18" Height="18" />
                           </Button>
                         </Grid>
@@ -361,6 +401,8 @@
             </StackPanel>
           </Grid>
 
+          <!-- Tessera vs other modules (single fill slot — avoids DockPanel starving Tessera) -->
+          <Grid>
           <!-- Tessera: left = scrolling settings + pinned Save; right = full-height Appearance -->
           <Grid IsVisible="{Binding ShowTesseraExtras}"
                 ColumnDefinitions="*,*">
@@ -497,7 +539,8 @@
                   <TextBlock Text="Saves on Try now / Save"
                              Foreground="#6c7086" FontSize="12" />
 
-                  <tessera:TesseraStylePreview StyleId="{Binding ModuleStyle}"
+                  <tessera:TesseraStylePreview IsVisible="{Binding TesseraConfigPreviewReady}"
+                                               StyleId="{Binding ModuleStyle}"
                                                ShowMediaStrip="{Binding TesseraMediaStrip}"
                                                AccentColor="{Binding TesseraAccentHex}" />
 
@@ -666,6 +709,7 @@
               </StackPanel>
             </ScrollViewer>
           </DockPanel>
+          </Grid>
         </DockPanel>
 
         <!-- Welcome -->
@@ -731,7 +775,7 @@
             <StackPanel Spacing="10">
               <TextBlock Classes="sectionTitle" Text="Display &amp; scale" Margin="24,0,24,0" />
               <TextBlock Classes="sectionHint" Margin="24,0,24,0"
-                         Text="User scale multiplies OS DPI for Home/Tiles chrome and tile overlays. Settings itself stays unscaled." />
+                         Text="User zoom scales Home/Tiles chrome and tile overlays. OS per-monitor DPI is handled by Avalonia (device-independent pixels)." />
               <TextBlock Text="{Binding ScaleSummary}" Foreground="#a6adc8" TextWrapping="Wrap"
                          Margin="24,0,24,0" />
               <Grid ColumnDefinitions="*,Auto,Auto" Margin="0">
@@ -753,8 +797,7 @@
                         Margin="0,0,24,0" />
               </Grid>
               <StackPanel Orientation="Horizontal" Spacing="8" Margin="24,0,24,0">
-                <Button Classes="action" Content="Match Windows" Command="{Binding MatchWindowsCommand}" />
-                <Button Classes="action" Content="Re-detect DPI" Command="{Binding RedetectDpiCommand}" />
+                <Button Classes="action" Content="Reset to 100%" Command="{Binding ResetUserScaleCommand}" />
               </StackPanel>
             </StackPanel>
           </Border>

@@ -1,3 +1,4 @@
+using MosaicShell.Core.Modules.Tessera;
 using FluentAssertions;
 using MosaicShell.Core.Styles;
 

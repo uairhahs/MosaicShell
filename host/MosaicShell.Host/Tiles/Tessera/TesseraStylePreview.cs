@@ -1,7 +1,10 @@
+using System;
+using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 
 namespace MosaicShell.Host.Tiles.Tessera;
 
@@ -17,12 +20,18 @@ public sealed class TesseraStylePreview : Border
     public static readonly StyledProperty<string?> AccentColorProperty =
         AvaloniaProperty.Register<TesseraStylePreview, string?>(nameof(AccentColor));
 
+    private static int _suspendDepth;
+    private static event Action? RebuildFlushRequested;
+
     private readonly ContentControl _host = new()
     {
         HorizontalAlignment = HorizontalAlignment.Center,
         VerticalAlignment = VerticalAlignment.Center,
         IsHitTestVisible = false
     };
+
+    private bool _rebuildPending;
+    private bool _rebuildPosted;
 
     public TesseraStylePreview()
     {
@@ -42,7 +51,6 @@ public sealed class TesseraStylePreview : Border
             VerticalAlignment = VerticalAlignment.Center,
             Child = _host
         };
-        Rebuild();
     }
 
     public string? StyleId
@@ -63,12 +71,80 @@ public sealed class TesseraStylePreview : Border
         set => SetValue(AccentColorProperty, value);
     }
 
+    public static IDisposable EnterSuspendRebuild()
+    {
+        Interlocked.Increment(ref _suspendDepth);
+        return new SuspendScope();
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        RebuildFlushRequested += HandleRebuildFlush;
+        if (_rebuildPending || _host.Content is null)
+            ScheduleRebuild();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        RebuildFlushRequested -= HandleRebuildFlush;
+        base.OnDetachedFromVisualTree(e);
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+
+        if (change.Property == IsVisibleProperty)
+        {
+            if (IsVisible && _rebuildPending)
+                ScheduleRebuild();
+            return;
+        }
+
         if (change.Property == StyleIdProperty || change.Property == ShowMediaStripProperty
             || change.Property == AccentColorProperty)
+        {
+            ScheduleRebuild();
+        }
+    }
+
+    private void HandleRebuildFlush()
+    {
+        if (_rebuildPending)
+            ScheduleRebuild();
+    }
+
+    private void ScheduleRebuild()
+    {
+        if (Volatile.Read(ref _suspendDepth) > 0)
+        {
+            _rebuildPending = true;
+            return;
+        }
+
+        if (!IsVisible)
+        {
+            _rebuildPending = true;
+            return;
+        }
+
+        if (_rebuildPosted)
+            return;
+
+        _rebuildPosted = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            _rebuildPosted = false;
+            if (Volatile.Read(ref _suspendDepth) > 0 || !IsVisible)
+            {
+                _rebuildPending = true;
+                return;
+            }
+
+            _rebuildPending = false;
             Rebuild();
+        }, DispatcherPriority.Background);
     }
 
     private void Rebuild()
@@ -88,6 +164,19 @@ public sealed class TesseraStylePreview : Border
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
+        }
+    }
+
+    private sealed class SuspendScope : IDisposable
+    {
+        private int _disposed;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) != 0)
+                return;
+            if (Interlocked.Decrement(ref _suspendDepth) == 0)
+                RebuildFlushRequested?.Invoke();
         }
     }
 }

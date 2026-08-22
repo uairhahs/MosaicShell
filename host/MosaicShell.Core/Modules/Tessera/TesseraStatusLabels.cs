@@ -1,4 +1,6 @@
-namespace MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities;
+
+namespace MosaicShell.Core.Modules.Tessera;
 
 /// <summary>Status chip text for locks / flight flyouts.</summary>
 public static class TesseraStatusLabels

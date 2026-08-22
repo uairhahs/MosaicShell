@@ -6,14 +6,12 @@ using MosaicShell.Host.Tiles;
 
 namespace MosaicShell.Host.Capabilities;
 
-/// <summary>Avalonia implementation of overlay / config / Tessera preview host actions.</summary>
+/// <summary>Avalonia implementation of overlay / config / flyout preview host actions.</summary>
 public sealed class AvaloniaHostUiBridge : IHostUiBridge
 {
     private readonly Func<TileRuntime> _runtime;
     private readonly Func<AvaloniaTileSurfaceHost> _tileHost;
     private readonly IFlyoutPresenter _flyouts;
-    private readonly HostServices _services;
-    private readonly TesseraFlyoutRequestBuilder _tesseraRequests = new();
     private readonly Action<string> _openModuleConfig;
 
     public AvaloniaHostUiBridge(
@@ -26,7 +24,7 @@ public sealed class AvaloniaHostUiBridge : IHostUiBridge
         _runtime = runtime;
         _tileHost = tileHost;
         _flyouts = flyouts;
-        _services = services;
+        _ = services;
         _openModuleConfig = openModuleConfig;
     }
 
@@ -53,10 +51,6 @@ public sealed class AvaloniaHostUiBridge : IHostUiBridge
     public void RefreshOverlay(string moduleId) =>
         Dispatcher.UIThread.Post(() => _tileHost().Refresh(moduleId));
 
-    public void PreviewTesseraFlyout(string kind = "vol") =>
-        Dispatcher.UIThread.Post(() =>
-        {
-            var settings = TesseraFlyoutRequestBuilder.LoadSettings();
-            _flyouts.Show(_tesseraRequests.Build(_services, settings, kind));
-        });
+    public void PreviewFlyout(FlyoutRequest request) =>
+        Dispatcher.UIThread.Post(() => _flyouts.Show(request));
 }

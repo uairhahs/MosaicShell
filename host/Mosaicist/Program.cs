@@ -28,6 +28,7 @@ public static class Program
                 "scale" => CmdScale(args.Skip(1).ToArray()),
                 "hash" => await CmdHashAsync(args.Skip(1).ToArray()),
                 "install-module" => await CmdInstallModuleAsync(args.Skip(1).ToArray()),
+                "install-package" => await CmdInstallPackageAsync(args.Skip(1).ToArray()),
                 "uninstall-module" => CmdUninstallModule(args.Skip(1).ToArray()),
                 "import-shp" => CmdImportShp(args.Skip(1).ToArray()),
                 _ => Fail($"Unknown command '{args[0]}'.")
@@ -50,6 +51,7 @@ public static class Program
               scale [--reset-user]
               hash <file>
               install-module <id>
+              install-package <folder-or.zip>
               uninstall-module <id>
               import-shp <file.shp>
 
@@ -57,6 +59,7 @@ public static class Program
               Mosaicist list
               Mosaicist hash .\release.zip
               Mosaicist install-module Canvas
+              Mosaicist install-package .\MyTile.zip
               Mosaicist uninstall-module Canvas
               Mosaicist import-shp .\Nordic{0}.shp
             """);
@@ -84,11 +87,9 @@ public static class Program
     {
         AppPaths.EnsureLayout();
         var settings = ScaleSettingsStore.Load();
-        settings.DpiScale = DpiProbe.GetDpiScale();
         if (args.Contains("--reset-user")) settings.UserScale = 1.0;
         ScaleSettingsStore.Save(settings);
-        var ui = Math.Round(settings.DpiScale * settings.UserScale, 4);
-        Console.WriteLine($"DpiScale={settings.DpiScale} UserScale={settings.UserScale} UiScale={ui}");
+        Console.WriteLine($"UserScale={settings.UserScale} (OS DPI handled by Avalonia)");
         Console.WriteLine($"Wrote {ScaleSettingsStore.DefaultPath}");
         return 0;
     }
@@ -108,13 +109,21 @@ public static class Program
         var id = args[0];
         AppPaths.EnsureLayout();
 
-        if (!ModuleCatalog.TryGet(id, out _))
-            return Fail($"Unknown module id '{id}'.");
-
         Console.WriteLine($"Installing {id} from Tiles/{id}/ native stub…");
         await new ModuleInstaller().InstallAsync(id);
 
         Console.WriteLine($"Installed {id} → {Path.Combine(AppPaths.ModulesDirectory, id)}");
+        return 0;
+    }
+
+    private static async Task<int> CmdInstallPackageAsync(string[] args)
+    {
+        if (args.Length < 1) return Fail("Usage: install-package <folder-or.zip>");
+        AppPaths.EnsureLayout();
+        var path = args[0];
+        Console.WriteLine($"Installing package from {path}…");
+        await new ModuleInstaller().InstallFromPackageAsync(path);
+        Console.WriteLine($"Installed → {AppPaths.ModulesDirectory}");
         return 0;
     }
 

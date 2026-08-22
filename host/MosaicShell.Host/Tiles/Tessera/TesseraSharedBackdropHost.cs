@@ -6,19 +6,19 @@ using SkiaSharp;
 namespace MosaicShell.Host.Tiles.Tessera;
 
 /// <summary>
-/// One screen capture + blur per flyout; glass panels blit sub-rects instead of re-capturing.
+/// One screen capture + blur per flyout. Must parent the flyout tree so glass panels can find it.
 /// </summary>
-internal sealed class TesseraSharedBackdropHost : Control
+internal sealed class TesseraSharedBackdropHost : Decorator
 {
     private SKImage? _blurred;
     private int _screenX = int.MinValue;
     private int _screenY = int.MinValue;
     private double _cachedBlur = -1;
-    private int _generation;
+    private Size _lastArrangeSize;
 
     public TesseraSharedBackdropHost()
     {
-        IsHitTestVisible = false;
+        IsHitTestVisible = true;
     }
 
     public static TesseraSharedBackdropHost? FindAncestor(Visual? from)
@@ -31,13 +31,16 @@ internal sealed class TesseraSharedBackdropHost : Control
         return null;
     }
 
-    protected override Size MeasureOverride(Size availableSize) => default;
-
     protected override Size ArrangeOverride(Size finalSize)
     {
-        if (finalSize.Width > 0 && finalSize.Height > 0)
+        var arranged = base.ArrangeOverride(finalSize);
+        if (Math.Abs(arranged.Width - _lastArrangeSize.Width) > 0.5
+            || Math.Abs(arranged.Height - _lastArrangeSize.Height) > 0.5)
+        {
+            _lastArrangeSize = arranged;
             InvalidateCache();
-        return finalSize;
+        }
+        return arranged;
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -151,6 +154,5 @@ internal sealed class TesseraSharedBackdropHost : Control
     {
         _blurred?.Dispose();
         _blurred = null;
-        _generation++;
     }
 }

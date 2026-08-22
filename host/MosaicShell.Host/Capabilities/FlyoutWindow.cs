@@ -7,11 +7,17 @@ using Avalonia.Platform;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 using MosaicShell.Host.Tiles.Tessera;
 
 namespace MosaicShell.Host.Capabilities;
 
+/// <summary>
+/// Tessera flyout surface. Configured per Avalonia window docs:
+/// TransparencyLevelHint + Transparent Background + TransparencyBackgroundFallback,
+/// SizeToContent, Show(owner), Topmost, Screens for placement.
+/// </summary>
 internal sealed class FlyoutWindow : Window
 {
     private FlyoutRequest _request;
@@ -23,6 +29,9 @@ internal sealed class FlyoutWindow : Window
     private Size _lastSize;
     private bool _clientSizeLocked;
 
+    private static readonly IBrush FallbackBrush =
+        new SolidColorBrush(Color.FromArgb(245, 0x11, 0x11, 0x1b));
+
     public FlyoutWindow(FlyoutRequest request, Control content, HostServices services)
     {
         _request = request;
@@ -30,6 +39,8 @@ internal sealed class FlyoutWindow : Window
         _material = TesseraFlyoutMaterialFactory.FromPayload(request.Payload);
         TesseraPalette.ApplyMaterial(_material);
         Title = $"MosaicShell - {request.ModuleId}";
+
+        // docs: SizeToContent for content-sized tool windows
         SizeToContent = SizeToContent.WidthAndHeight;
         CanResize = false;
         SystemDecorations = SystemDecorations.None;
@@ -38,8 +49,13 @@ internal sealed class FlyoutWindow : Window
         ShowActivated = false;
         Focusable = true;
         IsHitTestVisible = true;
+
+        // Soft frost uses Transparent (not AcrylicBlur) so rounded Tessera panels aren't
+        // backed by a hard OS acrylic rectangle. Background must stay Transparent.
         TransparencyLevelHint = new[] { WindowTransparencyLevel.Transparent };
         Background = Brushes.Transparent;
+        TransparencyBackgroundFallback = FallbackBrush;
+
         Content = content;
         Opacity = 1;
         PointerEntered += (_, _) => { _hover = true; };
@@ -72,7 +88,7 @@ internal sealed class FlyoutWindow : Window
                 if (_request.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
                     || _request.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase))
                 {
-                    RefreshStatusFromServices(resetDismiss: true);
+                    RefreshStatusFromServices();
                     return;
                 }
 
@@ -90,10 +106,7 @@ internal sealed class FlyoutWindow : Window
                 }
 
                 if (Content is not Control root || TesseraLiveHost.FindIn(root) is not { } host)
-                {
-                    System.Diagnostics.Debug.WriteLine("[Tessera live] TesseraLiveHost missing; live pump skipped.");
                     return;
-                }
 
                 host.ApplyLive(_services, _request);
             }
@@ -111,7 +124,7 @@ internal sealed class FlyoutWindow : Window
         _live = null;
     }
 
-    private void RefreshStatusFromServices(bool resetDismiss)
+    private void RefreshStatusFromServices()
     {
         var payload = TesseraFlyoutRequestBuilder.RefreshStatusPayload(
             _services, _request.Kind, _request.Payload);
@@ -125,8 +138,6 @@ internal sealed class FlyoutWindow : Window
         _request = _request with { Payload = payload };
         if (Content is Control root && TesseraLiveHost.FindIn(root) is { } host)
             host.ApplyLive(_services, _request);
-        else
-            System.Diagnostics.Debug.WriteLine("[Tessera live] TesseraLiveHost missing for status refresh.");
     }
 
     public void ApplyLiveOnly(FlyoutRequest request, HostServices services)
@@ -136,13 +147,11 @@ internal sealed class FlyoutWindow : Window
         if (_request.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
             || _request.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase))
         {
-            RefreshStatusFromServices(resetDismiss: false);
+            RefreshStatusFromServices();
             return;
         }
         if (Content is Control root && TesseraLiveHost.FindIn(root) is { } host)
             host.ApplyLive(services, _request);
-        else
-            System.Diagnostics.Debug.WriteLine("[Tessera live] TesseraLiveHost missing for soft refresh.");
     }
 
     public bool TryApplyLive(FlyoutRequest request, HostServices services, bool resetDismiss = true)
@@ -153,10 +162,7 @@ internal sealed class FlyoutWindow : Window
         if (Content is not Control root) return false;
 
         if (TesseraLiveHost.FindIn(root) is not { } liveHost)
-        {
-            System.Diagnostics.Debug.WriteLine("[Tessera live] TesseraLiveHost missing; rebuild required.");
             return false;
-        }
 
         if (request.Kind.Equals("vol", StringComparison.OrdinalIgnoreCase)
             || request.Kind.Equals("bright", StringComparison.OrdinalIgnoreCase))
@@ -204,6 +210,8 @@ internal sealed class FlyoutWindow : Window
     public void Relayout() =>
         Dispatcher.UIThread.Post(RelayoutImmediate, DispatcherPriority.Loaded);
 
+    public void FinishLayout() => RelayoutImmediate();
+
     private void RelayoutImmediate()
     {
         try
@@ -213,7 +221,8 @@ internal sealed class FlyoutWindow : Window
 
             var dipW = Math.Max(Bounds.Width, DesiredSize.Width);
             var dipH = Math.Max(Bounds.Height, DesiredSize.Height);
-            if (dipW < 40 || dipH < 24) return;
+            if (dipW < 40 || dipH < 24)
+                return;
 
             if (_material.ShouldLockClientSize && !_clientSizeLocked)
             {
@@ -223,6 +232,7 @@ internal sealed class FlyoutWindow : Window
                 _clientSizeLocked = true;
             }
 
+            // docs: Screens API for placement; Position is pixel coordinates
             var screens = Screens?.All?.ToList() ?? [];
             var screen = ResolveScreen(screens, _request.MonitorIndex) ?? Screens?.Primary;
             var area = screen?.WorkingArea ?? new PixelRect(0, 0, 1920, 1080);
@@ -261,12 +271,11 @@ internal sealed class FlyoutWindow : Window
         try
         {
             Relayout();
+            Opacity = 1;
+            RenderTransform = null;
+
             if (_request.Ani <= 0)
-            {
-                Opacity = 0;
-                AnimateDouble(this, OpacityProperty, 0, 1, 160);
                 return;
-            }
 
             var dir = (_request.AniDir ?? "Left").ToLowerInvariant();
             var dist = _request.Ani >= 2 ? 28.0 : 14.0;
@@ -281,8 +290,6 @@ internal sealed class FlyoutWindow : Window
 
             var tt = new TranslateTransform(dx, dy);
             RenderTransform = tt;
-            Opacity = 0;
-            AnimateDouble(this, OpacityProperty, 0, 1, 180);
             AnimateDouble(tt, TranslateTransform.XProperty, dx, 0, 200);
             AnimateDouble(tt, TranslateTransform.YProperty, dy, 0, 200);
         }

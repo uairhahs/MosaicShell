@@ -27,7 +27,7 @@ internal sealed class RecordingHostUiBridge : IHostUiBridge
     public void OpenModuleConfig(string moduleId) { }
     public void RefreshOverlay(string moduleId) { }
 
-    public void PreviewTesseraFlyout(string kind = "vol") => PreviewCount++;
+    public void PreviewFlyout(FlyoutRequest request) => PreviewCount++;
 }
 
 internal sealed class BridgeUi(IFlyoutPresenter flyouts, IHostUiBridge? hostUi = null) : ICapabilityUiBridge

@@ -24,7 +24,15 @@ public static class ModuleUsageGuide
             case "tessera":
                 return "System flyouts for volume, brightness, and media. Arm it to replace the OS OSD while Host runs in the tray.";
             default:
+            {
+                var manifest = ModuleManifest.TryLoad(moduleId);
+                if (!string.IsNullOrWhiteSpace(manifest?.UsageSummary))
+                    return manifest!.UsageSummary!;
+                if (ModuleCatalog.TryGet(moduleId, out var info) && info is not null
+                    && !string.IsNullOrWhiteSpace(info.Description))
+                    return info.Description;
                 return "";
+            }
         }
     }
 
@@ -48,7 +56,12 @@ public static class ModuleUsageGuide
         if (id == "tessera")
             return "Arm from Tiles, then change volume / brightness / media (or use Try now in settings).";
 
-        return "";
+        var manifest = ModuleManifest.TryLoad(moduleId);
+        if (!string.IsNullOrWhiteSpace(manifest?.HowToTrigger))
+            return manifest!.HowToTrigger!;
+        return ModuleCatalog.IsCapability(moduleId)
+            ? "Arm from Tiles, then use the module's configured trigger."
+            : "";
     }
 
     public static string CurrentHotkey(string moduleId)

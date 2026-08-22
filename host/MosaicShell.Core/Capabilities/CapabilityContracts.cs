@@ -68,26 +68,30 @@ public sealed class CapabilityRegistry
     public IReadOnlyCollection<string> RegisteredModuleIds => _factories.Keys.ToList();
 
     /// <summary>
-    /// Optional external plugin: Modules\{id}\capability.dll exporting a single ICapabilityFactory.
+    /// Optional external plugin: Modules\{id}\module.dll or capability.dll exporting ICapabilityFactory.
     /// Built-ins always win if already registered.
     /// </summary>
     public void TryLoadExternal(string moduleId, string modulesRoot)
     {
         if (_factories.ContainsKey(moduleId)) return;
-        var dll = Path.Combine(modulesRoot, moduleId, "capability.dll");
-        if (!File.Exists(dll)) return;
-        try
+        foreach (var name in new[] { "module.dll", "capability.dll" })
         {
-            var asm = System.Reflection.Assembly.LoadFrom(dll);
-            var type = asm.GetTypes()
-                .FirstOrDefault(t => typeof(ICapabilityFactory).IsAssignableFrom(t) && !t.IsAbstract && t.GetConstructor(Type.EmptyTypes) is not null);
-            if (type is null) return;
-            if (Activator.CreateInstance(type) is ICapabilityFactory factory)
-                Register(factory);
-        }
-        catch
-        {
-            // External plugins are best-effort.
+            var dll = Path.Combine(modulesRoot, moduleId, name);
+            if (!File.Exists(dll)) continue;
+            try
+            {
+                var asm = System.Reflection.Assembly.LoadFrom(dll);
+                var type = asm.GetTypes()
+                    .FirstOrDefault(t => typeof(ICapabilityFactory).IsAssignableFrom(t) && !t.IsAbstract && t.GetConstructor(Type.EmptyTypes) is not null);
+                if (type is null) continue;
+                if (Activator.CreateInstance(type) is ICapabilityFactory factory)
+                    Register(factory);
+                return;
+            }
+            catch
+            {
+                // External plugins are best-effort.
+            }
         }
     }
 }

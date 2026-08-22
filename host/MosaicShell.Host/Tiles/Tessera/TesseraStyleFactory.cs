@@ -7,11 +7,13 @@ public static class TesseraStyleFactory
     public static Control Create(string styleId, TesseraFlyoutViewModel vm) =>
         Create(styleId, vm, accentColor: null);
 
-    public static Control Create(string styleId, TesseraFlyoutViewModel vm, string? accentColor)
+    public static Control Create(string styleId, TesseraFlyoutViewModel vm, string? accentColor, bool embeddedPreview = false)
     {
         TesseraPalette.ApplyAccentFromSettings(accentColor);
-        var host = new TesseraLiveHost();
+        var host = new TesseraLiveHost { IsEmbeddedPreview = embeddedPreview };
         TesseraLiveAmbient.Current = host.Bindings;
+        if (embeddedPreview)
+            TesseraGlass.EmbeddedPreviewBuild = true;
         try
         {
             host.Content = styleId.ToLowerInvariant() switch
@@ -32,6 +34,8 @@ public static class TesseraStyleFactory
         finally
         {
             TesseraLiveAmbient.Current = null;
+            if (embeddedPreview)
+                TesseraGlass.EmbeddedPreviewBuild = false;
         }
         return host;
     }

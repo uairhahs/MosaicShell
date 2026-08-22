@@ -162,16 +162,9 @@ internal static class TesseraChrome
         return tile;
     }
 
-    /// <summary>Wrap Tessera flyout content with a shared backdrop capture host.</summary>
+    /// <summary>Wrap Tessera flyout content so glass panels can find the shared backdrop host as an ancestor.</summary>
     public static Control WrapFlyoutContent(Control content) =>
-        new Grid
-        {
-            Children =
-            {
-                new TesseraSharedBackdropHost(),
-                content
-            }
-        };
+        new TesseraSharedBackdropHost { Child = content };
 
     /// <summary>Frosted wash: translucent shell + soft art under solid tint (no OS acrylic).</summary>
     public static Control WithArtWash(Control foreground, byte[]? png, double radius, Thickness pad, double? maxWidth = null, double? maxHeight = null)

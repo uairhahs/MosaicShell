@@ -6,5 +6,8 @@
     "Lua.diagnostics.disable": [
         "lowercase-global"
     ],
-    "sarif-viewer.connectToGithubCodeScanning": "off"
+    "sarif-viewer.connectToGithubCodeScanning": "off",
+    "csharp-dev-tools.solutionViewer.selectedWorkspaceSolutions": [
+        "host/MosaicShell.sln"
+    ]
 }

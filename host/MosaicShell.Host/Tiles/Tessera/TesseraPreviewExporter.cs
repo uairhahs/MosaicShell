@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Platform;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Styles;
 
@@ -54,7 +55,7 @@ public static class TesseraPreviewExporter
 
         var request = new FlyoutRequest("Tessera", "vol", style, Payload: payload);
         var vm = TesseraFlyoutViewModel.FromRequest(services, request);
-        var flyout = TesseraStyleFactory.Create(style, vm, accentColor);
+        var flyout = TesseraStyleFactory.Create(style, vm, accentColor, embeddedPreview: true);
         flyout.IsHitTestVisible = false;
         return flyout;
     }

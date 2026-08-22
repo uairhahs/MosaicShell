@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Material.Icons;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core;
 using MosaicShell.Core.Capabilities.BuiltIn;
 using MosaicShell.Core.Install;
@@ -15,8 +16,10 @@ using MosaicShell.Core.Styles;
 using MosaicShell.Core.Update;
 using MosaicShell.Host.Input;
 using MosaicShell.Host.Tiles;
+using MosaicShell.Host.Tiles.Tessera;
 using System.Collections.ObjectModel;
 using Avalonia.Input;
+using Avalonia.Threading;
 
 namespace MosaicShell.Host.ViewModels;
 
@@ -31,6 +34,8 @@ public partial class MainViewModel : ViewModelBase
     private readonly CapabilityDaemon? _daemon;
 
     private readonly IHostUiBridge _hostUi;
+
+    private bool _isLoadingModuleConfig;
 
     public MainViewModel(
         ITileRuntime runtime,
@@ -48,7 +53,6 @@ public partial class MainViewModel : ViewModelBase
 
         AppPaths.EnsureLayout();
         var settings = ScaleSettingsStore.Load();
-        settings.DpiScale = DpiProbe.GetDpiScale();
         _scale = ScaleContract.FromSettings(settings);
         ScaleSettingsStore.Save(_scale.ToSettings());
         Hub = ModuleSettingsStore.Load("Hub", () => new HubSettings());
@@ -109,7 +113,6 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _isModuleConfig;
     [ObservableProperty] private bool _showBackButton;
     [ObservableProperty] private double _layoutScale = 1.0;
-    [ObservableProperty] private double _dpiScale = 1.0;
     [ObservableProperty] private double _userScale = 1.0;
     [ObservableProperty] private double _uiScale = 1.0;
     [ObservableProperty] private string _scaleSummary = "";
@@ -142,6 +145,7 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private decimal _configIdleSeconds = 300;
     [ObservableProperty] private bool _configHideOnFullscreen = true;
     [ObservableProperty] private bool _configCanTryOverlay;
+    [ObservableProperty] private bool _tesseraConfigPreviewReady;
 
     public ObservableCollection<string> ConfigPins { get; } = [];
     public ObservableCollection<ChordActionRow> ConfigChordActions { get; } = [];
@@ -163,7 +167,7 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _tesseraMediaStrip = true;
     [ObservableProperty] private bool _tesseraAcrylicBackdrop = true;
     [ObservableProperty] private bool _tesseraFocusDim = true;
-    [ObservableProperty] private bool _tesseraBackdropBlur;
+    [ObservableProperty] private bool _tesseraBackdropBlur = true;
     [ObservableProperty] private decimal _tesseraFlyoutScalePercent = 100;
     [ObservableProperty] private string _tesseraAccentHex = "";
     [ObservableProperty] private decimal _tesseraLegacyStepPercent = 2;
@@ -184,6 +188,8 @@ public partial class MainViewModel : ViewModelBase
 
     public void RefreshArmedState() => RefreshLibrary();
 
+    public bool IsModuleConfigOpening => _isLoadingModuleConfig;
+
     [RelayCommand]
     private void Navigate(string page)
     {
@@ -199,6 +205,8 @@ public partial class MainViewModel : ViewModelBase
         IsWelcome = page == "Welcome";
         IsModuleConfig = page == "ModuleConfig";
         ShowBackButton = IsTiles || IsWelcome || IsAbout || IsModuleConfig;
+        if (!IsModuleConfig)
+            TesseraConfigPreviewReady = false;
         if (IsTiles) RefreshLibrary();
         if (IsSettings)
         {
@@ -228,36 +236,64 @@ public partial class MainViewModel : ViewModelBase
     public void OpenModuleConfigById(string moduleId)
     {
         if (!ModuleCatalog.TryGet(moduleId, out var info) || info is null) return;
-        ConfigModuleId = info.Id;
-        ConfigModuleTitle = info.DisplayName;
-        ModuleStyleOptions.Clear();
-        foreach (var id in StyleCatalog.IdsFor(info.Id))
-            ModuleStyleOptions.Add(id);
+        if (_isLoadingModuleConfig) return;
+        if (IsModuleConfig && ConfigModuleId.Equals(moduleId, StringComparison.OrdinalIgnoreCase))
+            return;
 
-        ShowChronoExtras = info.Id.Equals("Chrono", StringComparison.OrdinalIgnoreCase);
-        ShowTesseraExtras = info.Id.Equals("Tessera", StringComparison.OrdinalIgnoreCase);
-        ShowHotkeyCapExtras = info.Id is "Inlay" or "Chord" or "Substrate" or "Mixdeck";
-        ShowSlateExtras = info.Id.Equals("Slate", StringComparison.OrdinalIgnoreCase);
-        ShowInlayPins = info.Id.Equals("Inlay", StringComparison.OrdinalIgnoreCase);
-        ShowChordActions = info.Id.Equals("Chord", StringComparison.OrdinalIgnoreCase);
-        ShowSubstrateMute = info.Id.Equals("Substrate", StringComparison.OrdinalIgnoreCase);
-        ConfigCanTryOverlay = ShowHotkeyCapExtras || ShowSlateExtras || ShowTesseraExtras;
-        ConfigUsageSummary = ModuleUsageGuide.Summary(info.Id);
-        ConfigHowToTrigger = ModuleUsageGuide.HowToTrigger(info.Id);
-        ConfigHotkeyGesture = ModuleUsageGuide.CurrentHotkey(info.Id);
-        IsCapturingHotkey = false;
-        HotkeyCaptureHint = "Click Capture, then press the shortcut";
-        LaunchTargetQuery = "";
-        ChordActionName = "";
-        ConfigPins.Clear();
-        ConfigChordActions.Clear();
-        EnsureLaunchTargetsLoaded();
-        ConfigPinsText = "";
-        ConfigActionsText = "";
-        ConfigShowMute = true;
-        ConfigIdleSeconds = 300;
-        ConfigHideOnFullscreen = true;
+        _isLoadingModuleConfig = true;
+        TesseraConfigPreviewReady = false;
+        try
+        {
+            ConfigModuleId = info.Id;
+            ConfigModuleTitle = info.DisplayName;
+            ModuleStyleOptions.Clear();
+            foreach (var id in StyleCatalog.IdsFor(info.Id))
+                ModuleStyleOptions.Add(id);
 
+            ShowChronoExtras = info.Id.Equals("Chrono", StringComparison.OrdinalIgnoreCase);
+            ShowTesseraExtras = info.Id.Equals("Tessera", StringComparison.OrdinalIgnoreCase);
+            ShowHotkeyCapExtras = info.Id is "Inlay" or "Chord" or "Substrate" or "Mixdeck";
+            ShowSlateExtras = info.Id.Equals("Slate", StringComparison.OrdinalIgnoreCase);
+            ShowInlayPins = info.Id.Equals("Inlay", StringComparison.OrdinalIgnoreCase);
+            ShowChordActions = info.Id.Equals("Chord", StringComparison.OrdinalIgnoreCase);
+            ShowSubstrateMute = info.Id.Equals("Substrate", StringComparison.OrdinalIgnoreCase);
+            ConfigCanTryOverlay = ShowHotkeyCapExtras || ShowSlateExtras || ShowTesseraExtras;
+            ConfigUsageSummary = ModuleUsageGuide.Summary(info.Id);
+            ConfigHowToTrigger = ModuleUsageGuide.HowToTrigger(info.Id);
+            ConfigHotkeyGesture = ModuleUsageGuide.CurrentHotkey(info.Id);
+            IsCapturingHotkey = false;
+            HotkeyCaptureHint = "Click Capture, then press the shortcut";
+            LaunchTargetQuery = "";
+            ChordActionName = "";
+            ConfigPins.Clear();
+            ConfigChordActions.Clear();
+            EnsureLaunchTargetsLoaded();
+            ConfigPinsText = "";
+            ConfigActionsText = "";
+            ConfigShowMute = true;
+            ConfigIdleSeconds = 300;
+            ConfigHideOnFullscreen = true;
+
+            using (TesseraStylePreview.EnterSuspendRebuild())
+            {
+                Navigate("ModuleConfig");
+                LoadModuleConfigFields(info);
+            }
+        }
+        finally
+        {
+            _isLoadingModuleConfig = false;
+            if (ShowTesseraExtras)
+            {
+                Dispatcher.UIThread.Post(
+                    () => TesseraConfigPreviewReady = true,
+                    DispatcherPriority.Background);
+            }
+        }
+    }
+
+    private void LoadModuleConfigFields(ModuleInfo info)
+    {
         if (ShowChronoExtras)
         {
             var s = ModuleSettingsStore.Load("Chrono", () => new ChronoSettings());
@@ -290,7 +326,6 @@ public partial class MainViewModel : ViewModelBase
             TesseraBackdropBlur = s.UseBackdropBlur;
             TesseraFlyoutScalePercent = Math.Clamp(s.FlyoutScalePercent, 50, 150);
             TesseraAccentHex = s.AccentColor ?? "";
-            // Stored as 0-1 fraction; UI is percent points out of 100
             var stepPct = s.LegacyVolumeStep <= 1.0
                 ? (decimal)Math.Round(s.LegacyVolumeStep * 100)
                 : (decimal)Math.Round(s.LegacyVolumeStep);
@@ -339,8 +374,6 @@ public partial class MainViewModel : ViewModelBase
 
         if (ModuleStyleOptions.Count > 0 && !ModuleStyleOptions.Contains(ModuleStyle))
             ModuleStyle = ModuleStyleOptions[0];
-
-        Navigate("ModuleConfig");
     }
 
     private static string LoadStylePreference(string moduleId, string fallback)
@@ -368,8 +401,11 @@ public partial class MainViewModel : ViewModelBase
     {
         if (ShowTesseraExtras)
             PersistTesseraFromUi();
-        _hostUi.PreviewTesseraFlyout();
-        StatusMessage = "Tessera preview shown (uses current placement & style).";
+        var settings = TesseraFlyoutRequestBuilder.LoadSettings();
+        var request = new TesseraFlyoutRequestBuilder().Build(_services, settings, "vol");
+        _hostUi.PreviewFlyout(request);
+        StatusMessage =
+            "Tessera preview requested — if nothing appears, check %LocalAppData%\\MosaicShell\\Cache\\flyout.log";
     }
 
     private void PersistTesseraFromUi()
@@ -690,18 +726,11 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void MatchWindows()
+    private void ResetUserScale()
     {
         _scale.ResetUserScale();
-        _scale.SetDpiScale(DpiProbe.GetDpiScale());
         PersistScale();
-    }
-
-    [RelayCommand]
-    private void RedetectDpi()
-    {
-        _scale.SetDpiScale(DpiProbe.GetDpiScale());
-        PersistScale();
+        _tileHost?.ApplyUserScale(_scale.UserScale);
     }
 
     [RelayCommand]
@@ -719,10 +748,11 @@ public partial class MainViewModel : ViewModelBase
     partial void OnUserScaleChanged(double value)
     {
         // Live preview while dragging; Apply still commits LayoutScale / tiles.
+        // LayoutScale is user preference only — Avalonia already applies per-monitor DPI.
         UserScalePercentLabel = $"{value * 100:0}%";
-        var effective = value * DpiScale;
-        ScaleSummary =
-            $"{effective * 100:0}% effective  (OS DPI {DpiScale:0.##} × user {value:0.##})";
+        LayoutScale = Math.Clamp(value, 0.5, 2.0);
+        UiScale = Math.Clamp(value, 0.75, 2.0);
+        ScaleSummary = $"User zoom ×{value:0.##} (OS DPI handled by Avalonia DIPs)";
     }
 
     [RelayCommand]
@@ -881,7 +911,7 @@ public partial class MainViewModel : ViewModelBase
             var manifest = ModuleManifest.TryLoad(item.Id);
             item.ApplyInstalled(false);
             StatusMessage = item.IsCapability
-                ? $"Installed {item.Name}. Use the flash button to arm the capability host."
+                ? $"Installed {item.Name}. Use the play button to arm the capability host."
                 : $"Installed {item.Name}. Use play to launch the overlay.";
 
             if (manifest?.DefaultArmed == true && _daemon is not null)
@@ -893,8 +923,7 @@ public partial class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            item.StatusText = "(Not Installed)";
-            item.ActionIcon = MaterialIconKind.Plus;
+            item.ApplyNotInstalled();
             StatusMessage = $"Install failed: {ex.Message}";
         }
         finally
@@ -938,12 +967,11 @@ public partial class MainViewModel : ViewModelBase
 
     private void SyncScaleProps()
     {
-        DpiScale = _scale.DpiScale;
         UserScale = _scale.UserScale; // also refreshes percent label + ScaleSummary via OnUserScaleChanged
         UiScale = _scale.UiScale;
-        LayoutScale = _scale.UserScale;
+        LayoutScale = Math.Clamp(_scale.UserScale, 0.5, 2.0);
         UserScalePercentLabel = $"{UserScale * 100:0}%";
-        ScaleSummary = $"{UiScale * 100:0}% effective  (OS DPI {_scale.DpiScale:0.##} × user {_scale.UserScale:0.##})";
+        ScaleSummary = $"User zoom ×{_scale.UserScale:0.##} (OS DPI handled by Avalonia DIPs)";
     }
 
     private void SyncServiceProbe()
@@ -999,7 +1027,17 @@ public partial class LibraryItemViewModel : ObservableObject
     [ObservableProperty] private bool _isArmed;
     [ObservableProperty] private bool _isSelectedForBatch;
     [ObservableProperty] private string _statusText = "(Not Installed)";
-    [ObservableProperty] private MaterialIconKind _actionIcon = MaterialIconKind.Plus;
+    [ObservableProperty] private MaterialIconKind _actionIcon = MaterialIconKind.Download;
+    [ObservableProperty] private string _actionToolTip = "Install";
+
+    public void ApplyNotInstalled()
+    {
+        IsInstalled = false;
+        IsRunning = false;
+        IsArmed = false;
+        StatusText = "(Not Installed)";
+        RefreshActionState();
+    }
 
     public void ApplyInstalled(bool armed = false)
     {
@@ -1007,15 +1045,10 @@ public partial class LibraryItemViewModel : ObservableObject
         IsRunning = false;
         IsArmed = armed;
         if (IsCapability)
-        {
             StatusText = armed ? ModuleUsageGuide.ArmedStatus(Id) : "Ready to arm";
-            ActionIcon = armed ? MaterialIconKind.StopCircle : MaterialIconKind.Flash;
-        }
         else
-        {
             StatusText = "Ready";
-            ActionIcon = MaterialIconKind.Play;
-        }
+        RefreshActionState();
     }
 
     public void ApplyRunning(bool running)
@@ -1023,7 +1056,7 @@ public partial class LibraryItemViewModel : ObservableObject
         IsRunning = running;
         if (!IsInstalled || IsCapability) return;
         StatusText = running ? "Running" : "Ready";
-        ActionIcon = running ? MaterialIconKind.Stop : MaterialIconKind.Play;
+        RefreshActionState();
     }
 
     public void ApplyArmed(bool armed)
@@ -1031,7 +1064,27 @@ public partial class LibraryItemViewModel : ObservableObject
         IsArmed = armed;
         if (!IsInstalled || !IsCapability) return;
         StatusText = armed ? ModuleUsageGuide.ArmedStatus(Id) : "Ready to arm";
-        ActionIcon = armed ? MaterialIconKind.StopCircle : MaterialIconKind.Flash;
+        RefreshActionState();
+    }
+
+    private void RefreshActionState()
+    {
+        if (!IsInstalled)
+        {
+            ActionIcon = MaterialIconKind.Download;
+            ActionToolTip = "Install";
+            return;
+        }
+
+        if (IsCapability)
+        {
+            ActionIcon = IsArmed ? MaterialIconKind.StopCircle : MaterialIconKind.Play;
+            ActionToolTip = IsArmed ? "Disarm" : "Arm";
+            return;
+        }
+
+        ActionIcon = IsRunning ? MaterialIconKind.Stop : MaterialIconKind.Play;
+        ActionToolTip = IsRunning ? "Stop" : "Launch";
     }
 
     public static LibraryItemViewModel From(ModuleInfo info, bool running = false, bool armed = false)
@@ -1039,24 +1092,14 @@ public partial class LibraryItemViewModel : ObservableObject
         var installed = ModuleCatalog.IsInstalled(info.Id);
         var isCap = info.Kind is ModuleKind.Capability or ModuleKind.Hybrid;
         string status;
-        MaterialIconKind icon;
         if (!installed)
-        {
             status = "(Not Installed)";
-            icon = MaterialIconKind.Plus;
-        }
         else if (isCap)
-        {
             status = armed ? ModuleUsageGuide.ArmedStatus(info.Id) : "Ready to arm";
-            icon = armed ? MaterialIconKind.StopCircle : MaterialIconKind.Flash;
-        }
         else
-        {
             status = running ? "Running" : "Ready";
-            icon = running ? MaterialIconKind.Stop : MaterialIconKind.Play;
-        }
 
-        return new LibraryItemViewModel
+        var item = new LibraryItemViewModel
         {
             Id = info.Id,
             Name = info.DisplayName,
@@ -1067,8 +1110,9 @@ public partial class LibraryItemViewModel : ObservableObject
             IsRunning = running && installed && !isCap,
             IsArmed = armed && installed && isCap,
             StatusText = status,
-            ActionIcon = icon
         };
+        item.RefreshActionState();
+        return item;
     }
 }
 

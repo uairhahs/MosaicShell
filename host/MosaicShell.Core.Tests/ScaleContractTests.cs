@@ -6,25 +6,14 @@ namespace MosaicShell.Core.Tests;
 public class ScaleContractTests
 {
     [Fact]
-    public void UiScale_is_DpiScale_times_UserScale()
+    public void UiScale_equals_UserScale()
     {
         var c = new ScaleContract();
-        c.SetDpiScale(1.5);
         c.SetUserScale(1.0);
-        c.UiScale.Should().Be(1.5);
+        c.UiScale.Should().Be(1.0);
 
         c.SetUserScale(0.8);
-        c.UiScale.Should().Be(1.2);
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    public void SetDpiScale_rejects_non_positive(double bad)
-    {
-        var c = new ScaleContract();
-        var act = () => c.SetDpiScale(bad);
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        c.UiScale.Should().Be(0.8);
     }
 
     [Theory]
@@ -47,14 +36,31 @@ public class ScaleContractTests
     }
 
     [Fact]
-    public void Roundtrip_settings_preserves_values()
+    public void Roundtrip_settings_preserves_user_scale_only()
     {
         var c = new ScaleContract();
-        c.SetDpiScale(1.25);
         c.SetUserScale(1.1);
         var again = ScaleContract.FromSettings(c.ToSettings());
-        again.DpiScale.Should().Be(1.25);
         again.UserScale.Should().Be(1.1);
-        again.UiScale.Should().Be(Math.Round(1.25 * 1.1, 4));
+        again.UiScale.Should().Be(1.1);
+    }
+
+    [Fact]
+    public void Load_ignores_legacy_DpiScale_in_json()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"mosaic-scale-{Guid.NewGuid():N}.json");
+        try
+        {
+            File.WriteAllText(path, """{"DpiScale":1.5,"UserScale":1.2}""");
+            var settings = ScaleSettingsStore.Load(path);
+            settings.DpiScale.Should().Be(1.0);
+            settings.UserScale.Should().Be(1.2);
+            var c = ScaleContract.FromSettings(settings);
+            c.UiScale.Should().Be(1.2);
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
     }
 }

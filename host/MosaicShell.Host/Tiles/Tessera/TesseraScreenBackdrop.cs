@@ -11,15 +11,20 @@ internal static class TesseraScreenBackdrop
 {
     public static SKImage? TryCapture(Visual visual, Rect localBounds)
     {
+        // GDI BitBlt is a Tessera-only fallback; Avalonia AcrylicBlur/Transparent is preferred.
+        if (!TesseraGlass.AllowGdiScreenCapture || !TesseraGlass.UseBackdropBlur)
+            return null;
+
         if (localBounds.Width < 1 || localBounds.Height < 1)
             return null;
 
         try
         {
-            var origin = visual.PointToScreen(localBounds.TopLeft);
-            var w = Math.Max(1, (int)Math.Ceiling(localBounds.Width));
-            var h = Math.Max(1, (int)Math.Ceiling(localBounds.Height));
-            return CaptureScreenRegion(origin.X, origin.Y, w, h);
+            var topLeft = visual.PointToScreen(localBounds.TopLeft);
+            var bottomRight = visual.PointToScreen(localBounds.BottomRight);
+            var w = Math.Max(1, bottomRight.X - topLeft.X);
+            var h = Math.Max(1, bottomRight.Y - topLeft.Y);
+            return CaptureScreenRegion(topLeft.X, topLeft.Y, w, h);
         }
         catch
         {

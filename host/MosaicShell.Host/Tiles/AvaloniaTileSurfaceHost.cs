@@ -1,15 +1,13 @@
-using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Platform;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Runtime;
-using MosaicShell.Core.Scale;
 using MosaicShell.Core.Services;
+using MosaicShell.Host.Capabilities;
 using MosaicShell.Host.Tiles.Surfaces;
 
 namespace MosaicShell.Host.Tiles;
@@ -50,8 +48,18 @@ public sealed class AvaloniaTileSurfaceHost : ITileSurfaceHost
 
             if (!ModuleCatalog.TryGet(moduleId, out var info) || info is null)
             {
-                error = $"Unknown module '{moduleId}'.";
-                return false;
+                // Still allow overlays for installed folders even if discovery failed earlier.
+                if (!ModuleCatalog.IsInstalled(moduleId))
+                {
+                    error = $"Unknown module '{moduleId}'.";
+                    return false;
+                }
+
+                info = new ModuleInfo(
+                    moduleId,
+                    moduleId,
+                    "Installed module.",
+                    ModuleKind.Capability);
             }
 
             var surface = TileSurfaceFactory.Create(info, _services);
@@ -181,6 +189,8 @@ public sealed class TileOverlayWindow : Window
         ShowInTaskbar = false;
         TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
         Background = Brushes.Transparent;
+        // docs: OS may suppress transparency (battery saver / RDP)
+        TransparencyBackgroundFallback = new SolidColorBrush(Color.Parse("#1e1e2e"));
 
         var shell = new Border
         {
@@ -249,14 +259,15 @@ public sealed class TileOverlayWindow : Window
     {
         _stuckToDesktop = true;
         Topmost = false;
-        SetZOrder(HwndBottom);
+        // Avalonia Topmost cannot place HWND below other windows; SetWindowPos required.
+        Win32WindowChrome.SetZOrder(this, Win32WindowChrome.HwndBottom);
     }
 
     public void BringToFront()
     {
         _stuckToDesktop = false;
         Topmost = true;
-        SetZOrder(HwndTopmost);
+        Win32WindowChrome.SetZOrder(this, Win32WindowChrome.HwndTopmost);
         Activate();
     }
 
@@ -264,7 +275,7 @@ public sealed class TileOverlayWindow : Window
     {
         _stuckToDesktop = false;
         Topmost = false;
-        SetZOrder(HwndNoTopmost);
+        Win32WindowChrome.SetZOrder(this, Win32WindowChrome.HwndNoTopmost);
     }
 
     public void AlignTo(AlignPreset preset)
@@ -379,32 +390,6 @@ public sealed class TileOverlayWindow : Window
         }
         return false;
     }
-
-    private void SetZOrder(IntPtr insertAfter)
-    {
-        try
-        {
-            var hwnd = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
-            if (hwnd == IntPtr.Zero) return;
-            SetWindowPos(hwnd, insertAfter, 0, 0, 0, 0,
-                SwpNomove | SwpNosize | SwpNoactivate);
-        }
-        catch
-        {
-            // best-effort
-        }
-    }
-
-    private static readonly IntPtr HwndBottom = new(1);
-    private static readonly IntPtr HwndTopmost = new(-1);
-    private static readonly IntPtr HwndNoTopmost = new(-2);
-    private const uint SwpNomove = 0x0002;
-    private const uint SwpNosize = 0x0001;
-    private const uint SwpNoactivate = 0x0010;
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool SetWindowPos(
-        IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint uFlags);
 }
 
 public enum AlignPreset

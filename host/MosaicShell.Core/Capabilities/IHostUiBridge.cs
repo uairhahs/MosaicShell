@@ -1,7 +1,8 @@
 namespace MosaicShell.Core.Capabilities;
 
 /// <summary>
-/// Host shell actions (overlays, module config, Tessera preview) — implemented by Avalonia Host, mocked in tests.
+/// Host shell actions (overlays, module config, flyout preview) — implemented by Avalonia Host, mocked in tests.
+/// Module-specific preview content is built by the caller into a <see cref="FlyoutRequest"/>.
 /// </summary>
 public interface IHostUiBridge
 {
@@ -10,7 +11,7 @@ public interface IHostUiBridge
     void FocusOverlay(string moduleId);
     void OpenModuleConfig(string moduleId);
     void RefreshOverlay(string moduleId);
-    void PreviewTesseraFlyout(string kind = "vol");
+    void PreviewFlyout(FlyoutRequest request);
 }
 
 /// <summary>No-op bridge for design-time / tests that do not exercise host chrome.</summary>
@@ -23,5 +24,5 @@ public sealed class NullHostUiBridge : IHostUiBridge
     public void FocusOverlay(string moduleId) { }
     public void OpenModuleConfig(string moduleId) { }
     public void RefreshOverlay(string moduleId) { }
-    public void PreviewTesseraFlyout(string kind = "vol") { }
+    public void PreviewFlyout(FlyoutRequest request) { }
 }

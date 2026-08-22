@@ -48,10 +48,7 @@ internal sealed class TesseraOutsideClickWatcher : IDisposable
     {
         if (IsActive) return;
         _proc = HookCallback;
-        using var process = System.Diagnostics.Process.GetCurrentProcess();
-        using var module = process.MainModule;
-        var hMod = module is null ? IntPtr.Zero : GetModuleHandle(module.ModuleName);
-        _hook = SetWindowsHookEx(WhMouseLl, _proc, hMod, 0);
+        _hook = SetWindowsHookEx(WhMouseLl, _proc, GetModuleHandle(null), 0);
     }
 
     public void Dispose()
@@ -122,5 +119,5 @@ internal sealed class TesseraOutsideClickWatcher : IDisposable
     private static extern nint CallNextHookEx(nint hhk, int nCode, nint wParam, nint lParam);
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-    private static extern nint GetModuleHandle(string lpModuleName);
+    private static extern nint GetModuleHandle(string? lpModuleName);
 }

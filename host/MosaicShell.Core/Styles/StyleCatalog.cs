@@ -34,8 +34,17 @@ public static class StyleCatalog
         ["Canvas"] = ["DEFAULT", "Compact"],
     };
 
-    public static IReadOnlyList<string> IdsFor(string moduleId) =>
-        Map.TryGetValue(moduleId, out var ids) ? ids : Array.Empty<string>();
+    public static IReadOnlyList<string> IdsFor(string moduleId)
+    {
+        if (Map.TryGetValue(moduleId, out var ids))
+            return ids;
+
+        var manifest = MosaicShell.Core.Runtime.ModuleManifest.TryLoad(moduleId);
+        if (manifest?.Styles is { Count: > 0 })
+            return manifest.Styles;
+
+        return Array.Empty<string>();
+    }
 
     public static IReadOnlyList<StyleDescriptor> For(string moduleId) =>
         IdsFor(moduleId).Select(id => new StyleDescriptor(moduleId, id, id)).ToList();
@@ -43,6 +52,11 @@ public static class StyleCatalog
     public static bool IsValid(string moduleId, string styleId) =>
         IdsFor(moduleId).Contains(styleId, StringComparer.OrdinalIgnoreCase);
 
-    public static string DefaultFor(string moduleId) =>
-        IdsFor(moduleId).FirstOrDefault() ?? "DEFAULT";
+    public static string DefaultFor(string moduleId)
+    {
+        var manifest = MosaicShell.Core.Runtime.ModuleManifest.TryLoad(moduleId);
+        if (!string.IsNullOrWhiteSpace(manifest?.DefaultStyle))
+            return manifest!.DefaultStyle!;
+        return IdsFor(moduleId).FirstOrDefault() ?? "DEFAULT";
+    }
 }

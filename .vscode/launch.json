@@ -1,0 +1,32 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "MosaicShell.Host",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-host",
+            "program": "${workspaceFolder}/host/MosaicShell.Host/bin/Debug/net8.0-windows10.0.19041.0/MosaicShell.Host.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}/host/MosaicShell.Host",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": ".NET Core Launch (console)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/host/MosaicShell.Core.Tests/bin/Debug/net8.0-windows10.0.19041.0/MosaicShell.Core.Tests.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/host/MosaicShell.Core.Tests",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": ".NET Core Attach",
+            "type": "coreclr",
+            "request": "attach"
+        }
+    ]
+}

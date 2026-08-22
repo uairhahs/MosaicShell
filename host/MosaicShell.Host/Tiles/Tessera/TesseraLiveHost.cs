@@ -6,6 +6,7 @@ using Avalonia.VisualTree;
 using Material.Icons;
 using Material.Icons.Avalonia;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Services.WebNowPlaying;
 
@@ -42,11 +43,23 @@ public sealed class TesseraLiveHost : ContentControl
 {
     public TesseraLiveBindings Bindings { get; } = new();
 
-    /// <summary>Find live host when flyout root is wrapped (e.g. LayoutTransformControl scale).</summary>
+    /// <summary>Module-config preview — must not sample live desktop backdrop.</summary>
+    public bool IsEmbeddedPreview { get; init; }
+
+    /// <summary>Find live host when flyout root is wrapped (scale decorator, shared backdrop parent).</summary>
     public static TesseraLiveHost? FindIn(Control? root)
     {
         if (root is TesseraLiveHost host) return host;
-        if (root is LayoutTransformControl { Child: Control child }) return FindIn(child);
+        if (root is Decorator { Child: Control decorated }) return FindIn(decorated);
+        if (root is Panel panel)
+        {
+            foreach (var c in panel.Children)
+            {
+                var found = FindIn(c);
+                if (found is not null) return found;
+            }
+            return null;
+        }
         if (root is ContentControl { Content: Control content }) return FindIn(content);
         if (root is Visual visual)
         {

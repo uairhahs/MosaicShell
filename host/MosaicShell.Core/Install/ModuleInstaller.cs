@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Text.Json;
 using MosaicShell.Core.Runtime;
 
@@ -10,8 +11,8 @@ public sealed class ModuleInstallProgress
 }
 
 /// <summary>
-/// Installs modules from the repo's native <c>Tiles/{Id}/</c> stub only.
-/// Runtime code lives under <c>host/</c>; install copies metadata + <c>module.native.json</c>.
+/// Installs modules from repo <c>Tiles/{Id}/</c> stubs, a packaged folder, or a zip
+/// containing <c>module.manifest.json</c> (+ optional DLLs).
 /// </summary>
 public sealed class ModuleInstaller
 {
@@ -29,7 +30,93 @@ public sealed class ModuleInstaller
 
         throw new InvalidOperationException(
             $"No native install stub for '{moduleId}'. Expected Tiles/{moduleId}/module.native.json " +
-            "in the MosaicShell repo. Clone the repo and run Mosaicist from the dev tree, or copy Tiles/ into your install root.");
+            "in the MosaicShell repo, or use InstallFromPackageAsync for a folder/zip package.");
+    }
+
+    /// <summary>
+    /// Install from a directory or .zip that contains <c>module.manifest.json</c>
+    /// (and optionally module.dll / capability.dll / tile.dll).
+    /// </summary>
+    public Task InstallFromPackageAsync(
+        string packagePath,
+        IProgress<ModuleInstallProgress>? progress = null,
+        CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        AppPaths.EnsureLayout();
+
+        if (string.IsNullOrWhiteSpace(packagePath))
+            throw new ArgumentException("Package path is required.", nameof(packagePath));
+
+        var full = Path.GetFullPath(packagePath);
+        progress?.Report(new ModuleInstallProgress { Stage = "package", Detail = full });
+
+        string staging;
+        var cleanupStaging = false;
+        if (File.Exists(full) && full.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            staging = Path.Combine(Path.GetTempPath(), "mosaic-pkg-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(staging);
+            ZipFile.ExtractToDirectory(full, staging);
+            cleanupStaging = true;
+        }
+        else if (Directory.Exists(full))
+        {
+            staging = full;
+        }
+        else
+        {
+            throw new FileNotFoundException("Package folder or zip not found.", full);
+        }
+
+        try
+        {
+            var manifestPath = FindManifest(staging)
+                ?? throw new InvalidOperationException(
+                    "Package must contain module.manifest.json (at root or one level down).");
+
+            var sourceDir = Path.GetDirectoryName(manifestPath)!;
+            var manifest = JsonSerializer.Deserialize<ModuleManifest>(File.ReadAllText(manifestPath))
+                           ?? throw new InvalidOperationException("Could not parse module.manifest.json.");
+            var moduleId = string.IsNullOrWhiteSpace(manifest.Id)
+                ? Path.GetFileName(sourceDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+                : manifest.Id;
+            if (string.IsNullOrWhiteSpace(moduleId))
+                throw new InvalidOperationException("module.manifest.json must set Id.");
+
+            var dest = Path.Combine(AppPaths.ModulesDirectory, moduleId);
+            if (Directory.Exists(dest))
+                Directory.Delete(dest, recursive: true);
+            CopyDirectory(sourceDir, dest);
+
+            // Ensure destination has a manifest with Id set.
+            manifest.Id = moduleId;
+            File.WriteAllText(
+                Path.Combine(dest, "module.manifest.json"),
+                JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true }));
+
+            var marker = new
+            {
+                Id = moduleId,
+                InstalledUtc = DateTime.UtcNow,
+                Source = full,
+                Runtime = "avalonia",
+                Package = true
+            };
+            File.WriteAllText(
+                Path.Combine(dest, "module.json"),
+                JsonSerializer.Serialize(marker, new JsonSerializerOptions { WriteIndented = true }));
+
+            progress?.Report(new ModuleInstallProgress { Stage = "done", Detail = dest });
+            return Task.CompletedTask;
+        }
+        finally
+        {
+            if (cleanupStaging)
+            {
+                try { Directory.Delete(staging, recursive: true); } catch { /* ignore */ }
+            }
+        }
     }
 
     public bool TryInstallFromSourceTree(
@@ -79,6 +166,22 @@ public sealed class ModuleInstaller
     public static bool IsNativeModuleStub(string dir) =>
         File.Exists(Path.Combine(dir, "module.native.json"))
         || File.Exists(Path.Combine(dir, "native.marker"));
+
+    private static string? FindManifest(string root)
+    {
+        var direct = Path.Combine(root, "module.manifest.json");
+        if (File.Exists(direct))
+            return direct;
+
+        foreach (var dir in Directory.EnumerateDirectories(root))
+        {
+            var nested = Path.Combine(dir, "module.manifest.json");
+            if (File.Exists(nested))
+                return nested;
+        }
+
+        return null;
+    }
 
     private static string? FindRepoRoot()
     {

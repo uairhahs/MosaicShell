@@ -13,11 +13,36 @@ namespace MosaicShell.Host.Tiles.Tessera;
 /// <summary>Global Skia glass policy (replaces baked frost PNG wash).</summary>
 public static class TesseraGlass
 {
-    /// <summary>When true, sample and blur the live backdrop; otherwise use gradient + grain fallback.</summary>
-    public static bool UseBackdropBlur { get; set; } = true;
+    /// <summary>
+    /// When true and <see cref="AllowGdiScreenCapture"/> is also true, sample/blur the live
+    /// desktop via GDI BitBlt. Default is false — prefer Avalonia AcrylicBlur / Transparent.
+    /// </summary>
+    public static bool UseBackdropBlur { get; set; }
+
+    /// <summary>
+    /// Opt-in GDI screen capture for glass. Off by default (Avalonia docs prefer OS transparency).
+    /// Set true only when OS acrylic is unavailable and BitBlt glass is explicitly desired.
+    /// </summary>
+    public static bool AllowGdiScreenCapture { get; set; }
 
     /// <summary>Embedded previews (module config) — backdrop sampling is unstable; use fallback glass.</summary>
     public static bool PreviewMode { get; set; }
+
+    /// <summary>While true, glass shells render as simple borders (config preview build).</summary>
+    public static bool EmbeddedPreviewBuild { get; set; }
+
+    public static bool IsEmbeddedPreviewContext(Visual? visual)
+    {
+        for (var v = visual; v is not null; v = v.GetVisualParent())
+        {
+            if (v is TesseraLiveHost { IsEmbeddedPreview: true })
+                return true;
+            if (v is TesseraStylePreview)
+                return true;
+        }
+
+        return false;
+    }
 }
 
 /// <summary>Skia glass shell shared by Tessera chrome.</summary>
@@ -53,6 +78,9 @@ public static class TesseraGlassPanel
         bool useSharedBackdrop = false,
         bool lightTintOnly = false)
     {
+        if (TesseraGlass.EmbeddedPreviewBuild)
+            return WrapEmbeddedSimple(child, cornerRadius, padding, width, height, minWidth, maxWidth, maxHeight);
+
         var content = child;
         if (padding is { } pad && pad != default)
         {
@@ -109,6 +137,55 @@ public static class TesseraGlassPanel
             grid.MaxWidth = mw;
 
         return grid;
+    }
+
+    private static Control WrapEmbeddedSimple(
+        Control child,
+        double cornerRadius,
+        Thickness? padding,
+        double? width,
+        double? height,
+        double? minWidth,
+        double? maxWidth,
+        double? maxHeight)
+    {
+        var shell = new Border
+        {
+            CornerRadius = new CornerRadius(cornerRadius),
+            Background = new SolidColorBrush(Color.FromArgb(210, 0x11, 0x11, 0x1b)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(55, 255, 255, 255)),
+            BorderThickness = new Thickness(1),
+            Padding = padding ?? default,
+            ClipToBounds = true,
+            Child = child
+        };
+
+        if (width is { } w)
+        {
+            shell.Width = w;
+            shell.MinWidth = w;
+            shell.MaxWidth = w;
+        }
+        else if (minWidth is { } mnw)
+        {
+            shell.MinWidth = mnw;
+        }
+
+        if (height is { } hh)
+        {
+            shell.Height = hh;
+            shell.MinHeight = hh;
+            shell.MaxHeight = hh;
+        }
+        else if (maxHeight is { } mxh)
+        {
+            shell.MaxHeight = mxh;
+        }
+
+        if (maxWidth is { } mw && width is null)
+            shell.MaxWidth = mw;
+
+        return shell;
     }
 
     internal static SKColor ToSkColor(Color color) =>
@@ -205,16 +282,20 @@ internal sealed class TesseraGlassBackground : Control
 
     public override void Render(DrawingContext context)
     {
-        if (Bounds.Width > 0 && Bounds.Height > 0)
-        {
-            context.Custom(new TesseraGlassDrawOperation(
-                this,
-                Bounds,
-                CornerRadius,
-                BlurRadius,
-                Tint,
-                _glassGeneration));
-        }
+        if (Bounds.Width <= 0 || Bounds.Height <= 0)
+            return;
+
+        // Always paint an opaque-enough base so transparent HWND composition has pixels.
+        var fallback = new SolidColorBrush(Color.FromArgb(220, 0x11, 0x11, 0x1b));
+        context.DrawRectangle(fallback, null, Bounds);
+
+        context.Custom(new TesseraGlassDrawOperation(
+            this,
+            Bounds,
+            CornerRadius,
+            BlurRadius,
+            Tint,
+            _glassGeneration));
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -231,7 +312,8 @@ internal sealed class TesseraGlassBackground : Control
         }
         else if (change.Property == BoundsProperty)
         {
-            InvalidateVisual();
+            if (!TesseraGlass.IsEmbeddedPreviewContext(this))
+                InvalidateVisual();
         }
     }
 
@@ -303,16 +385,18 @@ internal sealed class TesseraGlassBackground : Control
                 drewBackdrop = true;
         }
 
-        if (!drewBackdrop && TesseraGlass.UseBackdropBlur && !TesseraGlass.PreviewMode)
+        var liveBackdrop = TesseraGlass.UseBackdropBlur
+            && !TesseraGlass.PreviewMode
+            && !TesseraGlass.IsEmbeddedPreviewContext(this);
+
+        if (!drewBackdrop && liveBackdrop)
         {
             using var screen = TesseraScreenBackdrop.TryCapture(this, bounds);
             if (screen is not null)
                 drewBackdrop = TesseraGlassDrawOperation.TryDrawImageBackdropBlur(lc, screen, round, blurRadius);
         }
 
-        if (!drewBackdrop && TesseraGlass.UseBackdropBlur && !TesseraGlass.PreviewMode)
-            drewBackdrop = TesseraGlassDrawOperation.TryDrawBackdropBlur(lc, targetCanvas, sourceSurface, rect, round, blurRadius);
-
+        // Transparent flyout windows have no useful in-window back-buffer — screen or fallback only.
         if (!drewBackdrop)
             TesseraGlassDrawOperation.DrawFallbackGlass(lc, round, w, h, tint);
 

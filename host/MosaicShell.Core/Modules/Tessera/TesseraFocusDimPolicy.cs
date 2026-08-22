@@ -1,4 +1,4 @@
-namespace MosaicShell.Core.Capabilities;
+namespace MosaicShell.Core.Modules.Tessera;
 
 /// <summary>
 /// Subtle desktop dim behind Tessera (Focus-plugin analogue). Extremely light - not a modal scrim.

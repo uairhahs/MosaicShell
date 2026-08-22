@@ -1,5 +1,6 @@
 using FluentAssertions;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Capabilities.BuiltIn;
 using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
