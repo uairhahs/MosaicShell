@@ -26,7 +26,7 @@ public class HubParityBacklogTests
         { "hub_close_to_system_tray", true },
         { "tile_session_manager", true },
 
-        // Full Rainmeter visual DLC / every plugin feature
+        // Full StyleCatalog visual DLC / every historical plugin feature
         { "native_tile_overlay_runtime", false },
 
         { "capability_daemon", true },
@@ -34,11 +34,11 @@ public class HubParityBacklogTests
         { "tessera_named_styles", true },
         { "tessera_locks_flight", true },
         { "tessera_live_update_multimonitor", true },
-        // Approximations remain for 9 of 11 layouts
+        // Approximations remain for non-kit styles; Host Fluent/Win11/Center polished for identity
         { "tessera_layout_fidelity", false },
-        // Fluent+Win11 kit exists; not full YourFlyouts pixel parity / fixtures
+        // Fluent+Win11 kit exists; Host-identity Fluent/Win11/Center polish (not pixel YourFlyouts)
         { "tessera_fluent_win11_kit", true },
-        { "tessera_fluent_yourflyouts", false },
+        { "tessera_fluent_yourflyouts", true },
         { "tessera_media_smtc_only", false },
         { "tessera_media_wnp", true },
         { "style_catalog_jaxcore_ids", true },
@@ -97,6 +97,7 @@ public class HubParityBacklogTests
         ["tessera_locks_flight"] = nameof(TesseraParityTests.Armed_tessera_emits_locks_and_flight),
         ["tessera_live_update_multimonitor"] = nameof(TesseraParityTests.FlyoutAnchor_nine_point),
         ["tessera_fluent_win11_kit"] = nameof(TesseraParityTests.StyleCatalog_still_has_eleven_tessera_layouts),
+        ["tessera_fluent_yourflyouts"] = nameof(TesseraParityTests.TesseraSettings_host_polish_defaults),
         ["tessera_media_smtc_only"] = nameof(TesseraParityTests.MediaSessionInfo_accepts_thumbnail_and_timeline),
         ["tessera_media_wnp"] = nameof(WebNowPlayingMergeTests.Merge_overlays_wnp_cover_when_smtc_thumbnail_missing),
         ["tile_tessera_mvp"] = nameof(TesseraCapabilityTests.Armed_tessera_shows_flyout_on_volume_change),
@@ -148,6 +149,7 @@ public class HubParityBacklogTests
         map["tile_substrate_mvp"].Should().BeTrue();
         map["tile_slate_mvp"].Should().BeTrue();
         map["tessera_layout_fidelity"].Should().BeFalse();
+        map["tessera_fluent_yourflyouts"].Should().BeTrue();
         map["tessera_media_wnp"].Should().BeTrue();
         map["tessera_media_smtc_only"].Should().BeFalse();
         map["tile_mixdeck_skeleton"].Should().BeTrue();

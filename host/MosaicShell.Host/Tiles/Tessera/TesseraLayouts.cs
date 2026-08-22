@@ -53,38 +53,41 @@ internal static class TesseraLayouts
         {
             return TesseraShell.Create(
                 TesseraMediaPanel.Create(vm, TesseraMediaMode.FluentSide),
-                cornerRadius: 0,
-                fill: TesseraPalette.Primary);
+                cornerRadius: 10,
+                fill: TesseraPalette.Primary,
+                maxWidth: TesseraFluentMetrics.MaxShellWidth);
         }
 
         const double volumeW = TesseraFluentMetrics.VolumeWidth;
         const double h = TesseraFluentMetrics.Height;
         const double pad = TesseraFluentMetrics.Pad;
 
-        var glyph = TesseraVolumeGlyph.Create(vm, 18);
+        var glyph = TesseraVolumeGlyph.Create(vm, 20);
         glyph.Name = "TesseraGlyph";
         glyph.HorizontalAlignment = HorizontalAlignment.Center;
-        glyph.Margin = new Thickness(0, pad, 0, 0);
+        glyph.Margin = new Thickness(0, pad, 0, 6);
 
         var track = new TesseraTrack
         {
             IsVertical = true,
-            Width = 28,
-            Height = h - pad * 2 - 40,
+            Width = 26,
+            Height = h - pad * 2 - 48,
             HorizontalAlignment = HorizontalAlignment.Center,
             Value = vm.PrimaryValue,
-            Name = "TesseraTrack"
+            Name = "TesseraTrack",
+            TrackThickness = 5
         };
         track.ValueChanged += (_, v) => vm.ApplyPrimary(v);
 
         var percent = new TextBlock
         {
             Text = vm.PrimaryPercent,
-            FontSize = 10,
-            Foreground = TesseraPalette.FontMutedBrush,
-            FontFamily = new FontFamily("Segoe UI"),
+            FontSize = 11,
+            FontWeight = FontWeight.SemiBold,
+            Foreground = TesseraPalette.FontBrush,
+            FontFamily = new FontFamily("Segoe UI Variable, Segoe UI"),
             HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 0, 0, pad),
+            Margin = new Thickness(0, 4, 0, pad),
             Name = "TesseraPercent"
         };
         TesseraLiveAmbient.RegisterVolume(track, percent, glyph as MaterialIcon);
@@ -114,28 +117,34 @@ internal static class TesseraLayouts
                 Height = h - pad * 2,
                 Background = TesseraPalette.StrokeBrush,
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, pad, 0, pad)
+                Margin = new Thickness(0, pad, 0, pad),
+                Opacity = 0.55
             };
             var media = TesseraMediaPanel.Create(vm, TesseraMediaMode.FluentSide);
             body = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
+                Spacing = 2,
                 Children = { volCol, divider, media }
             };
         }
 
-        return TesseraShell.Create(body, cornerRadius: 0, fill: TesseraPalette.Primary);
+        return TesseraShell.Create(body, cornerRadius: 10, fill: TesseraPalette.Primary,
+            maxWidth: TesseraFluentMetrics.MaxShellWidth);
     }
 
     public static Control Win11(TesseraFlyoutViewModel vm)
     {
-        if (IsStatus(vm)) return StatusChip(vm, 12, 320, 50);
+        if (IsStatus(vm)) return StatusChip(vm, TesseraWin11Metrics.CornerRadius, TesseraWin11Metrics.Width, TesseraWin11Metrics.VolumeHeight);
 
         if (vm.Kind.Equals("media", StringComparison.OrdinalIgnoreCase))
-            return TesseraChrome.Glass(TesseraMediaPanel.Create(vm, TesseraMediaMode.Win11Below), 12);
+            return TesseraChrome.Glass(
+                TesseraMediaPanel.Create(vm, TesseraMediaMode.Win11Below),
+                TesseraWin11Metrics.CornerRadius,
+                w: TesseraWin11Metrics.Width);
 
         const double w = TesseraWin11Metrics.Width;
-        var glyph = TesseraVolumeGlyph.Create(vm, 16);
+        var glyph = TesseraVolumeGlyph.Create(vm, 18);
         glyph.Name = "TesseraGlyph";
         glyph.VerticalAlignment = VerticalAlignment.Center;
         glyph.HorizontalAlignment = HorizontalAlignment.Center;
@@ -143,11 +152,11 @@ internal static class TesseraLayouts
         var track = new TesseraTrack
         {
             IsVertical = false,
-            Width = w - 120,
-            Height = 28,
+            Width = w - 112,
+            Height = 26,
             Value = vm.PrimaryValue,
             Name = "TesseraTrack",
-            TrackThickness = 4
+            TrackThickness = 5
         };
         track.ValueChanged += (_, v) => vm.ApplyPrimary(v);
 
@@ -155,10 +164,12 @@ internal static class TesseraLayouts
         {
             Text = vm.PrimaryPercent,
             FontSize = 13,
-            Width = 40,
+            FontWeight = FontWeight.SemiBold,
+            Width = 42,
             TextAlignment = TextAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             Foreground = TesseraPalette.FontBrush,
+            FontFamily = new FontFamily("Segoe UI Variable, Segoe UI"),
             Name = "TesseraPercent"
         };
         TesseraLiveAmbient.RegisterVolume(track, percent, glyph as MaterialIcon);
@@ -166,9 +177,9 @@ internal static class TesseraLayouts
         var row = new Grid
         {
             Width = w,
-            Height = 50,
-            ColumnDefinitions = new ColumnDefinitions("48,*,48"),
-            Margin = new Thickness(4, 4, 4, 0)
+            Height = TesseraWin11Metrics.VolumeHeight,
+            ColumnDefinitions = new ColumnDefinitions("44,*,46"),
+            Margin = new Thickness(TesseraWin11Metrics.Pad / 2, 4, TesseraWin11Metrics.Pad / 2, 0)
         };
         Grid.SetColumn(glyph, 0);
         Grid.SetColumn(track, 1);
@@ -183,34 +194,35 @@ internal static class TesseraLayouts
         {
             body = new StackPanel
             {
+                Spacing = 2,
                 Children =
                 {
                     row,
-                    new Border { Height = 1, Background = TesseraPalette.StrokeBrush, Margin = new Thickness(14, 2) },
+                    new Border { Height = 1, Background = TesseraPalette.StrokeBrush, Margin = new Thickness(14, 2), Opacity = 0.5 },
                     TesseraMediaPanel.Create(vm, TesseraMediaMode.Win11Below)
                 }
             };
         }
 
-        return TesseraChrome.Glass(body, 12, w: w);
+        return TesseraChrome.Glass(body, TesseraWin11Metrics.CornerRadius, w: w);
     }
 
     public static Control Center(TesseraFlyoutViewModel vm)
     {
-        if (IsStatus(vm)) return StatusChip(vm, 18, 140, 140);
-        var glyph = TesseraVolumeGlyph.Create(vm, 32);
+        if (IsStatus(vm)) return StatusChip(vm, TesseraCenterMetrics.CornerRadius, TesseraCenterMetrics.Size, TesseraCenterMetrics.Size);
+        var glyph = TesseraVolumeGlyph.Create(vm, TesseraCenterMetrics.GlyphSize);
         glyph.Name = "TesseraGlyph";
         glyph.HorizontalAlignment = HorizontalAlignment.Center;
         var percent = new TextBlock
         {
             Text = vm.PrimaryPercent,
-            FontSize = 22,
+            FontSize = TesseraCenterMetrics.PercentSize,
             FontWeight = FontWeight.SemiBold,
             Foreground = TesseraPalette.FontBrush,
+            FontFamily = new FontFamily("Segoe UI Variable, Segoe UI"),
             HorizontalAlignment = HorizontalAlignment.Center,
             Name = "TesseraPercent"
         };
-        // Invisible track for live pump / wheel
         var track = new TesseraTrack
         {
             IsVertical = true,
@@ -227,9 +239,9 @@ internal static class TesseraLayouts
         {
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center,
-            Spacing = 10,
+            Spacing = 8,
             Children = { glyph, percent, track }
-        }, 20, new Thickness(20), 140, 140);
+        }, TesseraCenterMetrics.CornerRadius, new Thickness(18), TesseraCenterMetrics.Size, TesseraCenterMetrics.Size);
         BindWheel(card, vm);
         return card;
     }

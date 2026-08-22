@@ -62,7 +62,7 @@ public static class Program
               Mosaicist install-module Canvas
               Mosaicist uninstall-module Canvas
               Mosaicist import-shp .\Nordic{0}.shp
-              Mosaicist install-module Tessera --zip .\Tessera.rmskin
+              Mosaicist install-module Tessera --zip .\Tessera.zip
               Mosaicist install-module Canvas --url https://example/Canvas.zip --sha256 abc...
             """);
     }

@@ -70,6 +70,8 @@ public partial class App : Application
                         ["mediaPlaying"] = media?.IsPlaying == true ? "1" : "0",
                         ["acrylic"] = s.UseAcrylicBackdrop ? "1" : "0",
                         ["focusDim"] = s.UseFocusDim ? "1" : "0",
+                        ["flyoutScale"] = Math.Clamp(s.FlyoutScalePercent, 50, 150).ToString(),
+                        ["bakedFrost"] = s.UseBakedFrost ? "1" : "0",
                     },
                     s.MonitorIndex,
                     s.XPad,

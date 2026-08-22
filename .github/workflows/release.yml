@@ -9,49 +9,83 @@ on:
       - main
   workflow_dispatch:
 
+defaults:
+  run:
+    shell: pwsh
+
 jobs:
   build-and-release:
-    name: Build .rmskin and publish release
-    runs-on: ubuntu-latest
-    container:
-      image: alpine:3.21
+    name: Build Host zip and publish release
+    runs-on: windows-latest
 
     steps:
-      - name: Install dependencies
-        run: |
-          apk add --no-cache git zip github-cli
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: "8.0.x"
+
       - name: Resolve version
         id: tag
-        run: echo "name=$(date -u +%Y.%-m.%-d)-b${{ github.run_number }}" >> "$GITHUB_OUTPUT"
-
-      - name: Sync version in RMSKIN.ini
-        run: sed -i "s|^Version=.*|Version=${{ steps.tag.outputs.name }}|" RMSKIN.ini
-
-      - name: Build MosaicShell.rmskin
         run: |
-          PKG=$(mktemp -d)
-          SKIN="$PKG/Skins/#MosaicShell"
-          mkdir -p "$SKIN"
+          $name = (Get-Date -AsUTC).ToString("yyyy.M.d") + "-b${{ github.run_number }}"
+          "name=$name" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Release tag: $name"
 
-          for dir in @Resources Accessories Core CoreShell Ctx Main S-Hub; do
-            [ -d "$dir" ] && cp -r "$dir" "$SKIN/"
-          done
+      - name: Test
+        working-directory: host
+        run: dotnet test MosaicShell.Core.Tests --configuration Release --nologo
 
-          cp RMSKIN.ini "$PKG/"
+      - name: Publish Host + Mosaicist
+        working-directory: host
+        run: |
+          $out = Join-Path $env:GITHUB_WORKSPACE "artifacts"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
 
-          cd "$PKG"
-          zip -r "$GITHUB_WORKSPACE/MosaicShell.rmskin" . -x "*.git*"
+          dotnet publish MosaicShell.Host `
+            -c Release -r win-x64 --self-contained false `
+            -o (Join-Path $out "Host")
+
+          dotnet publish Mosaicist `
+            -c Release -r win-x64 --self-contained false `
+            -o (Join-Path $out "Mosaicist")
+
+          Copy-Item -Recurse -Force `
+            (Join-Path $env:GITHUB_WORKSPACE "Tiles") `
+            (Join-Path $out "Tiles")
+
+          @"
+          MosaicShell Host release
+
+          Requires .NET 8 runtime (Windows x64).
+
+          1. Extract this zip.
+          2. From Mosaicist\:  .\Mosaicist.exe install-module Tessera
+             (repeat for other module ids as needed; stubs are under Tiles\).
+          3. Run Host\MosaicShell.Host.exe
+
+          Docs: https://github.com/${{ github.repository }}
+          "@.Trim() | Set-Content -Path (Join-Path $out "README.txt") -Encoding utf8
+
+      - name: Zip release
+        id: zip
+        run: |
+          $name = "${{ steps.tag.outputs.name }}"
+          $zip = Join-Path $env:GITHUB_WORKSPACE "MosaicShell-Host-$name.zip"
+          if (Test-Path $zip) { Remove-Item $zip -Force }
+          Compress-Archive -Path (Join-Path $env:GITHUB_WORKSPACE "artifacts\*") -DestinationPath $zip
+          "path=$zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Created $zip"
 
       - name: Create GitHub release
-        run: |
-          gh release create ${{ steps.tag.outputs.name }} MosaicShell.rmskin \
-            --title "MosaicShell ${{ steps.tag.outputs.name }}" \
-            --generate-notes \
-            --target ${{ github.sha }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $name = "${{ steps.tag.outputs.name }}"
+          $zip = "${{ steps.zip.outputs.path }}"
+          gh release create $name $zip `
+            --title "MosaicShell $name" `
+            --generate-notes `
+            --target "${{ github.sha }}"

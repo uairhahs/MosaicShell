@@ -52,6 +52,10 @@ public sealed class TesseraSettings
     public bool UseAcrylicBackdrop { get; set; } = true;
     /// <summary>Subtle click-through desktop dim behind flyout.</summary>
     public bool UseFocusDim { get; set; } = true;
+    /// <summary>Flyout size multiplier percent (50-150). Default 100.</summary>
+    public int FlyoutScalePercent { get; set; } = 100;
+    /// <summary>Optional Skia-baked soft frost wash under tint (MagickMeter-style).</summary>
+    public bool UseBakedFrost { get; set; } = true;
 }
 
 public sealed class MixdeckSettings

@@ -23,7 +23,8 @@ public class ModuleInstallerTests : IDisposable
         File.WriteAllText(Path.Combine(_repo, "Tiles", "Canvas", "module.native.json"),
             """{"id":"Canvas","runtime":"avalonia","capability":false}""");
         File.WriteAllText(Path.Combine(_repo, "Tiles", "Canvas", "README.md"), "canvas tile");
-        File.WriteAllText(Path.Combine(_repo, "RunMosaicist.ps1"), "# stub");
+        Directory.CreateDirectory(Path.Combine(_repo, "host"));
+        File.WriteAllText(Path.Combine(_repo, "host", "MosaicShell.sln"), "# stub");
     }
 
     public void Dispose()

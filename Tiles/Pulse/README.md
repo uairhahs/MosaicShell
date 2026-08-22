@@ -1,6 +1,6 @@
 # Pulse (native-only)
 
-Pulse runs as an Avalonia **widget** via `TileRuntime` - not as a Rainmeter skin.
+Pulse runs as an Avalonia **widget** via `TileRuntime`.
 
 | Path | Role |
 |------|------|
@@ -8,8 +8,16 @@ Pulse runs as an Avalonia **widget** via `TileRuntime` - not as a Rainmeter skin
 | `host/MosaicShell.Core/Settings/ModuleSettings.cs` (`PulseSettings`) | Style / Bar vs Round |
 | This folder | Install stub for `install-module Pulse` |
 
-Bands come from WASAPI loopback levels - not RNG. StyleCatalog ids are chrome labels; full JaxCore visualizer skins are later.
+Bands come from WASAPI loopback levels - not RNG. StyleCatalog ids are chrome labels.
 
-## Legacy
+## Install / start
 
-The Rainmeter Pulse tree was removed on the Avalonia migration branch (supersession wave **B2**). Use **MosaicShell.Host** Library → Start.
+```powershell
+cd host
+dotnet run --project Mosaicist -- install-module Pulse
+dotnet run --project MosaicShell.Host
+```
+
+In Host: Library → Pulse → Start.
+
+Promised Rainmeter-era behavior: [`docs/legacy/pulse.md`](../../docs/legacy/pulse.md).

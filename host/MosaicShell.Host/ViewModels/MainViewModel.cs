@@ -159,6 +159,8 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _tesseraMediaStrip = true;
     [ObservableProperty] private bool _tesseraAcrylicBackdrop = true;
     [ObservableProperty] private bool _tesseraFocusDim = true;
+    [ObservableProperty] private bool _tesseraBakedFrost;
+    [ObservableProperty] private decimal _tesseraFlyoutScalePercent = 100;
     [ObservableProperty] private decimal _tesseraLegacyStepPercent = 2;
     [ObservableProperty] private bool _autostartEnabled;
     [ObservableProperty] private bool _closeMinimizesToTray = true;
@@ -280,6 +282,8 @@ public partial class MainViewModel : ViewModelBase
             TesseraMediaStrip = s.ShowMediaStripOnVolume;
             TesseraAcrylicBackdrop = s.UseAcrylicBackdrop;
             TesseraFocusDim = s.UseFocusDim;
+            TesseraBakedFrost = s.UseBakedFrost;
+            TesseraFlyoutScalePercent = Math.Clamp(s.FlyoutScalePercent, 50, 150);
             // Stored as 0-1 fraction; UI is percent points out of 100
             var stepPct = s.LegacyVolumeStep <= 1.0
                 ? (decimal)Math.Round(s.LegacyVolumeStep * 100)
@@ -382,6 +386,8 @@ public partial class MainViewModel : ViewModelBase
         s.ShowMediaStripOnVolume = TesseraMediaStrip;
         s.UseAcrylicBackdrop = TesseraAcrylicBackdrop;
         s.UseFocusDim = TesseraFocusDim;
+        s.UseBakedFrost = TesseraBakedFrost;
+        s.FlyoutScalePercent = (int)Math.Clamp(TesseraFlyoutScalePercent, 50, 150);
         s.UseLegacyVolumeHooks = TesseraLegacyVol;
         s.LegacyVolumeStep = Math.Clamp((double)TesseraLegacyStepPercent, 1, 25) / 100.0;
         ModuleSettingsStore.Save("Tessera", s);

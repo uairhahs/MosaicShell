@@ -47,6 +47,17 @@ public class TesseraParityTests : IDisposable
         s.Style.Should().Be("Fluent");
     }
 
+    [Fact]
+    public void TesseraSettings_host_polish_defaults()
+    {
+        var s = new TesseraSettings();
+        s.FlyoutScalePercent.Should().Be(100);
+        s.UseBakedFrost.Should().BeTrue();
+        s.UseAcrylicBackdrop.Should().BeTrue();
+        s.UseFocusDim.Should().BeTrue();
+        Math.Clamp(s.FlyoutScalePercent, 50, 150).Should().Be(100);
+    }
+
     [Theory]
     [InlineData(null, "TL")]
     [InlineData("", "TL")]

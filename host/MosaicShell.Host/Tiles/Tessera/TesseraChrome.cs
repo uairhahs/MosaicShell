@@ -29,11 +29,23 @@ internal static class TesseraChrome
     /// </summary>
     private static Border StrokedShell(Control content, double radius, IBrush background, double? maxWidth = null, double? height = null)
     {
+        Control inner = content;
+        if (TesseraBakedFrost.TryGetBrush(out var frost))
+        {
+            inner = new Grid
+            {
+                Children =
+                {
+                    new Border { Background = frost, Opacity = 0.45, IsHitTestVisible = false },
+                    content
+                }
+            };
+        }
         var clip = new Border
         {
             CornerRadius = new CornerRadius(Math.Max(0, radius - 0.5)),
             ClipToBounds = true,
-            Child = content
+            Child = inner
         };
         var shell = new Border
         {
@@ -64,6 +76,15 @@ internal static class TesseraChrome
     public static Border WithArtWash(Control foreground, byte[]? png, double radius, Thickness pad, double? maxWidth = null)
     {
         var root = new Grid();
+        if (TesseraBakedFrost.TryGetBrush(out var frost))
+        {
+            root.Children.Add(new Border
+            {
+                Background = frost,
+                Opacity = 0.5,
+                IsHitTestVisible = false
+            });
+        }
         var wash = new Border
         {
             Name = "TesseraMediaWash",

@@ -112,6 +112,8 @@ public sealed class WindowsNativeOsdSuppressor : INativeOsdSuppressor
     {
         if (!IsActive) return;
         _burstUntil = DateTimeOffset.UtcNow.AddMilliseconds(Math.Clamp(durationMs, 200, 8000));
+        // Re-resolve often - explorer can recreate the OSD HWND between volume ticks
+        _resolved = TryResolveNativeFlyout();
         HideNativeFlyout(permanent: false);
         _burst?.Dispose();
         _burst = new System.Threading.Timer(_ =>
@@ -122,8 +124,10 @@ public sealed class WindowsNativeOsdSuppressor : INativeOsdSuppressor
                 _burst = null;
                 return;
             }
+            if (!_resolved || _hwndHost == IntPtr.Zero || !IsWindow(_hwndHost))
+                _resolved = TryResolveNativeFlyout();
             HideNativeFlyout(permanent: false);
-        }, null, 0, 50);
+        }, null, 0, 33);
     }
 
     public void SuppressOnce() => HideNativeFlyout(permanent: false);
@@ -276,6 +280,7 @@ public sealed class WindowsNativeOsdSuppressor : INativeOsdSuppressor
 
         try
         {
+            var inBurst = DateTimeOffset.UtcNow <= _burstUntil;
             if (!_resolved && (eventType == EVENT_OBJECT_CREATE || eventType == EVENT_OBJECT_SHOW))
             {
                 var cls = GetClassName(hwnd);
@@ -284,6 +289,8 @@ public sealed class WindowsNativeOsdSuppressor : INativeOsdSuppressor
                     _resolved = TryResolveNativeFlyout();
                     if (_resolved)
                         InstallHook();
+                    if (inBurst)
+                        HideNativeFlyout(permanent: false);
                 }
             }
 
@@ -291,7 +298,9 @@ public sealed class WindowsNativeOsdSuppressor : INativeOsdSuppressor
             {
                 switch (eventType)
                 {
+                    case EVENT_OBJECT_CREATE:
                     case EVENT_OBJECT_SHOW:
+                    case EVENT_OBJECT_STATECHANGE:
                         HideNativeFlyout(permanent: false);
                         break;
                     case EVENT_OBJECT_DESTROY:
@@ -300,8 +309,18 @@ public sealed class WindowsNativeOsdSuppressor : INativeOsdSuppressor
                         _shellPid = 0;
                         _resolved = false;
                         _rehook?.Dispose();
-                        _rehook = new System.Threading.Timer(_ => TryRehook(), null, 3000, 3000);
+                        _rehook = new System.Threading.Timer(_ => TryRehook(), null, 1500, 3000);
                         break;
+                }
+            }
+            else if (inBurst && (eventType == EVENT_OBJECT_SHOW || eventType == EVENT_OBJECT_CREATE))
+            {
+                // Catch a newly minted OSD host during a burst even if band resolve lagged
+                var cls = GetClassName(hwnd);
+                if (cls is "NativeHWNDHost" or "XamlExplorerHostIslandWindow")
+                {
+                    _resolved = TryResolveNativeFlyout();
+                    HideNativeFlyout(permanent: false);
                 }
             }
         }

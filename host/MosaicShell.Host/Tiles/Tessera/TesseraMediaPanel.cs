@@ -37,23 +37,23 @@ public static class TesseraMediaPanel
 
     private static Control Fluent(TesseraFlyoutViewModel vm)
     {
-        const double mediaW = TesseraFluentMetrics.MediaWidth - 20; // ~480
+        const double mediaW = TesseraFluentMetrics.MediaWidth - 16;
         const double h = TesseraFluentMetrics.Height;
-        var art = AlbumArt(vm, 64);
-        art.Margin = new Thickness(20, 16, 0, 0);
-        var title = Text(vm.MediaTitle, 18, FontWeight.SemiBold, 320);
-        var artist = Text(vm.MediaArtist, 12, FontWeight.Normal, 320, muted: true);
+        var art = AlbumArt(vm, 56);
+        art.Margin = new Thickness(14, 14, 0, 0);
+        var title = Text(vm.MediaTitle, 15, FontWeight.SemiBold, 240);
+        var artist = Text(vm.MediaArtist, 11, FontWeight.Normal, 240, muted: true);
         var titles = new StackPanel
         {
-            Margin = new Thickness(12, 16, 20, 0),
+            Margin = new Thickness(10, 14, 14, 0),
             Spacing = 2,
             Children = { title, artist }
         };
-        var playIcon = PlayIcon(vm, 18);
-        var transport = TransportRow(vm, playIcon, shuffleRepeat: true, spacing: 14, btnSize: 32);
-        transport.Margin = new Thickness(0, 8, 0, 0);
-        var (scrubCol, scrub, pos, dur) = ScrubberStacked(vm, mediaW - 100);
-        scrubCol.Margin = new Thickness(40, 4, 40, 12);
+        var playIcon = PlayIcon(vm, 16);
+        var transport = TransportRow(vm, playIcon, shuffleRepeat: true, spacing: 12, btnSize: 28);
+        transport.Margin = new Thickness(0, 6, 0, 0);
+        var (scrubCol, scrub, pos, dur) = ScrubberStacked(vm, mediaW - 80);
+        scrubCol.Margin = new Thickness(28, 4, 28, 10);
         TesseraLiveAmbient.RegisterMedia(art, title, artist, scrub, pos, dur, playIcon);
 
         return new Border

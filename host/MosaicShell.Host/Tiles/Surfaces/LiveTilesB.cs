@@ -121,7 +121,7 @@ public sealed class MixdeckTileView : UserControl
         };
         var hint = new TextBlock
         {
-            Text = "Native skeleton mixer (not Rainmeter Mixdeck)",
+            Text = "Native mixer overlay",
             FontSize = 11,
             Foreground = Brush("#6c7086"),
             Margin = new Avalonia.Thickness(0, 0, 0, 8)

@@ -20,7 +20,7 @@ public sealed record ModuleInfo(
 
 public static class ModuleCatalog
 {
-    /// <summary>Canonical tile list (same order as CoreWebResources SkinList).</summary>
+    /// <summary>Canonical tile list (catalog order).</summary>
     public static IReadOnlyList<ModuleInfo> All { get; } =
     [
         new("Tessera", "Tessera", "Volume / brightness / media flyouts. Arm, then use system keys (replaces OS OSD while Host runs).", ModuleKind.Capability),

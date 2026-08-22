@@ -2,11 +2,13 @@
 
 Avalonia + Windows APIs only. No Rainmeter bridge, no `.ini` interpreter.
 
+**B5 complete:** this repository is **Host-only**. Legacy Rainmeter trees, CoreShell hub skins, and classic packaging scripts are removed from the working tree. Install stubs remain under `Tiles/{Id}/`. Promised Rainmeter-era behavior is documented in [`docs/legacy/`](legacy/).
+
 ## Tessera
 
 Armed capability (not a Library overlay widget). Replaces OS volume/brightness HUD while armed **on a best-effort basis**.
 
-**B0 = Rainmeter Tessera removed**, not full [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) parity. Runtime lives in `host/`; [`Tiles/Tessera`](../Tiles/Tessera) is an install stub (`module.native.json`) only.
+Runtime lives in `host/`; [`Tiles/Tessera`](../Tiles/Tessera) is an install stub (`module.native.json`) only. B0 removed Rainmeter Tessera; it is **not** full [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) parity.
 
 ### Status (honest)
 
@@ -14,19 +16,20 @@ Armed capability (not a Library overlay widget). Replaces OS volume/brightness H
 |------|--------|
 | Flyout kinds | `vol`, `bright`, `media`, `locks`, `flight` |
 | Media backend | **SMTC + WebNowPlaying** (browser covers; CLI port **5468**) |
-| Layouts | Fluent + Win11 **kit**; other 9 **approximations** |
+| Layouts | Fluent + Win11 + Center **Host-polished**; other styles approximations |
 | Placement | Default **TL**; 9-point Position; re-anchor after measure |
-| Settings | Host Tessera panel (subset of JaxCore Core pages) |
-| OSD | WinEvent ZBand hide + ShellHook triggers + burst; vendor OEM unsupported |
-| Pixel → Mixdeck | Opens **native Mixdeck overlay** (skeleton/MVP), not Rainmeter Mixdeck |
+| Settings | Host Tessera panel + flyout scale % + soft frost / baked frost / focus dim |
+| OSD | WinEvent ZBand hide + ShellHook + burst re-resolve; vendor OEM unsupported |
+| Pixel → Mixdeck | Opens **native Mixdeck overlay** (MVP) |
 
 ### Known gaps vs YourFlyouts
 
-- FrostedGlass / Focus
+- Soft frost / focus dim = **Host look**; optional Skia baked frost (opt-in). Own identity is fine.
 - Full appearance DLC (colors, sizes beyond Host settings)
 - Brightness / airplane limitations on some Win11 builds (upstream YourFlyouts caveat)
 - Vendor laptop OSDs (Dell/HP/…)
 - Rainmeter NowPlaying multi-player Auto (AIMP/CAD/…) - WNP + SMTC only
+- Non-kit StyleCatalog skins still approximate
 
 ### External references
 
@@ -38,13 +41,13 @@ Armed capability (not a Library overlay widget). Replaces OS volume/brightness H
 
 Each module follows the Tessera pattern: thin `Tiles/{Id}` stub + real code in `host/` + honest `*_skeleton` / `*_mvp` flags in `HubParityBacklogTests`.
 
-| Wave | Module | Today | Target | Exit criteria |
-|------|--------|-------|--------|---------------|
-| **B0** | Tessera | Rainmeter gone; Host capability | YourFlyouts-class fidelity later | Stub install only |
-| **B1** | Mixdeck | Native overlay MVP | Full StyleCatalog skins later | `tile_mixdeck_mvp`; Plugin=Tessera disabled |
-| **B2** | Widgets | TileRuntime MVP surfaces | Full Chrono/Phono/Pulse/Canvas skins later | Stub install; flip `tile_*_mvp` |
-| **B3** | Hotkey caps | Overlay MVP (Inlay/Chord/Substrate) | Full StyleCatalog skins later | Per-module `_mvp` (see parity bars) |
-| **B4** | Slate | Idle overlay MVP | Full screensaver DLC later | `tile_slate_mvp` |
-| **B5** | Hub | Avalonia MainWindow + Mosaicist | Retire CoreShell / Rainmeter install as primary | Host-only docs |
+| Wave | Module | Status | Notes |
+|------|--------|--------|-------|
+| **B0** | Tessera | Done | Host capability; stub install |
+| **B1** | Mixdeck | MVP | `tile_mixdeck_mvp`; native overlay |
+| **B2** | Widgets | MVP | Chrono/Phono/Pulse/Canvas stubs + TileRuntime |
+| **B3** | Hotkey caps | MVP | Inlay/Chord/Substrate |
+| **B4** | Slate | MVP | Idle overlay |
+| **B5** | Hub / repo | **Done** | Host-only docs; Rainmeter trees removed |
 
-**Non-goals until B5:** deleting Mixdeck/Inlay/Chord/Substrate/Slate `@Resources`, `S-Hub` packagers, or CoreShell wholesale. Widget Rainmeter trees (Chrono/Phono/Pulse/Canvas) are retired in **B2** once MVP bars hold.
+Further fidelity (StyleCatalog skins, YourFlyouts pixel parity) remains iterative — not blocked on Rainmeter trees.

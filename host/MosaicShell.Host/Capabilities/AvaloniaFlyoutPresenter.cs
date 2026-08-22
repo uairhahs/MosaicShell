@@ -220,8 +220,19 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         {
             var material = TesseraFlyoutMaterialFactory.FromPayload(request.Payload);
             TesseraPalette.ApplyMaterial(material);
+            TesseraBakedFrost.SetEnabled(BakedFrostFromPayload(request.Payload));
             var vm = TesseraFlyoutViewModel.FromRequest(_services, request);
-            return TesseraStyleFactory.Create(request.StyleId ?? "Fluent", vm);
+            Control root = TesseraStyleFactory.Create(request.StyleId ?? "Fluent", vm);
+            var scale = FlyoutScaleFromPayload(request.Payload);
+            if (Math.Abs(scale - 1.0) > 0.01)
+            {
+                root = new LayoutTransformControl
+                {
+                    LayoutTransform = new ScaleTransform(scale, scale),
+                    Child = root
+                };
+            }
+            return root;
         }
 
         return new Border
@@ -235,6 +246,22 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
                 Foreground = Brushes.White
             }
         };
+    }
+
+    private static double FlyoutScaleFromPayload(IReadOnlyDictionary<string, string>? payload)
+    {
+        if (payload is null || !payload.TryGetValue("flyoutScale", out var raw))
+            return 1.0;
+        if (!int.TryParse(raw, out var pct))
+            return 1.0;
+        return Math.Clamp(pct, 50, 150) / 100.0;
+    }
+
+    private static bool BakedFrostFromPayload(IReadOnlyDictionary<string, string>? payload)
+    {
+        if (payload is null || !payload.TryGetValue("bakedFrost", out var raw) || string.IsNullOrWhiteSpace(raw))
+            return false;
+        return raw is not ("0" or "false" or "False" or "off" or "Off");
     }
 }
 

@@ -12,8 +12,8 @@ public sealed class ModuleInstallProgress
 }
 
 /// <summary>
-/// Installs modules from a local source tree, a local .rmskin/.zip, or a GitHub release asset.
-/// Never executes downloaded scripts.
+/// Installs modules from a local source tree, a local .zip/.rmskin package, or a GitHub release asset.
+/// Never executes downloaded scripts. Local tree installs are always native stubs.
 /// </summary>
 public sealed class ModuleInstaller
 {
@@ -87,7 +87,7 @@ public sealed class ModuleInstaller
                 Id = moduleId,
                 InstalledUtc = DateTime.UtcNow,
                 Source = packagePath,
-                Runtime = IsNativeModuleStub(dest) ? "avalonia" : "rainmeter"
+                Runtime = "avalonia"
             };
             await File.WriteAllTextAsync(
                 Path.Combine(dest, "module.json"),
@@ -126,13 +126,12 @@ public sealed class ModuleInstaller
             Directory.Delete(dest, recursive: true);
         CopyDirectory(source, dest);
 
-        var isNative = IsNativeModuleStub(source);
         var marker = new
         {
             Id = moduleId,
             InstalledUtc = DateTime.UtcNow,
             Source = source,
-            Runtime = isNative ? "avalonia" : "rainmeter"
+            Runtime = "avalonia"
         };
         File.WriteAllText(
             Path.Combine(dest, "module.json"),
@@ -142,7 +141,7 @@ public sealed class ModuleInstaller
         progress?.Report(new ModuleInstallProgress
         {
             Stage = "done",
-            Detail = isNative ? $"{dest} (native stub)" : dest
+            Detail = $"{dest} (native stub)"
         });
         return true;
     }
@@ -213,7 +212,7 @@ public sealed class ModuleInstaller
         return Directory.Exists(directRoot) ? directRoot : null;
     }
 
-    /// <summary>Avalonia-only modules ship a stub folder with module.native.json (no Rainmeter Main.ini).</summary>
+    /// <summary>Native modules ship a stub folder with module.native.json (or native.marker).</summary>
     public static bool IsNativeModuleStub(string dir) =>
         File.Exists(Path.Combine(dir, "module.native.json"))
         || File.Exists(Path.Combine(dir, "native.marker"));
@@ -222,7 +221,6 @@ public sealed class ModuleInstaller
         IsNativeModuleStub(dir)
         || File.Exists(Path.Combine(dir, "Main.ini"))
         || Directory.Exists(Path.Combine(dir, "Main"))
-        || Directory.Exists(Path.Combine(dir, "@Resources"))
         || Directory.GetFiles(dir, "*.ini", SearchOption.AllDirectories).Length > 0;
 
     private static string? FindRepoRoot()
@@ -230,9 +228,6 @@ public sealed class ModuleInstaller
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null)
         {
-            if (Directory.Exists(Path.Combine(dir.FullName, "Tiles"))
-                && File.Exists(Path.Combine(dir.FullName, "RunMosaicist.ps1")))
-                return dir.FullName;
             if (Directory.Exists(Path.Combine(dir.FullName, "Tiles"))
                 && File.Exists(Path.Combine(dir.FullName, "host", "MosaicShell.sln")))
                 return dir.FullName;

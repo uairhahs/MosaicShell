@@ -14,11 +14,11 @@
 | Install stub | `Tiles/Tessera/` (`module.native.json` + README) → copied to `%…/Modules/Tessera` |
 | Arm gate | `ModuleCatalog.IsInstalled` = directory exists under `Modules/` |
 
-`ModuleInstaller` treats `module.native.json` / `native.marker` as a valid module root (no Rainmeter `Main.ini` required).
+`ModuleInstaller` treats `module.native.json` / `native.marker` as a valid module root. Local `Tiles/{Id}` installs are always native stubs (B5 Host-only repo).
 
-## Widget install stubs (B2)
+## Install stubs
 
-Chrono / Phono / Pulse / Canvas use the same stub pattern under `Tiles/{Id}/`. Runtime is `TileSurfaceFactory` → `LiveTilesA` via `TileRuntime`.
+All ten catalog modules use `Tiles/{Id}/` stubs. Widget runtime is `TileSurfaceFactory` → `LiveTilesA` via `TileRuntime`; capabilities arm via `CapabilityDaemon`.
 
 Tessera flow: OS events / ShellHook → `TesseraCapability` → OSD suppress → `AvaloniaFlyoutPresenter` → layout control.
 ShellHook: `WindowsShellFlyoutHook` (ModernFlyouts-compatible SHELLHOOK decode) alongside audio/brightness change sources.

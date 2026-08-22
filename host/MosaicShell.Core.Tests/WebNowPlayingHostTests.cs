@@ -9,7 +9,7 @@ namespace MosaicShell.Core.Tests;
 
 /// <summary>
 /// Drives <see cref="WebNowPlayingReduxHost"/> like the browser extension (WNPLIB rev 3),
-/// without Chrome / Rainmeter - isolates album-art protocol handling.
+/// without Chrome - isolates album-art protocol handling.
 /// </summary>
 public class WebNowPlayingHostTests
 {

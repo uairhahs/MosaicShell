@@ -503,11 +503,20 @@
                   <Border Height="1" Background="#313244" Margin="0,4" />
                   <TextBlock Classes="sectionTitle" Text="More appearance" Margin="0" />
                   <TextBlock Classes="sectionHint" Margin="0"
-                             Text="Translucent crust panel (no glow, no OS acrylic). Off = more opaque." />
+                             Text="Host material language - soft frost tint (not OS acrylic). Optional baked wash is a light MagickMeter-style texture." />
                   <CheckBox Content="Soft frost tint" IsChecked="{Binding TesseraAcrylicBackdrop}"
                             ToolTip.Tip="Slightly translucent Mocha crust. Off = denser solid panel." />
+                  <CheckBox Content="Baked frost wash" IsChecked="{Binding TesseraBakedFrost}"
+                            IsEnabled="{Binding TesseraAcrylicBackdrop}"
+                            ToolTip.Tip="Skia-prerendered soft noise wash under the tint (Host material). Off if you prefer flat tint only." />
                   <CheckBox Content="Subtle desktop dim (Focus)" IsChecked="{Binding TesseraFocusDim}"
                             ToolTip.Tip="Very light dim behind the flyout. Never blocks input; outside click dismisses instantly." />
+                  <StackPanel Spacing="4" Margin="0,4,0,0">
+                    <TextBlock Text="Flyout scale %" Foreground="#a6adc8" FontSize="12" />
+                    <NumericUpDown Classes="config" Minimum="50" Maximum="150" Increment="5"
+                                   FormatString="0" Value="{Binding TesseraFlyoutScalePercent}"
+                                   ToolTip.Tip="Size multiplier for Tessera flyouts on the desktop (100 = default)." />
+                  </StackPanel>
                 </StackPanel>
               </ScrollViewer>
             </Border>
@@ -690,7 +699,7 @@
             </StackPanel>
           </StackPanel>
           <TextBlock TextWrapping="Wrap" Foreground="#a6adc8" FontSize="14" LineHeight="22"
-                     Text="Native Avalonia hub + CapabilityDaemon. Tessera best-effort replaces OS volume OSD while armed (not full YourFlyouts). Pixel Mixdeck opens the native mixer overlay skeleton/MVP - not Rainmeter Mixdeck." />
+                     Text="Native Avalonia hub + CapabilityDaemon. Tessera best-effort replaces OS volume OSD while armed (not full YourFlyouts). Pixel Mixdeck opens the native mixer overlay." />
           <Button Classes="action" Content="View on GitHub" HorizontalAlignment="Left"
                   Command="{Binding OpenGitHubCommand}" />
         </StackPanel>

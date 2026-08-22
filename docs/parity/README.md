@@ -4,9 +4,11 @@ Living flags live in `host/MosaicShell.Core.Tests/HubParityBacklogTests.cs`.
 
 **Convention:** `*_skeleton` = wiring exists (arm/hotkey/stub UI). `*_mvp` = JaxCore-comparable user-visible slice (see bars below). Do not mark `_mvp` true without the bar met.
 
+**B5:** Rainmeter hub / skin trees are gone from the repo. Runtime is Host-only; `Tiles/{Id}` are native install stubs. Legacy promises: [`docs/legacy/`](../legacy/).
+
 ## Tessera
 
-**Rainmeter Tessera removed (B0)** - runtime is host-only; `Tiles/Tessera` is a native install stub. B0 is **not** full YourFlyouts parity.
+Runtime is host-only; `Tiles/Tessera` is a native install stub. B0 is **not** full YourFlyouts parity.
 
 | Flag | Meaning |
 |------|---------|
@@ -15,25 +17,22 @@ Living flags live in `host/MosaicShell.Core.Tests/HubParityBacklogTests.cs`.
 | `tessera_locks_flight` | Lock-key + airplane flyouts |
 | `tessera_live_update_multimonitor` | Reuse/update window; monitor + anchor math |
 | `tessera_fluent_win11_kit` | Fluent + Win11 transfer kit present |
-| `tessera_layout_fidelity` | **false** - layouts rebuilt vs `.local/Tessera` refs; flag stays false until visual QA hits ~8 |
-| `tessera_fluent_yourflyouts` | **false** - Fluent/Win11/Center closer (art wash, structure); not Rainmeter plugin parity |
+| `tessera_layout_fidelity` | **false** - non-kit styles still approximate; Host does not require pixel-YourFlyouts |
+| `tessera_fluent_yourflyouts` | **true** - Fluent / Win11 / Center tightened for Host identity (compact, soft frost, optional baked wash) |
 | `tessera_media_smtc_only` | **false** - SMTC is not the only media path |
-| `tessera_media_wnp` | **true** - WebNowPlaying host on CLI port **5468** (Rainmeter keeps 8974) |
+| `tessera_media_wnp` | **true** - WebNowPlaying host on CLI port **5468** |
 | `tile_tessera_mvp` | Armed flyouts + named styles (Host path) |
 
 References: [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts) (OSD / ShellHook).
 
 ### Known gaps vs YourFlyouts
 
-- FrostedGlass / Focus plugins
-- Full color/size DLC and Rainmeter Core settings pages
+- Soft frost / focus dim are **Host identity** (Avalonia tint); optional Skia baked frost wash (MagickMeter-style, opt-in)
+- Full color/size DLC beyond Host settings pages
 - Brightness / airplane caveats on some Win11 builds (see YourFlyouts README)
 - Vendor laptop OEM HUDs unsupported
-- Rainmeter NowPlaying Auto multi-player (non-WNP)
-
-### B0 regressions
-
-- Rainmeter Mixdeck / Inlay `Plugin=Tessera` volume hooks are **Disabled=1**. Host Mixdeck overlay + Tessera capability replace them.
+- Multi-player Auto NowPlaying outside WNP + SMTC
+- Remaining named styles (Amber/Gnome/Pixel/…) still light approximations (`tessera_layout_fidelity` false)
 
 ## Mixdeck MVP bar (must all hold for `tile_mixdeck_mvp`)
 
@@ -41,25 +40,24 @@ References: [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [Mo
 - Mute toggle + volume slider per session
 - StyleCatalog style reflected in chrome
 - Hotkey / Pixel deep-link opens **overlay**, not placeholder flyout text
-- No Rainmeter `Plugin=Tessera` required on Host path
 
-## Widget MVP bars (B2 - must all hold to flip `_mvp` and retire Rainmeter trees)
+## Widget MVP bars (B2)
 
-Rainmeter `Tiles/{Chrono,Phono,Pulse,Canvas}` are native install stubs. Runtime is `TileRuntime` + `LiveTilesA` only. Full StyleCatalog pixel skins remain later (`layout_fidelity`-style flags if added).
+`Tiles/{Chrono,Phono,Pulse,Canvas}` are native install stubs. Runtime is `TileRuntime` + `LiveTilesA` only. Full StyleCatalog pixel skins remain later (`layout_fidelity`-style flags if added).
 
 ### Chrono (`tile_chrono_mvp`)
 
 - Live clock + date from system time
 - `TwentyFourHour` / `ShowSeconds` from `ChronoSettings`
 - StyleCatalog style changes chrome (e.g. Center vs Text vs Minimal sizing)
-- Library Start opens overlay via TileRuntime (no Rainmeter)
+- Library Start opens overlay via TileRuntime
 
 ### Phono (`tile_phono_mvp`)
 
 - SMTC title / artist (and thumbnail when present)
 - Working prev / play-pause / next via `IMediaSessionService`
 - StyleCatalog style reflected in chrome
-- No WebNowPlaying / Rainmeter NowPlaying required
+- No WebNowPlaying required on the Phono path
 
 ### Pulse (`tile_pulse_mvp`)
 
@@ -74,9 +72,9 @@ Rainmeter `Tiles/{Chrono,Phono,Pulse,Canvas}` are native install stubs. Runtime 
 - Compact vs DEFAULT chrome from StyleCatalog
 - Library Start opens overlay via TileRuntime
 
-## Desktop widget chrome (Rainmeter Ctx parity)
+## Desktop widget chrome
 
-Rainmeter Chrono/Phono/Pulse/Canvas had **no product title strip** - content filled the skin. Shared right-click Ctx (`CoreShell Ctx`) offered Configure, Align, Z layer, Refresh, Unload.
+Legacy Chrono/Phono/Pulse/Canvas had **no product title strip** - content filled the skin. Shared right-click Ctx offered Configure, Align, Z layer, Refresh, Unload.
 
 Native overlays must match that shape:
 
@@ -95,7 +93,6 @@ Native overlays must match that shape:
 | Canvas DynamicWindowSize / section toggles | partial (settings) |
 
 ## Hotkey capability MVP bars (B3 - must all hold for `tile_*_mvp`)
-
 
 Armed hotkey opens a **Host overlay** via bridge (same pattern as Mixdeck), not a placeholder flyout.
 
@@ -143,4 +140,4 @@ True flags map to named tests in `HubParityBacklogTests.CompanionProof` (e.g. `A
 
 ## Supersession waves
 
-See [native-rewrite.md](../native-rewrite.md) Phase B table.
+See [native-rewrite.md](../native-rewrite.md). B5 (Host-only repo) is complete.

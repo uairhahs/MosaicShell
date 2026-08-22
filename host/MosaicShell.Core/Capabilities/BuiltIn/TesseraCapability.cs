@@ -203,7 +203,7 @@ public sealed class TesseraCapability : IModuleCapability
                 _lastShowUtc = now;
             }
 
-            try { _services.OsdSuppressor.SuppressBurst(3000); } catch { /* soft-fail */ }
+            try { _services.OsdSuppressor.SuppressBurst(3500); } catch { /* soft-fail */ }
             var request = BuildRequest(kind, payload);
             if (_ui.Flyouts.IsVisible(ModuleId))
                 _ui.Flyouts.Update(request);
@@ -228,6 +228,8 @@ public sealed class TesseraCapability : IModuleCapability
         p["showMediaStrip"] = _settings.ShowMediaStripOnVolume ? "1" : "0";
         p["acrylic"] = _settings.UseAcrylicBackdrop ? "1" : "0";
         p["focusDim"] = _settings.UseFocusDim ? "1" : "0";
+        p["flyoutScale"] = Math.Clamp(_settings.FlyoutScalePercent, 50, 150).ToString();
+        p["bakedFrost"] = _settings.UseBakedFrost ? "1" : "0";
         if (_lastLock is not null && kind == "locks")
         {
             p["lock"] = _lastLock.Key.ToString();

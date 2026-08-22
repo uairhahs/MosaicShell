@@ -156,7 +156,7 @@ public sealed class AvaloniaTileSurfaceHost : ITileSurfaceHost
 
 /// <summary>
 /// Borderless desktop/capability frame. Content fills the shell (no nested title chrome).
-/// Rainmeter-parity: drag whole surface; manage via right-click Ctx (align / Z / configure / close).
+/// Desktop-widget chrome: drag whole surface; manage via right-click Ctx (align / Z / configure / close).
 /// </summary>
 public sealed class TileOverlayWindow : Window
 {
