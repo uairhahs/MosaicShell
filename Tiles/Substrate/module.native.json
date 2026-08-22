@@ -1,0 +1,5 @@
+{
+  "id": "Substrate",
+  "runtime": "avalonia",
+  "capability": true
+}

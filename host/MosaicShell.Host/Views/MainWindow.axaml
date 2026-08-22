@@ -1,0 +1,822 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MosaicShell.Host.ViewModels"
+        xmlns:tessera="using:MosaicShell.Host.Tiles.Tessera"
+        xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="750"
+        x:Class="MosaicShell.Host.Views.MainWindow"
+        x:Name="Root"
+        x:DataType="vm:MainViewModel"
+        Width="1100" Height="750"
+        MinWidth="780" MinHeight="560"
+        Background="#11111b"
+        ExtendClientAreaToDecorationsHint="True"
+        Icon="/Assets/mosaicshell.ico"
+        Title="MosaicShell">
+
+  <Design.DataContext>
+    <vm:MainViewModel />
+  </Design.DataContext>
+
+  <Window.Styles>
+    <Style Selector="Button.nav">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="#a6adc8" />
+      <Setter Property="Padding" Value="18,10" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="Button.nav:pointerover">
+      <Setter Property="Background" Value="#313244" />
+      <Setter Property="Foreground" Value="#cdd6f4" />
+    </Style>
+    <Style Selector="Button.nav.active">
+      <Setter Property="Background" Value="#45475a" />
+      <Setter Property="Foreground" Value="#cdd6f4" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.action">
+      <Setter Property="Background" Value="#313244" />
+      <Setter Property="Foreground" Value="#cdd6f4" />
+      <Setter Property="Padding" Value="14,8" />
+      <Setter Property="CornerRadius" Value="8" />
+    </Style>
+    <Style Selector="Button.action:pointerover">
+      <Setter Property="Background" Value="#45475a" />
+    </Style>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="#89dceb" />
+      <Setter Property="Foreground" Value="#11111b" />
+      <Setter Property="Padding" Value="16,8" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.icon">
+      <Setter Property="Width" Value="36" />
+      <Setter Property="Height" Value="36" />
+      <Setter Property="MinWidth" Value="36" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.icon.action">
+      <Setter Property="Background" Value="#313244" />
+      <Setter Property="Foreground" Value="#cdd6f4" />
+    </Style>
+    <Style Selector="Button.icon.action:pointerover">
+      <Setter Property="Background" Value="#45475a" />
+    </Style>
+    <Style Selector="Button.icon.primary">
+      <Setter Property="Background" Value="#89dceb" />
+      <Setter Property="Foreground" Value="#11111b" />
+    </Style>
+    <Style Selector="Button.icon.primary:pointerover">
+      <Setter Property="Background" Value="#b4f0f8" />
+    </Style>
+    <Style Selector="Button.icon /template/ ContentPresenter">
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="#1e1e2e" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="20" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Border.card:pointerover">
+      <Setter Property="Background" Value="#313244" />
+    </Style>
+    <Style Selector="Border.row">
+      <Setter Property="Background" Value="#1e1e2e" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="12" />
+      <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+    <Style Selector="Border.section">
+      <Setter Property="Background" Value="#1e1e2e" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="20" />
+      <Setter Property="Margin" Value="0,0,0,14" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="TextBlock.sectionTitle">
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="#cdd6f4" />
+      <Setter Property="Margin" Value="0,0,0,4" />
+    </Style>
+    <Style Selector="TextBlock.sectionHint">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="#6c7086" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Margin" Value="0,0,0,12" />
+    </Style>
+    <!-- Readable spinboxes under LayoutScale (text was clipped at Width=100) -->
+    <Style Selector="NumericUpDown.config">
+      <Setter Property="MinWidth" Value="168" />
+      <Setter Property="Width" Value="180" />
+      <Setter Property="MinHeight" Value="40" />
+      <Setter Property="FontSize" Value="16" />
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="Background" Value="#313244" />
+      <Setter Property="Foreground" Value="#cdd6f4" />
+      <Setter Property="BorderBrush" Value="#45475a" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="ShowButtonSpinner" Value="True" />
+      <Setter Property="AllowSpin" Value="True" />
+    </Style>
+    <Style Selector="NumericUpDown.config /template/ TextBox#PART_TextBox">
+      <Setter Property="FontSize" Value="16" />
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="Padding" Value="8,4" />
+      <Setter Property="Foreground" Value="#cdd6f4" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel Margin="0,28,0,0">
+    <!-- Status - outside LayoutTransform so it stays edge-pinned when scale changes -->
+    <Border DockPanel.Dock="Bottom" Background="#181825" Padding="24,8"
+            BorderBrush="#313244" BorderThickness="0,1,0,0">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="{Binding StatusMessage}" Foreground="#6c7086" FontSize="12"
+                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" Text="{Binding ScaleSummary}" Foreground="#585b70" FontSize="11"
+                   Margin="16,0,0,0" VerticalAlignment="Center" />
+      </Grid>
+    </Border>
+
+    <!-- Nav - outside LayoutTransform so it stays edge-pinned when scale changes -->
+    <Border DockPanel.Dock="Bottom" Background="#1e1e2e" Padding="24,12"
+            BorderBrush="#313244" BorderThickness="0,1,0,0">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <Image Source="/Assets/MosaicShell.png" Width="28" Height="28"
+                 RenderOptions.BitmapInterpolationMode="HighQuality" />
+          <TextBlock Text="MosaicShell" FontWeight="SemiBold" FontSize="14"
+                     Foreground="#cdd6f4" VerticalAlignment="Center" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+          <Button Classes="nav" Content="Home"
+                  Classes.active="{Binding IsHome}"
+                  Command="{Binding NavigateCommand}" CommandParameter="Home" />
+          <Button Classes="nav" Content="Settings"
+                  Classes.active="{Binding IsSettings}"
+                  Command="{Binding NavigateCommand}" CommandParameter="Settings" />
+        </StackPanel>
+        <Button Grid.Column="2" Classes="action" Content="GitHub"
+                Command="{Binding OpenGitHubCommand}" VerticalAlignment="Center" />
+      </Grid>
+    </Border>
+
+    <!-- Page body: scaled Home/Tiles/… vs unscaled full-width Settings -->
+    <Grid>
+      <LayoutTransformControl IsVisible="{Binding !IsSettings}"
+                              HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+        <LayoutTransformControl.LayoutTransform>
+          <ScaleTransform ScaleX="{Binding LayoutScale}" ScaleY="{Binding LayoutScale}" />
+        </LayoutTransformControl.LayoutTransform>
+
+        <Grid Margin="40,20">
+          <!-- Home -->
+          <DockPanel IsVisible="{Binding IsHome}">
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
+              <StackPanel Orientation="Horizontal" Spacing="14">
+                <Image Source="/Assets/MosaicShell.png" Width="48" Height="48"
+                       RenderOptions.BitmapInterpolationMode="HighQuality" />
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock Text="Home" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
+                  <TextBlock Text="Compose your desktop from modules and widgets." Foreground="#a6adc8" FontSize="13" />
+                </StackPanel>
+              </StackPanel>
+              <Button Grid.Column="1" Classes="action" Content="Check catalog"
+                      Command="{Binding CheckUpdatesCommand}" VerticalAlignment="Center" />
+            </Grid>
+            <ItemsControl ItemsSource="{Binding HomeCards}"
+                          HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <UniformGrid Columns="1" Rows="3" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:DiscoverCard">
+                  <Border Classes="card" Margin="0,0,0,12" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                          PointerPressed="OnDiscoverCardPressed">
+                    <Grid ColumnDefinitions="Auto,*" Margin="8,0">
+                      <Image Width="48" Height="48" Margin="0,0,20,0" VerticalAlignment="Center"
+                             Source="{Binding IconPath}" />
+                      <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold" Foreground="#cdd6f4" />
+                        <TextBlock Text="{Binding Body}" FontSize="14" Foreground="#a6adc8" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </DockPanel>
+
+        <!-- Tiles -->
+        <DockPanel IsVisible="{Binding IsTiles}">
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,16">
+            <Button Classes="action" Command="{Binding GoBackCommand}"
+                    VerticalAlignment="Center" Margin="0,0,16,0" Padding="10,8"
+                    ToolTip.Tip="Back">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <icons:MaterialIcon Kind="ArrowLeft" Width="18" Height="18" />
+                <TextBlock Text="Back" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+            <StackPanel Grid.Column="1">
+              <TextBlock Text="Tiles" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
+              <TextBlock Text="Capabilities: install, arm/disarm background hosts. Widgets: play/stop overlays. Cog opens tile settings."
+                         Foreground="#6c7086" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <Button Classes="action" Content="Batch install" Command="{Binding BatchInstallCommand}" />
+              <Button Classes="action" Content="Refresh"
+                      Command="{Binding NavigateCommand}" CommandParameter="Tiles" />
+            </StackPanel>
+          </Grid>
+          <Grid ColumnDefinitions="*,24,*">
+            <DockPanel Grid.Column="0">
+              <TextBlock DockPanel.Dock="Top" Text="Modules" FontSize="16" FontWeight="SemiBold"
+                         Foreground="#cdd6f4" Margin="0,0,0,8" />
+              <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Modules}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:LibraryItemViewModel">
+                      <Border Classes="row">
+                        <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto">
+                          <CheckBox IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                          <Image Grid.Column="1" Width="32" Height="32" Margin="0,0,12,0"
+                                 Source="{Binding IconPath}" VerticalAlignment="Center" />
+                          <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                              <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="#cdd6f4" />
+                              <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="#a6adc8" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#6c7086"
+                                       TextWrapping="Wrap" Margin="0,4,0,0" />
+                          </StackPanel>
+                          <Button Grid.Column="3" Classes="icon action" Margin="0,0,6,0"
+                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
+                                  CommandParameter="{Binding}"
+                                  ToolTip.Tip="Tile settings">
+                            <icons:MaterialIcon Kind="Cog" Width="18" Height="18" />
+                          </Button>
+                          <Button Grid.Column="4" Classes="icon action" Margin="0,0,6,0"
+                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).UninstallModuleCommand}"
+                                  CommandParameter="{Binding}"
+                                  ToolTip.Tip="Uninstall">
+                            <icons:MaterialIcon Kind="Minus" Width="18" Height="18" />
+                          </Button>
+                          <Button Grid.Column="5" Classes="icon primary"
+                                  IsEnabled="{Binding !IsInstalling}"
+                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).InstallModuleCommand}"
+                                  CommandParameter="{Binding}"
+                                  ToolTip.Tip="Install / arm / disarm">
+                            <icons:MaterialIcon Kind="{Binding ActionIcon}" Width="18" Height="18" />
+                          </Button>
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </DockPanel>
+            <DockPanel Grid.Column="2">
+              <TextBlock DockPanel.Dock="Top" Text="Widgets" FontSize="16" FontWeight="SemiBold"
+                         Foreground="#cdd6f4" Margin="0,0,0,8" />
+              <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Widgets}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:LibraryItemViewModel">
+                      <Border Classes="row">
+                        <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto">
+                          <CheckBox IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                          <Image Grid.Column="1" Width="32" Height="32" Margin="0,0,12,0"
+                                 Source="{Binding IconPath}" VerticalAlignment="Center" />
+                          <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                              <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="#cdd6f4" />
+                              <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="#a6adc8" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#6c7086"
+                                       TextWrapping="Wrap" Margin="0,4,0,0" />
+                          </StackPanel>
+                          <Button Grid.Column="3" Classes="icon action" Margin="0,0,6,0"
+                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
+                                  CommandParameter="{Binding}"
+                                  ToolTip.Tip="Tile settings">
+                            <icons:MaterialIcon Kind="Cog" Width="18" Height="18" />
+                          </Button>
+                          <Button Grid.Column="4" Classes="icon action" Margin="0,0,6,0"
+                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).UninstallModuleCommand}"
+                                  CommandParameter="{Binding}"
+                                  ToolTip.Tip="Uninstall">
+                            <icons:MaterialIcon Kind="Minus" Width="18" Height="18" />
+                          </Button>
+                          <Button Grid.Column="5" Classes="icon primary"
+                                  IsEnabled="{Binding !IsInstalling}"
+                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).InstallModuleCommand}"
+                                  CommandParameter="{Binding}"
+                                  ToolTip.Tip="Install / launch / stop">
+                            <icons:MaterialIcon Kind="{Binding ActionIcon}" Width="18" Height="18" />
+                          </Button>
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </DockPanel>
+          </Grid>
+        </DockPanel>
+
+        <!-- Module config (from tile cog) -->
+        <DockPanel IsVisible="{Binding IsModuleConfig}">
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" Margin="0,0,0,16">
+            <Button Classes="action" Command="{Binding GoBackCommand}"
+                    VerticalAlignment="Center" Margin="0,0,16,0" Padding="10,8"
+                    ToolTip.Tip="Back to Tiles">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <icons:MaterialIcon Kind="ArrowLeft" Width="18" Height="18" />
+                <TextBlock Text="Back" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+              <TextBlock FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4">
+                <TextBlock.Text>
+                  <MultiBinding StringFormat="{}{0} settings">
+                    <Binding Path="ConfigModuleTitle" />
+                  </MultiBinding>
+                </TextBlock.Text>
+              </TextBlock>
+            </StackPanel>
+          </Grid>
+
+          <!-- Tessera: left = scrolling settings + pinned Save; right = full-height Appearance -->
+          <Grid IsVisible="{Binding ShowTesseraExtras}"
+                ColumnDefinitions="*,*">
+            <DockPanel Margin="0,0,16,0">
+              <Border DockPanel.Dock="Bottom" Classes="section" Margin="0,8,0,0" Padding="16,12">
+                <Button Classes="primary" Content="Save" HorizontalAlignment="Left"
+                        Command="{Binding SaveModuleConfigCommand}" />
+              </Border>
+
+              <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                            VerticalScrollBarVisibility="Visible"
+                            AllowAutoHide="False">
+                <StackPanel HorizontalAlignment="Stretch" Margin="0,0,8,8" Spacing="0">
+                  <TextBlock Classes="sectionTitle" Text="Additional settings" Margin="0,0,0,8" />
+
+                  <Border Classes="section">
+                    <StackPanel Spacing="12">
+                      <TextBlock Classes="sectionTitle" Text="Placement" />
+                      <TextBlock Classes="sectionHint"
+                                 Text="Where the flyout sits on the chosen monitor’s work area (default: top left, like JaxCore). Insets are pixels from that edge." />
+                      <StackPanel Spacing="4">
+                        <TextBlock Text="Corner" Foreground="#a6adc8" FontSize="12" />
+                        <ComboBox MinWidth="200" HorizontalAlignment="Left"
+                                  ItemsSource="{Binding TesseraPositionChoices}"
+                                  SelectedItem="{Binding SelectedTesseraPosition}"
+                                  ToolTip.Tip="Nine-point anchor: top/center/bottom × left/center/right" />
+                      </StackPanel>
+                      <StackPanel Spacing="12">
+                        <StackPanel Spacing="4">
+                          <TextBlock Text="Monitor" Foreground="#a6adc8" FontSize="12" />
+                          <NumericUpDown Classes="config" Minimum="1" Maximum="8"
+                                         FormatString="0" Value="{Binding TesseraMonitorIndex}"
+                                         ToolTip.Tip="1 = primary display; 2+ follow Avalonia screen order" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                          <TextBlock Text="Horizontal inset (px)" Foreground="#a6adc8" FontSize="12" />
+                          <NumericUpDown Classes="config" Minimum="0" Maximum="200"
+                                         FormatString="0" Value="{Binding TesseraXPad}"
+                                         ToolTip.Tip="Pixels from the left or right edge of the work area" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                          <TextBlock Text="Vertical inset (px)" Foreground="#a6adc8" FontSize="12" />
+                          <NumericUpDown Classes="config" Minimum="0" Maximum="200"
+                                         FormatString="0" Value="{Binding TesseraYPad}"
+                                         ToolTip.Tip="Pixels from the top or bottom edge of the work area" />
+                        </StackPanel>
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
+
+                  <Border Classes="section">
+                    <StackPanel Spacing="12">
+                      <TextBlock Classes="sectionTitle" Text="Timing" />
+                      <TextBlock Classes="sectionHint" Text="How long the flyout stays visible after the last change (hover holds it open)." />
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <NumericUpDown Classes="config" Minimum="0.5" Maximum="20" Increment="0.25"
+                                       FormatString="0.##" Value="{Binding TesseraAutoDismissSeconds}" />
+                        <TextBlock Text="seconds" VerticalAlignment="Center" Foreground="#a6adc8" FontSize="14" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
+
+                  <Border Classes="section">
+                    <StackPanel Spacing="12">
+                      <TextBlock Classes="sectionTitle" Text="Motion" />
+                      <TextBlock Classes="sectionHint" Text="Entrance animation when the flyout appears." />
+                      <StackPanel Orientation="Horizontal" Spacing="16">
+                        <StackPanel Spacing="4">
+                          <TextBlock Text="Style" Foreground="#a6adc8" FontSize="12" />
+                          <ComboBox MinWidth="180" ItemsSource="{Binding TesseraAniChoices}"
+                                    SelectedItem="{Binding SelectedTesseraAni}" />
+                        </StackPanel>
+                        <StackPanel Spacing="4" IsEnabled="{Binding TesseraAniDirEnabled}">
+                          <TextBlock Text="Slide from" Foreground="#a6adc8" FontSize="12" />
+                          <ComboBox Width="120" ItemsSource="{Binding TesseraAniDirOptions}"
+                                    SelectedItem="{Binding TesseraAniDir}" />
+                        </StackPanel>
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
+
+                  <Border Classes="section">
+                    <StackPanel Spacing="10">
+                      <TextBlock Classes="sectionTitle" Text="What to show" />
+                      <TextBlock Classes="sectionHint" Text="Which system events open a Tessera flyout." />
+                      <CheckBox Content="Media flyouts (now playing)" IsChecked="{Binding TesseraMediaFlyouts}"
+                                ToolTip.Tip="Show a flyout when SMTC media session changes" />
+                      <CheckBox Content="Media strip on volume flyout" IsChecked="{Binding TesseraMediaStrip}"
+                                ToolTip.Tip="When media is playing, show transport controls next to volume" />
+                      <CheckBox Content="Lock-key flyouts (Caps / Num / Scroll)" IsChecked="{Binding TesseraLockFlyouts}" />
+                      <CheckBox Content="Airplane-mode flyouts" IsChecked="{Binding TesseraFlightFlyouts}" />
+                    </StackPanel>
+                  </Border>
+
+                  <Border Classes="section" Margin="0">
+                    <StackPanel Spacing="10">
+                      <TextBlock Classes="sectionTitle" Text="Advanced" />
+                      <CheckBox Content="Legacy volume key hooks" IsChecked="{Binding TesseraLegacyVol}"
+                                ToolTip.Tip="Intercept volume keys so Tessera owns the gesture (recommended on Win11)" />
+                      <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding TesseraLegacyVol}">
+                        <TextBlock Text="Volume step" VerticalAlignment="Center" Foreground="#a6adc8" />
+                        <NumericUpDown Classes="config" Minimum="1" Maximum="25" Increment="1"
+                                       FormatString="0" Value="{Binding TesseraLegacyStepPercent}"
+                                       ToolTip.Tip="Percent points per legacy volume key press (e.g. 2 = ±2%)" />
+                        <TextBlock Text="/ 100" VerticalAlignment="Center" Foreground="#6c7086" FontSize="13" />
+                      </StackPanel>
+                      <TextBlock Classes="sectionHint" Margin="0"
+                                 Text="Stock Windows volume HUD is hidden best-effort (WinEvent + ShellHook) while Tessera is armed. Vendor laptop OSDs (Dell/HP/…) unsupported. Media is SMTC-only. Re-arm after changing hooks." />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </ScrollViewer>
+            </DockPanel>
+
+            <!-- Full-height right: Appearance -->
+            <Border Grid.Column="1" Classes="section" Margin="0"
+                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+              <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                            VerticalScrollBarVisibility="Auto"
+                            AllowAutoHide="False">
+                <StackPanel Spacing="12">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Classes="sectionTitle" Text="Appearance" Margin="0" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Classes="primary" Content="Try now"
+                            Command="{Binding PreviewTesseraFlyoutCommand}"
+                            ToolTip.Tip="Save placement/style and preview a volume flyout on the desktop" />
+                  </Grid>
+                  <TextBlock Classes="sectionHint" Margin="0"
+                             Text="Pick a template. Live scaled preview below - Try now opens it on the desktop." />
+
+                  <ComboBox MinWidth="220" HorizontalAlignment="Stretch"
+                            ItemsSource="{Binding ModuleStyleOptions}"
+                            SelectedItem="{Binding ModuleStyle}" />
+                  <TextBlock Text="Saves on Try now / Save"
+                             Foreground="#6c7086" FontSize="12" />
+
+                  <tessera:TesseraStylePreview StyleId="{Binding ModuleStyle}"
+                                               ShowMediaStrip="{Binding TesseraMediaStrip}" />
+
+                  <Border Height="1" Background="#313244" Margin="0,4" />
+                  <TextBlock Classes="sectionTitle" Text="More appearance" Margin="0" />
+                  <TextBlock Classes="sectionHint" Margin="0"
+                             Text="Host material language - soft frost tint (not OS acrylic). Optional baked wash is a light MagickMeter-style texture." />
+                  <CheckBox Content="Soft frost tint" IsChecked="{Binding TesseraAcrylicBackdrop}"
+                            ToolTip.Tip="Slightly translucent Mocha crust. Off = denser solid panel." />
+                  <CheckBox Content="Baked frost wash" IsChecked="{Binding TesseraBakedFrost}"
+                            IsEnabled="{Binding TesseraAcrylicBackdrop}"
+                            ToolTip.Tip="Skia-prerendered soft noise wash under the tint (Host material). Off if you prefer flat tint only." />
+                  <CheckBox Content="Subtle desktop dim (Focus)" IsChecked="{Binding TesseraFocusDim}"
+                            ToolTip.Tip="Very light dim behind the flyout. Never blocks input; outside click dismisses instantly." />
+                  <StackPanel Spacing="4" Margin="0,4,0,0">
+                    <TextBlock Text="Flyout scale %" Foreground="#a6adc8" FontSize="12" />
+                    <NumericUpDown Classes="config" Minimum="50" Maximum="150" Increment="5"
+                                   FormatString="0" Value="{Binding TesseraFlyoutScalePercent}"
+                                   ToolTip.Tip="Size multiplier for Tessera flyouts on the desktop (100 = default)." />
+                  </StackPanel>
+                </StackPanel>
+              </ScrollViewer>
+            </Border>
+          </Grid>
+
+          <!-- Non-Tessera modules: how-to + appearance + Save -->
+          <DockPanel IsVisible="{Binding !ShowTesseraExtras}">
+            <Border DockPanel.Dock="Bottom" Classes="section" Margin="0,8,0,0" Padding="16,12">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button Classes="primary" Content="Save" HorizontalAlignment="Left"
+                        Command="{Binding SaveModuleConfigCommand}" />
+                <Button Classes="action" Content="Try now"
+                        IsVisible="{Binding ConfigCanTryOverlay}"
+                        Command="{Binding TryCapabilityOverlayCommand}"
+                        ToolTip.Tip="Arm (if needed) and open the overlay so you can see what this module does" />
+              </StackPanel>
+            </Border>
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto" AllowAutoHide="False">
+              <StackPanel Spacing="12" Margin="0,0,8,8">
+                <Border Classes="section" IsVisible="{Binding ConfigCanTryOverlay}">
+                  <StackPanel Spacing="8">
+                    <TextBlock Classes="sectionTitle" Text="What this does" Margin="0" />
+                    <TextBlock Text="{Binding ConfigUsageSummary}" TextWrapping="Wrap"
+                               Foreground="#cdd6f4" FontSize="14" />
+                    <TextBlock Text="{Binding ConfigHowToTrigger}" TextWrapping="Wrap"
+                               Foreground="#89dceb" FontSize="13" />
+                  </StackPanel>
+                </Border>
+
+                <Border Classes="section" IsVisible="{Binding ShowHotkeyCapExtras}">
+                  <StackPanel Spacing="10">
+                    <TextBlock Classes="sectionTitle" Text="Hotkey" Margin="0" />
+                    <TextBlock Classes="sectionHint" Margin="0"
+                               Text="Capture a shortcut (Ctrl/Alt/Shift/Win + key). Win+S / Win+A / Win+Q are reserved by Windows and will be replaced automatically." />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Border Background="#181825" CornerRadius="8" Padding="12,8" MinWidth="160"
+                              BorderThickness="1" BorderBrush="#45475a">
+                        <TextBlock Text="{Binding ConfigHotkeyGesture}" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="#cdd6f4" VerticalAlignment="Center" />
+                      </Border>
+                      <Button Classes="primary" Content="Capture"
+                              Command="{Binding BeginHotkeyCaptureCommand}"
+                              IsVisible="{Binding !IsCapturingHotkey}" />
+                      <Button Classes="action" Content="Cancel"
+                              Command="{Binding CancelHotkeyCaptureCommand}"
+                              IsVisible="{Binding IsCapturingHotkey}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding HotkeyCaptureHint}" Foreground="#89dceb" FontSize="12" />
+
+                    <StackPanel Spacing="8" IsVisible="{Binding ShowInlayPins}" Margin="0,8,0,0">
+                      <TextBlock Classes="sectionTitle" Text="Pins" Margin="0" />
+                      <TextBlock Classes="sectionHint" Margin="0"
+                                 Text="Search apps, Start Menu shortcuts, or Settings pages, then Add." />
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <AutoCompleteBox Width="320" MinimumPrefixLength="0"
+                                         FilterMode="ContainsOrdinal"
+                                         ItemsSource="{Binding LaunchTargetChoices}"
+                                         Text="{Binding LaunchTargetQuery}"
+                                         Watermark="Search targets…" />
+                        <Button Classes="action" Content="Add pin"
+                                Command="{Binding AddLaunchTargetPinCommand}" />
+                      </StackPanel>
+                      <ItemsControl ItemsSource="{Binding ConfigPins}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <DockPanel Margin="0,2">
+                              <Button DockPanel.Dock="Right" Classes="icon action"
+                                      Command="{Binding #Root.((vm:MainViewModel)DataContext).RemoveConfigPinCommand}"
+                                      CommandParameter="{Binding}"
+                                      ToolTip.Tip="Remove">
+                                <icons:MaterialIcon Kind="Close" Width="16" Height="16" />
+                              </Button>
+                              <TextBlock Text="{Binding}" Foreground="#cdd6f4" VerticalAlignment="Center" />
+                            </DockPanel>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+
+                    <StackPanel Spacing="8" IsVisible="{Binding ShowChordActions}" Margin="0,8,0,0">
+                      <TextBlock Classes="sectionTitle" Text="Actions" Margin="0" />
+                      <TextBlock Classes="sectionHint" Margin="0"
+                                 Text="Optional display name + search a launch target." />
+                      <TextBox Width="200" HorizontalAlignment="Left" Watermark="Action name (optional)"
+                               Text="{Binding ChordActionName}" />
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <AutoCompleteBox Width="320" MinimumPrefixLength="0"
+                                         FilterMode="ContainsOrdinal"
+                                         ItemsSource="{Binding LaunchTargetChoices}"
+                                         Text="{Binding LaunchTargetQuery}"
+                                         Watermark="Search targets…" />
+                        <Button Classes="action" Content="Add action"
+                                Command="{Binding AddChordActionFromPickerCommand}" />
+                      </StackPanel>
+                      <ItemsControl ItemsSource="{Binding ConfigChordActions}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:ChordActionRow">
+                            <DockPanel Margin="0,2">
+                              <Button DockPanel.Dock="Right" Classes="icon action"
+                                      Command="{Binding #Root.((vm:MainViewModel)DataContext).RemoveChordActionCommand}"
+                                      CommandParameter="{Binding}"
+                                      ToolTip.Tip="Remove">
+                                <icons:MaterialIcon Kind="Close" Width="16" Height="16" />
+                              </Button>
+                              <TextBlock Text="{Binding Label}" Foreground="#cdd6f4" VerticalAlignment="Center" />
+                            </DockPanel>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+
+                    <CheckBox Content="Show mute tile" IsChecked="{Binding ConfigShowMute}"
+                              IsVisible="{Binding ShowSubstrateMute}" />
+                  </StackPanel>
+                </Border>
+
+                <Border Classes="section" VerticalAlignment="Top">
+                  <StackPanel Spacing="12">
+                    <TextBlock Classes="sectionTitle" Text="Appearance" Margin="0" />
+                    <TextBlock Classes="sectionHint" Margin="0"
+                               Text="StyleCatalog id. Full visual skins are later." />
+                    <ComboBox MinWidth="220" HorizontalAlignment="Left"
+                              ItemsSource="{Binding ModuleStyleOptions}"
+                              SelectedItem="{Binding ModuleStyle}" />
+                    <StackPanel Spacing="8" IsVisible="{Binding ShowChronoExtras}">
+                      <Border Height="1" Background="#313244" Margin="0,4" />
+                      <CheckBox Content="Show seconds" IsChecked="{Binding ChronoSeconds}" />
+                    </StackPanel>
+                    <StackPanel Spacing="8" IsVisible="{Binding ShowSlateExtras}">
+                      <Border Height="1" Background="#313244" Margin="0,4" />
+                      <TextBlock Text="Idle timeout (seconds)" Foreground="#a6adc8" FontSize="12" />
+                      <NumericUpDown Classes="config" Minimum="30" Maximum="3600" FormatString="0"
+                                     Value="{Binding ConfigIdleSeconds}" />
+                      <CheckBox Content="Hide when foreground app is fullscreen"
+                                IsChecked="{Binding ConfigHideOnFullscreen}" />
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+          </DockPanel>
+        </DockPanel>
+
+        <!-- Welcome -->
+        <StackPanel IsVisible="{Binding IsWelcome}" Spacing="14" MaxWidth="640" HorizontalAlignment="Left">
+          <Button Classes="action" Command="{Binding GoBackCommand}"
+                  HorizontalAlignment="Left" IsVisible="{Binding ShowBackButton}" Padding="10,8">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <icons:MaterialIcon Kind="ArrowLeft" Width="18" Height="18" />
+              <TextBlock Text="Back" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+          <Image Source="/Assets/MosaicShell.png" MaxWidth="280" HorizontalAlignment="Left"
+                 RenderOptions.BitmapInterpolationMode="HighQuality" />
+          <TextBlock Text="Welcome" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
+          <TextBlock TextWrapping="Wrap" Foreground="#a6adc8" FontSize="14" LineHeight="22"
+                     Text="Native host with CapabilityDaemon arms Tessera/Mixdeck/etc. in the tray process. Widgets launch as overlays. Prefer Mosaicist over iwr|iex." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Classes="primary" Content="Finish welcome" Command="{Binding CompleteWelcomeCommand}" />
+            <Button Classes="action" Content="Open Tiles" Command="{Binding NavigateCommand}" CommandParameter="Tiles" />
+          </StackPanel>
+        </StackPanel>
+
+        <!-- About -->
+        <StackPanel IsVisible="{Binding IsAbout}" Spacing="14" MaxWidth="640" HorizontalAlignment="Left">
+          <Button Classes="action" Command="{Binding GoBackCommand}"
+                  HorizontalAlignment="Left" Padding="10,8">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <icons:MaterialIcon Kind="ArrowLeft" Width="18" Height="18" />
+              <TextBlock Text="Back" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+          <StackPanel Orientation="Horizontal" Spacing="16">
+            <Image Source="/Assets/MosaicShell.png" Width="72" Height="72"
+                   RenderOptions.BitmapInterpolationMode="HighQuality" />
+            <StackPanel VerticalAlignment="Center">
+              <TextBlock Text="MosaicShell" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
+              <TextBlock Text="Your desktop, composed." Foreground="#89dceb" FontSize="14" />
+            </StackPanel>
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap" Foreground="#a6adc8" FontSize="14" LineHeight="22"
+                     Text="Native Avalonia hub + CapabilityDaemon. Tessera best-effort replaces OS volume OSD while armed (not full YourFlyouts). Pixel Mixdeck opens the native mixer overlay." />
+          <Button Classes="action" Content="View on GitHub" HorizontalAlignment="Left"
+                  Command="{Binding OpenGitHubCommand}" />
+        </StackPanel>
+        </Grid>
+      </LayoutTransformControl>
+
+      <!-- Settings stays unscaled; scale slider spans full content width -->
+      <DockPanel IsVisible="{Binding IsSettings}" Margin="0,12,0,0">
+      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="12" Margin="40,8,40,16">
+        <Image Source="/Assets/MosaicShell.png" Width="40" Height="40"
+               RenderOptions.BitmapInterpolationMode="HighQuality" />
+        <TextBlock Text="Settings" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4"
+                   VerticalAlignment="Center" />
+      </StackPanel>
+      <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Visible"
+                    AllowAutoHide="False"
+                    HorizontalAlignment="Stretch">
+        <StackPanel Spacing="0" HorizontalAlignment="Stretch">
+
+          <Border Classes="section" Margin="0" CornerRadius="0" Padding="0,16,0,16">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="sectionTitle" Text="Display &amp; scale" Margin="24,0,24,0" />
+              <TextBlock Classes="sectionHint" Margin="24,0,24,0"
+                         Text="User scale multiplies OS DPI for Home/Tiles chrome and tile overlays. Settings itself stays unscaled." />
+              <TextBlock Text="{Binding ScaleSummary}" Foreground="#a6adc8" TextWrapping="Wrap"
+                         Margin="24,0,24,0" />
+              <Grid ColumnDefinitions="*,Auto,Auto" Margin="0">
+                <Slider Minimum="0.75" Maximum="2"
+                        TickFrequency="0.05" IsSnapToTickEnabled="True"
+                        Value="{Binding UserScale, Mode=TwoWay}"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Center"
+                        Margin="0,0,12,0" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding UserScalePercentLabel}"
+                           Foreground="#cdd6f4" FontSize="14" FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           MinWidth="48" TextAlignment="Right"
+                           Margin="0,0,12,0" />
+                <Button Grid.Column="2" Classes="primary" Content="Apply"
+                        Command="{Binding ApplyUserScaleCommand}"
+                        VerticalAlignment="Center"
+                        Margin="0,0,24,0" />
+              </Grid>
+              <StackPanel Orientation="Horizontal" Spacing="8" Margin="24,0,24,0">
+                <Button Classes="action" Content="Match Windows" Command="{Binding MatchWindowsCommand}" />
+                <Button Classes="action" Content="Re-detect DPI" Command="{Binding RedetectDpiCommand}" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="section" Margin="40,0,40,0">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="sectionTitle" Text="Services" />
+              <TextBlock Classes="sectionHint"
+                         Text="Live probe of audio, metrics, media, and armed capabilities." />
+              <TextBlock Text="{Binding ServiceProbe}" Foreground="#a6adc8" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="section" Margin="40,0,40,0">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="sectionTitle" Text="Window close" />
+              <TextBlock Classes="sectionHint"
+                         Text="What the window close button does. Tray menu Exit always quits and stops tiles." />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Classes="action" Content="Minimize to tray"
+                        Command="{Binding SetCloseMinimizesToTrayCommand}" CommandParameter="tray"
+                        Classes.active="{Binding CloseMinimizesToTray}" />
+                <Button Classes="action" Content="Exit application"
+                        Command="{Binding SetCloseMinimizesToTrayCommand}" CommandParameter="exit"
+                        Classes.active="{Binding !CloseMinimizesToTray}" />
+              </StackPanel>
+              <TextBlock IsVisible="{Binding CloseMinimizesToTray}" Foreground="#a6adc8" FontSize="12"
+                         Text="Close hides the hub; capabilities keep running in the tray." />
+              <TextBlock IsVisible="{Binding !CloseMinimizesToTray}" Foreground="#a6adc8" FontSize="12"
+                         Text="Close exits MosaicShell and stops armed tiles." />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="section" Margin="40,0,40,0">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="sectionTitle" Text="Startup" />
+              <TextBlock Classes="sectionHint"
+                         Text="Launch MosaicShell Host when you sign in to Windows." />
+              <Button Classes="action" Content="{Binding AutostartEnabled, StringFormat=Autostart: {0}}"
+                      Command="{Binding ToggleAutostartCommand}" HorizontalAlignment="Left" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="section" Margin="40,0,40,0">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="sectionTitle" Text="Updates" />
+              <TextBlock Classes="sectionHint"
+                         Text="Compare the installed host version against the latest GitHub release." />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Classes="action" Content="Check GitHub releases" Command="{Binding CheckUpdatesCommand}" />
+                <TextBlock Text="{Binding UpdateStatus}" Foreground="#a6adc8" VerticalAlignment="Center"
+                           TextWrapping="Wrap" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="section" Margin="40,0,40,16">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="sectionTitle" Text="Data location" />
+              <TextBlock Classes="sectionHint"
+                         Text="Config, modules, sessions, and capability arm state live here." />
+              <TextBlock Text="%LocalAppData%\MosaicShell" Foreground="#a6adc8" FontSize="13"
+                         FontFamily="Cascadia Mono, Consolas, monospace" />
+            </StackPanel>
+          </Border>
+
+        </StackPanel>
+      </ScrollViewer>
+      </DockPanel>
+    </Grid>
+  </DockPanel>
+</Window>

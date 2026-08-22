@@ -1,2 +1,0 @@
-﻿[Variables]
-NoneHeight=0
