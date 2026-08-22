@@ -13,14 +13,14 @@ public static class TesseraFluentMetrics
     public const double MaxShellWidth = 420;
 }
 
-/// <summary>Host Win11 metrics - quiet horizontal chip.</summary>
+/// <summary>Host Win11 metrics — YourFlyouts Win11.inc at scale 1.</summary>
 public static class TesseraWin11Metrics
 {
-    public const double Width = 300;
-    public const double VolumeHeight = 48;
-    public const double MediaHeight = 156;
-    public const double Pad = 12;
-    public const double CornerRadius = 14;
+    public const double Width = 320;
+    public const double VolumeHeight = 50;
+    public const double MediaHeight = 175;
+    public const double Pad = 15;
+    public const double CornerRadius = 12;
 }
 
 /// <summary>Host Center metrics - round quiet card.</summary>

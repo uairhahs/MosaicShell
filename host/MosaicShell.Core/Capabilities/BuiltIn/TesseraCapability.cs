@@ -9,6 +9,7 @@ public sealed class TesseraCapability : IModuleCapability
 {
     private readonly HostServices _services;
     private readonly ICapabilityUiBridge _ui;
+    private readonly TesseraFlyoutRequestBuilder _requests = new();
     private TesseraSettings _settings = new();
     private readonly object _gate = new();
     private DateTimeOffset _lastShowUtc = DateTimeOffset.MinValue;
@@ -194,7 +195,12 @@ public sealed class TesseraCapability : IModuleCapability
             {
                 _settings = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
                 var now = DateTimeOffset.UtcNow;
-                if (kind == _lastKind && (now - _lastShowUtc).TotalMilliseconds < 40 && _ui.Flyouts.IsVisible(ModuleId))
+                var isStatus = kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
+                               || kind.Equals("flight", StringComparison.OrdinalIgnoreCase);
+                if (!isStatus
+                    && kind == _lastKind
+                    && (now - _lastShowUtc).TotalMilliseconds < 40
+                    && _ui.Flyouts.IsVisible(ModuleId))
                 {
                     _ui.Flyouts.Update(BuildRequest(kind, payload));
                     return;
@@ -216,41 +222,8 @@ public sealed class TesseraCapability : IModuleCapability
         }
     }
 
-    private FlyoutRequest BuildRequest(string kind, IReadOnlyDictionary<string, string>? payload)
-    {
-        var p = payload is null ? new Dictionary<string, string>() : new Dictionary<string, string>(payload);
-        p["volume"] = _services.Audio.MasterVolume.ToString("0.###");
-        p["muted"] = _services.Audio.IsMuted ? "1" : "0";
-        p["brightness"] = _services.Brightness.IsSupported ? _services.Brightness.Brightness.ToString("0.###") : "0.5";
-        p["mediaTitle"] = _services.Media.Current?.Title ?? "";
-        p["mediaArtist"] = _services.Media.Current?.Artist ?? "";
-        p["mediaPlaying"] = _services.Media.Current?.IsPlaying == true ? "1" : "0";
-        p["showMediaStrip"] = _settings.ShowMediaStripOnVolume ? "1" : "0";
-        p["acrylic"] = _settings.UseAcrylicBackdrop ? "1" : "0";
-        p["focusDim"] = _settings.UseFocusDim ? "1" : "0";
-        p["flyoutScale"] = Math.Clamp(_settings.FlyoutScalePercent, 50, 150).ToString();
-        p["bakedFrost"] = _settings.UseBakedFrost ? "1" : "0";
-        if (_lastLock is not null && kind == "locks")
-        {
-            p["lock"] = _lastLock.Key.ToString();
-            p["on"] = _lastLock.IsOn ? "1" : "0";
-        }
-        if (kind == "flight")
-            p["on"] = _services.Airplane.IsEnabled ? "1" : "0";
-
-        return new FlyoutRequest(
-            ModuleId,
-            kind,
-            _settings.Style,
-            _settings.Position,
-            _settings.AutoDismissMs,
-            p,
-            _settings.MonitorIndex,
-            _settings.XPad,
-            _settings.YPad,
-            _settings.Ani,
-            _settings.AniDir);
-    }
+    private FlyoutRequest BuildRequest(string kind, IReadOnlyDictionary<string, string>? payload) =>
+        _requests.Build(_services, _settings, kind, payload, _lastLock);
 
     public void Dispose() => DisarmAsync().GetAwaiter().GetResult();
 }

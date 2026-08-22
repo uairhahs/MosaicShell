@@ -54,8 +54,10 @@ public sealed class TesseraSettings
     public bool UseFocusDim { get; set; } = true;
     /// <summary>Flyout size multiplier percent (50-150). Default 100.</summary>
     public int FlyoutScalePercent { get; set; } = 100;
-    /// <summary>Optional Skia-baked soft frost wash under tint (MagickMeter-style).</summary>
+    /// <summary>Skia live backdrop blur on Tessera glass (legacy setting key: baked frost).</summary>
     public bool UseBakedFrost { get; set; } = true;
+    /// <summary>Custom flyout accent (#RRGGBB). Empty = Windows system accent.</summary>
+    public string AccentColor { get; set; } = "";
 }
 
 public sealed class MixdeckSettings

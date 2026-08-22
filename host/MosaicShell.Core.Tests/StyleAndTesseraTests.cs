@@ -31,6 +31,24 @@ public class StyleCatalogTests
     }
 
     [Fact]
+    public void Tessera_layout_fidelity_partitions_style_catalog()
+    {
+        TesseraLayoutCoverage.CoversLayoutFidelity().Should().BeTrue();
+        foreach (var id in StyleCatalog.IdsFor("Tessera"))
+        {
+            var signed = TesseraLayoutCoverage.IsLayoutFidelitySignedOff(id);
+            var deviated = TesseraLayoutCoverage.IsLayoutFidelityDeviated(id);
+            (signed ^ deviated).Should().BeTrue($"style {id} must be signed off or deviated");
+        }
+        TesseraLayoutCoverage.AllLayoutFidelitySignedOff().Should().BeFalse();
+        TesseraLayoutCoverage.IsLayoutFidelitySignedOff("Pixel").Should().BeTrue();
+        TesseraLayoutCoverage.IsLayoutFidelityDeviated("Smouti").Should().BeTrue();
+        TesseraLayoutCoverage.IsLayoutFidelitySignedOff("Win11").Should().BeTrue();
+        TesseraLayoutCoverage.IsLayoutFidelitySignedOff("CoreUI").Should().BeTrue();
+        TesseraLayoutCoverage.IsLayoutFidelitySignedOff("Modern").Should().BeTrue();
+    }
+
+    [Fact]
     public void Catalog_covers_widget_modules()
     {
         StyleCatalog.IdsFor("Chrono").Should().NotBeEmpty();
@@ -84,6 +102,7 @@ public class TesseraCapabilityTests : IDisposable
     private sealed class CaptureUi(List<FlyoutRequest> shown) : ICapabilityUiBridge
     {
         public IFlyoutPresenter Flyouts { get; } = new CaptureFlyouts(shown);
+        public IHostUiBridge HostUi { get; } = NullHostUiBridge.Instance;
     }
 
     private sealed class CaptureFlyouts(List<FlyoutRequest> shown) : IFlyoutPresenter

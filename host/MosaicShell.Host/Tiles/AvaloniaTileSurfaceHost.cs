@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform;
+using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Scale;
@@ -13,26 +14,22 @@ using MosaicShell.Host.Tiles.Surfaces;
 
 namespace MosaicShell.Host.Tiles;
 
-/// <summary>Host UI hooks for tile overlays (configure / refresh). Set from App.</summary>
-public static class TileHostUiBridge
-{
-    public static Action<string>? OpenModuleConfig { get; set; }
-    public static Action<string>? RefreshOverlay { get; set; }
-}
-
 public sealed class AvaloniaTileSurfaceHost : ITileSurfaceHost
 {
     private readonly Dictionary<string, TileOverlayWindow> _windows = new(StringComparer.OrdinalIgnoreCase);
     private readonly HostServices _services;
+    private readonly IHostUiBridge _hostUi;
     private readonly Func<double> _userScale;
     private readonly Action<string>? _onClosedByUser;
 
     public AvaloniaTileSurfaceHost(
         HostServices services,
+        IHostUiBridge hostUi,
         Func<double> userScale,
         Action<string>? onClosedByUser = null)
     {
         _services = services;
+        _hostUi = hostUi;
         _userScale = userScale;
         _onClosedByUser = onClosedByUser;
     }
@@ -58,7 +55,7 @@ public sealed class AvaloniaTileSurfaceHost : ITileSurfaceHost
             }
 
             var surface = TileSurfaceFactory.Create(info, _services);
-            var window = new TileOverlayWindow(info, surface, _userScale());
+            var window = new TileOverlayWindow(info, surface, _userScale(), _hostUi);
             window.Closed += (_, _) =>
             {
                 PersistAll();
@@ -162,12 +159,14 @@ public sealed class TileOverlayWindow : Window
 {
     public string ModuleId { get; }
     public bool IsDesktopWidget { get; }
+    private readonly IHostUiBridge _hostUi;
     private readonly LayoutTransformControl _scaler;
     private bool _stuckToDesktop;
 
-    public TileOverlayWindow(ModuleInfo info, Control surface, double userScale)
+    public TileOverlayWindow(ModuleInfo info, Control surface, double userScale, IHostUiBridge hostUi)
     {
         ModuleId = info.Id;
+        _hostUi = hostUi;
         IsDesktopWidget = info.Kind == ModuleKind.Widget;
         _stuckToDesktop = IsDesktopWidget
             || info.Id.Equals("Pulse", StringComparison.OrdinalIgnoreCase);
@@ -313,7 +312,7 @@ public sealed class TileOverlayWindow : Window
         var menu = new ContextMenu();
 
         var configure = new MenuItem { Header = "Configure in Host" };
-        configure.Click += (_, _) => TileHostUiBridge.OpenModuleConfig?.Invoke(ModuleId);
+        configure.Click += (_, _) => _hostUi.OpenModuleConfig(ModuleId);
         menu.Items.Add(configure);
 
         var align = new MenuItem { Header = "Align" };
@@ -344,7 +343,7 @@ public sealed class TileOverlayWindow : Window
         menu.Items.Add(new Separator());
 
         var refresh = new MenuItem { Header = "Refresh" };
-        refresh.Click += (_, _) => TileHostUiBridge.RefreshOverlay?.Invoke(ModuleId);
+        refresh.Click += (_, _) => _hostUi.RefreshOverlay(ModuleId);
         menu.Items.Add(refresh);
 
         var close = new MenuItem { Header = "Unload" };

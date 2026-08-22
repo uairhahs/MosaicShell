@@ -1,8 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Material.Icons;
-using MosaicShell.Core;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core;
 using MosaicShell.Core.Capabilities.BuiltIn;
 using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
@@ -30,17 +30,21 @@ public partial class MainViewModel : ViewModelBase
     private readonly AvaloniaTileSurfaceHost? _tileHost;
     private readonly CapabilityDaemon? _daemon;
 
+    private readonly IHostUiBridge _hostUi;
+
     public MainViewModel(
         ITileRuntime runtime,
         HostServices services,
         AvaloniaTileSurfaceHost? tileHost,
-        CapabilityDaemon? daemon = null)
+        CapabilityDaemon? daemon = null,
+        IHostUiBridge? hostUi = null)
     {
         _runtime = runtime;
         _launcher = new ModuleLauncher(runtime);
         _services = services;
         _tileHost = tileHost;
         _daemon = daemon;
+        _hostUi = hostUi ?? NullHostUiBridge.Instance;
 
         AppPaths.EnsureLayout();
         var settings = ScaleSettingsStore.Load();
@@ -161,6 +165,7 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _tesseraFocusDim = true;
     [ObservableProperty] private bool _tesseraBakedFrost;
     [ObservableProperty] private decimal _tesseraFlyoutScalePercent = 100;
+    [ObservableProperty] private string _tesseraAccentHex = "";
     [ObservableProperty] private decimal _tesseraLegacyStepPercent = 2;
     [ObservableProperty] private bool _autostartEnabled;
     [ObservableProperty] private bool _closeMinimizesToTray = true;
@@ -284,6 +289,7 @@ public partial class MainViewModel : ViewModelBase
             TesseraFocusDim = s.UseFocusDim;
             TesseraBakedFrost = s.UseBakedFrost;
             TesseraFlyoutScalePercent = Math.Clamp(s.FlyoutScalePercent, 50, 150);
+            TesseraAccentHex = s.AccentColor ?? "";
             // Stored as 0-1 fraction; UI is percent points out of 100
             var stepPct = s.LegacyVolumeStep <= 1.0
                 ? (decimal)Math.Round(s.LegacyVolumeStep * 100)
@@ -362,7 +368,7 @@ public partial class MainViewModel : ViewModelBase
     {
         if (ShowTesseraExtras)
             PersistTesseraFromUi();
-        MosaicShell.Host.Tiles.Tessera.TesseraHostBridge.PreviewVolumeFlyout?.Invoke();
+        _hostUi.PreviewTesseraFlyout();
         StatusMessage = "Tessera preview shown (uses current placement & style).";
     }
 
@@ -388,6 +394,8 @@ public partial class MainViewModel : ViewModelBase
         s.UseFocusDim = TesseraFocusDim;
         s.UseBakedFrost = TesseraBakedFrost;
         s.FlyoutScalePercent = (int)Math.Clamp(TesseraFlyoutScalePercent, 50, 150);
+        s.AccentColor = TesseraAccentColor.NormalizeOrEmpty(TesseraAccentHex);
+        TesseraAccentHex = s.AccentColor;
         s.UseLegacyVolumeHooks = TesseraLegacyVol;
         s.LegacyVolumeStep = Math.Clamp((double)TesseraLegacyStepPercent, 1, 25) / 100.0;
         ModuleSettingsStore.Save("Tessera", s);

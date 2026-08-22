@@ -1,4 +1,5 @@
 using FluentAssertions;
+using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Capabilities.BuiltIn;
 using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
@@ -34,7 +35,7 @@ public class HubParityBacklogTests
         { "tessera_named_styles", true },
         { "tessera_locks_flight", true },
         { "tessera_live_update_multimonitor", true },
-        // Approximations remain for non-kit styles; Host Fluent/Win11/Center polished for identity
+        // 10/11 styles signed off; Smouti still in .local/Tessera/deviated/
         { "tessera_layout_fidelity", false },
         // Fluent+Win11 kit exists; Host-identity Fluent/Win11/Center polish (not pixel YourFlyouts)
         { "tessera_fluent_win11_kit", true },
@@ -160,6 +161,7 @@ public class HubParityBacklogTests
         map["tile_substrate_mvp"].Should().BeTrue();
         map["tile_slate_mvp"].Should().BeTrue();
         map["tessera_layout_fidelity"].Should().BeFalse();
+        TesseraLayoutCoverage.AllLayoutFidelitySignedOff().Should().BeFalse();
         map["tessera_fluent_yourflyouts"].Should().BeTrue();
         map["tessera_media_wnp"].Should().BeTrue();
         map["tessera_media_smtc_only"].Should().BeFalse();
@@ -195,19 +197,10 @@ public class HonestyGateTests
     [Fact]
     public void Mixdeck_mvp_bar_documented_and_capability_opens_via_bridge()
     {
-        // MVP: hotkey uses MixdeckHostBridgeAccessor (overlay), StyleCatalog has styles, AppAudio API exists
         StyleCatalog.IdsFor("Mixdeck").Should().Contain("Fluent");
         typeof(IAppAudioService).GetMethod(nameof(IAppAudioService.SetMuted)).Should().NotBeNull();
         typeof(IAppAudioService).GetMethod(nameof(IAppAudioService.SetVolume)).Should().NotBeNull();
-        MixdeckHostBridgeAccessor.OpenOverlayAsync = () => Task.CompletedTask;
-        try
-        {
-            MixdeckHostBridgeAccessor.OpenOverlayAsync.Should().NotBeNull();
-        }
-        finally
-        {
-            MixdeckHostBridgeAccessor.OpenOverlayAsync = null;
-        }
+        typeof(IHostUiBridge).GetMethod(nameof(IHostUiBridge.OpenOverlayAsync)).Should().NotBeNull();
     }
 
     [Fact]
@@ -216,9 +209,7 @@ public class HonestyGateTests
         StyleCatalog.IdsFor("Inlay").Should().Contain("Win11");
         typeof(InlaySettings).GetProperty(nameof(InlaySettings.Pins)).Should().NotBeNull();
         LaunchTargetCatalog.Search("notepad").Should().NotBeEmpty();
-        InlayHostBridgeAccessor.OpenOverlayAsync = () => Task.CompletedTask;
-        try { InlayHostBridgeAccessor.OpenOverlayAsync.Should().NotBeNull(); }
-        finally { InlayHostBridgeAccessor.OpenOverlayAsync = null; }
+        typeof(IHostUiBridge).GetMethod(nameof(IHostUiBridge.OpenOverlayAsync)).Should().NotBeNull();
     }
 
     [Fact]
@@ -226,9 +217,7 @@ public class HonestyGateTests
     {
         StyleCatalog.IdsFor("Chord").Should().Contain("Center");
         typeof(ChordSettings).GetProperty(nameof(ChordSettings.Actions)).Should().NotBeNull();
-        ChordHostBridgeAccessor.OpenOverlayAsync = () => Task.CompletedTask;
-        try { ChordHostBridgeAccessor.OpenOverlayAsync.Should().NotBeNull(); }
-        finally { ChordHostBridgeAccessor.OpenOverlayAsync = null; }
+        typeof(IHostUiBridge).GetMethod(nameof(IHostUiBridge.OpenOverlayAsync)).Should().NotBeNull();
     }
 
     [Fact]
@@ -237,9 +226,7 @@ public class HonestyGateTests
         StyleCatalog.IdsFor("Substrate").Should().Contain("DEFAULT");
         typeof(IAudioService).GetProperty(nameof(IAudioService.IsMuted)).Should().NotBeNull();
         typeof(SubstrateSettings).GetProperty(nameof(SubstrateSettings.ShowMute)).Should().NotBeNull();
-        SubstrateHostBridgeAccessor.OpenOverlayAsync = () => Task.CompletedTask;
-        try { SubstrateHostBridgeAccessor.OpenOverlayAsync.Should().NotBeNull(); }
-        finally { SubstrateHostBridgeAccessor.OpenOverlayAsync = null; }
+        typeof(IHostUiBridge).GetMethod(nameof(IHostUiBridge.OpenOverlayAsync)).Should().NotBeNull();
     }
 
     [Fact]
@@ -249,9 +236,8 @@ public class HonestyGateTests
         typeof(IIdleService).GetEvent(nameof(IIdleService.IdleThresholdReached)).Should().NotBeNull();
         typeof(IFullscreenProbe).GetProperty(nameof(IFullscreenProbe.IsForegroundFullscreen)).Should().NotBeNull();
         typeof(SlateSettings).GetProperty(nameof(SlateSettings.HideOnFullscreen)).Should().NotBeNull();
-        SlateHostBridgeAccessor.OpenIdleOverlayAsync = () => Task.CompletedTask;
-        try { SlateHostBridgeAccessor.OpenIdleOverlayAsync.Should().NotBeNull(); }
-        finally { SlateHostBridgeAccessor.OpenIdleOverlayAsync = null; }
+        typeof(IHostUiBridge).GetMethod(nameof(IHostUiBridge.OpenOverlayAsync)).Should().NotBeNull();
+        typeof(IHostUiBridge).GetMethod(nameof(IHostUiBridge.CloseOverlay)).Should().NotBeNull();
     }
 
     [Fact]

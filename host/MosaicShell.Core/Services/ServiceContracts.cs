@@ -50,8 +50,8 @@ public interface IMediaSessionService : IDisposable
     Task SeekAsync(double positionSeconds);
     Task ToggleShuffleAsync();
     Task ToggleRepeatAsync();
-    /// <summary>Like/favorite when the player supports it (WNP rating / SMTC best-effort).</summary>
-    Task ToggleLikeAsync();
+    /// <summary>Like or remove like (never thumbs-down). <paramref name="wantLiked"/> comes from UI heart state.</summary>
+    Task ToggleLikeAsync(bool wantLiked);
 }
 
 public sealed record HotkeyBinding(string Id, string Gesture);

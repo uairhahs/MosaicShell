@@ -22,6 +22,7 @@ public interface IModuleCapability : IDisposable
 public interface ICapabilityUiBridge
 {
     IFlyoutPresenter Flyouts { get; }
+    IHostUiBridge HostUi { get; }
 }
 
 public sealed record FlyoutRequest(

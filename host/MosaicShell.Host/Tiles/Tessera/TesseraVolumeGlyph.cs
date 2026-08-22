@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Material.Icons;
 using Material.Icons.Avalonia;
@@ -45,7 +46,7 @@ public static class TesseraVolumeGlyph
 
 public static class TesseraShell
 {
-    public static Border Create(
+    public static Control Create(
         Control child,
         double cornerRadius,
         Thickness? padding = null,
@@ -55,48 +56,24 @@ public static class TesseraShell
         double? minWidth = null,
         double? maxWidth = null)
     {
-        Control content = child;
-        if (TesseraBakedFrost.TryGetBrush(out var frost) && TesseraPalette.UseEdgeBlend)
-        {
-            content = new Grid
-            {
-                Children =
-                {
-                    new Border
-                    {
-                        Background = frost,
-                        Opacity = 0.55,
-                        IsHitTestVisible = false
-                    },
-                    child
-                }
-            };
-        }
+        var shell = TesseraGlassPanel.Wrap(
+            child,
+            cornerRadius,
+            padding,
+            width,
+            height,
+            minWidth,
+            maxWidth,
+            tint: fill ?? TesseraPalette.Primary);
 
-        var border = new Border
+        // 1px inset keeps the glass edge from clipping at flyout window bounds.
+        return new Border
         {
-            Background = TesseraPalette.UseEdgeBlend
-                ? TesseraPalette.SoftFrostFill()
-                : new SolidColorBrush(fill ?? TesseraPalette.Primary),
-            CornerRadius = new CornerRadius(cornerRadius),
-            BorderBrush = TesseraPalette.StrokeBrush,
-            BorderThickness = new Thickness(1),
-            Padding = padding ?? new Thickness(0),
-            ClipToBounds = false,
-            Child = cornerRadius > 0
-                ? new Border
-                {
-                    CornerRadius = new CornerRadius(Math.Max(0, cornerRadius - 0.5)),
-                    ClipToBounds = true,
-                    Child = content
-                }
-                : content
+            Background = Brushes.Transparent,
+            Margin = new Thickness(1),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top,
+            Child = shell
         };
-        if (minWidth is not null) border.MinWidth = minWidth.Value;
-        if (width is not null) border.MinWidth = width.Value;
-        if (width is not null && height is not null) border.Width = width.Value;
-        if (height is not null) border.Height = height.Value;
-        if (maxWidth is not null) border.MaxWidth = maxWidth.Value;
-        return border;
     }
 }

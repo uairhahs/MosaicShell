@@ -498,17 +498,24 @@
                              Foreground="#6c7086" FontSize="12" />
 
                   <tessera:TesseraStylePreview StyleId="{Binding ModuleStyle}"
-                                               ShowMediaStrip="{Binding TesseraMediaStrip}" />
+                                               ShowMediaStrip="{Binding TesseraMediaStrip}"
+                                               AccentColor="{Binding TesseraAccentHex}" />
 
                   <Border Height="1" Background="#313244" Margin="0,4" />
                   <TextBlock Classes="sectionTitle" Text="More appearance" Margin="0" />
                   <TextBlock Classes="sectionHint" Margin="0"
                              Text="Host material language - soft frost tint (not OS acrylic). Optional baked wash is a light MagickMeter-style texture." />
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="Accent colour" Foreground="#a6adc8" FontSize="12" />
+                    <TextBox Classes="config" Text="{Binding TesseraAccentHex}"
+                             Watermark="#0273CD or leave blank for Windows accent"
+                             ToolTip.Tip="Hex accent used by every Tessera style (sliders, play, toggles, highlights). Empty = system accent." />
+                  </StackPanel>
                   <CheckBox Content="Soft frost tint" IsChecked="{Binding TesseraAcrylicBackdrop}"
                             ToolTip.Tip="Slightly translucent Mocha crust. Off = denser solid panel." />
-                  <CheckBox Content="Baked frost wash" IsChecked="{Binding TesseraBakedFrost}"
+                  <CheckBox Content="Skia backdrop blur" IsChecked="{Binding TesseraBakedFrost}"
                             IsEnabled="{Binding TesseraAcrylicBackdrop}"
-                            ToolTip.Tip="Skia-prerendered soft noise wash under the tint (Host material). Off if you prefer flat tint only." />
+                            ToolTip.Tip="Live Skia backdrop blur on Tessera glass panels. Off uses gradient + grain fallback only." />
                   <CheckBox Content="Subtle desktop dim (Focus)" IsChecked="{Binding TesseraFocusDim}"
                             ToolTip.Tip="Very light dim behind the flyout. Never blocks input; outside click dismisses instantly." />
                   <StackPanel Spacing="4" Margin="0,4,0,0">

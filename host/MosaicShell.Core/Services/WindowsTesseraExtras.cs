@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using NAudio.CoreAudioApi;
 
 namespace MosaicShell.Core.Services;
@@ -5,6 +7,9 @@ namespace MosaicShell.Core.Services;
 public sealed class WindowsLockKeysService : ILockKeysService
 {
     private System.Threading.Timer? _timer;
+    private IntPtr _hook;
+    private LowLevelKeyboardProc? _proc;
+    private readonly object _sync = new();
     private bool _caps, _num, _scroll;
 
     public LockKeyState Caps => new(LockKeyKind.CapsLock, _caps);
@@ -14,30 +19,94 @@ public sealed class WindowsLockKeysService : ILockKeysService
 
     public void Start()
     {
-        Sample(raise: false);
-        _timer = new System.Threading.Timer(_ => Sample(raise: true), null, 80, 80);
+        lock (_sync)
+        {
+            Sample(raise: false);
+            InstallHook();
+            _timer ??= new System.Threading.Timer(_ => Sample(raise: true), null, 500, 500);
+        }
     }
 
     public void Stop()
     {
-        _timer?.Dispose();
-        _timer = null;
+        lock (_sync)
+        {
+            _timer?.Dispose();
+            _timer = null;
+            RemoveHook();
+        }
+    }
+
+    private void InstallHook()
+    {
+        if (_hook != IntPtr.Zero) return;
+        _proc = HookCallback;
+        using var cur = Process.GetCurrentProcess();
+        using var mod = cur.MainModule!;
+        _hook = SetWindowsHookEx(WhKeyboardLl, _proc, GetModuleHandle(mod.ModuleName!), 0);
+    }
+
+    private void RemoveHook()
+    {
+        if (_hook == IntPtr.Zero) return;
+        UnhookWindowsHookEx(_hook);
+        _hook = IntPtr.Zero;
+        _proc = null;
+    }
+
+    private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+    {
+        if (nCode >= 0)
+        {
+            var msg = (int)wParam;
+            if (msg is WmKeyup or WmSyskeyup)
+            {
+                var vk = Marshal.ReadInt32(lParam);
+                if (vk is VkCapital or VkNumlock or VkScroll)
+                    Sample(raise: true);
+            }
+        }
+        return CallNextHookEx(_hook, nCode, wParam, lParam);
     }
 
     private void Sample(bool raise)
     {
-        var caps = (GetKeyState(0x14) & 1) != 0;
-        var num = (GetKeyState(0x90) & 1) != 0;
-        var scroll = (GetKeyState(0x91) & 1) != 0;
-        if (caps != _caps) { _caps = caps; if (raise) Changed?.Invoke(this, Caps); }
-        if (num != _num) { _num = num; if (raise) Changed?.Invoke(this, Num); }
-        if (scroll != _scroll) { _scroll = scroll; if (raise) Changed?.Invoke(this, Scroll); }
+        lock (_sync)
+        {
+            var caps = (GetKeyState(VkCapital) & 1) != 0;
+            var num = (GetKeyState(VkNumlock) & 1) != 0;
+            var scroll = (GetKeyState(VkScroll) & 1) != 0;
+            if (caps != _caps) { _caps = caps; if (raise) Changed?.Invoke(this, Caps); }
+            if (num != _num) { _num = num; if (raise) Changed?.Invoke(this, Num); }
+            if (scroll != _scroll) { _scroll = scroll; if (raise) Changed?.Invoke(this, Scroll); }
+        }
     }
 
     public void Dispose() => Stop();
 
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private const int WhKeyboardLl = 13;
+    private const int WmKeyup = 0x0101;
+    private const int WmSyskeyup = 0x0105;
+    private const int VkCapital = 0x14;
+    private const int VkNumlock = 0x90;
+    private const int VkScroll = 0x91;
+
+    private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll")]
     private static extern short GetKeyState(int nVirtKey);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool UnhookWindowsHookEx(IntPtr hhk);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+    private static extern IntPtr GetModuleHandle(string lpModuleName);
 }
 
 public sealed class WindowsAirplaneModeService : IAirplaneModeService

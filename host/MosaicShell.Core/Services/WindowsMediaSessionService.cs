@@ -415,7 +415,7 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
         catch { /* repeat not supported */ }
     }
 
-    public Task ToggleLikeAsync() => Task.CompletedTask; // SMTC has no standard like API
+    public Task ToggleLikeAsync(bool wantLiked) => Task.CompletedTask; // SMTC has no standard like API
 
     public void Dispose()
     {

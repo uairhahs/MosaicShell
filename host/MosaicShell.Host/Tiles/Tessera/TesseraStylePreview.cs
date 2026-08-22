@@ -2,9 +2,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Platform;
-using MosaicShell.Core.Capabilities;
-using MosaicShell.Core.Services;
 
 namespace MosaicShell.Host.Tiles.Tessera;
 
@@ -17,7 +14,8 @@ public sealed class TesseraStylePreview : Border
     public static readonly StyledProperty<bool> ShowMediaStripProperty =
         AvaloniaProperty.Register<TesseraStylePreview, bool>(nameof(ShowMediaStrip), true);
 
-    private static readonly Lazy<byte[]?> LogoPng = new(LoadLogoPng);
+    public static readonly StyledProperty<string?> AccentColorProperty =
+        AvaloniaProperty.Register<TesseraStylePreview, string?>(nameof(AccentColor));
 
     private readonly ContentControl _host = new()
     {
@@ -59,10 +57,17 @@ public sealed class TesseraStylePreview : Border
         set => SetValue(ShowMediaStripProperty, value);
     }
 
+    public string? AccentColor
+    {
+        get => GetValue(AccentColorProperty);
+        set => SetValue(AccentColorProperty, value);
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == StyleIdProperty || change.Property == ShowMediaStripProperty)
+        if (change.Property == StyleIdProperty || change.Property == ShowMediaStripProperty
+            || change.Property == AccentColorProperty)
             Rebuild();
     }
 
@@ -70,36 +75,8 @@ public sealed class TesseraStylePreview : Border
     {
         try
         {
-            var services = HostServicesFakes.Create();
-            services.Audio.MasterVolume = 0.62;
-            if (services.Media is FakeMediaSessionService media)
-            {
-                media.Current = new MediaSessionInfo(
-                    Title: "Sample track",
-                    Artist: "Artist",
-                    AppId: "preview",
-                    IsPlaying: true,
-                    ThumbnailPng: LogoPng.Value,
-                    PositionSeconds: 42,
-                    DurationSeconds: 180);
-            }
-
-            var payload = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["volume"] = "0.62",
-                ["muted"] = "0",
-                ["showMediaStrip"] = ShowMediaStrip ? "1" : "0",
-                ["mediaTitle"] = "Sample track",
-                ["mediaArtist"] = "Artist",
-                ["mediaPlaying"] = "1"
-            };
-
             var style = string.IsNullOrWhiteSpace(StyleId) ? "Fluent" : StyleId!;
-            var request = new FlyoutRequest("Tessera", "vol", style, Payload: payload);
-            var vm = TesseraFlyoutViewModel.FromRequest(services, request);
-            var flyout = TesseraStyleFactory.Create(style, vm);
-            flyout.IsHitTestVisible = false;
-            _host.Content = flyout;
+            _host.Content = TesseraPreviewExporter.BuildFlyout(style, ShowMediaStrip, AccentColor);
         }
         catch
         {
@@ -111,23 +88,6 @@ public sealed class TesseraStylePreview : Border
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
-        }
-    }
-
-    private static byte[]? LoadLogoPng()
-    {
-        try
-        {
-            // Source of truth: .github/res/MosaicShell.png (linked into Assets via csproj)
-            var uri = new Uri("avares://MosaicShell.Host/Assets/MosaicShell.png");
-            using var stream = AssetLoader.Open(uri);
-            using var ms = new MemoryStream();
-            stream.CopyTo(ms);
-            return ms.ToArray();
-        }
-        catch
-        {
-            return null;
         }
     }
 }

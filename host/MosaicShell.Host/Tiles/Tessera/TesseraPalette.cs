@@ -2,10 +2,11 @@ using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Media;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Settings;
 
 namespace MosaicShell.Host.Tiles.Tessera;
 
-/// <summary>YourFlyouts Fluent palette - SysAccent when available; shell alpha from soft-frost material.</summary>
+/// <summary>YourFlyouts Fluent palette - accent from settings or SysAccent; shell alpha from soft-frost material.</summary>
 public static class TesseraPalette
 {
     public static Color Crust { get; } = Color.FromRgb(0x11, 0x11, 0x1b);
@@ -29,11 +30,24 @@ public static class TesseraPalette
     public static Color FontMuted { get; } = Color.FromRgb(150, 150, 150);
     public static Color TrackBack { get; } = Color.FromArgb(50, 255, 255, 255);
     public static Color Accent { get; private set; } = Color.FromRgb(2, 115, 205);
+    public static Color OnAccent { get; private set; } = Color.FromRgb(255, 255, 255);
 
-    static TesseraPalette() => RefreshAccent();
+    static TesseraPalette() => RefreshAccentFromSystem();
 
-    public static void RefreshAccent()
+    /// <summary>Apply configured accent or fall back to Windows system accent.</summary>
+    public static void ApplyAccentFromSettings(string? accentColor)
     {
+        if (TesseraAccentColor.TryParse(accentColor, out var r, out var g, out var b))
+            SetAccent(Color.FromRgb(r, g, b));
+        else
+            RefreshAccentFromSystem();
+    }
+
+    public static void RefreshAccent() => RefreshAccentFromSystem();
+
+    public static void RefreshAccentFromSystem()
+    {
+        var fallback = Color.FromRgb(2, 115, 205);
         try
         {
             if (DwmGetColorizationColor(out var color, out _) == 0)
@@ -44,29 +58,35 @@ public static class TesseraPalette
                 var b = (byte)(color & 0xFF);
                 if (a == 0) a = 255;
                 if (r + g + b > 30 && r + g + b < 750)
-                    Accent = Color.FromArgb(a, r, g, b);
+                {
+                    SetAccent(Color.FromArgb(a, r, g, b));
+                    return;
+                }
             }
         }
         catch { /* keep fallback */ }
+
+        SetAccent(fallback);
     }
 
-    /// <summary>Vertical soft frost fill - gradual alpha, no hard slab.</summary>
-    public static IBrush SoftFrostFill()
+    public static Color LightenAccent(double amount) => Lighten(Accent, amount);
+
+    public static Color Lighten(Color c, double amount)
     {
-        var a0 = (byte)Math.Clamp(_shellAlpha + 18, 0, 255);
-        var a1 = _shellAlpha;
-        var a2 = (byte)Math.Clamp(_shellAlpha - 14, 40, 255);
-        return new LinearGradientBrush
-        {
-            StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-            EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
-            GradientStops =
-            {
-                new GradientStop(Color.FromArgb(a0, 0x14, 0x14, 0x20), 0),
-                new GradientStop(Color.FromArgb(a1, 0x11, 0x11, 0x1b), 0.4),
-                new GradientStop(Color.FromArgb(a2, 0x0e, 0x0e, 0x16), 1)
-            }
-        };
+        static byte L(byte v, double a) => (byte)Math.Clamp(v + (255 - v) * a, 0, 255);
+        return Color.FromRgb(L(c.R, amount), L(c.G, amount), L(c.B, amount));
+    }
+
+    private static void SetAccent(Color color)
+    {
+        Accent = color;
+        OnAccent = ContrastOn(color);
+    }
+
+    private static Color ContrastOn(Color c)
+    {
+        var lum = 0.299 * c.R + 0.587 * c.G + 0.114 * c.B;
+        return lum > 150 ? Color.FromRgb(27, 27, 30) : Color.FromRgb(255, 255, 255);
     }
 
     public static IBrush PrimaryBrush => new SolidColorBrush(Primary);
@@ -74,6 +94,7 @@ public static class TesseraPalette
     public static IBrush FontBrush => new SolidColorBrush(Font);
     public static IBrush FontMutedBrush => new SolidColorBrush(FontMuted);
     public static IBrush AccentBrush => new SolidColorBrush(Accent);
+    public static IBrush OnAccentBrush => new SolidColorBrush(OnAccent);
     public static IBrush TrackBackBrush => new SolidColorBrush(TrackBack);
     public static IBrush StrokeBrush => new SolidColorBrush(Color.FromArgb(90, 255, 255, 255));
 

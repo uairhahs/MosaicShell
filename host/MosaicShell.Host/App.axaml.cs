@@ -11,7 +11,6 @@ using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
 using MosaicShell.Host.Capabilities;
 using MosaicShell.Host.Tiles;
-using MosaicShell.Host.Tiles.Tessera;
 using MosaicShell.Host.ViewModels;
 using MosaicShell.Host.Views;
 
@@ -25,6 +24,7 @@ public partial class App : Application
     private HostServices? _services;
     private CapabilityDaemon? _daemon;
     private MainViewModel? _vm;
+    private IHostUiBridge? _hostUi;
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
@@ -38,81 +38,29 @@ public partial class App : Application
             double UserScale() => _vm?.UserScale ?? 1.0;
 
             var flyouts = new AvaloniaFlyoutPresenter(_services);
-            var uiBridge = new AvaloniaCapabilityUiBridge(flyouts);
-            var registry = new CapabilityRegistry();
-            BuiltInCapabilityFactories.RegisterAll(registry);
-            _daemon = new CapabilityDaemon(registry, _services, uiBridge);
-
-            MixdeckHostBridgeAccessor.OpenOverlayAsync = OpenMixdeckOverlayAsync;
-            InlayHostBridgeAccessor.OpenOverlayAsync = () => OpenCapabilityOverlayAsync("Inlay");
-            ChordHostBridgeAccessor.OpenOverlayAsync = () => OpenCapabilityOverlayAsync("Chord");
-            SubstrateHostBridgeAccessor.OpenOverlayAsync = () => OpenCapabilityOverlayAsync("Substrate");
-            SlateHostBridgeAccessor.OpenIdleOverlayAsync = () => OpenCapabilityOverlayAsync("Slate");
-            SlateHostBridgeAccessor.HideOverlay = () => _tileHost?.Close("Slate");
-            TesseraHostBridge.ArmMixdeckAsync = OpenMixdeckOverlayAsync;
-            TesseraHostBridge.PreviewVolumeFlyout = () =>
-            {
-                var s = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
-                var media = _services?.Media.Current;
-                flyouts.Show(new FlyoutRequest(
-                    "Tessera",
-                    "vol",
-                    s.Style,
-                    s.Position,
-                    s.AutoDismissMs,
-                    new Dictionary<string, string>
-                    {
-                        ["volume"] = (_services?.Audio.MasterVolume ?? 0.5).ToString("0.###"),
-                        ["muted"] = (_services?.Audio.IsMuted == true) ? "1" : "0",
-                        ["showMediaStrip"] = s.ShowMediaStripOnVolume && media is not null ? "1" : "0",
-                        ["mediaTitle"] = media?.Title ?? "",
-                        ["mediaArtist"] = media?.Artist ?? "",
-                        ["mediaPlaying"] = media?.IsPlaying == true ? "1" : "0",
-                        ["acrylic"] = s.UseAcrylicBackdrop ? "1" : "0",
-                        ["focusDim"] = s.UseFocusDim ? "1" : "0",
-                        ["flyoutScale"] = Math.Clamp(s.FlyoutScalePercent, 50, 150).ToString(),
-                        ["bakedFrost"] = s.UseBakedFrost ? "1" : "0",
-                    },
-                    s.MonitorIndex,
-                    s.XPad,
-                    s.YPad,
-                    s.Ani,
-                    s.AniDir));
-            };
-
-            _tileHost = new AvaloniaTileSurfaceHost(_services, UserScale, id =>
-                _tileRuntime?.NotifySurfaceClosed(id));
-            _tileRuntime = new TileRuntime(new RestoringSurfaceHost(_tileHost));
-
-            TileHostUiBridge.OpenModuleConfig = id =>
-            {
-                Dispatcher.UIThread.Post(() =>
+            _hostUi = new AvaloniaHostUiBridge(
+                () => _tileRuntime!,
+                () => _tileHost!,
+                flyouts,
+                _services,
+                id =>
                 {
                     _mainWindow?.Show();
                     _mainWindow?.Activate();
                     _vm?.OpenModuleConfigById(id);
                 });
-            };
-            TileHostUiBridge.RefreshOverlay = id =>
-            {
-                Dispatcher.UIThread.Post(() => _tileHost?.Refresh(id));
-            };
+            flyouts.AttachHostUi(_hostUi);
 
-            async Task OpenMixdeckOverlayAsync() => await OpenCapabilityOverlayAsync("Mixdeck");
+            var uiBridge = new AvaloniaCapabilityUiBridge(flyouts, _hostUi);
+            var registry = new CapabilityRegistry();
+            BuiltInCapabilityFactories.RegisterAll(registry);
+            _daemon = new CapabilityDaemon(registry, _services, uiBridge);
 
-            async Task OpenCapabilityOverlayAsync(string moduleId)
-            {
-                if (_daemon is null || _tileRuntime is null || _tileHost is null) return;
-                await Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    if (_tileRuntime.IsRunning(moduleId))
-                        _tileHost.Focus(moduleId);
-                    else
-                        _tileRuntime.Start(moduleId);
-                });
-            }
+            _tileHost = new AvaloniaTileSurfaceHost(_services, _hostUi, UserScale, id =>
+                _tileRuntime?.NotifySurfaceClosed(id));
+            _tileRuntime = new TileRuntime(new RestoringSurfaceHost(_tileHost));
 
-            _vm = new MainViewModel(_tileRuntime, _services, _tileHost, _daemon);
+            _vm = new MainViewModel(_tileRuntime, _services, _tileHost, _daemon, _hostUi);
             _mainWindow = new MainWindow { DataContext = _vm };
             _mainWindow.Closing += OnMainWindowClosing;
             desktop.MainWindow = _mainWindow;

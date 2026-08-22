@@ -49,11 +49,11 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
         if (_wnp is WebNowPlaying.WebNowPlayingReduxHost host)
             await host.TryToggleRepeatAsync();
     }
-    public async Task ToggleLikeAsync()
+    public async Task ToggleLikeAsync(bool wantLiked)
     {
-        await _smtc.ToggleLikeAsync();
+        await _smtc.ToggleLikeAsync(wantLiked);
         if (_wnp is WebNowPlaying.WebNowPlayingReduxHost host)
-            await host.TryToggleLikeAsync();
+            await host.TrySetLikeAsync(wantLiked);
     }
 
     public void Dispose()

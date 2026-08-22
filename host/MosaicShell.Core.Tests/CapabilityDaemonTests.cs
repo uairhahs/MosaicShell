@@ -115,6 +115,7 @@ public class CapabilityDaemonTests : IDisposable
     private sealed class FakeUiBridge : ICapabilityUiBridge
     {
         public IFlyoutPresenter Flyouts { get; } = new FakeFlyouts();
+        public IHostUiBridge HostUi { get; } = NullHostUiBridge.Instance;
     }
 
     private sealed class FakeFlyouts : IFlyoutPresenter

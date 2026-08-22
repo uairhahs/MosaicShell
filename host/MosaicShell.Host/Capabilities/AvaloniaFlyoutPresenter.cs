@@ -16,25 +16,52 @@ namespace MosaicShell.Host.Capabilities;
 
 public sealed class AvaloniaCapabilityUiBridge : ICapabilityUiBridge
 {
-    public AvaloniaCapabilityUiBridge(IFlyoutPresenter flyouts) => Flyouts = flyouts;
+    public AvaloniaCapabilityUiBridge(IFlyoutPresenter flyouts, IHostUiBridge hostUi)
+    {
+        Flyouts = flyouts;
+        HostUi = hostUi;
+    }
+
     public IFlyoutPresenter Flyouts { get; }
+    public IHostUiBridge HostUi { get; }
 }
 
 public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
 {
     private readonly HostServices _services;
+    private IHostUiBridge? _hostUi;
     private readonly object _gate = new();
     private readonly Dictionary<string, FlyoutWindow> _windows = new(StringComparer.OrdinalIgnoreCase);
     private FocusDimWindow? _focusDim;
     private TesseraOutsideClickWatcher? _outsideClick;
 
-    public AvaloniaFlyoutPresenter(HostServices services) => _services = services;
+    public AvaloniaFlyoutPresenter(HostServices services, IHostUiBridge? hostUi = null)
+    {
+        _services = services;
+        _hostUi = hostUi;
+    }
 
-    public void Show(FlyoutRequest request) =>
-        Dispatcher.UIThread.Post(() => SafeShowOrUpdate(request, resetDismiss: true));
+    public void AttachHostUi(IHostUiBridge hostUi) => _hostUi = hostUi;
 
-    public void Update(FlyoutRequest request) =>
-        Dispatcher.UIThread.Post(() => SafeShowOrUpdate(request, resetDismiss: true));
+    public void Show(FlyoutRequest request)
+    {
+        if (IsImmediateStatusKind(request))
+            Dispatcher.UIThread.Invoke(() => SafeShowOrUpdate(request, resetDismiss: true));
+        else
+            Dispatcher.UIThread.Post(() => SafeShowOrUpdate(request, resetDismiss: true));
+    }
+
+    private static bool IsImmediateStatusKind(FlyoutRequest request) =>
+        request.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
+        || request.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase);
+
+    public void Update(FlyoutRequest request)
+    {
+        if (IsImmediateStatusKind(request))
+            Dispatcher.UIThread.Invoke(() => SafeShowOrUpdate(request, resetDismiss: true));
+        else
+            Dispatcher.UIThread.Post(() => SafeShowOrUpdate(request, resetDismiss: true));
+    }
 
     public void SoftRefresh(FlyoutRequest request) =>
         Dispatcher.UIThread.Post(() =>
@@ -102,6 +129,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
             {
                 if (existing.TryApplyLive(request, _services, resetDismiss))
                 {
+                    existing.EnsureLivePump();
                     SyncFocusDim(request);
                     RestackAboveDim(existing);
                     if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
@@ -109,6 +137,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
                     return;
                 }
                 existing.ApplyRequest(request, BuildContent(request));
+                existing.EnsureLivePump();
                 SyncFocusDim(request);
                 RestackAboveDim(existing);
                 if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
@@ -137,6 +166,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         };
         lock (_gate) _windows[request.ModuleId] = window;
         window.Show();
+        window.EnsureLivePump();
         RestackAboveDim(window);
         window.PlayShowAnimation();
         if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
@@ -221,7 +251,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
             var material = TesseraFlyoutMaterialFactory.FromPayload(request.Payload);
             TesseraPalette.ApplyMaterial(material);
             TesseraBakedFrost.SetEnabled(BakedFrostFromPayload(request.Payload));
-            var vm = TesseraFlyoutViewModel.FromRequest(_services, request);
+            var vm = TesseraFlyoutViewModel.FromRequest(_services, request, _hostUi);
             Control root = TesseraStyleFactory.Create(request.StyleId ?? "Fluent", vm);
             var scale = FlyoutScaleFromPayload(request.Payload);
             if (Math.Abs(scale - 1.0) > 0.01)
@@ -301,18 +331,20 @@ internal sealed class FlyoutWindow : Window
         Opened += (_, _) =>
         {
             Relayout();
-            StartLivePump();
+            EnsureLivePump();
         };
         LayoutUpdated += OnLayoutUpdated;
         Closed += (_, _) => StopLivePump();
         ResetDismissTimer();
     }
 
+    public void EnsureLivePump() => StartLivePump();
+
     private void StartLivePump()
     {
         if (!string.Equals(_request.ModuleId, "Tessera", StringComparison.OrdinalIgnoreCase))
             return;
-        _live?.Stop();
+        if (_live is not null) return;
         _live = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
         double lastVol = double.NaN;
         bool lastMute = false;
@@ -333,7 +365,7 @@ internal sealed class FlyoutWindow : Window
                     ResetDismissTimer();
                 }
 
-                if (Content is TesseraLiveHost host)
+                if (Content is Control root && TesseraLiveHost.FindIn(root) is { } host)
                 {
                     host.ApplyLive(_services, _request);
                     return;
@@ -369,25 +401,22 @@ internal sealed class FlyoutWindow : Window
 
     private Dictionary<string, string> BuildLivePayload()
     {
-        var media = _services.Media.Current;
-        return new Dictionary<string, string>
+        var settings = TesseraFlyoutRequestBuilder.LoadSettings();
+        var strip = _request.Payload?.GetValueOrDefault("showMediaStrip");
+        bool? showMediaStrip = strip switch
         {
-            ["volume"] = _services.Audio.MasterVolume.ToString("0.###"),
-            ["muted"] = _services.Audio.IsMuted ? "1" : "0",
-            ["brightness"] = _services.Brightness.IsSupported
-                ? _services.Brightness.Brightness.ToString("0.###")
-                : "0.5",
-            ["mediaTitle"] = media?.Title ?? "",
-            ["mediaArtist"] = media?.Artist ?? "",
-            ["mediaPlaying"] = media?.IsPlaying == true ? "1" : "0",
-            ["showMediaStrip"] = _request.Payload?.GetValueOrDefault("showMediaStrip") ?? "1",
+            "1" => true,
+            "0" => false,
+            _ => null
         };
+        return new TesseraFlyoutRequestBuilder().BuildLivePayload(_services, settings, showMediaStrip);
     }
 
     public void ApplyLiveOnly(FlyoutRequest request, HostServices services)
     {
         _request = request;
-        if (Content is TesseraLiveHost host)
+        services.Media.PumpTimeline();
+        if (Content is Control root && TesseraLiveHost.FindIn(root) is { } host)
             host.ApplyLive(services, request);
         else
             TryApplyLive(request, services, resetDismiss: false);
@@ -396,6 +425,19 @@ internal sealed class FlyoutWindow : Window
     public bool TryApplyLive(FlyoutRequest request, HostServices services, bool resetDismiss = true)
     {
         if (!request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase)) return false;
+        if (request.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
+            || request.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase))
+        {
+            if (Content is Visual statusRoot
+                && FindNamed<TextBlock>(statusRoot, "TesseraStatusLabel") is { } statusLabel)
+            {
+                statusLabel.Text = BuildStatusLabel(request);
+                _request = request;
+                if (resetDismiss) ResetDismissTimer();
+                return true;
+            }
+            return false;
+        }
         if (!string.Equals(_request.Kind, request.Kind, StringComparison.OrdinalIgnoreCase)) return false;
         if (!string.Equals(_request.StyleId ?? "", request.StyleId ?? "", StringComparison.OrdinalIgnoreCase)) return false;
         if (Content is not Visual root) return false;
@@ -411,7 +453,7 @@ internal sealed class FlyoutWindow : Window
                 || request.Kind.Equals("bright", StringComparison.OrdinalIgnoreCase)))
             return false;
 
-        if (Content is TesseraLiveHost liveHost)
+        if (Content is Control contentRoot && TesseraLiveHost.FindIn(contentRoot) is { } liveHost)
         {
             liveHost.ApplyLive(services, request);
             _request = request;
@@ -497,6 +539,15 @@ internal sealed class FlyoutWindow : Window
         return t.TotalHours >= 1 ? t.ToString(@"h\:mm\:ss") : t.ToString(@"m\:ss");
     }
 
+    private static string BuildStatusLabel(FlyoutRequest request)
+    {
+        var on = request.Payload?.GetValueOrDefault("on") == "1";
+        if (request.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase))
+            return on ? "Airplane mode On" : "Airplane mode Off";
+        var lockName = request.Payload?.GetValueOrDefault("lock") ?? "CapsLock";
+        return on ? $"{lockName} On" : $"{lockName} Off";
+    }
+
     private static T? FindNamed<T>(Visual root, string name) where T : class
     {
         if (root is Control { Name: { } n } && n == name && root is T direct)
@@ -528,6 +579,7 @@ internal sealed class FlyoutWindow : Window
         }
         ResetDismissTimer();
         Relayout();
+        EnsureLivePump();
     }
 
     private void OnLayoutUpdated(object? sender, EventArgs e)

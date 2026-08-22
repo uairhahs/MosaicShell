@@ -13,12 +13,19 @@ internal static class TesseraLiveAmbient
         set => _current = value;
     }
 
-    public static void RegisterVolume(TesseraTrack track, TextBlock? percent, Material.Icons.Avalonia.MaterialIcon? glyph)
+    public static void RegisterVolume(
+        TesseraTrack track,
+        TextBlock? percent,
+        Material.Icons.Avalonia.MaterialIcon? glyph,
+        bool pixelVolumeGlyph = false,
+        bool percentOnAdjustOnly = false)
     {
         if (_current is null) return;
         _current.VolumeTrack = track;
         _current.Percent = percent;
         _current.Glyph = glyph;
+        _current.PixelVolumeGlyph = pixelVolumeGlyph;
+        _current.PercentOnAdjustOnly = percentOnAdjustOnly;
     }
 
     public static void RegisterRing(TesseraRingVolume ring)
@@ -51,5 +58,14 @@ internal static class TesseraLiveAmbient
         _current.MediaPos = pos;
         _current.MediaDur = dur;
         _current.PlayPauseIcon = play;
+    }
+
+    public static void RegisterPlainextMedia(TextBlock titleState, TextBlock artist, TextBlock progressLine)
+    {
+        if (_current is null) return;
+        _current.PlainextMedia = true;
+        _current.MediaTitle = titleState;
+        _current.MediaArtist = artist;
+        _current.MediaPos = progressLine;
     }
 }

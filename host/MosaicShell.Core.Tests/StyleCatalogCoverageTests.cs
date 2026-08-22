@@ -39,5 +39,7 @@ public class StyleCatalogCoverageTests
         MixdeckLayoutCoverage.IsFlagship("Fluent").Should().BeTrue();
         InlayLayoutCoverage.IsFlagship("Win11").Should().BeTrue();
         TesseraLayoutCoverage.IsPolished("Pixel").Should().BeTrue();
+        TesseraLayoutCoverage.UsesStackedMediaStrip("Pixel").Should().BeFalse();
+        TesseraLayoutCoverage.UsesStackedMediaStrip("Modern").Should().BeTrue();
     }
 }

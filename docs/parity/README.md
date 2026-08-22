@@ -17,7 +17,7 @@ Runtime is host-only; `Tiles/Tessera` is a native install stub. B0 is **not** fu
 | `tessera_locks_flight` | Lock-key + airplane flyouts |
 | `tessera_live_update_multimonitor` | Reuse/update window; monitor + anchor math |
 | `tessera_fluent_win11_kit` | Fluent + Win11 transfer kit present |
-| `tessera_layout_fidelity` | **false** - non-kit styles still approximate; Host does not require pixel-YourFlyouts |
+| `tessera_layout_fidelity` | **false** - 7/11 styles signed off; CoreUI, Pixel, Smouti, Win11 still deviate (`.local/Tessera/deviated/`) |
 | `tessera_fluent_yourflyouts` | **true** - Fluent / Win11 / Center tightened for Host identity (compact, soft frost, optional baked wash) |
 | `tessera_media_smtc_only` | **false** - SMTC is not the only media path |
 | `tessera_media_wnp` | **true** - WebNowPlaying host on CLI port **5468** |
@@ -32,7 +32,7 @@ References: [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [Mo
 - Brightness / airplane caveats on some Win11 builds (see YourFlyouts README)
 - Vendor laptop OEM HUDs unsupported
 - Multi-player Auto NowPlaying outside WNP + SMTC
-- Remaining named styles (Amber/Gnome/Pixel/…) still light approximations (`tessera_layout_fidelity` false)
+- CoreUI, Pixel, Smouti, Win11 still deviate from refs (`tessera_layout_fidelity` false until all signed off)
 
 ## Mixdeck MVP bar (must all hold for `tile_mixdeck_mvp`)
 
@@ -159,7 +159,7 @@ Flip to **true** only when a module meets screenshot-level parity vs its [Jax-Co
 | `pulse_layout_fidelity` | Pulse | ModularVisualizer |
 | `canvas_layout_fidelity` | Canvas | Plainext |
 
-Tessera Phase C1 maturity tiers live in `TesseraLayoutCoverage` (polished vs approximate). `tessera_layout_fidelity` remains false until all StyleCatalog ids pass visual proofs.
+Tessera Phase C1 tiers live in `TesseraLayoutCoverage`: polished vs approximate (code), plus signed-off vs deviated (visual). `tessera_layout_fidelity` remains false until all StyleCatalog ids are signed off.
 
 | `native_tile_overlay_runtime` | **false** — full StyleCatalog pixel skins as dedicated runtime; not a Rainmeter interpreter |
 

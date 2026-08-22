@@ -5,27 +5,29 @@ using MosaicShell.Core.Settings;
 
 namespace MosaicShell.Core.Capabilities.BuiltIn;
 
-/// <summary>Armed hotkey opens Host overlay via bridge (Mixdeck / Inlay / Chord / Substrate).</summary>
+/// <summary>Armed hotkey opens Host overlay via <see cref="IHostUiBridge"/>.</summary>
 public class HotkeyOverlayCapability : IModuleCapability
 {
     private readonly HostServices _services;
     private readonly string _hotkeyId;
+    private readonly string _overlayModuleId;
     private readonly Func<string> _gesture;
     private readonly Action<string>? _persistGesture;
-    private readonly Func<Func<Task>?> _getOpenOverlay;
+    private readonly IHostUiBridge _hostUi;
 
     public HotkeyOverlayCapability(
         string moduleId,
         HostServices services,
         Func<string> gesture,
-        Func<Func<Task>?> getOpenOverlay,
+        IHostUiBridge hostUi,
         Action<string>? persistGesture = null)
     {
         ModuleId = moduleId;
+        _overlayModuleId = moduleId;
         _services = services;
         _hotkeyId = "cap:" + moduleId;
         _gesture = gesture;
-        _getOpenOverlay = getOpenOverlay;
+        _hostUi = hostUi;
         _persistGesture = persistGesture;
     }
 
@@ -75,22 +77,17 @@ public class HotkeyOverlayCapability : IModuleCapability
         return Task.CompletedTask;
     }
 
-    private void OnHotkey()
-    {
-        var open = _getOpenOverlay();
-        if (open is not null)
-            _ = open();
-    }
+    private void OnHotkey() => _ = _hostUi.OpenOverlayAsync(_overlayModuleId);
 
     public void Dispose() => DisarmAsync().GetAwaiter().GetResult();
 }
 
 public sealed class MixdeckCapability : HotkeyOverlayCapability
 {
-    public MixdeckCapability(HostServices services, ICapabilityUiBridge _)
+    public MixdeckCapability(HostServices services, ICapabilityUiBridge ui)
         : base("Mixdeck", services,
             () => ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings()).HotkeyGesture,
-            () => MixdeckHostBridgeAccessor.OpenOverlayAsync,
+            ui.HostUi,
             PersistMixdeck)
     {
     }
@@ -103,17 +100,12 @@ public sealed class MixdeckCapability : HotkeyOverlayCapability
     }
 }
 
-public static class MixdeckHostBridgeAccessor
-{
-    public static Func<Task>? OpenOverlayAsync { get; set; }
-}
-
 public sealed class InlayCapability : HotkeyOverlayCapability
 {
-    public InlayCapability(HostServices services, ICapabilityUiBridge _)
+    public InlayCapability(HostServices services, ICapabilityUiBridge ui)
         : base("Inlay", services,
             () => ModuleSettingsStore.Load("Inlay", () => new InlaySettings()).HotkeyGesture,
-            () => InlayHostBridgeAccessor.OpenOverlayAsync,
+            ui.HostUi,
             PersistInlay)
     {
     }
@@ -126,17 +118,12 @@ public sealed class InlayCapability : HotkeyOverlayCapability
     }
 }
 
-public static class InlayHostBridgeAccessor
-{
-    public static Func<Task>? OpenOverlayAsync { get; set; }
-}
-
 public sealed class ChordCapability : HotkeyOverlayCapability
 {
-    public ChordCapability(HostServices services, ICapabilityUiBridge _)
+    public ChordCapability(HostServices services, ICapabilityUiBridge ui)
         : base("Chord", services,
             () => ModuleSettingsStore.Load("Chord", () => new ChordSettings()).HotkeyGesture,
-            () => ChordHostBridgeAccessor.OpenOverlayAsync,
+            ui.HostUi,
             PersistChord)
     {
     }
@@ -149,17 +136,12 @@ public sealed class ChordCapability : HotkeyOverlayCapability
     }
 }
 
-public static class ChordHostBridgeAccessor
-{
-    public static Func<Task>? OpenOverlayAsync { get; set; }
-}
-
 public sealed class SubstrateCapability : HotkeyOverlayCapability
 {
-    public SubstrateCapability(HostServices services, ICapabilityUiBridge _)
+    public SubstrateCapability(HostServices services, ICapabilityUiBridge ui)
         : base("Substrate", services,
             () => ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings()).HotkeyGesture,
-            () => SubstrateHostBridgeAccessor.OpenOverlayAsync,
+            ui.HostUi,
             PersistSubstrate)
     {
     }
@@ -172,18 +154,15 @@ public sealed class SubstrateCapability : HotkeyOverlayCapability
     }
 }
 
-public static class SubstrateHostBridgeAccessor
-{
-    public static Func<Task>? OpenOverlayAsync { get; set; }
-}
-
 public sealed class SlateCapability : IModuleCapability
 {
     private readonly HostServices _services;
+    private readonly IHostUiBridge _hostUi;
 
-    public SlateCapability(HostServices services, ICapabilityUiBridge _)
+    public SlateCapability(HostServices services, ICapabilityUiBridge ui)
     {
         _services = services;
+        _hostUi = ui.HostUi;
     }
 
     public string ModuleId => "Slate";
@@ -205,7 +184,7 @@ public sealed class SlateCapability : IModuleCapability
         if (!IsArmed) return Task.CompletedTask;
         _services.Idle.IdleThresholdReached -= OnIdle;
         _services.Idle.Stop();
-        SlateHostBridgeAccessor.HideOverlay?.Invoke();
+        _hostUi.CloseOverlay(ModuleId);
         IsArmed = false;
         return Task.CompletedTask;
     }
@@ -215,18 +194,10 @@ public sealed class SlateCapability : IModuleCapability
         var settings = ModuleSettingsStore.Load("Slate", () => new SlateSettings());
         if (settings.HideOnFullscreen && _services.Fullscreen.IsForegroundFullscreen)
             return;
-        var open = SlateHostBridgeAccessor.OpenIdleOverlayAsync;
-        if (open is not null)
-            _ = open();
+        _ = _hostUi.OpenOverlayAsync(ModuleId);
     }
 
     public void Dispose() => DisarmAsync().GetAwaiter().GetResult();
-}
-
-public static class SlateHostBridgeAccessor
-{
-    public static Func<Task>? OpenIdleOverlayAsync { get; set; }
-    public static Action? HideOverlay { get; set; }
 }
 
 public static class BuiltInCapabilityFactories

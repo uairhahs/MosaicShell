@@ -109,11 +109,13 @@ public class TesseraParityTests : IDisposable
             Ani = 1,
             AniDir = "Bottom",
             EnableFlightFlyouts = false,
-            ShowMediaStripOnVolume = false
+            ShowMediaStripOnVolume = false,
+            AccentColor = "#D8E2F8"
         };
         ModuleSettingsStore.Save("Tessera", s);
         var loaded = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
         loaded.Style.Should().Be("Win11");
+        loaded.AccentColor.Should().Be("#D8E2F8");
         loaded.Position.Should().Be("BC");
         loaded.MonitorIndex.Should().Be(2);
         loaded.AniDir.Should().Be("Bottom");
@@ -159,7 +161,10 @@ public class TesseraParityTests : IDisposable
         (await daemon.ArmAsync("Tessera")).Should().BeTrue();
 
         lockSvc.Raise(new LockKeyState(LockKeyKind.CapsLock, true));
-        _shown.Should().Contain(r => r.Kind == "locks");
+        _shown.Should().Contain(r => r.Kind == "locks" && r.Payload!["on"] == "1");
+
+        lockSvc.Raise(new LockKeyState(LockKeyKind.CapsLock, false));
+        _shown.Should().Contain(r => r.Kind == "locks" && r.Payload!["on"] == "0");
 
         air.Raise();
         _shown.Should().Contain(r => r.Kind == "flight");
@@ -201,6 +206,7 @@ public class TesseraParityTests : IDisposable
     private sealed class CaptureUi(List<FlyoutRequest> shown) : ICapabilityUiBridge
     {
         public IFlyoutPresenter Flyouts { get; } = new CaptureFlyouts(shown);
+        public IHostUiBridge HostUi { get; } = NullHostUiBridge.Instance;
     }
 
     private sealed class CaptureFlyouts(List<FlyoutRequest> shown) : IFlyoutPresenter

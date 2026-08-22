@@ -88,7 +88,7 @@ public sealed class FakeMediaSessionService : IMediaSessionService
     public Task SeekAsync(double positionSeconds) => Task.CompletedTask;
     public Task ToggleShuffleAsync() => Task.CompletedTask;
     public Task ToggleRepeatAsync() => Task.CompletedTask;
-    public Task ToggleLikeAsync() => Task.CompletedTask;
+    public Task ToggleLikeAsync(bool wantLiked) => Task.CompletedTask;
     public void RaiseProgress() => ProgressChanged?.Invoke(this, EventArgs.Empty);
     public void Dispose() { }
 }

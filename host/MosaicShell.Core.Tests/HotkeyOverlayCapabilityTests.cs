@@ -19,49 +19,22 @@ public class HotkeyOverlayCapabilityTests
         var services = HostServicesFakes.Create();
         var hotkeys = (FakeHotkeyService)services.Hotkeys;
         var flyouts = new CountingFlyouts();
-        var ui = new BridgeUi(flyouts);
-        var opened = 0;
+        var hostUi = new RecordingHostUiBridge();
+        var ui = new BridgeUi(flyouts, hostUi);
 
-        Func<Task> bridge = () =>
+        IModuleCapability cap = moduleId switch
         {
-            opened++;
-            return Task.CompletedTask;
+            "Inlay" => new InlayCapability(services, ui),
+            "Chord" => new ChordCapability(services, ui),
+            _ => new SubstrateCapability(services, ui)
         };
 
-        switch (moduleId)
-        {
-            case "Inlay":
-                InlayHostBridgeAccessor.OpenOverlayAsync = bridge;
-                break;
-            case "Chord":
-                ChordHostBridgeAccessor.OpenOverlayAsync = bridge;
-                break;
-            case "Substrate":
-                SubstrateHostBridgeAccessor.OpenOverlayAsync = bridge;
-                break;
-        }
-
-        try
-        {
-            IModuleCapability cap = moduleId switch
-            {
-                "Inlay" => new InlayCapability(services, ui),
-                "Chord" => new ChordCapability(services, ui),
-                _ => new SubstrateCapability(services, ui)
-            };
-
-            await cap.ArmAsync();
-            hotkeys.TryInvoke("cap:" + moduleId).Should().BeTrue();
-            opened.Should().Be(1);
-            flyouts.ShowCount.Should().Be(0);
-            await cap.DisarmAsync();
-        }
-        finally
-        {
-            InlayHostBridgeAccessor.OpenOverlayAsync = null;
-            ChordHostBridgeAccessor.OpenOverlayAsync = null;
-            SubstrateHostBridgeAccessor.OpenOverlayAsync = null;
-        }
+        await cap.ArmAsync();
+        hotkeys.TryInvoke("cap:" + moduleId).Should().BeTrue();
+        hostUi.OpenCount.Should().Be(1);
+        hostUi.LastOpenedModule.Should().Be(moduleId);
+        flyouts.ShowCount.Should().Be(0);
+        await cap.DisarmAsync();
     }
 
     [Fact]
@@ -71,16 +44,8 @@ public class HotkeyOverlayCapabilityTests
         var idle = (FakeIdleService)services.Idle;
         var fullscreen = (FakeFullscreenProbe)services.Fullscreen;
         var flyouts = new CountingFlyouts();
-        var ui = new BridgeUi(flyouts);
-        var opened = 0;
-        var hidden = 0;
-
-        SlateHostBridgeAccessor.OpenIdleOverlayAsync = () =>
-        {
-            opened++;
-            return Task.CompletedTask;
-        };
-        SlateHostBridgeAccessor.HideOverlay = () => hidden++;
+        var hostUi = new RecordingHostUiBridge();
+        var ui = new BridgeUi(flyouts, hostUi);
 
         ModuleSettingsStore.Save("Slate", new SlateSettings
         {
@@ -89,31 +54,25 @@ public class HotkeyOverlayCapabilityTests
             Style = "Center"
         });
 
-        try
-        {
-            var cap = new SlateCapability(services, ui);
-            await cap.ArmAsync();
-            idle.IsStarted.Should().BeTrue();
-            idle.Threshold.Should().Be(TimeSpan.FromSeconds(30));
+        var cap = new SlateCapability(services, ui);
+        await cap.ArmAsync();
+        idle.IsStarted.Should().BeTrue();
+        idle.Threshold.Should().Be(TimeSpan.FromSeconds(30));
 
-            fullscreen.IsForegroundFullscreen = true;
-            idle.RaiseIdle();
-            opened.Should().Be(0);
+        fullscreen.IsForegroundFullscreen = true;
+        idle.RaiseIdle();
+        hostUi.OpenCount.Should().Be(0);
 
-            fullscreen.IsForegroundFullscreen = false;
-            idle.RaiseIdle();
-            opened.Should().Be(1);
-            flyouts.ShowCount.Should().Be(0);
+        fullscreen.IsForegroundFullscreen = false;
+        idle.RaiseIdle();
+        hostUi.OpenCount.Should().Be(1);
+        hostUi.LastOpenedModule.Should().Be("Slate");
+        flyouts.ShowCount.Should().Be(0);
 
-            await cap.DisarmAsync();
-            hidden.Should().Be(1);
-            idle.IsStarted.Should().BeFalse();
-        }
-        finally
-        {
-            SlateHostBridgeAccessor.OpenIdleOverlayAsync = null;
-            SlateHostBridgeAccessor.HideOverlay = null;
-        }
+        await cap.DisarmAsync();
+        hostUi.CloseCount.Should().Be(1);
+        hostUi.LastClosedModule.Should().Be("Slate");
+        idle.IsStarted.Should().BeFalse();
     }
 
     [Fact]
@@ -137,16 +96,11 @@ public class HotkeyOverlayCapabilityTests
         HotkeyGestureParser.EnsureRegisterable("Substrate", "Win+A").Should().Be("Ctrl+Alt+Q");
     }
 
-    private sealed class BridgeUi(IFlyoutPresenter flyouts) : ICapabilityUiBridge
-    {
-        public IFlyoutPresenter Flyouts { get; } = flyouts;
-    }
-
     private sealed class CountingFlyouts : IFlyoutPresenter
     {
         public int ShowCount { get; private set; }
         public void Show(FlyoutRequest request) => ShowCount++;
-        public void Update(FlyoutRequest request) { }
+        public void Update(FlyoutRequest request) => ShowCount++;
         public void SoftRefresh(FlyoutRequest request) { }
         public void Hide(string moduleId) { }
         public void HideAll() { }

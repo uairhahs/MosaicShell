@@ -80,6 +80,7 @@ public class ShellFlyoutTriggerTests : IDisposable
     private sealed class CaptureUi(List<FlyoutRequest> shown) : ICapabilityUiBridge
     {
         public IFlyoutPresenter Flyouts { get; } = new CaptureFlyouts(shown);
+        public IHostUiBridge HostUi { get; } = NullHostUiBridge.Instance;
     }
 
     private sealed class CaptureFlyouts(List<FlyoutRequest> shown) : IFlyoutPresenter

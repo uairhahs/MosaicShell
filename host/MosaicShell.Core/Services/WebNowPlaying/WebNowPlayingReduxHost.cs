@@ -450,7 +450,6 @@ public sealed class WebNowPlayingReduxHost : IWebNowPlayingService
     }
 
     private int _eventSeq;
-    private bool _likedOptimistic;
 
     public async Task TryToggleShuffleAsync()
     {
@@ -476,15 +475,22 @@ public sealed class WebNowPlayingReduxHost : IWebNowPlayingService
         await SendEventAsync(p.PortId, eventType: 6 /* SET_REPEAT */, data: next);
     }
 
-    public async Task TryToggleLikeAsync()
+    public async Task TrySetLikeAsync(bool wantLiked)
     {
         var p = ActivePlayer();
         if (p is null) return;
-        var liked = p.Rating >= 5;
-        var next = liked ? 0 : 5;
-        p.Rating = next;
-        _likedOptimistic = next >= 5;
-        await SendEventAsync(p.PortId, eventType: 5 /* SET_RATING */, data: next);
+        // WNP YTM likeDislike: SET_RATING 0 on an unrated track triggers thumbs-down.
+        // UI heart state drives intent — never infer unlike from stale host Rating when liking.
+        if (wantLiked)
+        {
+            await SendEventAsync(p.PortId, eventType: 5 /* TRY_SET_RATING */, data: 5);
+            p.Rating = 5;
+            return;
+        }
+
+        if (p.Rating != 5) return;
+        await SendEventAsync(p.PortId, eventType: 5 /* TRY_SET_RATING */, data: 0);
+        p.Rating = 0;
     }
 
     private MutablePlayer? ActivePlayer()
@@ -543,6 +549,8 @@ public sealed class WebNowPlayingReduxHost : IWebNowPlayingService
 
     private static void ApplyFields(MutablePlayer p, IReadOnlyList<string> t)
     {
+        var prevTitle = p.Title;
+        var prevArtist = p.Artist;
         Set(t, 1, v => p.Name = v);
         Set(t, 2, v => p.Title = v);
         Set(t, 3, v => p.Artist = v);
@@ -552,11 +560,20 @@ public sealed class WebNowPlayingReduxHost : IWebNowPlayingService
         SetInt(t, 7, v => p.PositionSeconds = v);
         SetInt(t, 8, v => p.DurationSeconds = v);
         SetInt(t, 9, v => p.Volume = v);
-        SetInt(t, 10, v => p.Rating = v);
+        if (FieldPresent(t, 10))
+            SetInt(t, 10, v => p.Rating = v);
+        else if ((!string.IsNullOrEmpty(p.Title)
+                  && !string.Equals(prevTitle, p.Title, StringComparison.Ordinal))
+                 || (!string.IsNullOrEmpty(p.Artist)
+                     && !string.Equals(prevArtist, p.Artist, StringComparison.Ordinal)))
+            p.Rating = 0;
         SetInt(t, 11, v => p.Repeat = v);
         SetInt(t, 12, v => p.Shuffle = v != 0);
         SetUlong(t, 25, v => p.ActiveAt = v);
     }
+
+    private static bool FieldPresent(IReadOnlyList<string> t, int i) =>
+        i < t.Count && t[i].Length > 0;
 
     private static void Set(IReadOnlyList<string> t, int i, Action<string> apply)
     {
