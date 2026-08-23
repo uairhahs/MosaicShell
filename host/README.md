@@ -1,14 +1,28 @@
-# MosaicShell native host
+# MosaicShell Host
 
-Avalonia hub, `Mosaicist` CLI, and `MosaicShell.Installer` setup wizard. See [`.cursor/docs/architecture-native.md`](../.cursor/docs/architecture-native.md).
+Avalonia hub and `Mosaicist` CLI. See [`.cursor/docs/architecture-native.md`](../.cursor/docs/architecture-native.md).
+
+## Dev loop
 
 ```powershell
-dotnet build MosaicShell.sln
 dotnet test MosaicShell.Core.Tests
-dotnet run --project MosaicShell.Host
-dotnet run --project Mosaicist -- list
 dotnet run --project Mosaicist -- install-module Tessera
-dotnet run --project MosaicShell.Installer
+dotnet run --project MosaicShell.Host
 ```
 
-Release zips ship `Installer\`, `Host-fw\`, `Host-sc\`, `Mosaicist\`, and `Tiles\`. Prefer the GUI installer for end users.
+## Releases
+
+End users install via **Inno Setup** (`MosaicShell-Setup-*.exe`). See [packaging/README.md](../packaging/README.md).
+
+Version tags are **date-build** (`yyyy.M.d-bN`), not semver.
+
+Portable layout (also inside the Setup staging folder):
+
+```text
+Host/MosaicShell.Host.exe   (self-contained win-x64)
+Mosaicist/Mosaicist.exe
+Tiles/{Id}/...
+VERSION.txt
+```
+
+Mosaicist installs modules into `%LocalAppData%\MosaicShell\Modules` from the release `Tiles/` tree next to Host.

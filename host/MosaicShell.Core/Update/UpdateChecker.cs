@@ -1,9 +1,16 @@
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using MosaicShell.Core.Install;
 
 namespace MosaicShell.Core.Update;
 
-public sealed record UpdateCheckResult(bool UpdateAvailable, string? LatestVersion, string? CurrentVersion, string? ReleaseUrl);
+public sealed record UpdateCheckResult(
+    bool UpdateAvailable,
+    string? LatestVersion,
+    string? CurrentVersion,
+    string? ReleaseUrl,
+    string? SetupDownloadUrl = null,
+    string? SetupFileName = null);
 
 public static class UpdateChecker
 {
@@ -30,13 +37,73 @@ public static class UpdateChecker
             if (string.IsNullOrWhiteSpace(latest))
                 return new UpdateCheckResult(false, null, currentVersion, release?.HtmlUrl);
 
+            var setup = SelectSetupAsset(release?.Assets);
             var available = HostBuildVersionPolicy.IsNewer(latest, currentVersion);
-            return new UpdateCheckResult(available, latest, currentVersion, release?.HtmlUrl);
+            return new UpdateCheckResult(
+                available,
+                latest,
+                currentVersion,
+                release?.HtmlUrl,
+                setup?.BrowserDownloadUrl,
+                setup?.Name);
         }
         catch
         {
             return new UpdateCheckResult(false, null, currentVersion, null);
         }
+    }
+
+    /// <summary>
+    /// Downloads the Setup asset for an update check result into the update cache.
+    /// </summary>
+    public static async Task<string> DownloadSetupAsync(
+        HttpClient http,
+        UpdateCheckResult check,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(check.SetupDownloadUrl))
+            throw new InvalidOperationException("No Setup.exe asset URL on the latest release.");
+
+        var name = string.IsNullOrWhiteSpace(check.SetupFileName)
+            ? HostInstallLayoutSpec.SetupExeName
+            : check.SetupFileName!;
+
+        var dl = new ReleaseDownloader(http);
+        return await dl.DownloadAsync(
+            new ReleaseAsset
+            {
+                Url = check.SetupDownloadUrl!,
+                FileName = name,
+            },
+            HostUpdatePolicy.CacheDirectory,
+            ct);
+    }
+
+    /// <summary>Picks MosaicShell-Setup.exe or MosaicShell-Setup-*.exe from release assets.</summary>
+    public static GhAsset? SelectSetupAsset(IReadOnlyList<GhAsset>? assets)
+    {
+        if (assets is null || assets.Count == 0)
+            return null;
+
+        GhAsset? exact = null;
+        GhAsset? versioned = null;
+        foreach (var asset in assets)
+        {
+            var name = asset.Name ?? "";
+            if (!name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (name.Equals(HostInstallLayoutSpec.SetupExeName, StringComparison.OrdinalIgnoreCase))
+            {
+                exact = asset;
+                break;
+            }
+
+            if (name.StartsWith("MosaicShell-Setup-", StringComparison.OrdinalIgnoreCase)
+                && versioned is null)
+                versioned = asset;
+        }
+
+        return exact ?? versioned;
     }
 
     private static string? NormalizeTag(string? tagName)
@@ -55,5 +122,17 @@ public static class UpdateChecker
 
         [JsonPropertyName("html_url")]
         public string? HtmlUrl { get; set; }
+
+        [JsonPropertyName("assets")]
+        public List<GhAsset>? Assets { get; set; }
+    }
+
+    public sealed class GhAsset
+    {
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
+
+        [JsonPropertyName("browser_download_url")]
+        public string? BrowserDownloadUrl { get; set; }
     }
 }

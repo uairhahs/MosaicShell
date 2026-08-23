@@ -17,6 +17,7 @@ public class HostBuildVersionPolicyTests
     }
 
     [Theory]
+    [InlineData("1.2.3")] // semver-style, not used
     [InlineData("0.1.0-native")]
     [InlineData("dev-060eea4")]
     [InlineData("")]
@@ -39,5 +40,14 @@ public class HostBuildVersionPolicyTests
         HostBuildVersionPolicy.IsLocalDev("0.0.0-dev").Should().BeTrue();
         HostBuildVersionPolicy.Compare("2026.8.21-b1", HostBuildVersionPolicy.LocalDevLabel).Should().BePositive();
         HostBuildVersionPolicy.IsNewer("2026.8.21-b1", HostBuildVersionPolicy.LocalDevLabel).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("2026.8.23-b1", "2026.8.23.1")]
+    [InlineData("v2026.12.1-b47", "2026.12.1.47")]
+    [InlineData("1.2.3", "0.0.0.0")]
+    public void ToVersionInfoVersion_maps_date_build_for_pe_metadata(string tag, string expected)
+    {
+        HostBuildVersionPolicy.ToVersionInfoVersion(tag).Should().Be(expected);
     }
 }

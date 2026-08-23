@@ -22,7 +22,7 @@ public sealed class ReleaseDownloader
     {
         _http = http ?? new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
         if (!_http.DefaultRequestHeaders.UserAgent.Any())
-            _http.DefaultRequestHeaders.UserAgent.ParseAdd("MosaicShell-Mosaicist/0.1");
+            _http.DefaultRequestHeaders.UserAgent.ParseAdd("MosaicShell-Mosaicist");
     }
 
     public async Task<string> DownloadAsync(ReleaseAsset asset, string destinationDirectory, CancellationToken ct = default)

@@ -46,11 +46,10 @@ public class ReleaseBundleLayoutTests : IDisposable
     }
 
     [Fact]
-    public void TryFindRoot_walks_up_from_Installer_subdirectory()
+    public void TryFindRoot_walks_up_from_Mosaicist_subdirectory()
     {
-        var installerDir = Path.Combine(_root, "Installer");
-        Directory.CreateDirectory(installerDir);
-        ReleaseBundleLayout.TryFindRoot(installerDir).Should().Be(_root);
+        var fromMosaicist = Path.Combine(_root, "Mosaicist");
+        ReleaseBundleLayout.TryFindRoot(fromMosaicist).Should().Be(_root);
     }
 
     [Fact]
@@ -75,6 +74,6 @@ public class ReleaseBundleLayoutTests : IDisposable
         HostInstallLayoutSpec.HostExeName.Should().Be("MosaicShell.Host.exe");
         HostInstallLayoutSpec.MosaicistFolder.Should().Be("Mosaicist");
         HostInstallLayoutSpec.TilesFolder.Should().Be("Tiles");
-        HostInstallLayoutSpec.InstallerFolder.Should().Be("Installer");
+        HostInstallLayoutSpec.SetupExeName.Should().Be("MosaicShell-Setup.exe");
     }
 }

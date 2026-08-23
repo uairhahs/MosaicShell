@@ -63,6 +63,17 @@ public static class HostBuildVersionPolicy
     public static bool IsNewer(string? latest, string? current) =>
         Compare(latest, current) > 0;
 
+    /// <summary>
+    /// Maps a date-build tag to a 4-part numeric string for PE / Inno VersionInfoVersion.
+    /// Example: <c>2026.8.23-b1</c> → <c>2026.8.23.1</c>.
+    /// </summary>
+    public static string ToVersionInfoVersion(string? tag)
+    {
+        if (!TryParse(tag, out var parts))
+            return "0.0.0.0";
+        return $"{parts.Year}.{parts.Month}.{parts.Day}.{parts.Build}";
+    }
+
     public static bool IsLocalDev(string? label) =>
         string.IsNullOrWhiteSpace(label)
         || Normalize(label).Equals(LocalDevLabel, StringComparison.OrdinalIgnoreCase);

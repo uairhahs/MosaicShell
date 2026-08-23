@@ -6,7 +6,6 @@ public static class HostInstallPolicy
     public const string StartMenuShortcutFileName = "MosaicShell.lnk.url";
     public const string StartupShortcutFileName = "MosaicShell.Host.url";
     public const string TrayOnlyArg = "--tray-only";
-    public const string DotNetDesktopDownloadUrl = "https://dotnet.microsoft.com/download/dotnet/10.0";
 
     /// <summary>Default app install root: %LocalAppData%\Programs\MosaicShell</summary>
     public static string DefaultInstallDirectory =>
@@ -23,6 +22,6 @@ public static class HostInstallPolicy
     public static string StartupDirectory =>
         Environment.GetFolderPath(Environment.SpecialFolder.Startup);
 
-    /// <summary>Module ids preselected in the installer wizard.</summary>
+    /// <summary>Module ids installed by default from Inno Setup / Mosaicist post-install.</summary>
     public static IReadOnlyList<string> DefaultModuleIds { get; } = ["Tessera", "Mixdeck"];
 }

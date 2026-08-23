@@ -856,30 +856,88 @@ public partial class MainViewModel : ViewModelBase
     private async Task CheckUpdatesAsync()
     {
         IsBusy = true;
-        UpdateStatus = "Checking…";
+        UpdateStatus = "Checking...";
         try
         {
-            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+            using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
             var result = await UpdateChecker.CheckGitHubAsync(http, currentVersion: HostBuildLabel);
-            UpdateStatus = result.UpdateAvailable
-                ? $"Update available: {result.LatestVersion} (you have {result.CurrentVersion})"
-                : $"Up to date ({result.CurrentVersion}).";
-            StatusMessage = UpdateStatus;
-            if (result.ReleaseUrl is not null && result.UpdateAvailable)
+            if (!result.UpdateAvailable)
             {
-                try
-                {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                    {
-                        FileName = result.ReleaseUrl,
-                        UseShellExecute = true
-                    });
-                }
-                catch { /* ignore */ }
+                UpdateStatus = $"Up to date ({result.CurrentVersion}).";
+                StatusMessage = UpdateStatus;
+                return;
             }
+
+            UpdateStatus = $"Update available: {result.LatestVersion} (you have {result.CurrentVersion})";
+            StatusMessage = UpdateStatus;
+
+            if (string.IsNullOrWhiteSpace(result.SetupDownloadUrl))
+            {
+                UpdateStatus += "; no Setup.exe on release (opening release page).";
+                StatusMessage = UpdateStatus;
+                if (!string.IsNullOrWhiteSpace(result.ReleaseUrl))
+                    TryOpenUrl(result.ReleaseUrl!);
+                return;
+            }
+
+            if (!ConfirmHostUpdate(result.LatestVersion!))
+            {
+                UpdateStatus = "Update cancelled.";
+                StatusMessage = UpdateStatus;
+                return;
+            }
+
+            UpdateStatus = "Downloading Setup...";
+            StatusMessage = UpdateStatus;
+            var setupPath = await UpdateChecker.DownloadSetupAsync(http, result);
+
+            UpdateStatus = "Launching Setup...";
+            StatusMessage = UpdateStatus;
+            HostUpdateApplier.LaunchSetup(setupPath);
+            UpdateStatus = "Setup started. Host will close for upgrade.";
+            StatusMessage = UpdateStatus;
+
+            // Give Setup a moment to start before we exit (Inno /CLOSEAPPLICATIONS also closes us).
+            await Task.Delay(750);
+            if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+                desktop.Shutdown();
+        }
+        catch (Exception ex)
+        {
+            UpdateStatus = $"Update failed: {ex.Message}";
+            StatusMessage = UpdateStatus;
         }
         finally { IsBusy = false; }
     }
+
+    private static bool ConfirmHostUpdate(string latestVersion)
+    {
+        // Native confirm; Avalonia has no built-in MessageBox in this Host.
+        const uint mbYesNo = 0x00000004;
+        const uint mbIconQuestion = 0x00000020;
+        const uint idYes = 6;
+        var text =
+            $"Download and install MosaicShell {latestVersion} now?\n\n" +
+            "The silent Setup will close MosaicShell, upgrade files, then you can relaunch.";
+        var result = NativeMessageBox(IntPtr.Zero, text, "MosaicShell update", mbYesNo | mbIconQuestion);
+        return result == idYes;
+    }
+
+    private static void TryOpenUrl(string url)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
+        }
+        catch { /* ignore */ }
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, EntryPoint = "MessageBoxW")]
+    private static extern int NativeMessageBox(IntPtr hWnd, string text, string caption, uint type);
 
     [RelayCommand]
     private async Task CompleteWelcomeAsync()

@@ -14,15 +14,7 @@ public static class ReleaseBundleLayout
         var hostExe = Path.Combine(root, HostInstallLayoutSpec.HostFolder, HostInstallLayoutSpec.HostExeName);
         var mosaicistExe = Path.Combine(root, HostInstallLayoutSpec.MosaicistFolder, HostInstallLayoutSpec.MosaicistExeName);
         var tiles = Path.Combine(root, HostInstallLayoutSpec.TilesFolder);
-
-        // Variant layouts: Host-fw / Host-sc instead of Host/
-        var hostFwExe = Path.Combine(root, HostInstallLayoutSpec.HostFwFolder, HostInstallLayoutSpec.HostExeName);
-        var hostScExe = Path.Combine(root, HostInstallLayoutSpec.HostScFolder, HostInstallLayoutSpec.HostExeName);
-        var hasHost = File.Exists(hostExe) || File.Exists(hostFwExe) || File.Exists(hostScExe);
-
-        return hasHost
-               && File.Exists(mosaicistExe)
-               && Directory.Exists(tiles);
+        return File.Exists(hostExe) && File.Exists(mosaicistExe) && Directory.Exists(tiles);
     }
 
     /// <summary>
@@ -44,31 +36,5 @@ public static class ReleaseBundleLayout
         }
 
         return null;
-    }
-
-    /// <summary>
-    /// Resolves the Host payload folder for a variant inside a bundle root.
-    /// Prefers exact folder names; falls back to <c>Host/</c>.
-    /// </summary>
-    public static string ResolveHostFolder(string bundleRoot, HostInstallVariant variant)
-    {
-        var preferred = variant switch
-        {
-            HostInstallVariant.SelfContained => HostInstallLayoutSpec.HostScFolder,
-            _ => HostInstallLayoutSpec.HostFwFolder,
-        };
-
-        var preferredPath = Path.Combine(bundleRoot, preferred);
-        if (Directory.Exists(preferredPath)
-            && File.Exists(Path.Combine(preferredPath, HostInstallLayoutSpec.HostExeName)))
-            return preferredPath;
-
-        var classic = Path.Combine(bundleRoot, HostInstallLayoutSpec.HostFolder);
-        if (Directory.Exists(classic)
-            && File.Exists(Path.Combine(classic, HostInstallLayoutSpec.HostExeName)))
-            return classic;
-
-        throw new DirectoryNotFoundException(
-            $"No Host payload for {variant} under '{bundleRoot}'. Expected {preferred}/ or Host/.");
     }
 }
