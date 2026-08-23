@@ -31,6 +31,8 @@ public sealed class TesseraLiveBindings
     public TextBlock? MediaTitle { get; set; }
     public TextBlock? MediaArtist { get; set; }
     public MaterialIcon? PlayPauseIcon { get; set; }
+    public MaterialIcon? LikeIcon { get; set; }
+    public MaterialIcon? DislikeIcon { get; set; }
     public TextBlock? StatusLabel { get; set; }
     /// <summary>Plainext: title uses {@code Title > Playing &lt;} and progress uses slash meter.</summary>
     public bool PlainTextMedia { get; set; }
@@ -165,6 +167,12 @@ public sealed class TesseraLiveHost : ContentControl
 
         if (b.PlayPauseIcon is not null)
             b.PlayPauseIcon.Kind = media?.IsPlaying == true ? MaterialIconKind.Pause : MaterialIconKind.Play;
+
+        if (b.LikeIcon is not null)
+            TesseraMediaPanel.ApplyLikeIcon(b.LikeIcon, media?.LikeRating);
+
+        if (b.DislikeIcon is not null)
+            TesseraMediaPanel.ApplyDislikeIcon(b.DislikeIcon, media?.LikeRating);
 
         if (media is not null)
         {

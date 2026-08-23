@@ -56,6 +56,13 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
             await host.TrySetLikeAsync(wantLiked);
     }
 
+    public async Task ToggleDislikeAsync(bool wantDisliked)
+    {
+        await _smtc.ToggleDislikeAsync(wantDisliked);
+        if (_wnp is WebNowPlaying.WebNowPlayingReduxHost host)
+            await host.TrySetDislikeAsync(wantDisliked);
+    }
+
     public void Dispose()
     {
         _smtc.Changed -= OnSourceChanged;
@@ -141,7 +148,8 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
                 IsPlaying: wnp.IsPlaying,
                 ThumbnailPng: wnp.CoverPng,
                 PositionSeconds: wnp.PositionSeconds,
-                DurationSeconds: wnp.DurationSeconds);
+                DurationSeconds: wnp.DurationSeconds,
+                LikeRating: wnp.Rating);
         }
 
         // Prefer any WNP cover when SMTC has none (YTM PWA / browser)
@@ -188,7 +196,15 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
             ThumbnailPng = thumb,
             PositionSeconds = pos,
             DurationSeconds = dur,
+            LikeRating = ResolveLikeRating(smtc.AppId, wnp?.Rating),
         };
+    }
+
+    private static int? ResolveLikeRating(string? appId, int? wnpRating)
+    {
+        if (!LooksLikeBrowserSession(appId) || wnpRating is null)
+            return null;
+        return wnpRating.Value;
     }
 
     private static bool LooksLikeBrowserSession(string? appId)

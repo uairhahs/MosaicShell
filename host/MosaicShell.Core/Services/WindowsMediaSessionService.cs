@@ -430,6 +430,7 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
     }
 
     public Task ToggleLikeAsync(bool wantLiked) => Task.CompletedTask; // SMTC has no standard like API
+    public Task ToggleDislikeAsync(bool wantDisliked) => Task.CompletedTask;
 
     public void Dispose()
     {

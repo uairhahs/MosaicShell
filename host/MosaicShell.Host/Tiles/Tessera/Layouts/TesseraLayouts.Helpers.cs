@@ -193,15 +193,11 @@ internal static partial class TesseraLayouts
         }
     }
 
-    private static async Task MaterialYouToggleLikeAsync(TesseraFlyoutViewModel vm, MaterialIcon icon)
-    {
-        var wantLiked = icon.Kind != MaterialIconKind.Heart;
-        await vm.Services.Media.ToggleLikeAsync(wantLiked);
-        icon.Kind = wantLiked ? MaterialIconKind.Heart : MaterialIconKind.HeartOutline;
-        icon.Foreground = wantLiked
-            ? TesseraStylePalette.MaterialYou.AccentBrush
-            : TesseraStylePalette.MaterialYou.SecondaryBrush;
-    }
+    private static async Task MaterialYouToggleLikeAsync(TesseraFlyoutViewModel vm, MaterialIcon icon) =>
+        await vm.ToggleLikeAsync(icon);
+
+    private static async Task MaterialYouToggleDislikeAsync(TesseraFlyoutViewModel vm, MaterialIcon icon) =>
+        await vm.ToggleDislikeAsync(icon);
 
     private static void BindWheel(Control c, TesseraFlyoutViewModel vm, double step = 0.02) =>
         c.PointerWheelChanged += (_, e) =>

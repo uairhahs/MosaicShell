@@ -431,6 +431,7 @@ public sealed class WebNowPlayingReduxHost : IWebNowPlayingService
             p.Title,
             p.Artist,
             state = p.State.ToString(),
+            p.Rating,
             coverBytes = p.CoverPng?.Length ?? 0,
             coverSrc = string.IsNullOrEmpty(p.CoverSrc) ? null : p.CoverSrc[..Math.Min(80, p.CoverSrc.Length)],
             coverMagic = p.CoverPng is null ? null : Magic(p.CoverPng),
@@ -478,20 +479,73 @@ public sealed class WebNowPlayingReduxHost : IWebNowPlayingService
     public async Task TrySetLikeAsync(bool wantLiked)
     {
         var p = ActivePlayer();
-        if (p is null) return;
-        // WNP YTM likeDislike: SET_RATING 0 on an unrated track triggers thumbs-down.
-        // UI heart state drives intent, never infer unlike from stale host Rating when liking.
-        if (wantLiked)
+        if (p is null)
         {
-            await SendEventAsync(p.PortId, eventType: 5 /* TRY_SET_RATING */, data: 5);
-            p.Rating = 5;
+            Trace("like skip: no active WNP player");
             return;
         }
 
-        if (p.Rating != 5) return;
-        await SendEventAsync(p.PortId, eventType: 5 /* TRY_SET_RATING */, data: 0);
-        p.Rating = 0;
+        if (!wantLiked && !MediaLikePolicy.MaySendUnlikeRating(p.Rating))
+        {
+            Trace($"like skip: unlike blocked (hostRating={p.Rating}, player={p.Name})");
+            return;
+        }
+
+        var data = MediaLikePolicy.ResolveLikeRequestRating(p.Name, wantLiked, p.Rating);
+        Trace(
+            $"like intent wantLiked={wantLiked} player='{p.Name}' title='{p.Title}' " +
+            $"hostRating={p.Rating} sendRating={data} ({DescribeRating(data)})");
+
+        await SendEventAsync(p.PortId, eventType: 5 /* TRY_SET_RATING */, data: data);
+
+        p.Rating = wantLiked ? MediaLikePolicy.Liked : MediaLikePolicy.Unrated;
     }
+
+    public async Task TrySetDislikeAsync(bool wantDisliked)
+    {
+        var p = ActivePlayer();
+        if (p is null)
+        {
+            Trace("dislike skip: no active WNP player");
+            return;
+        }
+
+        if (!MediaLikePolicy.SupportsDislike(appId: null, p.Name))
+        {
+            Trace($"dislike skip: player '{p.Name}' does not support dislike");
+            return;
+        }
+
+        if (!wantDisliked && !MediaLikePolicy.MaySendUndislikeRating(p.Rating))
+        {
+            Trace($"dislike skip: undislike blocked (hostRating={p.Rating}, player={p.Name})");
+            return;
+        }
+
+        var data = MediaLikePolicy.ResolveDislikeRequestRating(p.Name, wantDisliked, p.Rating);
+        if (data == MediaLikePolicy.Unrated && !wantDisliked)
+        {
+            Trace($"dislike skip: no-op (hostRating={p.Rating})");
+            return;
+        }
+
+        Trace(
+            $"dislike intent wantDisliked={wantDisliked} player='{p.Name}' title='{p.Title}' " +
+            $"hostRating={p.Rating} sendRating={data} ({DescribeRating(data)})");
+
+        await SendEventAsync(p.PortId, eventType: 5 /* TRY_SET_RATING */, data: data);
+
+        p.Rating = wantDisliked ? MediaLikePolicy.Disliked : MediaLikePolicy.Unrated;
+    }
+
+    private static string DescribeRating(int rating) =>
+        rating switch
+        {
+            MediaLikePolicy.Liked => "liked/5",
+            MediaLikePolicy.Disliked => "disliked/1",
+            MediaLikePolicy.Unrated => "unrated/0",
+            _ => rating.ToString(),
+        };
 
     private MutablePlayer? ActivePlayer()
     {

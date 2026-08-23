@@ -141,14 +141,22 @@ public sealed class TesseraFlyoutViewModel
         var wantLiked = icon is null || icon.Kind != Material.Icons.MaterialIconKind.Heart;
         await Services.Media.ToggleLikeAsync(wantLiked);
         if (icon is not null)
-        {
-            icon.Kind = wantLiked
-                ? Material.Icons.MaterialIconKind.Heart
-                : Material.Icons.MaterialIconKind.HeartOutline;
-            icon.Foreground = wantLiked
-                ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromRgb(255, 80, 100))
-                : TesseraPalette.FontBrush;
-        }
+            TesseraMediaPanel.ApplyLikeIcon(
+                icon,
+                wantLiked ? MediaLikePolicy.Liked : MediaLikePolicy.Unrated);
+    }
+
+    public bool SupportsMediaDislike =>
+        MediaLikePolicy.SupportsDislike(Services.Media.Current?.AppId);
+
+    public async Task ToggleDislikeAsync(Material.Icons.Avalonia.MaterialIcon? icon = null)
+    {
+        var wantDisliked = icon is null || icon.Kind != Material.Icons.MaterialIconKind.ThumbDown;
+        await Services.Media.ToggleDislikeAsync(wantDisliked);
+        if (icon is not null)
+            TesseraMediaPanel.ApplyDislikeIcon(
+                icon,
+                wantDisliked ? MediaLikePolicy.Disliked : MediaLikePolicy.Unrated);
     }
 
     private static bool IsToggleIconActive(Material.Icons.Avalonia.MaterialIcon icon) =>

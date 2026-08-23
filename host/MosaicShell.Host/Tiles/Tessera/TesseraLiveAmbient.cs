@@ -48,7 +48,9 @@ internal static class TesseraLiveAmbient
         TesseraTrack? scrub,
         TextBlock? pos,
         TextBlock? dur,
-        Material.Icons.Avalonia.MaterialIcon? play)
+        Material.Icons.Avalonia.MaterialIcon? play,
+        Material.Icons.Avalonia.MaterialIcon? like = null,
+        Material.Icons.Avalonia.MaterialIcon? dislike = null)
     {
         if (_current is null) return;
         _current.MediaArt = art;
@@ -58,6 +60,8 @@ internal static class TesseraLiveAmbient
         _current.MediaPos = pos;
         _current.MediaDur = dur;
         _current.PlayPauseIcon = play;
+        _current.LikeIcon = like;
+        _current.DislikeIcon = dislike;
     }
 
     public static void RegisterPlainTextMedia(TextBlock titleState, TextBlock artist, TextBlock progressLine)

@@ -132,6 +132,7 @@ public class CompositeMediaTrackChangeTests
         public Task ToggleShuffleAsync() => Task.CompletedTask;
         public Task ToggleRepeatAsync() => Task.CompletedTask;
         public Task ToggleLikeAsync(bool wantLiked) => Task.CompletedTask;
+        public Task ToggleDislikeAsync(bool wantDisliked) => Task.CompletedTask;
         public void Dispose() { }
     }
 

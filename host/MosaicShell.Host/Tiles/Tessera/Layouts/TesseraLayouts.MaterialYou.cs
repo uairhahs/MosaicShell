@@ -28,6 +28,18 @@ internal static partial class TesseraLayouts
         var heartIcon = MaterialYouIcon(MaterialIconKind.HeartOutline, muted: true);
         var repeatIcon = MaterialYouIcon(MaterialIconKind.Repeat, muted: true);
 
+        var extrasChildren = new List<Control>
+        {
+            MaterialYouIconBtn(shuffleIcon, () => _ = MaterialYouToggleShuffleAsync(vm, shuffleIcon)),
+            MaterialYouIconBtn(heartIcon, () => _ = MaterialYouToggleLikeAsync(vm, heartIcon)),
+        };
+        if (vm.SupportsMediaDislike)
+        {
+            var dislikeIcon = MaterialYouIcon(MaterialIconKind.ThumbDownOutline, muted: true);
+            extrasChildren.Add(MaterialYouIconBtn(dislikeIcon, () => _ = MaterialYouToggleDislikeAsync(vm, dislikeIcon)));
+        }
+        extrasChildren.Add(MaterialYouIconBtn(repeatIcon, () => _ = MaterialYouToggleRepeatAsync(vm, repeatIcon)));
+
         var transport = TesseraChrome.SolidPill(new StackPanel
         {
             Spacing = 8,
@@ -46,13 +58,10 @@ internal static partial class TesseraLayouts
             Spacing = 8,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
-            Children =
-            {
-                MaterialYouIconBtn(shuffleIcon, () => _ = MaterialYouToggleShuffleAsync(vm, shuffleIcon)),
-                MaterialYouIconBtn(heartIcon, () => _ = MaterialYouToggleLikeAsync(vm, heartIcon)),
-                MaterialYouIconBtn(repeatIcon, () => _ = MaterialYouToggleRepeatAsync(vm, repeatIcon))
-            }
+            Children = { }
         }, TesseraStylePalette.MaterialYou.ShellBrush, pillR, colW, colH, new Thickness(pillPadH, 12));
+        foreach (var child in extrasChildren)
+            ((StackPanel)extras.Child!).Children.Add(child);
 
         var track = new TesseraTrack
         {

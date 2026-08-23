@@ -193,7 +193,7 @@ public class WebNowPlayingHostTests
         var evt = session.WaitForOutboundEventAsync();
         await session.Host.TrySetLikeAsync(wantLiked: true);
         var msg = await evt;
-        msg.Should().MatchRegex(@"^8 \d+ 5 5$");
+        msg.Should().MatchRegex(@"^8 \d+ 5 1$");
     }
 
     [Fact]
@@ -208,11 +208,11 @@ public class WebNowPlayingHostTests
         var evt = session.WaitForOutboundEventAsync();
         await session.Host.TrySetLikeAsync(wantLiked: true);
         var msg = await evt;
-        msg.Should().MatchRegex(@"^10 \d+ 5 5$");
+        msg.Should().MatchRegex(@"^10 \d+ 5 1$");
     }
 
     [Fact]
-    public async Task Host_set_unlike_sends_rating_0_only_when_host_knows_liked()
+    public async Task Host_set_unlike_sends_ytm_toggle_rating_when_host_knows_liked()
     {
         await using var session = await WnpTestSession.StartAsync();
         _ = await session.ReceiveTextAsync();
@@ -223,7 +223,7 @@ public class WebNowPlayingHostTests
         var evt = session.WaitForOutboundEventAsync();
         await session.Host.TrySetLikeAsync(wantLiked: false);
         var msg = await evt;
-        msg.Should().MatchRegex(@"^9 \d+ 5 0$");
+        msg.Should().MatchRegex(@"^9 \d+ 5 1$");
     }
 
     [Fact]
