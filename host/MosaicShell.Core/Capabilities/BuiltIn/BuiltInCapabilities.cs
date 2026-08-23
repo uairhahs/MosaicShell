@@ -1,4 +1,5 @@
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
@@ -15,6 +16,22 @@ public class HotkeyOverlayCapability : IModuleCapability
     private readonly Action<string>? _persistGesture;
     private readonly IHostUiBridge _hostUi;
 
+    public HotkeyOverlayCapability(
+        string moduleId,
+        ICapabilityContext context,
+        Func<string> gesture,
+        Action<string>? persistGesture = null)
+    {
+        ModuleId = moduleId;
+        _overlayModuleId = moduleId;
+        _services = context.Services;
+        _hotkeyId = "cap:" + moduleId;
+        _gesture = gesture;
+        _hostUi = context.Ui.HostUi;
+        _persistGesture = persistGesture;
+    }
+
+    /// <summary>Legacy ctor for tests that pass services/ui directly.</summary>
     public HotkeyOverlayCapability(
         string moduleId,
         HostServices services,
@@ -84,10 +101,9 @@ public class HotkeyOverlayCapability : IModuleCapability
 
 public sealed class MixdeckCapability : HotkeyOverlayCapability
 {
-    public MixdeckCapability(HostServices services, ICapabilityUiBridge ui)
-        : base("Mixdeck", services,
+    public MixdeckCapability(ICapabilityContext context)
+        : base("Mixdeck", context,
             () => ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings()).HotkeyGesture,
-            ui.HostUi,
             PersistMixdeck)
     {
     }
@@ -102,10 +118,9 @@ public sealed class MixdeckCapability : HotkeyOverlayCapability
 
 public sealed class InlayCapability : HotkeyOverlayCapability
 {
-    public InlayCapability(HostServices services, ICapabilityUiBridge ui)
-        : base("Inlay", services,
+    public InlayCapability(ICapabilityContext context)
+        : base("Inlay", context,
             () => ModuleSettingsStore.Load("Inlay", () => new InlaySettings()).HotkeyGesture,
-            ui.HostUi,
             PersistInlay)
     {
     }
@@ -120,10 +135,9 @@ public sealed class InlayCapability : HotkeyOverlayCapability
 
 public sealed class ChordCapability : HotkeyOverlayCapability
 {
-    public ChordCapability(HostServices services, ICapabilityUiBridge ui)
-        : base("Chord", services,
+    public ChordCapability(ICapabilityContext context)
+        : base("Chord", context,
             () => ModuleSettingsStore.Load("Chord", () => new ChordSettings()).HotkeyGesture,
-            ui.HostUi,
             PersistChord)
     {
     }
@@ -138,10 +152,9 @@ public sealed class ChordCapability : HotkeyOverlayCapability
 
 public sealed class SubstrateCapability : HotkeyOverlayCapability
 {
-    public SubstrateCapability(HostServices services, ICapabilityUiBridge ui)
-        : base("Substrate", services,
+    public SubstrateCapability(ICapabilityContext context)
+        : base("Substrate", context,
             () => ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings()).HotkeyGesture,
-            ui.HostUi,
             PersistSubstrate)
     {
     }
@@ -159,10 +172,10 @@ public sealed class SlateCapability : IModuleCapability
     private readonly HostServices _services;
     private readonly IHostUiBridge _hostUi;
 
-    public SlateCapability(HostServices services, ICapabilityUiBridge ui)
+    public SlateCapability(ICapabilityContext context)
     {
-        _services = services;
-        _hostUi = ui.HostUi;
+        _services = context.Services;
+        _hostUi = context.Ui.HostUi;
     }
 
     public string ModuleId => "Slate";
@@ -204,20 +217,20 @@ public static class BuiltInCapabilityFactories
 {
     public static void RegisterAll(CapabilityRegistry registry)
     {
-        registry.Register(new DelegateFactory("Tessera", (m, s, u) => new TesseraCapability(s, u)));
-        registry.Register(new DelegateFactory("Mixdeck", (m, s, u) => new MixdeckCapability(s, u)));
-        registry.Register(new DelegateFactory("Inlay", (m, s, u) => new InlayCapability(s, u)));
-        registry.Register(new DelegateFactory("Chord", (m, s, u) => new ChordCapability(s, u)));
-        registry.Register(new DelegateFactory("Substrate", (m, s, u) => new SubstrateCapability(s, u)));
-        registry.Register(new DelegateFactory("Slate", (m, s, u) => new SlateCapability(s, u)));
+        registry.Register(new DelegateFactory("Tessera", (m, c) => new TesseraCapability(c)));
+        registry.Register(new DelegateFactory("Mixdeck", (m, c) => new MixdeckCapability(c)));
+        registry.Register(new DelegateFactory("Inlay", (m, c) => new InlayCapability(c)));
+        registry.Register(new DelegateFactory("Chord", (m, c) => new ChordCapability(c)));
+        registry.Register(new DelegateFactory("Substrate", (m, c) => new SubstrateCapability(c)));
+        registry.Register(new DelegateFactory("Slate", (m, c) => new SlateCapability(c)));
     }
 
     private sealed class DelegateFactory(
         string moduleId,
-        Func<ModuleManifest, HostServices, ICapabilityUiBridge, IModuleCapability> create) : ICapabilityFactory
+        Func<ModuleManifest, ICapabilityContext, IModuleCapability> create) : ICapabilityFactory
     {
         public string ModuleId => moduleId;
-        public IModuleCapability Create(ModuleManifest manifest, HostServices services, ICapabilityUiBridge ui) =>
-            create(manifest, services, ui);
+        public IModuleCapability Create(ModuleManifest manifest, ICapabilityContext context) =>
+            create(manifest, context);
     }
 }

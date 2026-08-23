@@ -24,9 +24,9 @@ public class HotkeyOverlayCapabilityTests
 
         IModuleCapability cap = moduleId switch
         {
-            "Inlay" => new InlayCapability(services, ui),
-            "Chord" => new ChordCapability(services, ui),
-            _ => new SubstrateCapability(services, ui)
+            "Inlay" => new InlayCapability(TestCapabilityContext.Create(services, ui, moduleId)),
+            "Chord" => new ChordCapability(TestCapabilityContext.Create(services, ui, moduleId)),
+            _ => new SubstrateCapability(TestCapabilityContext.Create(services, ui, moduleId))
         };
 
         await cap.ArmAsync();
@@ -54,7 +54,7 @@ public class HotkeyOverlayCapabilityTests
             Style = "Square"
         });
 
-        var cap = new SlateCapability(services, ui);
+        var cap = new SlateCapability(TestCapabilityContext.Create(services, ui, "Slate"));
         await cap.ArmAsync();
         idle.IsStarted.Should().BeTrue();
         idle.Threshold.Should().Be(TimeSpan.FromSeconds(30));
@@ -98,6 +98,7 @@ public class HotkeyOverlayCapabilityTests
 
     private sealed class CountingFlyouts : IFlyoutPresenter
     {
+        public event Action<string>? TransientDismissed;
         public int ShowCount { get; private set; }
         public void Show(FlyoutRequest request) => ShowCount++;
         public void Update(FlyoutRequest request) => ShowCount++;

@@ -39,7 +39,7 @@ public class TesseraFlyoutPresentRoutingTests : IDisposable
     {
         var lockSvc = new RaisingLockKeys();
         var services = TesseraServices(lockSvc);
-        var cap = new TesseraCapability(services, _ui);
+        var cap = new TesseraCapability(TestCapabilityContext.Create(services, _ui));
         await cap.ArmAsync();
 
         services.Audio.MasterVolume = 0.5;
@@ -60,7 +60,7 @@ public class TesseraFlyoutPresentRoutingTests : IDisposable
     {
         var lockSvc = new RaisingLockKeys();
         var services = TesseraServices(lockSvc);
-        var cap = new TesseraCapability(services, _ui);
+        var cap = new TesseraCapability(TestCapabilityContext.Create(services, _ui));
         await cap.ArmAsync();
 
         lockSvc.Raise(new LockKeyState(LockKeyKind.CapsLock, true));
@@ -81,7 +81,7 @@ public class TesseraFlyoutPresentRoutingTests : IDisposable
     {
         var media = new FakeMediaSessionService();
         var services = TesseraServices(media: media);
-        var cap = new TesseraCapability(services, _ui);
+        var cap = new TesseraCapability(TestCapabilityContext.Create(services, _ui));
         await cap.ArmAsync();
 
         media.Current = new MediaSessionInfo("Track A", "Artist", "app", true, null, 40, 180);
@@ -103,7 +103,7 @@ public class TesseraFlyoutPresentRoutingTests : IDisposable
     {
         var media = new FakeMediaSessionService();
         var services = TesseraServices(media: media);
-        var cap = new TesseraCapability(services, _ui);
+        var cap = new TesseraCapability(TestCapabilityContext.Create(services, _ui));
         await cap.ArmAsync();
 
         media.Current = new MediaSessionInfo("Track A", "Artist", "app", true, null, 0, 100);
@@ -126,7 +126,7 @@ public class TesseraFlyoutPresentRoutingTests : IDisposable
     {
         var media = new FakeMediaSessionService();
         var services = TesseraServices(media: media);
-        var cap = new TesseraCapability(services, _ui);
+        var cap = new TesseraCapability(TestCapabilityContext.Create(services, _ui));
         await cap.ArmAsync();
 
         media.Current = new MediaSessionInfo("Track A", "Artist", "app", true, null, 0, 100);
@@ -149,7 +149,7 @@ public class TesseraFlyoutPresentRoutingTests : IDisposable
         var lockSvc = new ThreadPoolDeferringLockKeys();
         var flyouts = new CountingFlyouts();
         var ui = new BridgeUi(flyouts);
-        var cap = new TesseraCapability(TesseraServices(lockSvc), ui);
+        var cap = new TesseraCapability(TestCapabilityContext.Create(TesseraServices(lockSvc), ui));
         await cap.ArmAsync();
 
         lockSvc.RaiseDeferred(new LockKeyState(LockKeyKind.CapsLock, true));
@@ -161,11 +161,53 @@ public class TesseraFlyoutPresentRoutingTests : IDisposable
     }
 
     [Fact]
-    public async Task Track_change_after_dismiss_uses_Show()
+    public async Task Track_change_after_transient_dismiss_does_not_present()
     {
         var media = new FakeMediaSessionService();
         var services = TesseraServices(media: media);
-        var cap = new TesseraCapability(services, _ui);
+        var cap = new TesseraCapability(TestCapabilityContext.Create(services, _ui));
+        await cap.ArmAsync();
+
+        media.Current = new MediaSessionInfo("Track A", "Artist", "app", true, null, 0, 100);
+        _flyouts.ShowCount.Should().Be(1);
+
+        _flyouts.RaiseTransientDismiss();
+        _flyouts.Visible.Should().BeFalse();
+
+        _flyouts.ShowCount = 0;
+        _flyouts.UpdateCount = 0;
+
+        media.Current = new MediaSessionInfo("Track B", "Artist", "app", true, null, 0, 100);
+
+        _flyouts.ShowCount.Should().Be(0);
+        _flyouts.UpdateCount.Should().Be(0);
+        await cap.DisarmAsync();
+    }
+
+    [Fact]
+    public async Task Volume_after_transient_dismiss_clears_suppress_and_shows()
+    {
+        var media = new FakeMediaSessionService();
+        var services = TesseraServices(media: media);
+        var cap = new TesseraCapability(TestCapabilityContext.Create(services, _ui));
+        await cap.ArmAsync();
+
+        media.Current = new MediaSessionInfo("Track A", "Artist", "app", true, null, 0, 100);
+        _flyouts.RaiseTransientDismiss();
+
+        _flyouts.ShowCount = 0;
+        services.Audio.MasterVolume = 0.5;
+
+        _flyouts.ShowCount.Should().Be(1);
+        await cap.DisarmAsync();
+    }
+
+    [Fact]
+    public async Task Track_change_after_hide_without_transient_dismiss_still_presents()
+    {
+        var media = new FakeMediaSessionService();
+        var services = TesseraServices(media: media);
+        var cap = new TesseraCapability(TestCapabilityContext.Create(services, _ui));
         await cap.ArmAsync();
 
         media.Current = new MediaSessionInfo("Track A", "Artist", "app", true, null, 0, 100);
@@ -186,7 +228,7 @@ public class TesseraFlyoutPresentRoutingTests : IDisposable
     public async Task Same_kind_volume_tick_uses_Update()
     {
         var services = TesseraServices();
-        var cap = new TesseraCapability(services, _ui);
+        var cap = new TesseraCapability(TestCapabilityContext.Create(services, _ui));
         await cap.ArmAsync();
 
         services.Audio.MasterVolume = 0.4;
@@ -259,6 +301,14 @@ public class TesseraFlyoutPresentRoutingTests : IDisposable
         public int UpdateCount { get; set; }
         public int SoftRefreshCount { get; set; }
         public bool Visible { get; private set; }
+
+        public event Action<string>? TransientDismissed;
+
+        public void RaiseTransientDismiss(string moduleId = "Tessera")
+        {
+            Visible = false;
+            TransientDismissed?.Invoke(moduleId);
+        }
 
         public void Show(FlyoutRequest request)
         {

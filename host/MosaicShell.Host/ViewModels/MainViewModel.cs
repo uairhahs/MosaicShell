@@ -31,7 +31,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly ModuleLauncher _launcher;
     private readonly HostServices _services;
     private readonly AvaloniaTileSurfaceHost? _tileHost;
-    private readonly CapabilityDaemon? _daemon;
+    private readonly ICapabilityHost? _capabilityHost;
 
     private readonly IHostUiBridge _hostUi;
 
@@ -41,14 +41,14 @@ public partial class MainViewModel : ViewModelBase
         ITileRuntime runtime,
         HostServices services,
         AvaloniaTileSurfaceHost? tileHost,
-        CapabilityDaemon? daemon = null,
+        ICapabilityHost? capabilityHost = null,
         IHostUiBridge? hostUi = null)
     {
         _runtime = runtime;
         _launcher = new ModuleLauncher(runtime);
         _services = services;
         _tileHost = tileHost;
-        _daemon = daemon;
+        _capabilityHost = capabilityHost;
         _hostUi = hostUi ?? NullHostUiBridge.Instance;
 
         AppPaths.EnsureLayout();
@@ -546,9 +546,9 @@ public partial class MainViewModel : ViewModelBase
             case "tessera":
             {
                 PersistTesseraFromUi();
-                if (_daemon?.IsArmed("Tessera") == true)
+                if (_capabilityHost?.IsArmed("Tessera") == true)
                 {
-                    var ok = await _daemon.ReArmAsync("Tessera");
+                    var ok = await _capabilityHost.ReArmAsync("Tessera");
                     StatusMessage = ok
                         ? "Tessera settings saved and re-armed."
                         : "Tessera settings saved but re-arm failed.";
@@ -630,9 +630,9 @@ public partial class MainViewModel : ViewModelBase
                 s.IdleSeconds = Math.Clamp((int)ConfigIdleSeconds, 30, 3600);
                 s.HideOnFullscreen = ConfigHideOnFullscreen;
                 ModuleSettingsStore.Save("Slate", s);
-                if (_daemon?.IsArmed(id) == true)
-                    await _daemon.ReArmAsync(id);
-                StatusMessage = "Slate saved" + (_daemon?.IsArmed(id) == true ? " and re-armed." : ".");
+                if (_capabilityHost?.IsArmed(id) == true)
+                    await _capabilityHost.ReArmAsync(id);
+                StatusMessage = "Slate saved" + (_capabilityHost?.IsArmed(id) == true ? " and re-armed." : ".");
                 break;
             }
             case "substrate":
@@ -657,13 +657,13 @@ public partial class MainViewModel : ViewModelBase
 
     private async Task<string> PersistHotkeyArmAsync(string id)
     {
-        if (_daemon is null) return $"{id} saved.";
-        if (!_daemon.IsArmed(id))
+        if (_capabilityHost is null) return $"{id} saved.";
+        if (!_capabilityHost.IsArmed(id))
             return $"{id} saved. Arm from Tiles, then press {ConfigHotkeyGesture}.";
 
-        var ok = await _daemon.ReArmAsync(id);
+        var ok = await _capabilityHost.ReArmAsync(id);
         if (!ok) return $"{id} saved but could not re-arm.";
-        var err = _daemon.GetHotkeyError(id);
+        var err = _capabilityHost.GetHotkeyError(id);
         return string.IsNullOrWhiteSpace(err)
             ? $"{id} saved. Hotkey active: {ConfigHotkeyGesture}."
             : $"{id} saved but hotkey failed: {err}";
@@ -762,17 +762,17 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private async Task TryCapabilityOverlayAsync()
     {
-        if (string.IsNullOrWhiteSpace(ConfigModuleId) || _daemon is null) return;
+        if (string.IsNullOrWhiteSpace(ConfigModuleId) || _capabilityHost is null) return;
         var id = ConfigModuleId;
         await SaveModuleConfigAsync();
-        var ok = _daemon.IsArmed(id) || await _daemon.ArmAsync(id);
+        var ok = _capabilityHost.IsArmed(id) || await _capabilityHost.ArmAsync(id);
         if (!ok)
         {
             StatusMessage = $"Could not arm {id}. Install it from Tiles first.";
             return;
         }
 
-        var err = _daemon.GetHotkeyError(id);
+        var err = _capabilityHost.GetHotkeyError(id);
         if (!string.IsNullOrWhiteSpace(err) && ShowHotkeyCapExtras)
             StatusMessage = err;
 
@@ -901,7 +901,7 @@ public partial class MainViewModel : ViewModelBase
             {
                 StatusMessage = $"Installing {item.Name}…";
                 await _installer.InstallAsync(item.Id);
-                item.ApplyInstalled(_daemon?.IsArmed(item.Id) == true);
+                item.ApplyInstalled(_capabilityHost?.IsArmed(item.Id) == true);
             }
             StatusMessage = $"Batch installed {selected.Count} module(s).";
         }
@@ -917,26 +917,26 @@ public partial class MainViewModel : ViewModelBase
         {
             if (item.IsCapability)
             {
-                if (_daemon is null)
+                if (_capabilityHost is null)
                 {
                     StatusMessage = "Capability daemon not available.";
                     return;
                 }
-                if (_daemon.IsArmed(item.Id))
+                if (_capabilityHost.IsArmed(item.Id))
                 {
-                    await _daemon.DisarmAsync(item.Id);
+                    await _capabilityHost.DisarmAsync(item.Id);
                     item.ApplyArmed(false);
                     StatusMessage = $"Disarmed {item.Name}.";
                 }
                 else
                 {
-                    var ok = await _daemon.ArmAsync(item.Id);
+                    var ok = await _capabilityHost.ArmAsync(item.Id);
                     item.ApplyArmed(ok);
                     if (!ok)
                         StatusMessage = $"Could not arm {item.Name}.";
                     else
                     {
-                        var err = _daemon.GetHotkeyError(item.Id);
+                        var err = _capabilityHost.GetHotkeyError(item.Id);
                         StatusMessage = string.IsNullOrWhiteSpace(err)
                             ? $"{ModuleUsageGuide.ArmedStatus(item.Id)}. {ModuleUsageGuide.HowToTrigger(item.Id)}"
                             : err;
@@ -969,9 +969,9 @@ public partial class MainViewModel : ViewModelBase
                 ? $"Installed {item.Name}. Use the play button to arm the capability host."
                 : $"Installed {item.Name}. Use play to launch the overlay.";
 
-            if (manifest?.DefaultArmed == true && _daemon is not null)
+            if (manifest?.DefaultArmed == true && _capabilityHost is not null)
             {
-                var ok = await _daemon.ArmAsync(item.Id);
+                var ok = await _capabilityHost.ArmAsync(item.Id);
                 item.ApplyArmed(ok);
                 if (ok) StatusMessage = $"Installed and armed {item.Name}.";
             }
@@ -992,7 +992,7 @@ public partial class MainViewModel : ViewModelBase
     private async Task UninstallModule(LibraryItemViewModel? item)
     {
         if (item is null || !item.IsInstalled) return;
-        if (ModuleUninstaller.Uninstall(item.Id, _runtime, _daemon))
+        if (ModuleUninstaller.Uninstall(item.Id, _runtime, _capabilityHost))
         {
             StatusMessage = $"Uninstalled {item.Name}.";
             RefreshLibrary();
@@ -1019,7 +1019,7 @@ public partial class MainViewModel : ViewModelBase
         {
             var m = _services.Metrics.Sample();
             var media = _services.Media.Current?.Title ?? "(none)";
-            var armed = _daemon is null ? "0" : string.Join(",", _daemon.ArmedModuleIds);
+            var armed = _capabilityHost is null ? "0" : string.Join(",", _capabilityHost.ArmedModuleIds);
             ServiceProbe =
                 $"CPU {m.CpuPercent:0}% · RAM {m.RamUsedPercent:0}% · Vol {_services.Audio.MasterVolume:0%} · Media {media} · Armed [{armed}]";
         }
@@ -1035,7 +1035,7 @@ public partial class MainViewModel : ViewModelBase
         Widgets.Clear();
         foreach (var m in ModuleCatalog.Modules)
         {
-            var armed = _daemon?.IsArmed(m.Id) == true;
+            var armed = _capabilityHost?.IsArmed(m.Id) == true;
             Modules.Add(LibraryItemViewModel.From(m, running: false, armed: armed));
         }
         foreach (var w in ModuleCatalog.Widgets)

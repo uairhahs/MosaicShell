@@ -1,3 +1,4 @@
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 
@@ -46,6 +47,9 @@ public sealed record FlyoutRequest(
 
 public interface IFlyoutPresenter
 {
+    /// <summary>Auto-dismiss or outside-click hide (SoftFrost transient dismiss, not Disarm Hide).</summary>
+    event Action<string>? TransientDismissed;
+
     void Show(FlyoutRequest request);
     void Update(FlyoutRequest request);
     /// <summary>Patch visible flyout UI without resetting auto-dismiss (progress / live pump).</summary>
@@ -58,7 +62,7 @@ public interface IFlyoutPresenter
 public interface ICapabilityFactory
 {
     string ModuleId { get; }
-    IModuleCapability Create(ModuleManifest manifest, HostServices services, ICapabilityUiBridge ui);
+    IModuleCapability Create(ModuleManifest manifest, ICapabilityContext context);
 }
 
 public sealed class CapabilityRegistry

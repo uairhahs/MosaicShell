@@ -27,6 +27,8 @@ public sealed class AvaloniaCapabilityUiBridge : ICapabilityUiBridge
 
 public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
 {
+    public event Action<string>? TransientDismissed;
+
     private readonly HostServices _services;
     private IHostUiBridge? _hostUi;
     private readonly object _gate = new();
@@ -83,6 +85,10 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
                     if (!_windows.TryGetValue(request.ModuleId, out var existing)
                         || !existing.IsFlyoutSessionShowing)
                         return;
+
+                    if (!_patchCoalesce.TryBeginFlush(MonoNow(), out _))
+                        return;
+
                     existing.ApplyLiveOnly(request, _services);
                 }
             }
@@ -457,8 +463,11 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         window.TransientDismissed += OnFlyoutTransientDismissed;
     }
 
-    private void OnFlyoutTransientDismissed()
+    private void OnFlyoutTransientDismissed(string moduleId)
     {
+        try { TransientDismissed?.Invoke(moduleId); }
+        catch { /* ignore */ }
+
         if (!TesseraFocusDimPolicy.ShouldCloseFocusDimOnTransientDismiss())
             return;
         Log("transient-dismiss, closing focusDim");

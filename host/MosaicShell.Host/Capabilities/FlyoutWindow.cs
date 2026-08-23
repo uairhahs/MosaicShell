@@ -92,7 +92,7 @@ internal sealed class FlyoutWindow : Window
         TesseraFlyoutLiveSyncPolicy.IsEffectivelyShowing(IsVisible, Opacity);
 
     /// <summary>Raised after auto-dismiss / TransientDismiss so Host can close FocusDim.</summary>
-    public event Action? TransientDismissed;
+    public event Action<string>? TransientDismissed;
 
     public void EnsureLivePump() => StartLivePump();
 
@@ -113,9 +113,9 @@ internal sealed class FlyoutWindow : Window
                     return;
                 }
 
-                // Single volume owner = coalesced Patch (PumpMayWriteVolumeBindings = false).
-                if (TesseraFlyoutLiveSyncPolicy.PumpMayAdvanceMediaTimeline)
-                    _services.Media.PumpTimeline();
+                // Timeline UI: ApplyLive only. PumpTimeline runs from armed poll / user events.
+                if (Content is Control root && TesseraLiveHost.FindIn(root) is { } host)
+                    host.ApplyLive(_services, _request);
             }
             catch (Exception ex)
             {
@@ -150,7 +150,6 @@ internal sealed class FlyoutWindow : Window
     public void ApplyLiveOnly(FlyoutRequest request, HostServices services)
     {
         _request = request;
-        services.Media.PumpTimeline();
         if (_request.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
             || _request.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase))
         {
@@ -348,7 +347,7 @@ internal sealed class FlyoutWindow : Window
         _dismiss.Tick += (_, _) =>
         {
             if (_hover) return;
-            _dismiss.Stop();
+            _dismiss?.Stop();
             TransientDismiss();
         };
         _dismiss.Start();
@@ -361,6 +360,7 @@ internal sealed class FlyoutWindow : Window
     public void TransientDismiss()
     {
         _dismiss?.Stop();
+        _hover = false;
         _revealGeneration++;
         RenderTransform = null;
         Opacity = 0;
@@ -373,7 +373,7 @@ internal sealed class FlyoutWindow : Window
         }
         catch { /* ignore */ }
 
-        try { TransientDismissed?.Invoke(); }
+        try { TransientDismissed?.Invoke(_request.ModuleId); }
         catch { /* ignore */ }
     }
 

@@ -12,7 +12,7 @@ namespace MosaicShell.Core.Tests;
 
 /// <summary>
 /// Living checklist. Use *_skeleton for wiring; *_mvp only for JaxCore-comparable slices.
-/// Companion coverage is listed in .cursor/docs/parity/README.md - do not mark mvp true without that bar.
+/// Companion coverage bar: .github/docs/parity.md - do not mark mvp true without that bar.
 /// </summary>
 public class HubParityBacklogTests
 {
@@ -45,7 +45,7 @@ public class HubParityBacklogTests
         { "tessera_media_wnp", true },
         { "style_catalog_jaxcore_ids", true },
 
-        // Phase C layout fidelity (false until screenshot-level proofs; see .cursor/docs/parity)
+        // Phase C layout fidelity (false until screenshot proofs; see .github/docs/parity.md)
         { "chrono_layout_fidelity", false },
         { "phono_layout_fidelity", false },
         { "pulse_layout_fidelity", false },
@@ -71,7 +71,7 @@ public class HubParityBacklogTests
         { "library_uninstall", true },
         { "tile_user_scale_applied", true },
 
-        // Widgets / caps: skeleton vs mvp (see .cursor/docs/parity)
+        // Widgets / caps: skeleton vs mvp (see .github/docs/parity.md)
         { "tile_chrono_skeleton", true },
         { "tile_chrono_mvp", true },
         { "tile_canvas_skeleton", true },
@@ -263,7 +263,7 @@ public class HonestyGateTests
     [Fact]
     public void Widget_mvp_bars_documented_and_services_exist()
     {
-        // Bars: .cursor/docs/parity/README.md - live metrics/media/levels + StyleCatalog chrome
+        // Bars: .github/docs/parity.md - live metrics/media/levels + StyleCatalog chrome
         typeof(ISystemMetricsService).GetMethod(nameof(ISystemMetricsService.Sample)).Should().NotBeNull();
         typeof(IMediaSessionService).GetMethod(nameof(IMediaSessionService.PlayPauseAsync)).Should().NotBeNull();
         typeof(IAudioLevelService).GetProperty(nameof(IAudioLevelService.Bands)).Should().NotBeNull();

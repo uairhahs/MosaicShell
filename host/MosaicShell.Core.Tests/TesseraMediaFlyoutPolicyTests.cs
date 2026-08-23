@@ -1,5 +1,6 @@
 using FluentAssertions;
 using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.Services;
 
 namespace MosaicShell.Core.Tests;
 
@@ -23,9 +24,11 @@ public class TesseraMediaFlyoutPolicyTests
         TesseraMediaFlyoutPolicy.Resolve(enableMedia, visible, lastKind).Should().Be(expected);
 
     [Fact]
-    public void Armed_timeline_poll_is_required_while_media_flyouts_enabled()
+    public void Timeline_poll_owned_by_host_services_not_tessera_module()
     {
-        TesseraMediaFlyoutPolicy.MustPollTimelineWhileArmed.Should().BeTrue();
-        TesseraMediaFlyoutPolicy.ArmedTimelinePollMs.Should().BePositive();
+        TesseraMediaFlyoutPolicy.MustPollTimelineWhileArmed.Should().BeFalse(
+            "CapabilityDaemon MediaSessionPlatform + IMediaSessionService own polling");
+        MediaSessionChangePolicy.MustPollTimelineIndependentlyOfFlyout.Should().BeTrue();
+        MediaSessionChangePolicy.TimelinePollMs.Should().BePositive();
     }
 }

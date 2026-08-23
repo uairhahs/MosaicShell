@@ -1,6 +1,7 @@
 using FluentAssertions;
 using MosaicShell.Core;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
@@ -89,7 +90,7 @@ public class CapabilityDaemonTests : IDisposable
     private sealed class FakeCapabilityFactory(string moduleId) : ICapabilityFactory
     {
         public string ModuleId => moduleId;
-        public IModuleCapability Create(ModuleManifest manifest, HostServices services, ICapabilityUiBridge ui) =>
+        public IModuleCapability Create(ModuleManifest manifest, ICapabilityContext context) =>
             new FakeCapability(moduleId);
     }
 

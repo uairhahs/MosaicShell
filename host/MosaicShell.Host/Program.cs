@@ -9,6 +9,7 @@ sealed class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        MosaicShell.Core.Capabilities.Platform.HostLaunchOptions.Apply(args);
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         return 0;
     }

@@ -1,4 +1,6 @@
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.Platform;
+using MosaicShell.Core.Services;
 
 namespace MosaicShell.Core.Tests;
 
@@ -48,8 +50,26 @@ internal sealed class BridgeUi(IFlyoutPresenter flyouts, IHostUiBridge? hostUi =
     }
 }
 
+/// <summary>Builds <see cref="ICapabilityContext"/> for unit tests without a full daemon.</summary>
+internal static class TestCapabilityContext
+{
+    public static ICapabilityContext Create(
+        HostServices services,
+        ICapabilityUiBridge ui,
+        string moduleId = "Tessera",
+        ICapabilityEventBus? events = null)
+    {
+        var bus = events ?? new CapabilityEventBus();
+        var platform = new CapabilityFlyoutPlatform(ui.Flyouts);
+        var media = new MediaSessionPlatform(services.Media);
+        return new CapabilityContext(services, ui, platform.CreateSession(moduleId), media, bus);
+    }
+}
+
 internal sealed class CaptureFlyouts(List<FlyoutRequest> shown) : IFlyoutPresenter
 {
+    public event Action<string>? TransientDismissed;
+
     public void Show(FlyoutRequest request) => shown.Add(request);
     public void Update(FlyoutRequest request) => shown.Add(request);
     public void SoftRefresh(FlyoutRequest request) { }

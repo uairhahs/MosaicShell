@@ -75,7 +75,7 @@ public class ShellFlyoutTriggerTests : IDisposable
         };
 
         var ui = new BridgeUi(new CaptureFlyouts(shown));
-        var cap = new TesseraCapability(services, ui);
+        var cap = new TesseraCapability(TestCapabilityContext.Create(services, ui));
         await cap.ArmAsync();
         hook.Raise(ShellFlyoutKind.Volume);
         shown.Should().Contain(r => r.Kind == "vol");
@@ -110,7 +110,7 @@ public class ShellFlyoutTriggerTests : IDisposable
         };
 
         var ui = new BridgeUi(new CaptureFlyouts(shown));
-        var cap = new TesseraCapability(services, ui);
+        var cap = new TesseraCapability(TestCapabilityContext.Create(services, ui));
         await cap.ArmAsync();
         hook.Raise(ShellFlyoutKind.Media);
         shown.Should().Contain(r => r.Kind == "media" && r.ModuleId == "Tessera");

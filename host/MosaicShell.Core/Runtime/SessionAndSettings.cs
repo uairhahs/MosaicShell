@@ -89,14 +89,14 @@ public static class ModuleSettingsStore
 
 public static class ModuleUninstaller
 {
-    public static bool Uninstall(string moduleId, ITileRuntime? runtime = null, CapabilityDaemon? daemon = null)
+    public static bool Uninstall(string moduleId, ITileRuntime? runtime = null, ICapabilityHost? capabilityHost = null)
     {
         if (!ModuleCatalog.TryGet(moduleId, out _))
             return false;
 
         runtime?.Stop(moduleId);
-        if (daemon is not null)
-            daemon.DisarmAsync(moduleId).GetAwaiter().GetResult();
+        if (capabilityHost is not null)
+            capabilityHost.DisarmAsync(moduleId).GetAwaiter().GetResult();
         ModuleSettingsStore.Delete(moduleId);
 
         var dir = Path.Combine(AppPaths.ModulesDirectory, moduleId);

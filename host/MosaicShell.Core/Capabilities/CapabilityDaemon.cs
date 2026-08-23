@@ -1,24 +1,44 @@
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 
 namespace MosaicShell.Core.Capabilities;
 
-public sealed class CapabilityDaemon : IDisposable
+public sealed class CapabilityDaemon : ICapabilityHost, IDisposable
 {
     private readonly CapabilityRegistry _registry;
     private readonly HostServices _services;
     private readonly ICapabilityUiBridge _ui;
+    private readonly CapabilityFlyoutPlatform _flyoutPlatform;
+    private readonly MediaSessionPlatform _mediaPlatform;
+    private readonly ICapabilityEventBus _events;
     private readonly Dictionary<string, IModuleCapability> _instances = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
     private bool _disposed;
 
-    public CapabilityDaemon(CapabilityRegistry registry, HostServices services, ICapabilityUiBridge ui)
+    public CapabilityDaemon(
+        CapabilityRegistry registry,
+        HostServices services,
+        ICapabilityUiBridge ui,
+        ICapabilityEventBus? events = null)
     {
         _registry = registry;
         _services = services;
         _ui = ui;
+        _events = events ?? new CapabilityEventBus();
+        _flyoutPlatform = new CapabilityFlyoutPlatform(ui.Flyouts);
+        _mediaPlatform = new MediaSessionPlatform(services.Media);
+        _mediaPlatform.Signal += OnMediaPlatformSignal;
+        _services.Audio.Changed += OnVolumeChanged;
+        _ui.Flyouts.TransientDismissed += OnFlyoutTransientDismissed;
     }
+
+    /// <summary>Cross-module platform events (media track boundaries, volume, lifecycle).</summary>
+    public ICapabilityEventBus Events => _events;
+
+    /// <summary>Shared media signal layer (SMTC/WNP classification). Used by armed capabilities.</summary>
+    public MediaSessionPlatform MediaPlatform => _mediaPlatform;
 
     public IReadOnlyList<string> ArmedModuleIds
     {
@@ -84,11 +104,13 @@ public sealed class CapabilityDaemon : IDisposable
             }
 
             var manifest = ModuleManifest.TryLoad(moduleId) ?? ModuleManifest.CreateDefault(moduleId);
-            capability = factory.Create(manifest, _services, _ui);
+            var context = CreateContext(moduleId);
+            capability = factory.Create(manifest, context);
             _instances[moduleId] = capability;
         }
 
         await capability.ArmAsync(cancellationToken).ConfigureAwait(false);
+        _events.Publish(new CapabilityEvent(CapabilityEventKind.CapabilityArmed, moduleId));
         if (persist) Persist();
         return true;
     }
@@ -104,9 +126,11 @@ public sealed class CapabilityDaemon : IDisposable
 
         await capability.DisarmAsync(cancellationToken).ConfigureAwait(false);
         capability.Dispose();
+        _events.Publish(new CapabilityEvent(CapabilityEventKind.CapabilityDisarmed, moduleId));
         lock (_gate)
             _instances.Remove(moduleId);
 
+        _flyoutPlatform.RemoveSession(moduleId);
         _ui.Flyouts.Hide(moduleId);
         if (persist) Persist();
         return true;
@@ -140,5 +164,29 @@ public sealed class CapabilityDaemon : IDisposable
             try { c.Dispose(); } catch { /* ignore */ }
         }
         _instances.Clear();
+        _mediaPlatform.Signal -= OnMediaPlatformSignal;
+        _services.Audio.Changed -= OnVolumeChanged;
+        _ui.Flyouts.TransientDismissed -= OnFlyoutTransientDismissed;
+        _flyoutPlatform.Dispose();
+        _mediaPlatform.Dispose();
     }
+
+    private void OnMediaPlatformSignal(MediaSessionSignal signal) =>
+        _events.Publish(CapabilityEventPublishing.FromMediaSignal(signal));
+
+    private void OnVolumeChanged(object? sender, EventArgs e) =>
+        _events.Publish(new CapabilityEvent(CapabilityEventKind.VolumeChanged));
+
+    private void OnFlyoutTransientDismissed(string moduleId) =>
+        _events.Publish(new CapabilityEvent(
+            CapabilityEventKind.FlyoutTransientDismissed,
+            moduleId));
+
+    private ICapabilityContext CreateContext(string moduleId) =>
+        new CapabilityContext(
+            _services,
+            _ui,
+            _flyoutPlatform.CreateSession(moduleId),
+            _mediaPlatform,
+            _events);
 }

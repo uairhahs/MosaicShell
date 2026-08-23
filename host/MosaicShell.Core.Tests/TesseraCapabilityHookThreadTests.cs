@@ -40,7 +40,7 @@ public class TesseraCapabilityHookThreadTests : IDisposable
         var lockKeys = new TrackingLockKeysService();
         var legacy = new TrackingLegacyHook(() => bridge.InHostThread);
         var services = CreateServices(lockKeys, legacy);
-        var cap = new TesseraCapability(services, bridge);
+        var cap = new TesseraCapability(TestCapabilityContext.Create(services, bridge));
 
         await cap.ArmAsync();
 
