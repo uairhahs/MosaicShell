@@ -59,6 +59,12 @@ public static class TesseraFlyoutLiveSyncPolicy
     /// <summary>Volume bindings have a single owner: coalesced Patch, not the pump.</summary>
     public const bool PumpMayWriteVolumeBindings = false;
 
+    /// <summary>
+    /// Host must merge high-frequency Update calls before Post/Invoke; coalesce inside ShowOrUpdateCore alone
+    /// still floods the dispatcher (see flyout.log volume-drag bursts).
+    /// </summary>
+    public const bool MustCoalesceBeforeUiPost = true;
+
     public const bool LiveHostRequiredForTesseraSuccess = true;
 
     public static bool IsSuccessfulTesseraContent(bool hasLiveHost, bool isFallbackContent) =>
@@ -134,4 +140,36 @@ public sealed class TesseraFlyoutLiveSyncCoalescer
     }
 
     public void Reset() => _lastFlush = null;
+}
+
+/// <summary>Result of enqueueing a flyout Update before scheduling UI work.</summary>
+public enum TesseraFlyoutUpdateDispatchKind
+{
+    /// <summary>Last-value merge only; a Post or deferred flush is already scheduled.</summary>
+    Merged,
+
+    /// <summary>Schedule one immediate UI callback (last stored request wins at flush).</summary>
+    PostNow,
+}
+
+/// <summary>
+/// Ensures at most one pending UI dispatch per burst. Last-value wins; flush rate stays in
+/// <see cref="TesseraFlyoutLiveSyncCoalescer"/> inside ShowOrUpdateCore.
+/// </summary>
+public sealed class TesseraFlyoutUpdateDispatchGate
+{
+    private bool _dispatchScheduled;
+
+    public TesseraFlyoutUpdateDispatchKind TryEnqueue()
+    {
+        if (_dispatchScheduled)
+            return TesseraFlyoutUpdateDispatchKind.Merged;
+
+        _dispatchScheduled = true;
+        return TesseraFlyoutUpdateDispatchKind.PostNow;
+    }
+
+    public void CompleteDispatch() => _dispatchScheduled = false;
+
+    public bool HasScheduledDispatch => _dispatchScheduled;
 }

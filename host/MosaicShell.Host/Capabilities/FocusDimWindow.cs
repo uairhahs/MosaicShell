@@ -276,4 +276,41 @@ internal static class Win32WindowChrome
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool SetWindowPos(
         IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint uFlags);
+
+    /// <summary>
+    /// Clip stacked OS acrylic flyouts to pill/card geometry. HWND backdrop is rectangular;
+    /// without a region, acrylic leaks outside inner rounded content.
+    /// </summary>
+    public static void ApplyRoundRectRegion(Window window, int widthPx, int heightPx, int cornerRadiusPx)
+    {
+        if (!OperatingSystem.IsWindows())
+            return;
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            try
+            {
+                var handle = window.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+                if (handle == IntPtr.Zero || widthPx < 2 || heightPx < 2)
+                    return;
+
+                var radius = Math.Clamp(cornerRadiusPx, 1, Math.Min(widthPx, heightPx) / 2);
+                var rgn = CreateRoundRectRgn(0, 0, widthPx + 1, heightPx + 1, radius * 2, radius * 2);
+                if (rgn == IntPtr.Zero)
+                    return;
+
+                _ = SetWindowRgn(handle, rgn, true);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Win32 region] {ex.Message}");
+            }
+        }, DispatcherPriority.Loaded);
+    }
+
+    [DllImport("gdi32.dll", SetLastError = true)]
+    private static extern IntPtr CreateRoundRectRgn(int left, int top, int right, int bottom, int widthEllipse, int heightEllipse);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern int SetWindowRgn(IntPtr hWnd, IntPtr hRgn, bool bRedraw);
 }

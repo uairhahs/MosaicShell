@@ -143,6 +143,16 @@ public sealed class TesseraFlyoutRequestBuilder
         return true;
     }
 
+    /// <summary>Flyout UI scale from payload (50..150 percent). Default 1.0.</summary>
+    public static double FlyoutScaleFromPayload(IReadOnlyDictionary<string, string>? payload)
+    {
+        if (payload is null || !payload.TryGetValue("flyoutScale", out var raw))
+            return 1.0;
+        if (!int.TryParse(raw, out var pct))
+            return 1.0;
+        return Math.Clamp(pct, 50, 150) / 100.0;
+    }
+
     /// <summary>
     /// Custom accent from flyout payload (#RRGGBB). Null/empty = Windows system accent.
     /// Host must pass this into TesseraStyleFactory so live flyouts match config preview.

@@ -17,20 +17,7 @@ public static class TesseraStyleFactory
             TesseraGlass.EmbeddedPreviewBuild = true;
         try
         {
-            host.Content = StyleIds.Normalize(styleId) switch
-            {
-                StyleIds.Windows11 => TesseraLayouts.Windows11(vm),
-                StyleIds.Compact => TesseraLayouts.Compact(vm),
-                StyleIds.MaterialYou => TesseraLayouts.MaterialYou(vm),
-                StyleIds.Square => TesseraLayouts.Square(vm),
-                StyleIds.ModernFlyouts => TesseraLayouts.ModernFlyouts(vm),
-                StyleIds.Meter => TesseraLayouts.Meter(vm),
-                StyleIds.Gnome => TesseraLayouts.Gnome(vm),
-                StyleIds.Radial => TesseraLayouts.Radial(vm),
-                StyleIds.PlainText => TesseraLayouts.PlainText(vm),
-                StyleIds.CoreUI => TesseraLayouts.CoreUI(vm),
-                _ => TesseraLayouts.Fluent(vm),
-            };
+            host.Content = CreateLayoutPanel(styleId, vm);
         }
         finally
         {
@@ -40,4 +27,20 @@ public static class TesseraStyleFactory
         }
         return host;
     }
+
+    internal static Control CreateLayoutPanel(string styleId, TesseraFlyoutViewModel vm) =>
+        StyleIds.Normalize(styleId) switch
+        {
+            StyleIds.Windows11 => TesseraLayouts.Windows11(vm),
+            StyleIds.Compact => TesseraLayouts.Compact(vm),
+            StyleIds.MaterialYou => TesseraLayouts.MaterialYou(vm),
+            StyleIds.Square => TesseraLayouts.Square(vm),
+            StyleIds.ModernFlyouts => TesseraLayouts.ModernFlyouts(vm),
+            StyleIds.Meter => TesseraLayouts.Meter(vm),
+            StyleIds.Gnome => TesseraLayouts.Gnome(vm),
+            StyleIds.Radial => TesseraLayouts.Radial(vm),
+            StyleIds.PlainText => TesseraLayouts.PlainText(vm),
+            StyleIds.CoreUI => TesseraLayouts.CoreUI(vm),
+            _ => TesseraLayouts.Fluent(vm),
+        };
 }

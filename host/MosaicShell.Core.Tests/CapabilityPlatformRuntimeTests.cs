@@ -47,6 +47,35 @@ public class HostLaunchOptionsTests
         HostLaunchOptions.ResetForTests();
         HostLaunchOptions.Apply(["--tray-only"]);
         HostLaunchOptions.IsTrayOnly.Should().BeTrue();
+        HostLaunchOptions.TesseraOsAcrylicTrial.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Tessera_os_acrylic_flag_is_opt_in()
+    {
+        HostLaunchOptions.ResetForTests();
+        HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
+        HostLaunchOptions.TesseraOsAcrylicTrial.Should().BeTrue();
+        HostLaunchOptions.IsTrayOnly.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Tessera_force_software_render_flag_is_opt_in()
+    {
+        HostLaunchOptions.ResetForTests();
+        HostLaunchOptions.Apply([HostLaunchOptions.TesseraForceSoftwareRenderFlag]);
+        HostLaunchOptions.TesseraForceSoftwareRender.Should().BeTrue();
+        HostLaunchOptions.TesseraOsAcrylicTrial.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Apply_resets_acrylic_trial_so_alpha_rollback_is_omit_the_flag()
+    {
+        HostLaunchOptions.ResetForTests();
+        HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
+        HostLaunchOptions.Apply(["--tray-only"]);
+        HostLaunchOptions.TesseraOsAcrylicTrial.Should().BeFalse();
+        HostLaunchOptions.IsTrayOnly.Should().BeTrue();
     }
 }
 

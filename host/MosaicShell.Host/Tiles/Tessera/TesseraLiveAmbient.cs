@@ -21,6 +21,7 @@ internal static class TesseraLiveAmbient
         bool percentOnAdjustOnly = false)
     {
         if (_current is null) return;
+        _current.VolumeRing = null;
         _current.VolumeTrack = track;
         _current.Percent = percent;
         _current.Glyph = glyph;
@@ -31,6 +32,7 @@ internal static class TesseraLiveAmbient
     public static void RegisterRing(TesseraRingVolume ring)
     {
         if (_current is null) return;
+        _current.VolumeTrack = null;
         _current.VolumeRing = ring;
         _current.Percent = ring.PercentLabel;
     }

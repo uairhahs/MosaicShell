@@ -32,7 +32,7 @@ internal sealed class TesseraOutsideClickWatcher : IDisposable
     private readonly Action _dismiss;
     private nint _hook;
     private LowLevelMouseProc? _proc;
-    private int _left, _top, _right, _bottom;
+    private readonly List<(int Left, int Top, int Right, int Bottom)> _rects = [];
     private bool _hasBounds;
     private int _dismissPosted;
 
@@ -42,15 +42,22 @@ internal sealed class TesseraOutsideClickWatcher : IDisposable
     private const int WmMButtonDown = 0x0207;
     private const int WmNcLButtonDown = 0x00A1;
 
-    public bool IsActive => _hook != IntPtr.Zero;
-
     public TesseraOutsideClickWatcher(FlyoutWindow flyout, Action dismiss)
+        : this([flyout], dismiss)
     {
-        _dismiss = dismiss;
-        CaptureBounds(flyout);
     }
 
-    public void RefreshBounds(FlyoutWindow flyout) => CaptureBounds(flyout);
+    public TesseraOutsideClickWatcher(IReadOnlyList<FlyoutWindow> flyouts, Action dismiss)
+    {
+        _dismiss = dismiss;
+        CaptureBounds(flyouts);
+    }
+
+    public void RefreshBounds(FlyoutWindow flyout) => CaptureBounds([flyout]);
+
+    public void RefreshBounds(IReadOnlyList<FlyoutWindow> flyouts) => CaptureBounds(flyouts);
+
+    public bool IsActive => _hook != IntPtr.Zero;
 
     public void Start()
     {
@@ -70,23 +77,37 @@ internal sealed class TesseraOutsideClickWatcher : IDisposable
         _proc = null;
     }
 
-    private void CaptureBounds(FlyoutWindow flyout)
+    private void CaptureBounds(IReadOnlyList<FlyoutWindow> flyouts)
     {
+        _rects.Clear();
+        try
+        {
+            foreach (var flyout in flyouts)
+            {
+                if (TryCaptureRect(flyout, out var rect))
+                    _rects.Add(rect);
+            }
+
+            _hasBounds = _rects.Count > 0;
+        }
+        catch
+        {
+            _hasBounds = false;
+        }
+    }
+
+    private static bool TryCaptureRect(FlyoutWindow flyout, out (int Left, int Top, int Right, int Bottom) rect)
+    {
+        rect = default;
         try
         {
             if (!flyout.IsVisible)
-            {
-                _hasBounds = false;
-                return;
-            }
+                return false;
 
             var position = flyout.Position;
             var bounds = flyout.Bounds;
             if (bounds.Width < 2 || bounds.Height < 2)
-            {
-                _hasBounds = false;
-                return;
-            }
+                return false;
 
             var screens = flyout.Screens?.All?.ToList() ?? [];
             var screen = screens.FirstOrDefault(s =>
@@ -98,15 +119,15 @@ internal sealed class TesseraOutsideClickWatcher : IDisposable
             var scale = screen?.Scaling > 0.1 ? screen.Scaling : 1.0;
             var w = (int)Math.Ceiling(bounds.Width * scale);
             var h = (int)Math.Ceiling(bounds.Height * scale);
-            _left = position.X;
-            _top = position.Y;
-            _right = position.X + w;
-            _bottom = position.Y + h;
-            _hasBounds = w > 0 && h > 0;
+            if (w <= 0 || h <= 0)
+                return false;
+
+            rect = (position.X, position.Y, position.X + w, position.Y + h);
+            return true;
         }
         catch
         {
-            _hasBounds = false;
+            return false;
         }
     }
 
@@ -133,8 +154,16 @@ internal sealed class TesseraOutsideClickWatcher : IDisposable
         return CallNextHookEx(_hook, nCode, wParam, lParam);
     }
 
-    private bool HitTest(int screenX, int screenY) =>
-        screenX >= _left && screenX < _right && screenY >= _top && screenY < _bottom;
+    private bool HitTest(int screenX, int screenY)
+    {
+        foreach (var (left, top, right, bottom) in _rects)
+        {
+            if (screenX >= left && screenX < right && screenY >= top && screenY < bottom)
+                return true;
+        }
+
+        return false;
+    }
 
     private void PostDismissOnce()
     {

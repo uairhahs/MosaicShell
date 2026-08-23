@@ -6,6 +6,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Material.Icons;
 using Material.Icons.Avalonia;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 
 namespace MosaicShell.Host.Tiles.Tessera;
@@ -16,12 +17,49 @@ internal static partial class TesseraLayouts
     public static Control PlainText(TesseraFlyoutViewModel vm)
     {
         if (IsStatus(vm)) return StatusChip(vm, 4);
+
+        var stacked = TesseraStackedBuildContext.TryCreatePanel(
+            vm,
+            buildVolume: PlainTextVolumeCore,
+            buildMedia: PlainTextMediaCore,
+            wrapVolume: PlainTextVolumeWrap,
+            wrapMedia: PlainTextMediaWrap);
+        if (stacked is not null)
+            return stacked;
+
+        var kids = PlainTextVolumeChildren(vm);
+        if (vm.ShowMediaStrip)
+            kids.AddRange(PlainTextMediaChildren(vm));
+
+        var panel = new StackPanel { Spacing = 4 };
+        foreach (var c in kids) panel.Children.Add(c);
+        return PlainTextShell(panel);
+    }
+
+    private static Control PlainTextVolumeCore(TesseraFlyoutViewModel vm)
+    {
+        var panel = new StackPanel { Spacing = 4 };
+        foreach (var c in PlainTextVolumeChildren(vm))
+            panel.Children.Add(c);
+        BindWheel(panel, vm);
+        return panel;
+    }
+
+    private static Control PlainTextMediaCore(TesseraFlyoutViewModel vm)
+    {
+        var panel = new StackPanel { Spacing = 4 };
+        foreach (var c in PlainTextMediaChildren(vm))
+            panel.Children.Add(c);
+        return panel;
+    }
+
+    private static List<Control> PlainTextVolumeChildren(TesseraFlyoutViewModel vm)
+    {
         var pct = VolumePercent.ToPercent(vm.PrimaryValue);
         var header = TesseraChrome.Mono($"Speakers: {pct}%", 14);
         header.Name = "TesseraPercent";
         var slash = TesseraChrome.Mono(TesseraChrome.SlashFill(vm.PrimaryValue), 14);
         TesseraLiveAmbient.RegisterSlash(slash);
-        // Hidden track for interaction
         var track = new TesseraTrack
         {
             IsVertical = false,
@@ -38,32 +76,46 @@ internal static partial class TesseraLayouts
             slash.Text = TesseraChrome.SlashFill(v);
         };
         TesseraLiveAmbient.RegisterVolume(track, header, null);
-
-        var kids = new List<Control>
-        {
+        return
+        [
             header,
             slash,
             track,
             TesseraChrome.Mono("------------------------------", 12, muted: true)
-        };
+        ];
+    }
 
-        if (vm.ShowMediaStrip)
+    private static List<Control> PlainTextMediaChildren(TesseraFlyoutViewModel vm)
+    {
+        var state = vm.IsPlaying ? "Playing" : "Paused";
+        var title = TesseraChrome.Mono($"{vm.MediaTitle} > {state} <", 13);
+        var artist = TesseraChrome.Mono(vm.MediaArtist, 12, muted: true);
+        var prog = TesseraChrome.Mono(
+            $"{FormatTime(vm.MediaPositionSeconds)} {TesseraChrome.SlashFill(vm.MediaProgress, 16)} {FormatTime(vm.MediaDurationSeconds)}",
+            12);
+        TesseraLiveAmbient.RegisterPlainTextMedia(title, artist, prog);
+        return
+        [
+            title,
+            artist,
+            prog,
+            TesseraChrome.Mono("Media playing | Heart: 0 Shuffle: 0 Repeat: 0", 10, muted: true)
+        ];
+    }
+
+    private static Control PlainTextVolumeWrap(Control panel) =>
+        PlainTextShell(panel, TesseraStackedBuildContext.Role == TesseraStackedPanelRole.Volume);
+
+    private static Control PlainTextMediaWrap(Control panel) =>
+        PlainTextShell(panel, TesseraStackedBuildContext.Role == TesseraStackedPanelRole.Media);
+
+    private static Control PlainTextShell(Control panel, bool stackedSegment = false)
+    {
+        var shell = new Grid
         {
-            var state = vm.IsPlaying ? "Playing" : "Paused";
-            kids.Add(TesseraChrome.Mono($"{vm.MediaTitle} > {state} <", 13));
-            kids.Add(TesseraChrome.Mono(vm.MediaArtist, 12, muted: true));
-            var prog = TesseraChrome.Mono(
-                $"{FormatTime(vm.MediaPositionSeconds)} {TesseraChrome.SlashFill(vm.MediaProgress, 16)} {FormatTime(vm.MediaDurationSeconds)}",
-                12);
-            kids.Add(prog);
-            kids.Add(TesseraChrome.Mono("Media playing | Heart: 0 Shuffle: 0 Repeat: 0", 10, muted: true));
-        }
-
-        var panel = new StackPanel { Spacing = 4 };
-        foreach (var c in kids) panel.Children.Add(c);
-
-        // Diagonal cut via clipped polygon overlay on the right
-        var shell = new Grid { Width = 360, MinHeight = 80 };
+            Width = TesseraStackedPlacementSpec.PlainTextWidthDip,
+            MinHeight = stackedSegment ? 0 : 80
+        };
         var bg = new Border
         {
             Background = new SolidColorBrush(Color.FromArgb(200, 0x11, 0x11, 0x1b)),
@@ -71,22 +123,7 @@ internal static partial class TesseraLayouts
             BorderThickness = new Thickness(1),
             Child = new Border { Padding = new Thickness(16, 12), Child = panel }
         };
-        // Skewed right edge
-        var cut = new Polygon
-        {
-            Points = new Points
-            {
-                new Point(330, 0),
-                new Point(360, 0),
-                new Point(360, 200),
-                new Point(300, 200)
-            },
-            Fill = Brushes.Transparent,
-            IsHitTestVisible = false
-        };
         shell.Children.Add(bg);
-        shell.Children.Add(cut);
-        // Clip to parallelogram-ish using Border with custom - approximate with opacity mask
         var clipFigures = new PathFigures
         {
             new PathFigure
@@ -102,8 +139,6 @@ internal static partial class TesseraLayouts
             }
         };
         bg.Clip = new PathGeometry { Figures = clipFigures };
-        BindWheel(shell, vm);
         return shell;
-
     }
 }

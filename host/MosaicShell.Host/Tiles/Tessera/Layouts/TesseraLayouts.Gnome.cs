@@ -8,6 +8,8 @@ using Material.Icons;
 using Material.Icons.Avalonia;
 using MosaicShell.Core.Services;
 
+using MosaicShell.Core.Modules.Tessera;
+
 namespace MosaicShell.Host.Tiles.Tessera;
 
 internal static partial class TesseraLayouts
@@ -16,6 +18,33 @@ internal static partial class TesseraLayouts
     public static Control Gnome(TesseraFlyoutViewModel vm)
     {
         if (IsStatus(vm)) return StatusChip(vm, 24);
+
+        var stacked = TesseraStackedBuildContext.TryCreatePanel(
+            vm,
+            buildVolume: GnomeVolumeCore,
+            buildMedia: v => TesseraMediaPanel.Create(v, TesseraMediaMode.GnomePill),
+            wrapVolume: GnomeVolumeWrap,
+            wrapMedia: static p => p);
+        if (stacked is not null)
+            return stacked;
+
+        var volPill = GnomeVolumeWrap(GnomeVolumeCore(vm));
+        if (!vm.ShowMediaStrip)
+            return volPill;
+
+        return new StackPanel
+        {
+            Spacing = 10,
+            Children =
+            {
+                TesseraMediaPanel.Create(vm, TesseraMediaMode.GnomePill),
+                volPill
+            }
+        };
+    }
+
+    private static Control GnomeVolumeCore(TesseraFlyoutViewModel vm)
+    {
         var volTrack = new TesseraTrack
         {
             IsVertical = false,
@@ -30,27 +59,33 @@ internal static partial class TesseraLayouts
         var glyph = TesseraVolumeGlyph.Create(vm, 18);
         glyph.Name = "TesseraGlyph";
         TesseraLiveAmbient.RegisterVolume(volTrack, null, glyph as MaterialIcon);
-        var volPill = TesseraChrome.Glass(new StackPanel
+        var panel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 10,
             VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
             Children = { glyph, volTrack }
-        }, 28, new Thickness(14, 10), w: 240);
-        BindWheel(volPill, vm);
-
-        if (!vm.ShowMediaStrip)
-            return volPill;
-
-        return new StackPanel
-        {
-            Spacing = 10,
-            Children =
-            {
-                TesseraMediaPanel.Create(vm, TesseraMediaMode.GnomePill),
-                volPill
-            }
         };
+        BindWheel(panel, vm);
+        return panel;
+    }
 
+    private static Control GnomeVolumeWrap(Control inner)
+    {
+        if (TesseraStackedBuildContext.IsActive && TesseraGlass.UseOsAcrylicChrome)
+        {
+            return new Border
+            {
+                Width = TesseraStackedPlacementSpec.GnomeVolumeWidthDip,
+                Height = TesseraStackedPlacementSpec.GnomeVolumeHeightDip,
+                Padding = new Thickness(14, 10),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                ClipToBounds = true,
+                Child = inner
+            };
+        }
+
+        return TesseraChrome.Glass(inner, 28, new Thickness(14, 10), w: 240);
     }
 }

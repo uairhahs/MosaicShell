@@ -17,12 +17,48 @@ internal static partial class TesseraLayouts
     {
         if (IsStatus(vm)) return StatusChip(vm, TesseraWindows11Metrics.CornerRadius, TesseraWindows11Metrics.Width, TesseraWindows11Metrics.VolumeHeight);
 
-        if (vm.Kind.Equals("media", StringComparison.OrdinalIgnoreCase))
+        if (vm.Kind.Equals("media", StringComparison.OrdinalIgnoreCase)
+            && !TesseraStackedBuildContext.IsActive)
             return TesseraChrome.Glass(
                 TesseraMediaPanel.Create(vm, TesseraMediaMode.Windows11Below),
                 TesseraWindows11Metrics.CornerRadius,
                 w: TesseraWindows11Metrics.Width);
 
+        var stacked = TesseraStackedBuildContext.TryCreatePanel(
+            vm,
+            buildVolume: Win11VolumeCore,
+            buildMedia: v => TesseraMediaPanel.Create(v, TesseraMediaMode.Windows11Below),
+            wrapVolume: Win11VolumeWrap,
+            wrapMedia: Win11MediaWrap);
+        if (stacked is not null)
+            return stacked;
+
+        var row = Win11VolumeCore(vm);
+        Control body = row;
+        if (vm.ShowMediaStrip)
+        {
+            body = new StackPanel
+            {
+                Spacing = 0,
+                Children =
+                {
+                    row,
+                    new Border
+                    {
+                        Height = 1,
+                        Background = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255)),
+                        Margin = new Thickness(TesseraWindows11Metrics.Pad, 0)
+                    },
+                    TesseraMediaPanel.Create(vm, TesseraMediaMode.Windows11Below)
+                }
+            };
+        }
+
+        return TesseraChrome.GlassTinted(body, TesseraWindows11Metrics.CornerRadius, TesseraStylePalette.Windows11.ShellBrush, w: TesseraWindows11Metrics.Width);
+    }
+
+    private static Control Win11VolumeCore(TesseraFlyoutViewModel vm)
+    {
         const double w = TesseraWindows11Metrics.Width;
         var glyph = TesseraVolumeGlyph.Create(vm, 16);
         glyph.Name = "TesseraGlyph";
@@ -55,7 +91,6 @@ internal static partial class TesseraLayouts
         };
         TesseraLiveAmbient.RegisterVolume(track, percent, glyph as MaterialIcon);
 
-        // Win11.inc: icon center @30, slider 60→(W-60), percent center @(W-30)
         var row = new Grid
         {
             Width = w,
@@ -69,9 +104,13 @@ internal static partial class TesseraLayouts
         row.Children.Add(track);
         row.Children.Add(percent);
         BindWheel(row, vm);
+        return row;
+    }
 
+    private static Control Win11VolumeWrap(Control row)
+    {
         Control body = row;
-        if (vm.ShowMediaStrip)
+        if (TesseraStackedBuildContext.IsActive)
         {
             body = new StackPanel
             {
@@ -84,13 +123,16 @@ internal static partial class TesseraLayouts
                         Height = 1,
                         Background = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255)),
                         Margin = new Thickness(TesseraWindows11Metrics.Pad, 0)
-                    },
-                    TesseraMediaPanel.Create(vm, TesseraMediaMode.Windows11Below)
+                    }
                 }
             };
         }
 
-        return TesseraChrome.GlassTinted(body, TesseraWindows11Metrics.CornerRadius, TesseraStylePalette.Windows11.ShellBrush, w: w);
-
+        return TesseraChrome.GlassTinted(body, TesseraWindows11Metrics.CornerRadius, TesseraStylePalette.Windows11.ShellBrush,
+            w: TesseraWindows11Metrics.Width);
     }
+
+    private static Control Win11MediaWrap(Control media) =>
+        TesseraChrome.GlassTinted(media, TesseraWindows11Metrics.CornerRadius, TesseraStylePalette.Windows11.ShellBrush,
+            w: TesseraWindows11Metrics.Width);
 }

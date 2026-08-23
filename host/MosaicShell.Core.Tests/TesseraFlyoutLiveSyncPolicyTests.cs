@@ -133,4 +133,27 @@ public class TesseraFlyoutLiveSyncPolicyTests
         gate.TryBeginFlush(t0 + TimeSpan.FromMilliseconds(40), out var retry).Should().BeFalse();
         retry.Should().Be(TimeSpan.FromMilliseconds(60));
     }
+
+    [Fact]
+    public void Update_dispatch_gate_must_coalesce_before_ui_post()
+    {
+        TesseraFlyoutLiveSyncPolicy.MustCoalesceBeforeUiPost.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Update_dispatch_gate_merges_same_frame_burst_into_one_post()
+    {
+        var gate = new TesseraFlyoutUpdateDispatchGate();
+        var posts = 0;
+        for (var i = 0; i < 50; i++)
+        {
+            if (gate.TryEnqueue() == TesseraFlyoutUpdateDispatchKind.PostNow)
+                posts++;
+        }
+
+        posts.Should().Be(1);
+        gate.HasScheduledDispatch.Should().BeTrue();
+        gate.CompleteDispatch();
+        gate.TryEnqueue().Should().Be(TesseraFlyoutUpdateDispatchKind.PostNow);
+    }
 }

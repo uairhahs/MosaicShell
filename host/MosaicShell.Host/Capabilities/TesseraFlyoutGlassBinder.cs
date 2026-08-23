@@ -14,12 +14,18 @@ internal static class TesseraFlyoutGlassBinder
         bool UseEmbeddedPreview,
         bool SoftFrostHwndReady,
         bool UseBackdropBlur,
-        bool AllowGdiScreenCapture);
+        bool AllowGdiScreenCapture,
+        bool OsAcrylicEligible);
 
-    public static Binding ApplyForLiveFlyout(bool settingsWantBlur)
+    public static Binding ApplyForLiveFlyout(
+        bool settingsWantBlur,
+        bool osAcrylicEligible = false)
     {
         var softFrostHwnd = TesseraFlyoutWindowPolicy.SoftFrostHwndReady;
-        var mode = TesseraFlyoutGlassPolicy.ResolveLiveMode(softFrostHwnd, settingsWantBlur);
+        var mode = TesseraFlyoutGlassPolicy.ResolveLiveMode(
+            softFrostHwnd,
+            settingsWantBlur,
+            osAcrylicEligible);
         var useEmbedded = TesseraFlyoutGlassPolicy.ShouldUseEmbeddedPreviewBuild(
             isConfigOrExportPreview: false,
             softFrostHwndReady: softFrostHwnd);
@@ -28,7 +34,9 @@ internal static class TesseraFlyoutGlassBinder
 
         TesseraGlass.UseBackdropBlur = useBackdrop;
         TesseraGlass.AllowGdiScreenCapture = allowGdi;
+        TesseraGlass.UseOsAcrylicChrome = mode == TesseraFlyoutGlassMode.OsAcrylic;
+        TesseraGlass.SuppressInnerSkiaGlass = TesseraFlyoutGlassPolicy.SuppressMeterInnerSkiaGlass(mode);
 
-        return new Binding(mode, useEmbedded, softFrostHwnd, useBackdrop, allowGdi);
+        return new Binding(mode, useEmbedded, softFrostHwnd, useBackdrop, allowGdi, osAcrylicEligible);
     }
 }

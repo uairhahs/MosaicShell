@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 
 namespace MosaicShell.Host.Tiles.Tessera;
@@ -349,6 +350,13 @@ public sealed class TesseraRingVolume : Panel
         PointerPressed += (_, e) => { _dragging = true; Mark(); e.Pointer.Capture(this); Apply(e.GetPosition(this)); SyncChrome(); e.Handled = true; };
         PointerMoved += (_, e) => { if (!_dragging) return; Mark(); Apply(e.GetPosition(this)); SyncChrome(); e.Handled = true; };
         PointerReleased += (_, e) => { _dragging = false; Mark(); SyncChrome(); e.Pointer.Capture(null); };
+        PointerCaptureLost += (_, _) =>
+        {
+            if (!_dragging) return;
+            _dragging = false;
+            SyncChrome();
+            InvalidateArrange();
+        };
         PointerWheelChanged += (_, e) =>
         {
             Mark();
@@ -396,7 +404,8 @@ public sealed class TesseraRingVolume : Panel
     public bool IsUserAdjusting => _dragging || DateTime.UtcNow < _userUntil;
     public TextBlock PercentLabel => _pct;
 
-    private void Mark() => _userUntil = DateTime.UtcNow.AddMilliseconds(350);
+    private void Mark() =>
+        _userUntil = DateTime.UtcNow.Add(TesseraVolumeAdjustPolicy.UserAdjustGracePeriod);
 
     public void SetValueSilent(double v)
     {
@@ -517,10 +526,56 @@ public sealed class TesseraRingVolume : Panel
 /// <summary>Arc shape used by <see cref="TesseraRingVolume"/>.</summary>
 internal sealed class Arc : Control
 {
-    public double StartAngle { get; set; }
-    public double SweepAngle { get; set; }
-    public double StrokeThickness { get; set; } = 8;
-    public IBrush? Stroke { get; set; }
+    private double _startAngle;
+    private double _sweepAngle;
+    private double _strokeThickness = 8;
+    private IBrush? _stroke;
+
+    public double StartAngle
+    {
+        get => _startAngle;
+        set
+        {
+            if (Math.Abs(_startAngle - value) < 1e-6) return;
+            _startAngle = value;
+            if (TesseraVolumeAdjustPolicy.VolumeRingArcMustInvalidateVisualOnSweepChange)
+                InvalidateVisual();
+        }
+    }
+
+    public double SweepAngle
+    {
+        get => _sweepAngle;
+        set
+        {
+            if (Math.Abs(_sweepAngle - value) < 1e-6) return;
+            _sweepAngle = value;
+            if (TesseraVolumeAdjustPolicy.VolumeRingArcMustInvalidateVisualOnSweepChange)
+                InvalidateVisual();
+        }
+    }
+
+    public double StrokeThickness
+    {
+        get => _strokeThickness;
+        set
+        {
+            if (Math.Abs(_strokeThickness - value) < 1e-6) return;
+            _strokeThickness = value;
+            InvalidateVisual();
+        }
+    }
+
+    public IBrush? Stroke
+    {
+        get => _stroke;
+        set
+        {
+            if (ReferenceEquals(_stroke, value)) return;
+            _stroke = value;
+            InvalidateVisual();
+        }
+    }
 
     public override void Render(DrawingContext context)
     {

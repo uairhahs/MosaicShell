@@ -12,6 +12,9 @@ public enum TesseraFlyoutGlassMode
     /// </summary>
     EmbeddedSimple,
 
+    /// <summary>WinUI AcrylicBlur on Transparent HWND (H1 trial, single-shell only).</summary>
+    OsAcrylic,
+
     /// <summary>Skia glass chrome (Transparent SoftFrost HWND, no live backdrop).</summary>
     SkiaFallback,
 
@@ -38,7 +41,6 @@ public static class TesseraFlyoutGlassPolicy
     /// (tint/noise/edge) instead, same practical approach as most Avalonia glass UIs.
     /// Shared-backdrop Host wrap stays as a dormant scaffold for future extensibility;
     /// do not flip this without measured non-blanking pixel usability (size ≠ content).
-    /// OS Acrylic/Mica is out of scope, material contract stays Transparent-only.
     /// </summary>
     public const bool ForbidLiveBackdropPixelSampling = true;
 
@@ -71,14 +73,33 @@ public static class TesseraFlyoutGlassPolicy
         ShouldEnableBackdropBlur(softFrostHwndReady, settingsWantBlur)
         && !ForbidLiveBackdropPixelSampling;
 
-    public static TesseraFlyoutGlassMode ResolveLiveMode(bool softFrostHwndReady, bool useBackdropBlur)
+    public static TesseraFlyoutGlassMode ResolveLiveMode(bool softFrostHwndReady, bool useBackdropBlur) =>
+        ResolveLiveMode(softFrostHwndReady, useBackdropBlur, osAcrylicEligible: false);
+
+    public static TesseraFlyoutGlassMode ResolveLiveMode(
+        bool softFrostHwndReady,
+        bool useBackdropBlur,
+        bool osAcrylicEligible)
     {
         if (!softFrostHwndReady && PreferPresentableShellUntilSoftFrostHwnd)
             return TesseraFlyoutGlassMode.EmbeddedSimple;
+
+        if (osAcrylicEligible)
+            return TesseraFlyoutGlassMode.OsAcrylic;
 
         if (ShouldEnableBackdropBlur(softFrostHwndReady, useBackdropBlur))
             return TesseraFlyoutGlassMode.SkiaBackdrop;
 
         return TesseraFlyoutGlassMode.SkiaFallback;
     }
+
+    /// <summary>
+    /// Meter (Amber) wraps the pill and media card in inner <c>TesseraChrome.Glass</c> panels.
+    /// On live SoftFrost/OsAcrylic flyouts that stacks Skia layers on the outer shell and
+    /// produces GPU shimmer/artifacting until the compositor dies.
+    /// </summary>
+    public static bool SuppressMeterInnerSkiaGlass(TesseraFlyoutGlassMode mode) =>
+        mode is TesseraFlyoutGlassMode.SkiaFallback
+            or TesseraFlyoutGlassMode.OsAcrylic
+            or TesseraFlyoutGlassMode.SkiaBackdrop;
 }

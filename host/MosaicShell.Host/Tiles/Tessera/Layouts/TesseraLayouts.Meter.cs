@@ -12,10 +12,35 @@ internal static partial class TesseraLayouts
     {
         if (IsStatus(vm)) return StatusChip(vm, 16);
 
-        // Match Center’s working GlassFill path: fixed size, no M3 thumb, live percent label.
-        // Meter-only glass (old Amber) read as a static mocha block under opaque HWND + Patch.
-        const double w = 28;
-        const double h = 200;
+        var stacked = TesseraStackedBuildContext.TryCreatePanel(
+            vm,
+            buildVolume: MeterVolumeCore,
+            buildMedia: v => TesseraMediaPanel.Create(v, TesseraMediaMode.MeterCard),
+            wrapVolume: MeterVolumeWrap,
+            wrapMedia: static p => p);
+        if (stacked is not null)
+            return stacked;
+
+        var volPill = MeterVolumeWrap(MeterVolumeCore(vm));
+        if (!vm.ShowMediaStrip)
+            return volPill;
+
+        return new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 12,
+            Children =
+            {
+                TesseraMediaPanel.Create(vm, TesseraMediaMode.MeterCard),
+                volPill
+            }
+        };
+    }
+
+    private static Control MeterVolumeCore(TesseraFlyoutViewModel vm)
+    {
+        const double w = TesseraStackedPlacementSpec.MeterVolumeWidthDip;
+        const double h = TesseraStackedPlacementSpec.MeterVolumeHeightDip;
         const double r = 14;
 
         var percent = new TextBlock
@@ -30,6 +55,8 @@ internal static partial class TesseraLayouts
             Name = "TesseraPercent"
         };
 
+        var stackedOsAcrylic = TesseraStackedBuildContext.IsActive && TesseraGlass.UseOsAcrylicChrome;
+
         var track = new TesseraTrack
         {
             IsVertical = true,
@@ -42,14 +69,15 @@ internal static partial class TesseraLayouts
             TrackThickness = w,
             TrackPad = 0,
             ShellRadius = r,
-            GlassFill = true,
+            GlassFill = !stackedOsAcrylic
+                && !TesseraGlass.SuppressInnerSkiaGlass
+                && !TesseraStackedBuildContext.IsActive,
             AccentBrushOverride = TesseraPalette.AccentBrush,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch
         };
         track.ValueChanged += (_, v) => vm.ApplyPrimary(v);
 
-        // Contract: TesseraLayoutCoverage.RequiresLiveVolumePercentLabel("Meter")
         TesseraLiveAmbient.RegisterVolume(track, percent, null);
 
         var overlay = new StackPanel
@@ -67,20 +95,30 @@ internal static partial class TesseraLayouts
             Children = { track, overlay }
         };
         BindWheel(inner, vm);
-        var volPill = TesseraChrome.Glass(inner, r, w: w, h: h);
+        return inner;
+    }
 
-        if (!vm.ShowMediaStrip)
-            return volPill;
+    private static Control MeterVolumeWrap(Control inner)
+    {
+        const double w = TesseraStackedPlacementSpec.MeterVolumeWidthDip;
+        const double h = TesseraStackedPlacementSpec.MeterVolumeHeightDip;
+        const double r = 14;
 
-        return new StackPanel
+        if (TesseraStackedBuildContext.IsActive && TesseraGlass.UseOsAcrylicChrome)
         {
-            Orientation = Orientation.Horizontal,
-            Spacing = 12,
-            Children =
+            return new Border
             {
-                TesseraMediaPanel.Create(vm, TesseraMediaMode.MeterCard),
-                volPill
-            }
-        };
+                Width = w,
+                Height = h,
+                CornerRadius = new CornerRadius(TesseraStackedPlacementSpec.MeterVolumeCornerRadiusDip),
+                Background = Brushes.Transparent,
+                ClipToBounds = true,
+                Child = inner
+            };
+        }
+
+        return TesseraGlass.SuppressInnerSkiaGlass
+            ? TesseraChrome.SolidPill(inner, TesseraChrome.TileFace, r, w, h)
+            : TesseraChrome.Glass(inner, r, w: w, h: h);
     }
 }

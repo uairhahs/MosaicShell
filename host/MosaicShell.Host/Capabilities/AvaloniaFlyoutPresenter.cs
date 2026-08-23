@@ -25,7 +25,7 @@ public sealed class AvaloniaCapabilityUiBridge : ICapabilityUiBridge
         Dispatcher.UIThread.Invoke(action);
 }
 
-public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
+public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
 {
     public event Action<string>? TransientDismissed;
 
@@ -37,12 +37,11 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
     private TesseraOutsideClickWatcher? _outsideClick;
     private DispatcherTimer? _outsideClickArm;
     private readonly TesseraFlyoutLiveSyncCoalescer _patchCoalesce = new();
+    private readonly TesseraFlyoutUpdateDispatchGate _updateDispatch = new();
     private DispatcherTimer? _deferredPatch;
     private FlyoutRequest? _pendingPatch;
+    private FlyoutRequest? _pendingUpdate;
     private bool _pendingResetDismiss;
-    private static readonly string LogPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "MosaicShell", "Cache", "flyout.log");
 
     public AvaloniaFlyoutPresenter(HostServices services, IHostUiBridge? hostUi = null)
     {
@@ -70,9 +69,41 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
     {
         Log($"Update queued kind={request.Kind} style={request.StyleId} thread={Environment.CurrentManagedThreadId}");
         if (IsImmediateStatusKind(request))
+        {
             Dispatcher.UIThread.Invoke(() => SafeShowOrUpdate(request, resetDismiss: true));
-        else
-            Dispatcher.UIThread.Post(() => SafeShowOrUpdate(request, resetDismiss: true));
+            return;
+        }
+
+        _pendingUpdate = request;
+        _pendingResetDismiss = true;
+        if (_updateDispatch.TryEnqueue() != TesseraFlyoutUpdateDispatchKind.PostNow)
+            return;
+
+        Dispatcher.UIThread.Post(FlushPendingUpdate);
+    }
+
+    private void FlushPendingUpdate()
+    {
+        if (_pendingUpdate is not { } pending)
+        {
+            _updateDispatch.CompleteDispatch();
+            return;
+        }
+
+        var reset = _pendingResetDismiss;
+        _pendingUpdate = null;
+        try
+        {
+            SafeShowOrUpdate(pending, reset);
+        }
+        finally
+        {
+            _updateDispatch.CompleteDispatch();
+        }
+
+        if (_pendingUpdate is not null
+            && _updateDispatch.TryEnqueue() == TesseraFlyoutUpdateDispatchKind.PostNow)
+            Dispatcher.UIThread.Post(FlushPendingUpdate);
     }
 
     public void SoftRefresh(FlyoutRequest request) =>
@@ -82,6 +113,20 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
             {
                 lock (_gate)
                 {
+                    if (ShouldUseStackedOsAcrylic(request))
+                    {
+                        var volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Volume);
+                        if (!_windows.TryGetValue(volumeKey, out var volumeWin)
+                            || !volumeWin.IsFlyoutSessionShowing)
+                            return;
+
+                        if (!_patchCoalesce.TryBeginFlush(MonoNow(), out _))
+                            return;
+
+                        volumeWin.ApplyLiveOnly(request, _services);
+                        return;
+                    }
+
                     if (!_windows.TryGetValue(request.ModuleId, out var existing)
                         || !existing.IsFlyoutSessionShowing)
                         return;
@@ -99,18 +144,27 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
     {
         Dispatcher.UIThread.Post(() =>
         {
+            if (moduleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            {
+                CloseStackedSession();
+                FlyoutWindow? single;
+                lock (_gate)
+                {
+                    _windows.Remove(moduleId, out single);
+                }
+                try { single?.Close(); } catch { /* ignore */ }
+                StopOutsideClickWatcher();
+                CloseFocusDim();
+                CancelDeferredPatch();
+                return;
+            }
+
             FlyoutWindow? w;
             lock (_gate)
             {
                 if (!_windows.Remove(moduleId, out w)) return;
             }
             try { w.Close(); } catch { /* ignore */ }
-            if (moduleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
-            {
-                StopOutsideClickWatcher();
-                CloseFocusDim();
-                CancelDeferredPatch();
-            }
         });
     }
 
@@ -118,6 +172,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
     {
         Dispatcher.UIThread.Post(() =>
         {
+            CloseStackedSession();
             List<string> ids;
             lock (_gate) ids = _windows.Keys.ToList();
             foreach (var id in ids)
@@ -130,6 +185,9 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
 
     public bool IsVisible(string moduleId)
     {
+        if (moduleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase) && IsStackedTesseraVisible())
+            return true;
+
         lock (_gate)
             return _windows.TryGetValue(moduleId, out var w) && w.IsFlyoutSessionShowing;
     }
@@ -147,6 +205,20 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
     private static TimeSpan MonoNow() => TimeSpan.FromMilliseconds(Environment.TickCount64);
 
     private void ShowOrUpdateCore(FlyoutRequest request, bool resetDismiss = true)
+    {
+        if (ShouldUseStackedOsAcrylic(request))
+        {
+            ShowOrUpdateStacked(request, resetDismiss);
+            return;
+        }
+
+        if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            CloseStackedSession();
+
+        ShowOrUpdateCoreSinglePath(request, resetDismiss);
+    }
+
+    private void ShowOrUpdateCoreSinglePath(FlyoutRequest request, bool resetDismiss = true)
     {
         Log($"ShowOrUpdateCore enter kind={request.Kind}");
         FlyoutWindow? reuse = null;
@@ -322,6 +394,8 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         _deferredPatch?.Stop();
         _deferredPatch = null;
         _pendingPatch = null;
+        _pendingUpdate = null;
+        _updateDispatch.CompleteDispatch();
     }
 
     private void PresentFlyout(FlyoutWindow window, FlyoutRequest request)
@@ -448,13 +522,13 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
     private void DismissTesseraImmediate()
     {
         Log("outside-click dismiss");
-        FlyoutWindow? flyout;
-        lock (_gate) _windows.TryGetValue("Tessera", out flyout);
-        if (flyout is null) return;
+        if (_stackedSession is not null)
+        {
+            DismissStackedTesseraImmediate();
+            return;
+        }
 
-        // Keep the HWND registered, TransientDismiss Hides so the next Try now reuses it.
-        // TransientDismissed closes FocusDim (same path as auto-dismiss timer).
-        flyout.TransientDismiss();
+        DismissTesseraSingleImmediate();
     }
 
     private void WireTesseraSession(FlyoutWindow window)
@@ -465,6 +539,22 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
 
     private void OnFlyoutTransientDismissed(string moduleId)
     {
+        if (_stackedSession is not null
+            && TesseraOsAcrylicStackedPolicy.TransientDismissMustHideAllSlots)
+        {
+            lock (_gate)
+            {
+                foreach (var slotKey in _stackedSession.SlotKeys)
+                {
+                    if (_windows.TryGetValue(slotKey, out var window)
+                        && window.IsFlyoutSessionShowing)
+                        window.TransientDismissWithoutNotify();
+                }
+            }
+
+            StopStackedAutoDismiss();
+        }
+
         try { TransientDismissed?.Invoke(moduleId); }
         catch { /* ignore */ }
 
@@ -482,11 +572,14 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
             var material = TesseraFlyoutMaterialFactory.FromPayload(request.Payload);
             TesseraPalette.ApplyMaterial(material);
 
+            var osAcrylicEligible = TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(
+                request.Payload, request.StyleId);
             var settingsWantBlur = TesseraFlyoutRequestBuilder.BackdropBlurFromPayload(request.Payload);
-            var glass = TesseraFlyoutGlassBinder.ApplyForLiveFlyout(settingsWantBlur);
+            var glass = TesseraFlyoutGlassBinder.ApplyForLiveFlyout(settingsWantBlur, osAcrylicEligible);
             Log(
                 $"glass mode={glass.Mode} backdrop={glass.UseBackdropBlur} " +
-                $"embeddedPreview={glass.UseEmbeddedPreview} softFrostHwnd={glass.SoftFrostHwndReady}");
+                $"embeddedPreview={glass.UseEmbeddedPreview} softFrostHwnd={glass.SoftFrostHwndReady} " +
+                $"osAcrylic={glass.OsAcrylicEligible}");
 
             var vm = TesseraFlyoutViewModel.FromRequest(_services, request, _hostUi);
             var root = TesseraStyleFactory.Create(
@@ -539,14 +632,5 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         return Math.Clamp(pct, 50, 150) / 100.0;
     }
 
-    private static void Log(string message)
-    {
-        try
-        {
-            AppPaths.EnsureLayout();
-            File.AppendAllText(LogPath, $"{DateTime.Now:HH:mm:ss.fff} {message}{Environment.NewLine}");
-        }
-        catch { /* ignore */ }
-        Console.WriteLine($"[Tessera flyout] {message}");
-    }
+    private static void Log(string message) => TesseraFlyoutDiagnostics.Log(message);
 }

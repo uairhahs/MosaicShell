@@ -8,6 +8,8 @@ using Material.Icons;
 using Material.Icons.Avalonia;
 using MosaicShell.Core.Services;
 
+using MosaicShell.Core.Modules.Tessera;
+
 namespace MosaicShell.Host.Tiles.Tessera;
 
 internal static partial class TesseraLayouts
@@ -16,6 +18,27 @@ internal static partial class TesseraLayouts
     public static Control Compact(TesseraFlyoutViewModel vm)
     {
         if (IsStatus(vm)) return StatusChip(vm, 12);
+
+        var stacked = TesseraStackedBuildContext.TryCreatePanel(
+            vm,
+            buildVolume: CompactVolumeCore,
+            buildMedia: v => TesseraMediaPanel.Create(v, TesseraMediaMode.SimpleRow),
+            wrapVolume: CompactVolumeWrap,
+            wrapMedia: static p => p);
+        if (stacked is not null)
+            return stacked;
+
+        var vol = CompactVolumeWrap(CompactVolumeCore(vm));
+        if (!vm.ShowMediaStrip) return vol;
+        return new StackPanel
+        {
+            Spacing = 10,
+            Children = { vol, TesseraMediaPanel.Create(vm, TesseraMediaMode.SimpleRow) }
+        };
+    }
+
+    private static Control CompactVolumeCore(TesseraFlyoutViewModel vm)
+    {
         var glyph = TesseraVolumeGlyph.Create(vm, 16);
         glyph.Name = "TesseraGlyph";
         var track = new TesseraTrack
@@ -39,19 +62,31 @@ internal static partial class TesseraLayouts
             Name = "TesseraPercent"
         };
         TesseraLiveAmbient.RegisterVolume(track, percent, glyph as MaterialIcon);
-        var vol = TesseraChrome.Glass(new StackPanel
+        var panel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 10,
             Children = { glyph, track, percent }
-        }, 12, new Thickness(12, 10), w: 280);
-        BindWheel(vol, vm);
-        if (!vm.ShowMediaStrip) return vol;
-        return new StackPanel
-        {
-            Spacing = 10,
-            Children = { vol, TesseraMediaPanel.Create(vm, TesseraMediaMode.SimpleRow) }
         };
+        BindWheel(panel, vm);
+        return panel;
+    }
 
+    private static Control CompactVolumeWrap(Control inner)
+    {
+        if (TesseraStackedBuildContext.IsActive && TesseraGlass.UseOsAcrylicChrome)
+        {
+            return new Border
+            {
+                Width = TesseraStackedPlacementSpec.CompactVolumeWidthDip,
+                Height = TesseraStackedPlacementSpec.CompactVolumeHeightDip,
+                Padding = new Thickness(12, 10),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                ClipToBounds = true,
+                Child = inner
+            };
+        }
+
+        return TesseraChrome.Glass(inner, 12, new Thickness(12, 10), w: 280);
     }
 }

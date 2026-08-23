@@ -70,4 +70,19 @@ public static class TesseraFlyoutWindowPolicy
         SoftFrostHwndReady
             ? SoftFrostCompositionFallbackAlpha
             : ResolveWindowBackgroundAlpha(material);
+
+    /// <summary>Minimum client width before a single flyout may anchor (legacy chip gate).</summary>
+    public const double RelayoutMinWidthDip = 40;
+
+    /// <summary>Minimum client height before a flyout may anchor.</summary>
+    public const double RelayoutMinHeightDip = 24;
+
+    public static double ResolveRelayoutMinWidthDip(bool stackedClusterPanel) =>
+        stackedClusterPanel
+            ? TesseraOsAcrylicStackedPolicy.ClusterRelayoutMinWidthDip
+            : RelayoutMinWidthDip;
+
+    public static bool MeetsRelayoutSizeGate(double widthDip, double heightDip, bool stackedClusterPanel) =>
+        widthDip >= ResolveRelayoutMinWidthDip(stackedClusterPanel)
+        && heightDip >= RelayoutMinHeightDip;
 }

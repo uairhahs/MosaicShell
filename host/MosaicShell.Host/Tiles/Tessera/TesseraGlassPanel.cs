@@ -32,6 +32,12 @@ public static class TesseraGlass
     /// <summary>While true, glass shells render as simple borders (config preview build).</summary>
     public static bool EmbeddedPreviewBuild { get; set; }
 
+    /// <summary>OS AcrylicBlur trial: skip Skia frost slab; HWND blur + light edge only.</summary>
+    public static bool UseOsAcrylicChrome { get; set; }
+
+    /// <summary>Live flyout: skip inner TesseraChrome.Glass on Meter/Amber (see Core policy).</summary>
+    public static bool SuppressInnerSkiaGlass { get; set; }
+
     public static bool IsEmbeddedPreviewContext(Visual? visual)
     {
         for (var v = visual; v is not null; v = v.GetVisualParent())
@@ -386,13 +392,21 @@ internal sealed class TesseraGlassBackground : Control
         var rect = SKRect.Create(0, 0, w, h);
         var round = new SKRoundRect(rect, (float)cornerRadius, (float)cornerRadius);
 
-        // Always paint translucent frost chrome. Do NOT GDI/BitBlt or shared-capture into
-        // this layer, that self-captures the flyout as opaque black (Soft frost → black boxes).
-        // Real wallpaper shows through Transparent HWND + alpha frost (4fcc41a fake-glass recipe).
-        TesseraGlassDrawOperation.DrawFallbackGlass(lc, round, w, h, tint);
+        var osAcrylic = TesseraGlass.UseOsAcrylicChrome
+            && !TesseraGlass.PreviewMode
+            && !TesseraGlass.IsEmbeddedPreviewContext(this);
+
+        if (!osAcrylic)
+        {
+            // Always paint translucent frost chrome. Do NOT GDI/BitBlt or shared-capture into
+            // this layer, that self-captures the flyout as opaque black (Soft frost → black boxes).
+            // Real wallpaper shows through Transparent HWND + alpha frost (4fcc41a fake-glass recipe).
+            TesseraGlassDrawOperation.DrawFallbackGlass(lc, round, w, h, tint);
+        }
 
         var drewBackdrop = false;
-        var maySample = TesseraGlass.UseBackdropBlur
+        var maySample = !osAcrylic
+            && TesseraGlass.UseBackdropBlur
             && !TesseraGlass.PreviewMode
             && !TesseraGlass.IsEmbeddedPreviewContext(this)
             && !TesseraFlyoutGlassPolicy.ForbidLiveBackdropPixelSampling;
@@ -411,8 +425,15 @@ internal sealed class TesseraGlassBackground : Control
                 lc, targetCanvas, sourceSurface, rect, round, blurRadius);
         }
 
-        TesseraGlassDrawOperation.DrawShellTint(lc, round, tint, drewBackdrop, lightTintOnly: false);
-        TesseraGlassDrawOperation.DrawGlassChrome(lc, round, w, h);
+        if (osAcrylic)
+        {
+            TesseraGlassDrawOperation.DrawGlassChrome(lc, round, w, h);
+        }
+        else
+        {
+            TesseraGlassDrawOperation.DrawShellTint(lc, round, tint, drewBackdrop, lightTintOnly: false);
+            TesseraGlassDrawOperation.DrawGlassChrome(lc, round, w, h);
+        }
 
         _layerCache.Image = layerSurface.Snapshot();
         return _layerCache.Image;

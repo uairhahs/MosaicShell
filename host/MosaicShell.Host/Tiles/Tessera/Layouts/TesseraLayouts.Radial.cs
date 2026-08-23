@@ -16,6 +16,46 @@ internal static partial class TesseraLayouts
     public static Control Radial(TesseraFlyoutViewModel vm)
     {
         if (IsStatus(vm)) return StatusChip(vm, 10);
+
+        var stacked = TesseraStackedBuildContext.TryCreatePanel(
+            vm,
+            buildVolume: RadialVolumeCore,
+            buildMedia: v => TesseraMediaPanel.Create(v, TesseraMediaMode.RadialSide),
+            wrapVolume: RadialVolumeWrap,
+            wrapMedia: RadialMediaWrap);
+        if (stacked is not null)
+            return stacked;
+
+        var left = RadialVolumeCore(vm);
+        Control body = left;
+        if (vm.ShowMediaStrip)
+        {
+            var media = TesseraMediaPanel.Create(vm, TesseraMediaMode.RadialSide);
+            media.HorizontalAlignment = HorizontalAlignment.Right;
+            media.VerticalAlignment = VerticalAlignment.Center;
+
+            body = new Grid
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Center,
+                ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
+                Children = { left, media }
+            };
+            Grid.SetColumn(left, 0);
+            Grid.SetColumn(media, 2);
+        }
+
+        var shell = TesseraChrome.WithArtWash(body, vm.ThumbnailPng, 10,
+            new Thickness(TesseraStyleMetrics.RadialPad, 14),
+            TesseraStyleMetrics.RadialWidth,
+            TesseraStyleMetrics.RadialMaxHeight);
+        shell.MinHeight = TesseraStyleMetrics.RadialMinHeight;
+        shell.VerticalAlignment = VerticalAlignment.Top;
+        return shell;
+    }
+
+    private static Control RadialVolumeCore(TesseraFlyoutViewModel vm)
+    {
         const double ringSize = TesseraStyleMetrics.RadialRing;
         var ring = new TesseraRingVolume
         {
@@ -54,32 +94,19 @@ internal static partial class TesseraLayouts
             }
         };
         BindWheel(ringHost, vm);
+        return left;
+    }
 
-        Control body = left;
-        if (vm.ShowMediaStrip)
-        {
-            var media = TesseraMediaPanel.Create(vm, TesseraMediaMode.RadialSide);
-            media.HorizontalAlignment = HorizontalAlignment.Right;
-            media.VerticalAlignment = VerticalAlignment.Center;
+    private static Control RadialVolumeWrap(Control inner) =>
+        TesseraChrome.Glass(inner, 10, new Thickness(TesseraStyleMetrics.RadialPad, 14));
 
-            body = new Grid
-            {
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Center,
-                ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
-                Children = { left, media }
-            };
-            Grid.SetColumn(left, 0);
-            Grid.SetColumn(media, 2);
-        }
+    private static Control RadialMediaWrap(Control media)
+    {
+        media.HorizontalAlignment = HorizontalAlignment.Right;
+        media.VerticalAlignment = VerticalAlignment.Center;
+        if (TesseraStackedBuildContext.IsActive)
+            return media;
 
-        var shell = TesseraChrome.WithArtWash(body, vm.ThumbnailPng, 10,
-            new Thickness(TesseraStyleMetrics.RadialPad, 14),
-            TesseraStyleMetrics.RadialWidth,
-            TesseraStyleMetrics.RadialMaxHeight);
-        shell.MinHeight = TesseraStyleMetrics.RadialMinHeight;
-        shell.VerticalAlignment = VerticalAlignment.Top;
-        return shell;
-
+        return TesseraChrome.Glass(media, 10, new Thickness(12, 14));
     }
 }

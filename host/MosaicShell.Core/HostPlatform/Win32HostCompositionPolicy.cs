@@ -1,3 +1,4 @@
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules.Tessera;
 
 namespace MosaicShell.Core.HostPlatform;
@@ -16,4 +17,29 @@ public static class Win32HostCompositionPolicy
     /// </summary>
     public static bool PreferWinUiComposition =>
         TesseraFlyoutWindowPolicy.PreferWinUiCompositionForSoftFrost;
+
+    /// <summary>Pin AngleEgl ahead of Software (H0); required for backdrop corner radius.</summary>
+    public const bool PreferAngleEglRendering = true;
+
+    /// <summary>String hints for Host bootstrap; mirrors Avalonia Win32RenderingMode order.</summary>
+    public static IReadOnlyList<string> RenderingModeHints =>
+        HostLaunchOptions.TesseraForceSoftwareRender
+            ? ["Software"]
+            : ["AngleEgl", "Software"];
+
+    /// <summary>OsAcrylic needs AngleEgl; Software-only forces frost fallback (H2 row).</summary>
+    public static bool OsAcrylicRenderingAvailable =>
+        !HostLaunchOptions.TesseraForceSoftwareRender;
+
+    /// <summary>Runtime opt-in from <see cref="HostLaunchOptions.TesseraOsAcrylicTrialFlag"/>.</summary>
+    public static bool OsAcrylicTrialRequested =>
+        TesseraOsAcrylicTrialPolicy.Available
+        && HostLaunchOptions.TesseraOsAcrylicTrial
+        && OsAcrylicRenderingAvailable;
+
+    /// <summary>
+    /// Process-wide rounded acrylic brushes. Null while trial is off so alpha keeps Skia frost.
+    /// </summary>
+    public static float? WinUiCompositionBackdropCornerRadius =>
+        OsAcrylicTrialRequested ? TesseraOsAcrylicTrialPolicy.SpikeCornerRadius : null;
 }

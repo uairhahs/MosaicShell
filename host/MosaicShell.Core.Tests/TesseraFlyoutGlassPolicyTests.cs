@@ -73,13 +73,24 @@ public class TesseraFlyoutGlassPolicyTests
     }
 
     [Fact]
-    public void Soft_frost_material_still_asks_for_transparent_not_os_acrylic()
+    public void Default_frost_material_asks_for_transparent_not_os_acrylic()
     {
-        // R5: OS Acrylic/Mica stays shelved, material contract forces Transparent only.
         var m = TesseraFlyoutMaterialFactory.Create(useAcrylic: true);
         m.TransparencyHints.Should().Equal("Transparent");
         m.TransparencyHints.Should().NotContain("AcrylicBlur");
         m.TransparencyHints.Should().NotContain("Blur");
         m.TransparencyHints.Should().NotContain("Mica");
+    }
+
+    [Theory]
+    [InlineData(TesseraFlyoutGlassMode.EmbeddedSimple, false)]
+    [InlineData(TesseraFlyoutGlassMode.SkiaFallback, true)]
+    [InlineData(TesseraFlyoutGlassMode.OsAcrylic, true)]
+    [InlineData(TesseraFlyoutGlassMode.SkiaBackdrop, true)]
+    public void Meter_inner_skia_glass_suppressed_on_live_flyout_shells(
+        TesseraFlyoutGlassMode mode,
+        bool expectSuppressed)
+    {
+        TesseraFlyoutGlassPolicy.SuppressMeterInnerSkiaGlass(mode).Should().Be(expectSuppressed);
     }
 }

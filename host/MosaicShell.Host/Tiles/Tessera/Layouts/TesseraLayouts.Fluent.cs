@@ -16,7 +16,8 @@ internal static partial class TesseraLayouts
     {
         if (IsStatus(vm)) return StatusChip(vm, 0);
 
-        if (vm.Kind.Equals("media", StringComparison.OrdinalIgnoreCase))
+        if (vm.Kind.Equals("media", StringComparison.OrdinalIgnoreCase)
+            && !TesseraStackedBuildContext.IsActive)
         {
             return TesseraChrome.Shell(
                 TesseraMediaPanel.Create(vm, TesseraMediaMode.FluentSide),
@@ -26,6 +27,46 @@ internal static partial class TesseraLayouts
                 maxWidth: TesseraFluentMetrics.MaxShellWidth);
         }
 
+        var stacked = TesseraStackedBuildContext.TryCreatePanel(
+            vm,
+            buildVolume: FluentVolumeCore,
+            buildMedia: v => TesseraMediaPanel.Create(v, TesseraMediaMode.FluentSide),
+            wrapVolume: FluentVolumeWrap,
+            wrapMedia: FluentMediaWrap);
+        if (stacked is not null)
+            return stacked;
+
+        var volCol = FluentVolumeCore(vm);
+        Control body = volCol;
+        if (vm.ShowMediaStrip)
+        {
+            const double h = TesseraFluentMetrics.Height;
+            const double pad = TesseraFluentMetrics.Pad;
+            var divider = new Border
+            {
+                Width = 1,
+                Height = h - pad * 2,
+                Background = TesseraPalette.StrokeBrush,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, pad, 0, pad),
+                Opacity = 0.55
+            };
+            var media = TesseraMediaPanel.Create(vm, TesseraMediaMode.FluentSide);
+            body = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 2,
+                Children = { volCol, divider, media }
+            };
+        }
+
+        return TesseraChrome.Shell(body, 10, TesseraShellOptions.InsetMargin,
+            new SolidColorBrush(TesseraPalette.Primary),
+            maxWidth: TesseraFluentMetrics.MaxShellWidth);
+    }
+
+    private static Control FluentVolumeCore(TesseraFlyoutViewModel vm)
+    {
         const double volumeW = TesseraFluentMetrics.VolumeWidth;
         const double h = TesseraFluentMetrics.Height;
         const double pad = TesseraFluentMetrics.Pad;
@@ -75,31 +116,21 @@ internal static partial class TesseraLayouts
             Child = volPanel
         };
         BindWheel(volCol, vm);
+        return volCol;
+    }
 
-        Control body = volCol;
-        if (vm.ShowMediaStrip)
-        {
-            var divider = new Border
-            {
-                Width = 1,
-                Height = h - pad * 2,
-                Background = TesseraPalette.StrokeBrush,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, pad, 0, pad),
-                Opacity = 0.55
-            };
-            var media = TesseraMediaPanel.Create(vm, TesseraMediaMode.FluentSide);
-            body = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Spacing = 2,
-                Children = { volCol, divider, media }
-            };
-        }
+    private static Control FluentVolumeWrap(Control volCol)
+    {
+        var options = TesseraStackedBuildContext.IsActive ? TesseraShellOptions.None : TesseraShellOptions.InsetMargin;
+        return TesseraChrome.Shell(volCol, 10, options,
+            new SolidColorBrush(TesseraPalette.Primary));
+    }
 
-        return TesseraChrome.Shell(body, 10, TesseraShellOptions.InsetMargin,
+    private static Control FluentMediaWrap(Control media)
+    {
+        var options = TesseraStackedBuildContext.IsActive ? TesseraShellOptions.None : TesseraShellOptions.InsetMargin;
+        return TesseraChrome.Shell(media, 10, options,
             new SolidColorBrush(TesseraPalette.Primary),
             maxWidth: TesseraFluentMetrics.MaxShellWidth);
-
     }
 }

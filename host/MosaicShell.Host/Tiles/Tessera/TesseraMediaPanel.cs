@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Material.Icons;
 using Material.Icons.Avalonia;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 using System.IO;
 
@@ -201,16 +202,28 @@ public static class TesseraMediaPanel
         Grid.SetColumn(art, 1);
         top.Children.Add(left);
         top.Children.Add(art);
-        return TesseraChrome.Glass(
-            new StackPanel { Spacing = 4, Children = { top, scrub, transport } },
-            12,
-            new Thickness(12),
-            w: 320,
-            h: 190);
+        var body = new StackPanel { Spacing = 4, Children = { top, scrub, transport } };
+
+        if (TesseraStackedBuildContext.IsActive && TesseraGlass.UseOsAcrylicChrome)
+        {
+            return new Border
+            {
+                Width = TesseraStackedPlacementSpec.ModernFlyoutsMediaWidthDip,
+                Height = TesseraStackedPlacementSpec.ModernFlyoutsMediaHeightDip,
+                CornerRadius = new CornerRadius(12),
+                Background = Brushes.Transparent,
+                Padding = new Thickness(12),
+                ClipToBounds = true,
+                Child = body
+            };
+        }
+
+        return TesseraChrome.Glass(body, 12, new Thickness(12), w: 320, h: 190);
     }
 
     private static Control SimpleRow(TesseraFlyoutViewModel vm)
     {
+        var stackedOsAcrylic = TesseraStackedBuildContext.IsActive && TesseraGlass.UseOsAcrylicChrome;
         var art = AlbumArt(vm, 64);
         var title = Text(vm.MediaTitle, 15, FontWeight.SemiBold, 200);
         var artist = Text(vm.MediaArtist, 12, FontWeight.Normal, 200, muted: true);
@@ -219,7 +232,7 @@ public static class TesseraMediaPanel
         var heart = GlyphBtn(MaterialIconKind.Heart, () => { });
         heart.HorizontalAlignment = HorizontalAlignment.Left;
         TesseraLiveAmbient.RegisterMedia(art, title, artist, null, time, null, null);
-        return TesseraChrome.Glass(new StackPanel
+        var body = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 12,
@@ -228,11 +241,28 @@ public static class TesseraMediaPanel
                 art,
                 new StackPanel { Spacing = 4, VerticalAlignment = VerticalAlignment.Center, Children = { title, artist, time, heart } }
             }
-        }, 14, new Thickness(12), w: 320);
+        };
+
+        if (stackedOsAcrylic)
+        {
+            return new Border
+            {
+                Width = TesseraStackedPlacementSpec.CompactMediaWidthDip,
+                Height = TesseraStackedPlacementSpec.CompactMediaHeightDip,
+                CornerRadius = new CornerRadius(14),
+                Background = Brushes.Transparent,
+                Padding = new Thickness(12),
+                ClipToBounds = true,
+                Child = body
+            };
+        }
+
+        return TesseraChrome.Glass(body, 14, new Thickness(12), w: 320);
     }
 
     private static Control GnomePill(TesseraFlyoutViewModel vm)
     {
+        var stackedOsAcrylic = TesseraStackedBuildContext.IsActive && TesseraGlass.UseOsAcrylicChrome;
         var art = AlbumArt(vm, 36);
         art.CornerRadius = new CornerRadius(18);
         var title = Text(vm.MediaTitle, 13, FontWeight.SemiBold, 140);
@@ -242,7 +272,7 @@ public static class TesseraMediaPanel
         var play = GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: 32, playStyle: true);
         var next = GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: 32);
         TesseraLiveAmbient.RegisterMedia(art, title, artist, null, null, null, playIcon);
-        return TesseraChrome.Glass(new StackPanel
+        var body = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 10,
@@ -255,29 +285,118 @@ public static class TesseraMediaPanel
                 play,
                 next
             }
-        }, 28, new Thickness(10, 8), w: 340);
+        };
+
+        if (stackedOsAcrylic)
+        {
+            return new Border
+            {
+                Width = TesseraStackedPlacementSpec.GnomeMediaWidthDip,
+                Height = TesseraStackedPlacementSpec.GnomeMediaHeightDip,
+                CornerRadius = new CornerRadius(TesseraStackedPlacementSpec.GnomePillCornerRadiusDip),
+                Background = Brushes.Transparent,
+                Padding = new Thickness(10, 8),
+                ClipToBounds = true,
+                Child = body
+            };
+        }
+
+        return TesseraChrome.Glass(body, 28, new Thickness(10, 8), w: 340);
     }
 
     private static Control MeterCard(TesseraFlyoutViewModel vm)
     {
-        var art = AlbumArt(vm, 120);
+        var stacked = TesseraStackedBuildContext.IsActive;
+        var stackedOsAcrylic = stacked && TesseraGlass.UseOsAcrylicChrome;
+        var artSize = stacked
+            ? (int)TesseraStackedPlacementSpec.MeterMediaArtDip
+            : 120;
+        var art = AlbumArt(vm, artSize);
         art.HorizontalAlignment = HorizontalAlignment.Center;
-        art.Margin = new Thickness(0, 8, 0, 8);
+        art.Margin = stacked
+            ? new Thickness(0, 0, 0, TesseraStackedPlacementSpec.MeterMediaArtBottomMarginDip)
+            : new Thickness(0, 8, 0, 8);
         var title = Text(vm.MediaTitle, 15, FontWeight.SemiBold, 160);
         title.HorizontalAlignment = HorizontalAlignment.Center;
         title.TextAlignment = TextAlignment.Center;
+        title.Height = TesseraStackedPlacementSpec.MeterMediaTitleLineDip;
         var artist = Text(vm.MediaArtist, 12, FontWeight.Normal, 160, muted: true);
         artist.HorizontalAlignment = HorizontalAlignment.Center;
         artist.TextAlignment = TextAlignment.Center;
+        artist.Height = TesseraStackedPlacementSpec.MeterMediaArtistLineDip;
         var playIcon = PlayIcon(vm);
-        var (transport, _, _) = TransportRow(vm, playIcon, shuffleRepeat: false, spacing: 20);
-        transport.Margin = new Thickness(0, 10, 0, 4);
+        var transportBtn = stacked
+            ? TesseraStackedPlacementSpec.MeterMediaTransportBtnDip
+            : 32;
+        var (transport, _, _) = TransportRow(
+            vm,
+            playIcon,
+            shuffleRepeat: false,
+            spacing: stacked ? 16 : 20,
+            btnSize: transportBtn);
         TesseraLiveAmbient.RegisterMedia(art, title, artist, null, null, null, playIcon);
-        return TesseraChrome.Glass(new StackPanel
+
+        Control body;
+        if (stacked)
         {
-            Width = 180,
-            Children = { art, title, artist, transport }
-        }, 16, new Thickness(14, 10));
+            transport.HorizontalAlignment = HorizontalAlignment.Center;
+            transport.Margin = new Thickness(0, TesseraStackedPlacementSpec.MeterMediaTransportTopMarginDip, 0, 0);
+            var header = new StackPanel
+            {
+                Width = TesseraStackedPlacementSpec.MeterMediaBodyWidthDip,
+                Spacing = TesseraStackedPlacementSpec.MeterMediaHeaderSpacingDip,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Top,
+                Children = { art, title, artist }
+            };
+            var dock = new DockPanel
+            {
+                Width = TesseraStackedPlacementSpec.MeterMediaBodyWidthDip,
+                LastChildFill = true,
+                VerticalAlignment = VerticalAlignment.Stretch
+            };
+            DockPanel.SetDock(transport, Dock.Bottom);
+            dock.Children.Add(transport);
+            dock.Children.Add(header);
+            body = dock;
+        }
+        else
+        {
+            transport.Margin = new Thickness(0, 10, 0, 4);
+            body = new StackPanel
+            {
+                Width = TesseraStackedPlacementSpec.MeterMediaBodyWidthDip,
+                Children = { art, title, artist, transport }
+            };
+        }
+
+        if (TesseraGlass.SuppressInnerSkiaGlass)
+        {
+            var pad = stacked
+                ? new Thickness(
+                    TesseraStackedPlacementSpec.MeterMediaPadHorizontalDip,
+                    TesseraStackedPlacementSpec.MeterMediaPadTopDip,
+                    TesseraStackedPlacementSpec.MeterMediaPadHorizontalDip,
+                    TesseraStackedPlacementSpec.MeterMediaPadBottomDip)
+                : new Thickness(14, 10);
+            var border = new Border
+            {
+                CornerRadius = new CornerRadius(16),
+                Background = stackedOsAcrylic ? Brushes.Transparent : TesseraChrome.TileFace,
+                Padding = pad,
+                ClipToBounds = true,
+                Child = body
+            };
+            if (stacked)
+            {
+                border.Width = TesseraStackedPlacementSpec.MeterMediaWidthDip;
+                border.Height = TesseraStackedPlacementSpec.MeterMediaHeightDip;
+            }
+
+            return border;
+        }
+
+        return TesseraChrome.Glass(body, 16, new Thickness(14, 10));
     }
 
     private static Control CoreUiBlock(TesseraFlyoutViewModel vm, double height = 150)

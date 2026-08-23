@@ -43,7 +43,13 @@ public sealed class TesseraLiveBindings
 /// <summary>Root wrapper - live pump updates Bindings directly (volume / scrub / art).</summary>
 public sealed class TesseraLiveHost : ContentControl
 {
-    public TesseraLiveBindings Bindings { get; } = new();
+    public TesseraLiveBindings Bindings { get; }
+
+    /// <summary>Root wrapper - live pump updates Bindings directly (volume / scrub / art).</summary>
+    public TesseraLiveHost(TesseraLiveBindings? sharedBindings = null)
+    {
+        Bindings = sharedBindings ?? new TesseraLiveBindings();
+    }
 
     /// <summary>Module-config preview, must not sample live desktop backdrop.</summary>
     public bool IsEmbeddedPreview { get; init; }
