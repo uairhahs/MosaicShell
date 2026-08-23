@@ -18,4 +18,4 @@ dotnet run --project MosaicShell.Host
 
 In Host: Library → Substrate → Arm, then press the configured hotkey.
 
-Promised Rainmeter-era behavior: [`docs/legacy/substrate.md`](../../docs/legacy/substrate.md).
+Promised Rainmeter-era behavior: [`.cursor/docs/legacy/substrate.md`](../../.cursor/docs/legacy/substrate.md).

@@ -1,31 +1,50 @@
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
 
 namespace MosaicShell.Core.Capabilities.BuiltIn;
 
-/// <summary>Armed hotkey opens Host overlay via bridge (Mixdeck / Inlay / Chord / Substrate).</summary>
+/// <summary>Armed hotkey opens Host overlay via <see cref="IHostUiBridge"/>.</summary>
 public class HotkeyOverlayCapability : IModuleCapability
 {
     private readonly HostServices _services;
     private readonly string _hotkeyId;
+    private readonly string _overlayModuleId;
     private readonly Func<string> _gesture;
     private readonly Action<string>? _persistGesture;
-    private readonly Func<Func<Task>?> _getOpenOverlay;
+    private readonly IHostUiBridge _hostUi;
 
+    public HotkeyOverlayCapability(
+        string moduleId,
+        ICapabilityContext context,
+        Func<string> gesture,
+        Action<string>? persistGesture = null)
+    {
+        ModuleId = moduleId;
+        _overlayModuleId = moduleId;
+        _services = context.Services;
+        _hotkeyId = "cap:" + moduleId;
+        _gesture = gesture;
+        _hostUi = context.Ui.HostUi;
+        _persistGesture = persistGesture;
+    }
+
+    /// <summary>Legacy ctor for tests that pass services/ui directly.</summary>
     public HotkeyOverlayCapability(
         string moduleId,
         HostServices services,
         Func<string> gesture,
-        Func<Func<Task>?> getOpenOverlay,
+        IHostUiBridge hostUi,
         Action<string>? persistGesture = null)
     {
         ModuleId = moduleId;
+        _overlayModuleId = moduleId;
         _services = services;
         _hotkeyId = "cap:" + moduleId;
         _gesture = gesture;
-        _getOpenOverlay = getOpenOverlay;
+        _hostUi = hostUi;
         _persistGesture = persistGesture;
     }
 
@@ -75,22 +94,16 @@ public class HotkeyOverlayCapability : IModuleCapability
         return Task.CompletedTask;
     }
 
-    private void OnHotkey()
-    {
-        var open = _getOpenOverlay();
-        if (open is not null)
-            _ = open();
-    }
+    private void OnHotkey() => _ = _hostUi.OpenOverlayAsync(_overlayModuleId);
 
     public void Dispose() => DisarmAsync().GetAwaiter().GetResult();
 }
 
 public sealed class MixdeckCapability : HotkeyOverlayCapability
 {
-    public MixdeckCapability(HostServices services, ICapabilityUiBridge _)
-        : base("Mixdeck", services,
+    public MixdeckCapability(ICapabilityContext context)
+        : base("Mixdeck", context,
             () => ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings()).HotkeyGesture,
-            () => MixdeckHostBridgeAccessor.OpenOverlayAsync,
             PersistMixdeck)
     {
     }
@@ -103,17 +116,11 @@ public sealed class MixdeckCapability : HotkeyOverlayCapability
     }
 }
 
-public static class MixdeckHostBridgeAccessor
-{
-    public static Func<Task>? OpenOverlayAsync { get; set; }
-}
-
 public sealed class InlayCapability : HotkeyOverlayCapability
 {
-    public InlayCapability(HostServices services, ICapabilityUiBridge _)
-        : base("Inlay", services,
+    public InlayCapability(ICapabilityContext context)
+        : base("Inlay", context,
             () => ModuleSettingsStore.Load("Inlay", () => new InlaySettings()).HotkeyGesture,
-            () => InlayHostBridgeAccessor.OpenOverlayAsync,
             PersistInlay)
     {
     }
@@ -126,17 +133,11 @@ public sealed class InlayCapability : HotkeyOverlayCapability
     }
 }
 
-public static class InlayHostBridgeAccessor
-{
-    public static Func<Task>? OpenOverlayAsync { get; set; }
-}
-
 public sealed class ChordCapability : HotkeyOverlayCapability
 {
-    public ChordCapability(HostServices services, ICapabilityUiBridge _)
-        : base("Chord", services,
+    public ChordCapability(ICapabilityContext context)
+        : base("Chord", context,
             () => ModuleSettingsStore.Load("Chord", () => new ChordSettings()).HotkeyGesture,
-            () => ChordHostBridgeAccessor.OpenOverlayAsync,
             PersistChord)
     {
     }
@@ -149,17 +150,11 @@ public sealed class ChordCapability : HotkeyOverlayCapability
     }
 }
 
-public static class ChordHostBridgeAccessor
-{
-    public static Func<Task>? OpenOverlayAsync { get; set; }
-}
-
 public sealed class SubstrateCapability : HotkeyOverlayCapability
 {
-    public SubstrateCapability(HostServices services, ICapabilityUiBridge _)
-        : base("Substrate", services,
+    public SubstrateCapability(ICapabilityContext context)
+        : base("Substrate", context,
             () => ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings()).HotkeyGesture,
-            () => SubstrateHostBridgeAccessor.OpenOverlayAsync,
             PersistSubstrate)
     {
     }
@@ -172,18 +167,15 @@ public sealed class SubstrateCapability : HotkeyOverlayCapability
     }
 }
 
-public static class SubstrateHostBridgeAccessor
-{
-    public static Func<Task>? OpenOverlayAsync { get; set; }
-}
-
 public sealed class SlateCapability : IModuleCapability
 {
     private readonly HostServices _services;
+    private readonly IHostUiBridge _hostUi;
 
-    public SlateCapability(HostServices services, ICapabilityUiBridge _)
+    public SlateCapability(ICapabilityContext context)
     {
-        _services = services;
+        _services = context.Services;
+        _hostUi = context.Ui.HostUi;
     }
 
     public string ModuleId => "Slate";
@@ -205,7 +197,7 @@ public sealed class SlateCapability : IModuleCapability
         if (!IsArmed) return Task.CompletedTask;
         _services.Idle.IdleThresholdReached -= OnIdle;
         _services.Idle.Stop();
-        SlateHostBridgeAccessor.HideOverlay?.Invoke();
+        _hostUi.CloseOverlay(ModuleId);
         IsArmed = false;
         return Task.CompletedTask;
     }
@@ -215,38 +207,30 @@ public sealed class SlateCapability : IModuleCapability
         var settings = ModuleSettingsStore.Load("Slate", () => new SlateSettings());
         if (settings.HideOnFullscreen && _services.Fullscreen.IsForegroundFullscreen)
             return;
-        var open = SlateHostBridgeAccessor.OpenIdleOverlayAsync;
-        if (open is not null)
-            _ = open();
+        _ = _hostUi.OpenOverlayAsync(ModuleId);
     }
 
     public void Dispose() => DisarmAsync().GetAwaiter().GetResult();
-}
-
-public static class SlateHostBridgeAccessor
-{
-    public static Func<Task>? OpenIdleOverlayAsync { get; set; }
-    public static Action? HideOverlay { get; set; }
 }
 
 public static class BuiltInCapabilityFactories
 {
     public static void RegisterAll(CapabilityRegistry registry)
     {
-        registry.Register(new DelegateFactory("Tessera", (m, s, u) => new TesseraCapability(s, u)));
-        registry.Register(new DelegateFactory("Mixdeck", (m, s, u) => new MixdeckCapability(s, u)));
-        registry.Register(new DelegateFactory("Inlay", (m, s, u) => new InlayCapability(s, u)));
-        registry.Register(new DelegateFactory("Chord", (m, s, u) => new ChordCapability(s, u)));
-        registry.Register(new DelegateFactory("Substrate", (m, s, u) => new SubstrateCapability(s, u)));
-        registry.Register(new DelegateFactory("Slate", (m, s, u) => new SlateCapability(s, u)));
+        registry.Register(new DelegateFactory("Tessera", (m, c) => new TesseraCapability(c)));
+        registry.Register(new DelegateFactory("Mixdeck", (m, c) => new MixdeckCapability(c)));
+        registry.Register(new DelegateFactory("Inlay", (m, c) => new InlayCapability(c)));
+        registry.Register(new DelegateFactory("Chord", (m, c) => new ChordCapability(c)));
+        registry.Register(new DelegateFactory("Substrate", (m, c) => new SubstrateCapability(c)));
+        registry.Register(new DelegateFactory("Slate", (m, c) => new SlateCapability(c)));
     }
 
     private sealed class DelegateFactory(
         string moduleId,
-        Func<ModuleManifest, HostServices, ICapabilityUiBridge, IModuleCapability> create) : ICapabilityFactory
+        Func<ModuleManifest, ICapabilityContext, IModuleCapability> create) : ICapabilityFactory
     {
         public string ModuleId => moduleId;
-        public IModuleCapability Create(ModuleManifest manifest, HostServices services, ICapabilityUiBridge ui) =>
-            create(manifest, services, ui);
+        public IModuleCapability Create(ModuleManifest manifest, ICapabilityContext context) =>
+            create(manifest, context);
     }
 }

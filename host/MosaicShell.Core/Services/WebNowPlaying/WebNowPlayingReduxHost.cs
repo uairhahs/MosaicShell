@@ -245,7 +245,7 @@ public sealed class WebNowPlayingReduxHost : IWebNowPlayingService
 
     private void OnText(string message)
     {
-        if (message.Length > 200) Trace($"text {message.Length}b: {message[..200]}…");
+        if (message.Length > 200) Trace($"text {message.Length}b: {message[..200]}...");
         else Trace($"text: {message}");
 
         var sp = message.IndexOf(' ');
@@ -431,6 +431,7 @@ public sealed class WebNowPlayingReduxHost : IWebNowPlayingService
             p.Title,
             p.Artist,
             state = p.State.ToString(),
+            p.Rating,
             coverBytes = p.CoverPng?.Length ?? 0,
             coverSrc = string.IsNullOrEmpty(p.CoverSrc) ? null : p.CoverSrc[..Math.Min(80, p.CoverSrc.Length)],
             coverMagic = p.CoverPng is null ? null : Magic(p.CoverPng),
@@ -450,7 +451,6 @@ public sealed class WebNowPlayingReduxHost : IWebNowPlayingService
     }
 
     private int _eventSeq;
-    private bool _likedOptimistic;
 
     public async Task TryToggleShuffleAsync()
     {
@@ -476,16 +476,76 @@ public sealed class WebNowPlayingReduxHost : IWebNowPlayingService
         await SendEventAsync(p.PortId, eventType: 6 /* SET_REPEAT */, data: next);
     }
 
-    public async Task TryToggleLikeAsync()
+    public async Task TrySetLikeAsync(bool wantLiked)
     {
         var p = ActivePlayer();
-        if (p is null) return;
-        var liked = p.Rating >= 5;
-        var next = liked ? 0 : 5;
-        p.Rating = next;
-        _likedOptimistic = next >= 5;
-        await SendEventAsync(p.PortId, eventType: 5 /* SET_RATING */, data: next);
+        if (p is null)
+        {
+            Trace("like skip: no active WNP player");
+            return;
+        }
+
+        if (!wantLiked && !MediaLikePolicy.MaySendUnlikeRating(p.Rating))
+        {
+            Trace($"like skip: unlike blocked (hostRating={p.Rating}, player={p.Name})");
+            return;
+        }
+
+        var data = MediaLikePolicy.ResolveLikeRequestRating(p.Name, wantLiked, p.Rating);
+        Trace(
+            $"like intent wantLiked={wantLiked} player='{p.Name}' title='{p.Title}' " +
+            $"hostRating={p.Rating} sendRating={data} ({DescribeRating(data)})");
+
+        await SendEventAsync(p.PortId, eventType: 5 /* TRY_SET_RATING */, data: data);
+
+        p.Rating = wantLiked ? MediaLikePolicy.Liked : MediaLikePolicy.Unrated;
     }
+
+    public async Task TrySetDislikeAsync(bool wantDisliked)
+    {
+        var p = ActivePlayer();
+        if (p is null)
+        {
+            Trace("dislike skip: no active WNP player");
+            return;
+        }
+
+        if (!MediaLikePolicy.SupportsDislike(appId: null, p.Name))
+        {
+            Trace($"dislike skip: player '{p.Name}' does not support dislike");
+            return;
+        }
+
+        if (!wantDisliked && !MediaLikePolicy.MaySendUndislikeRating(p.Rating))
+        {
+            Trace($"dislike skip: undislike blocked (hostRating={p.Rating}, player={p.Name})");
+            return;
+        }
+
+        var data = MediaLikePolicy.ResolveDislikeRequestRating(p.Name, wantDisliked, p.Rating);
+        if (data == MediaLikePolicy.Unrated && !wantDisliked)
+        {
+            Trace($"dislike skip: no-op (hostRating={p.Rating})");
+            return;
+        }
+
+        Trace(
+            $"dislike intent wantDisliked={wantDisliked} player='{p.Name}' title='{p.Title}' " +
+            $"hostRating={p.Rating} sendRating={data} ({DescribeRating(data)})");
+
+        await SendEventAsync(p.PortId, eventType: 5 /* TRY_SET_RATING */, data: data);
+
+        p.Rating = wantDisliked ? MediaLikePolicy.Disliked : MediaLikePolicy.Unrated;
+    }
+
+    private static string DescribeRating(int rating) =>
+        rating switch
+        {
+            MediaLikePolicy.Liked => "liked/5",
+            MediaLikePolicy.Disliked => "disliked/1",
+            MediaLikePolicy.Unrated => "unrated/0",
+            _ => rating.ToString(),
+        };
 
     private MutablePlayer? ActivePlayer()
     {
@@ -543,6 +603,8 @@ public sealed class WebNowPlayingReduxHost : IWebNowPlayingService
 
     private static void ApplyFields(MutablePlayer p, IReadOnlyList<string> t)
     {
+        var prevTitle = p.Title;
+        var prevArtist = p.Artist;
         Set(t, 1, v => p.Name = v);
         Set(t, 2, v => p.Title = v);
         Set(t, 3, v => p.Artist = v);
@@ -552,11 +614,20 @@ public sealed class WebNowPlayingReduxHost : IWebNowPlayingService
         SetInt(t, 7, v => p.PositionSeconds = v);
         SetInt(t, 8, v => p.DurationSeconds = v);
         SetInt(t, 9, v => p.Volume = v);
-        SetInt(t, 10, v => p.Rating = v);
+        if (FieldPresent(t, 10))
+            SetInt(t, 10, v => p.Rating = v);
+        else if ((!string.IsNullOrEmpty(p.Title)
+                  && !string.Equals(prevTitle, p.Title, StringComparison.Ordinal))
+                 || (!string.IsNullOrEmpty(p.Artist)
+                     && !string.Equals(prevArtist, p.Artist, StringComparison.Ordinal)))
+            p.Rating = 0;
         SetInt(t, 11, v => p.Repeat = v);
         SetInt(t, 12, v => p.Shuffle = v != 0);
         SetUlong(t, 25, v => p.ActiveAt = v);
     }
+
+    private static bool FieldPresent(IReadOnlyList<string> t, int i) =>
+        i < t.Count && t[i].Length > 0;
 
     private static void Set(IReadOnlyList<string> t, int i, Action<string> apply)
     {

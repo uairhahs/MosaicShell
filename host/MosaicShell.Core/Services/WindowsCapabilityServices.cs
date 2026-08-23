@@ -538,7 +538,7 @@ public sealed class NullNativeOsdSuppressor : INativeOsdSuppressor
 public sealed class NullLegacyMediaKeyHook : ILegacyMediaKeyHook
 {
     public bool IsActive => false;
-    public event EventHandler<LegacyVolumeKey>? Pressed;
+    public event EventHandler<LegacyVolumeKey>? Pressed { add { } remove { } }
     public void Start() { }
     public void Stop() { }
     public void Dispose() { }
@@ -546,7 +546,7 @@ public sealed class NullLegacyMediaKeyHook : ILegacyMediaKeyHook
 
 public sealed class NullBrightnessChangeSource : IBrightnessChangeSource
 {
-    public event EventHandler? Changed;
+    public event EventHandler? Changed { add { } remove { } }
     public void Start() { }
     public void Stop() { }
     public void Dispose() { }
@@ -556,7 +556,7 @@ public sealed class NullIdleService : IIdleService
 {
     public TimeSpan IdleTime => TimeSpan.Zero;
     public TimeSpan Threshold { get; set; } = TimeSpan.FromMinutes(5);
-    public event EventHandler? IdleThresholdReached;
+    public event EventHandler? IdleThresholdReached { add { } remove { } }
     public void Start() { }
     public void Stop() { }
     public void Dispose() { }
@@ -622,14 +622,4 @@ public sealed class WindowsFullscreenProbe : IFullscreenProbe
 public sealed class NullFullscreenProbe : IFullscreenProbe
 {
     public bool IsForegroundFullscreen => false;
-}
-
-public sealed class NullFlyoutPresenter : MosaicShell.Core.Capabilities.IFlyoutPresenter
-{
-    public void Show(MosaicShell.Core.Capabilities.FlyoutRequest request) { }
-    public void Update(MosaicShell.Core.Capabilities.FlyoutRequest request) { }
-    public void SoftRefresh(MosaicShell.Core.Capabilities.FlyoutRequest request) { }
-    public void Hide(string moduleId) { }
-    public void HideAll() { }
-    public bool IsVisible(string moduleId) => false;
 }

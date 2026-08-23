@@ -1,3 +1,4 @@
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 
@@ -22,6 +23,13 @@ public interface IModuleCapability : IDisposable
 public interface ICapabilityUiBridge
 {
     IFlyoutPresenter Flyouts { get; }
+    IHostUiBridge HostUi { get; }
+
+    /// <summary>
+    /// Run on the Host message-pump thread (Avalonia UI thread). Tests may run inline.
+    /// Required for WH_KEYBOARD_LL hook install/start per TesseraArmPolicy.
+    /// </summary>
+    void RunOnHostThread(Action action);
 }
 
 public sealed record FlyoutRequest(
@@ -39,6 +47,9 @@ public sealed record FlyoutRequest(
 
 public interface IFlyoutPresenter
 {
+    /// <summary>Auto-dismiss or outside-click hide (SoftFrost transient dismiss, not Disarm Hide).</summary>
+    event Action<string>? TransientDismissed;
+
     void Show(FlyoutRequest request);
     void Update(FlyoutRequest request);
     /// <summary>Patch visible flyout UI without resetting auto-dismiss (progress / live pump).</summary>
@@ -51,7 +62,7 @@ public interface IFlyoutPresenter
 public interface ICapabilityFactory
 {
     string ModuleId { get; }
-    IModuleCapability Create(ModuleManifest manifest, HostServices services, ICapabilityUiBridge ui);
+    IModuleCapability Create(ModuleManifest manifest, ICapabilityContext context);
 }
 
 public sealed class CapabilityRegistry
@@ -67,26 +78,30 @@ public sealed class CapabilityRegistry
     public IReadOnlyCollection<string> RegisteredModuleIds => _factories.Keys.ToList();
 
     /// <summary>
-    /// Optional external plugin: Modules\{id}\capability.dll exporting a single ICapabilityFactory.
+    /// Optional external plugin: Modules\{id}\module.dll or capability.dll exporting ICapabilityFactory.
     /// Built-ins always win if already registered.
     /// </summary>
     public void TryLoadExternal(string moduleId, string modulesRoot)
     {
         if (_factories.ContainsKey(moduleId)) return;
-        var dll = Path.Combine(modulesRoot, moduleId, "capability.dll");
-        if (!File.Exists(dll)) return;
-        try
+        foreach (var name in new[] { "module.dll", "capability.dll" })
         {
-            var asm = System.Reflection.Assembly.LoadFrom(dll);
-            var type = asm.GetTypes()
-                .FirstOrDefault(t => typeof(ICapabilityFactory).IsAssignableFrom(t) && !t.IsAbstract && t.GetConstructor(Type.EmptyTypes) is not null);
-            if (type is null) return;
-            if (Activator.CreateInstance(type) is ICapabilityFactory factory)
-                Register(factory);
-        }
-        catch
-        {
-            // External plugins are best-effort.
+            var dll = Path.Combine(modulesRoot, moduleId, name);
+            if (!File.Exists(dll)) continue;
+            try
+            {
+                var asm = System.Reflection.Assembly.LoadFrom(dll);
+                var type = asm.GetTypes()
+                    .FirstOrDefault(t => typeof(ICapabilityFactory).IsAssignableFrom(t) && !t.IsAbstract && t.GetConstructor(Type.EmptyTypes) is not null);
+                if (type is null) continue;
+                if (Activator.CreateInstance(type) is ICapabilityFactory factory)
+                    Register(factory);
+                return;
+            }
+            catch
+            {
+                // External plugins are best-effort.
+            }
         }
     }
 }

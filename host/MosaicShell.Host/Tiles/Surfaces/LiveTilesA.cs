@@ -5,6 +5,8 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
+using Material.Icons;
+using Material.Icons.Avalonia;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
@@ -113,50 +115,12 @@ public sealed class ChronoTileView : UserControl
     public ChronoTileView()
     {
         _settings = ModuleSettingsStore.Load("Chrono", () => new ChronoSettings());
-        ApplyStyleChrome();
-        Content = WidgetChrome.Wrap(
-            new StackPanel
-            {
-                VerticalAlignment = VerticalAlignment.Center,
-                Children = { _time, _date }
-            },
-            minWidth: 280);
+        Content = ChronoStyleFactory.Create(_settings, _time, _date);
         _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
         _timer.Tick += (_, _) => Tick();
         _timer.Start();
         Tick();
         DetachedFromVisualTree += (_, _) => _timer.Stop();
-    }
-
-    private void ApplyStyleChrome()
-    {
-        var style = _settings.Style;
-        if (style.Equals("Text", StringComparison.OrdinalIgnoreCase)
-            || style.Equals("Minimal", StringComparison.OrdinalIgnoreCase))
-        {
-            _time.FontSize = 36;
-            _time.FontWeight = FontWeight.SemiBold;
-            _date.FontSize = 12;
-        }
-        else if (style.Equals("Tech", StringComparison.OrdinalIgnoreCase)
-                 || style.Equals("CircTech", StringComparison.OrdinalIgnoreCase))
-        {
-            _time.FontSize = 44;
-            _time.FontFamily = new FontFamily("Consolas, Cascadia Mono, monospace");
-            _date.FontSize = 13;
-            _date.FontFamily = _time.FontFamily;
-        }
-        else if (style.Equals("Light", StringComparison.OrdinalIgnoreCase))
-        {
-            _time.FontSize = 52;
-            _time.FontWeight = FontWeight.Thin;
-            _date.FontSize = 14;
-        }
-        else
-        {
-            _time.FontSize = 48;
-            _date.FontSize = 14;
-        }
     }
 
     private void Tick()
@@ -189,6 +153,7 @@ public sealed class PhonoTileView : UserControl
     {
         Width = 72, Height = 72, Stretch = Stretch.UniformToFill, IsVisible = false
     };
+    private readonly MaterialIcon _playPauseIcon;
     private readonly EventHandler _onChanged;
 
     public PhonoTileView(IMediaSessionService media)
@@ -196,32 +161,26 @@ public sealed class PhonoTileView : UserControl
         _media = media;
         _settings = ModuleSettingsStore.Load("Phono", () => new PhonoSettings());
 
+        _playPauseIcon = new MaterialIcon
+        {
+            Kind = MaterialIconKind.Play,
+            Width = 20,
+            Height = 20,
+            Foreground = WidgetChrome.Brush("#cdd6f4")
+        };
         var transport = new StackPanel
         {
             Orientation = Orientation.Horizontal, Spacing = 10,
             HorizontalAlignment = HorizontalAlignment.Center,
             Children =
             {
-                Btn("⏮", () => _ = _media.PreviousAsync()),
-                Btn("⏯", () => _ = _media.PlayPauseAsync()),
-                Btn("⏭", () => _ = _media.NextAsync()),
+                IconBtn(MaterialIconKind.SkipPrevious, () => _ = _media.PreviousAsync()),
+                IconBtn(_playPauseIcon, () => _ = _media.PlayPauseAsync()),
+                IconBtn(MaterialIconKind.SkipNext, () => _ = _media.NextAsync()),
             }
         };
 
-        var textCol = new StackPanel { Children = { _title } };
-        if (_settings.ShowArtist)
-            textCol.Children.Add(_artist);
-        textCol.Children.Add(transport);
-
-        Content = WidgetChrome.Wrap(
-            new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Spacing = 14,
-                VerticalAlignment = VerticalAlignment.Center,
-                Children = { _art, textCol }
-            },
-            minWidth: 320);
+        Content = PhonoStyleFactory.Create(_settings, _title, _artist, _art, transport);
 
         _onChanged = (_, _) => Dispatcher.UIThread.Post(Update);
         _media.Changed += _onChanged;
@@ -234,6 +193,7 @@ public sealed class PhonoTileView : UserControl
         var c = _media.Current;
         _title.Text = c?.Title ?? "Nothing playing";
         _artist.Text = c?.Artist ?? "Start media on this PC";
+        _playPauseIcon.Kind = c?.IsPlaying == true ? MaterialIconKind.Pause : MaterialIconKind.Play;
         if (c?.ThumbnailPng is { Length: > 0 } png)
         {
             try
@@ -255,12 +215,25 @@ public sealed class PhonoTileView : UserControl
         }
     }
 
-    private static Button Btn(string g, Action act)
+    private static Button IconBtn(MaterialIconKind kind, Action act) =>
+        IconBtn(new MaterialIcon
+        {
+            Kind = kind,
+            Width = 20,
+            Height = 20,
+            Foreground = WidgetChrome.Brush("#cdd6f4")
+        }, act);
+
+    private static Button IconBtn(MaterialIcon icon, Action act)
     {
         var b = new Button
         {
-            Content = g, Width = 44, Height = 36,
-            Background = WidgetChrome.Brush("#313244"), Foreground = WidgetChrome.Brush("#cdd6f4"),
+            Content = icon,
+            Width = 44,
+            Height = 36,
+            Padding = new Avalonia.Thickness(0),
+            Background = WidgetChrome.Brush("#313244"),
+            BorderThickness = new Avalonia.Thickness(0),
             CornerRadius = new Avalonia.CornerRadius(8)
         };
         b.Click += (_, _) => act();

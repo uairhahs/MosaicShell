@@ -39,19 +39,32 @@ public sealed class FakeAppAudioService : IAppAudioService
         var i = Sessions.FindIndex(s => s.Id == sessionId);
         if (i < 0) return;
         Sessions[i] = Sessions[i] with { Volume = volume };
+        SessionsChanged?.Invoke(this, EventArgs.Empty);
     }
     public void SetMuted(string sessionId, bool muted)
     {
         var i = Sessions.FindIndex(s => s.Id == sessionId);
         if (i < 0) return;
         Sessions[i] = Sessions[i] with { IsMuted = muted };
+        SessionsChanged?.Invoke(this, EventArgs.Empty);
     }
     public void Dispose() { }
 }
 
 public sealed class FakeMediaSessionService : IMediaSessionService
 {
-    public MediaSessionInfo? Current { get; set; }
+    private MediaSessionInfo? _current;
+
+    public MediaSessionInfo? Current
+    {
+        get => _current;
+        set
+        {
+            _current = value;
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
     public event EventHandler? Changed;
     public event EventHandler? ProgressChanged;
     public void PumpTimeline()
@@ -75,7 +88,8 @@ public sealed class FakeMediaSessionService : IMediaSessionService
     public Task SeekAsync(double positionSeconds) => Task.CompletedTask;
     public Task ToggleShuffleAsync() => Task.CompletedTask;
     public Task ToggleRepeatAsync() => Task.CompletedTask;
-    public Task ToggleLikeAsync() => Task.CompletedTask;
+    public Task ToggleLikeAsync(bool wantLiked) => Task.CompletedTask;
+    public Task ToggleDislikeAsync(bool wantDisliked) => Task.CompletedTask;
     public void RaiseProgress() => ProgressChanged?.Invoke(this, EventArgs.Empty);
     public void Dispose() { }
 }

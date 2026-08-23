@@ -22,9 +22,6 @@ public static class LaunchTargetCatalog
         return _cached;
     }
 
-    public static IEnumerable<string> DisplayLabels() =>
-        All().Select(t => $"{t.DisplayName}  ({t.Target})");
-
     public static bool TryResolveLabel(string? labelOrTarget, out string target, out string displayName)
     {
         target = "";
@@ -50,6 +47,24 @@ public static class LaunchTargetCatalog
         displayName = Path.GetFileNameWithoutExtension(text);
         if (string.IsNullOrWhiteSpace(displayName)) displayName = text;
         return true;
+    }
+
+    public static IEnumerable<string> DisplayLabels() =>
+        All().Select(t => $"{t.DisplayName}  ({t.Target})");
+
+    /// <summary>Filter catalog by display name, target path, or group.</summary>
+    public static IEnumerable<LaunchTarget> Search(string? query, int maxResults = 32)
+    {
+        var q = query?.Trim() ?? "";
+        var all = All();
+        if (string.IsNullOrEmpty(q))
+            return all.Take(maxResults);
+
+        return all.Where(t =>
+                t.DisplayName.Contains(q, StringComparison.OrdinalIgnoreCase)
+                || t.Target.Contains(q, StringComparison.OrdinalIgnoreCase)
+                || t.Group.Contains(q, StringComparison.OrdinalIgnoreCase))
+            .Take(maxResults);
     }
 
     private static readonly LaunchTarget[] BuiltIns =

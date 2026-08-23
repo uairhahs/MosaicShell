@@ -13,17 +13,26 @@ internal static class TesseraLiveAmbient
         set => _current = value;
     }
 
-    public static void RegisterVolume(TesseraTrack track, TextBlock? percent, Material.Icons.Avalonia.MaterialIcon? glyph)
+    public static void RegisterVolume(
+        TesseraTrack track,
+        TextBlock? percent,
+        Material.Icons.Avalonia.MaterialIcon? glyph,
+        bool pixelVolumeGlyph = false,
+        bool percentOnAdjustOnly = false)
     {
         if (_current is null) return;
+        _current.VolumeRing = null;
         _current.VolumeTrack = track;
         _current.Percent = percent;
         _current.Glyph = glyph;
+        _current.MaterialYouVolumeGlyph = pixelVolumeGlyph;
+        _current.PercentOnAdjustOnly = percentOnAdjustOnly;
     }
 
     public static void RegisterRing(TesseraRingVolume ring)
     {
         if (_current is null) return;
+        _current.VolumeTrack = null;
         _current.VolumeRing = ring;
         _current.Percent = ring.PercentLabel;
     }
@@ -41,7 +50,9 @@ internal static class TesseraLiveAmbient
         TesseraTrack? scrub,
         TextBlock? pos,
         TextBlock? dur,
-        Material.Icons.Avalonia.MaterialIcon? play)
+        Material.Icons.Avalonia.MaterialIcon? play,
+        Material.Icons.Avalonia.MaterialIcon? like = null,
+        Material.Icons.Avalonia.MaterialIcon? dislike = null)
     {
         if (_current is null) return;
         _current.MediaArt = art;
@@ -51,5 +62,22 @@ internal static class TesseraLiveAmbient
         _current.MediaPos = pos;
         _current.MediaDur = dur;
         _current.PlayPauseIcon = play;
+        _current.LikeIcon = like;
+        _current.DislikeIcon = dislike;
+    }
+
+    public static void RegisterPlainTextMedia(TextBlock titleState, TextBlock artist, TextBlock progressLine)
+    {
+        if (_current is null) return;
+        _current.PlainTextMedia = true;
+        _current.MediaTitle = titleState;
+        _current.MediaArtist = artist;
+        _current.MediaPos = progressLine;
+    }
+
+    public static void RegisterStatus(TextBlock label)
+    {
+        if (_current is null) return;
+        _current.StatusLabel = label;
     }
 }

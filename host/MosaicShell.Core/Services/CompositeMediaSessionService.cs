@@ -49,11 +49,18 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
         if (_wnp is WebNowPlaying.WebNowPlayingReduxHost host)
             await host.TryToggleRepeatAsync();
     }
-    public async Task ToggleLikeAsync()
+    public async Task ToggleLikeAsync(bool wantLiked)
     {
-        await _smtc.ToggleLikeAsync();
+        await _smtc.ToggleLikeAsync(wantLiked);
         if (_wnp is WebNowPlaying.WebNowPlayingReduxHost host)
-            await host.TryToggleLikeAsync();
+            await host.TrySetLikeAsync(wantLiked);
+    }
+
+    public async Task ToggleDislikeAsync(bool wantDisliked)
+    {
+        await _smtc.ToggleDislikeAsync(wantDisliked);
+        if (_wnp is WebNowPlaying.WebNowPlayingReduxHost host)
+            await host.TrySetDislikeAsync(wantDisliked);
     }
 
     public void Dispose()
@@ -71,11 +78,40 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
 
     private void Rebuild(bool raiseProgress)
     {
-        var next = Merge(_smtc.Current, _wnp.Active);
+        var smtc = _smtc.Current;
+        var wnp = _wnp.Active;
         var prev = _current;
+        var next = Merge(smtc, wnp);
         _current = next;
 
         if (prev is null && next is null) return;
+
+        var raiseChanged = false;
+
+        if (prev is not null && smtc is not null)
+        {
+            if (!string.IsNullOrWhiteSpace(smtc.Title)
+                && !string.Equals(prev.Title, smtc.Title, StringComparison.Ordinal))
+                raiseChanged = true;
+
+            if (!raiseChanged
+                && MediaSessionChangePolicy.LooksLikeNewTrackPosition(
+                    prev.PositionSeconds, smtc.PositionSeconds))
+                raiseChanged = true;
+        }
+
+        if (!raiseChanged
+            && prev is not null
+            && next is not null
+            && MediaSessionChangePolicy.LooksLikeNewTrackPosition(
+                prev.PositionSeconds, next.PositionSeconds))
+            raiseChanged = true;
+
+        if (raiseChanged)
+        {
+            Changed?.Invoke(this, EventArgs.Empty);
+            return;
+        }
 
         if (raiseProgress)
         {
@@ -112,7 +148,8 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
                 IsPlaying: wnp.IsPlaying,
                 ThumbnailPng: wnp.CoverPng,
                 PositionSeconds: wnp.PositionSeconds,
-                DurationSeconds: wnp.DurationSeconds);
+                DurationSeconds: wnp.DurationSeconds,
+                LikeRating: wnp.Rating);
         }
 
         // Prefer any WNP cover when SMTC has none (YTM PWA / browser)
@@ -123,9 +160,16 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
             && (LooksLikeBrowserSession(smtc.AppId)
                 || TitlesLooselyMatch(smtc.Title, wnp.Title)))
         {
-            title = wnp.Title;
-            if (!string.IsNullOrWhiteSpace(wnp.Artist))
-                artist = wnp.Artist;
+            // Use WNP title/artist when SMTC is empty or still agrees with WNP.
+            // Do not keep a stale WNP title when SMTC already advanced to a new track;
+            // that swallowed Media.Changed and blocked Tessera media flyouts.
+            if (string.IsNullOrWhiteSpace(smtc.Title) || TitlesLooselyMatch(smtc.Title, wnp.Title))
+            {
+                title = wnp.Title;
+                if (!string.IsNullOrWhiteSpace(wnp.Artist))
+                    artist = wnp.Artist;
+            }
+
             if (!IsUsableCover(thumb) && IsUsableCover(wnp.CoverPng))
                 thumb = wnp.CoverPng;
         }
@@ -136,8 +180,13 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
         if (wnp is not null && wnp.DurationSeconds > 0
             && (dur <= 0.5 || LooksLikeBrowserSession(smtc.AppId)))
         {
-            pos = wnp.PositionSeconds;
-            dur = wnp.DurationSeconds;
+            // WNP position often lags a skip; do not mask SMTC restart edges.
+            if (!MediaSessionChangePolicy.LooksLikeNewTrackPosition(
+                    wnp.PositionSeconds, smtc.PositionSeconds))
+            {
+                pos = wnp.PositionSeconds;
+                dur = wnp.DurationSeconds;
+            }
         }
 
         return smtc with
@@ -147,7 +196,15 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
             ThumbnailPng = thumb,
             PositionSeconds = pos,
             DurationSeconds = dur,
+            LikeRating = ResolveLikeRating(smtc.AppId, wnp?.Rating),
         };
+    }
+
+    private static int? ResolveLikeRating(string? appId, int? wnpRating)
+    {
+        if (!LooksLikeBrowserSession(appId) || wnpRating is null)
+            return null;
+        return wnpRating.Value;
     }
 
     private static bool LooksLikeBrowserSession(string? appId)

@@ -1,39 +1,31 @@
-using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Platform;
+using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Runtime;
-using MosaicShell.Core.Scale;
 using MosaicShell.Core.Services;
+using MosaicShell.Host.Capabilities;
 using MosaicShell.Host.Tiles.Surfaces;
 
 namespace MosaicShell.Host.Tiles;
-
-/// <summary>Host UI hooks for tile overlays (configure / refresh). Set from App.</summary>
-public static class TileHostUiBridge
-{
-    public static Action<string>? OpenModuleConfig { get; set; }
-    public static Action<string>? RefreshOverlay { get; set; }
-}
 
 public sealed class AvaloniaTileSurfaceHost : ITileSurfaceHost
 {
     private readonly Dictionary<string, TileOverlayWindow> _windows = new(StringComparer.OrdinalIgnoreCase);
     private readonly HostServices _services;
-    private readonly Func<double> _userScale;
+    private readonly IHostUiBridge _hostUi;
     private readonly Action<string>? _onClosedByUser;
 
     public AvaloniaTileSurfaceHost(
         HostServices services,
-        Func<double> userScale,
+        IHostUiBridge hostUi,
         Action<string>? onClosedByUser = null)
     {
         _services = services;
-        _userScale = userScale;
+        _hostUi = hostUi;
         _onClosedByUser = onClosedByUser;
     }
 
@@ -53,12 +45,22 @@ public sealed class AvaloniaTileSurfaceHost : ITileSurfaceHost
 
             if (!ModuleCatalog.TryGet(moduleId, out var info) || info is null)
             {
-                error = $"Unknown module '{moduleId}'.";
-                return false;
+                // Still allow overlays for installed folders even if discovery failed earlier.
+                if (!ModuleCatalog.IsInstalled(moduleId))
+                {
+                    error = $"Unknown module '{moduleId}'.";
+                    return false;
+                }
+
+                info = new ModuleInfo(
+                    moduleId,
+                    moduleId,
+                    "Installed module.",
+                    ModuleKind.Capability);
             }
 
             var surface = TileSurfaceFactory.Create(info, _services);
-            var window = new TileOverlayWindow(info, surface, _userScale());
+            var window = new TileOverlayWindow(info, surface, _hostUi);
             window.Closed += (_, _) =>
             {
                 PersistAll();
@@ -146,12 +148,6 @@ public sealed class AvaloniaTileSurfaceHost : ITileSurfaceHost
             w.Height)).ToList();
         SessionStore.Save(states);
     }
-
-    public void ApplyUserScale(double scale)
-    {
-        foreach (var w in _windows.Values)
-            w.ApplyScale(scale);
-    }
 }
 
 /// <summary>
@@ -162,12 +158,13 @@ public sealed class TileOverlayWindow : Window
 {
     public string ModuleId { get; }
     public bool IsDesktopWidget { get; }
-    private readonly LayoutTransformControl _scaler;
+    private readonly IHostUiBridge _hostUi;
     private bool _stuckToDesktop;
 
-    public TileOverlayWindow(ModuleInfo info, Control surface, double userScale)
+    public TileOverlayWindow(ModuleInfo info, Control surface, IHostUiBridge hostUi)
     {
         ModuleId = info.Id;
+        _hostUi = hostUi;
         IsDesktopWidget = info.Kind == ModuleKind.Widget;
         _stuckToDesktop = IsDesktopWidget
             || info.Id.Equals("Pulse", StringComparison.OrdinalIgnoreCase);
@@ -177,11 +174,13 @@ public sealed class TileOverlayWindow : Window
         MinWidth = 160;
         MinHeight = 100;
         CanResize = true;
-        SystemDecorations = SystemDecorations.None;
+        WindowDecorations = Avalonia.Controls.WindowDecorations.None;
         Topmost = !IsDesktopWidget && !_stuckToDesktop;
         ShowInTaskbar = false;
         TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
         Background = Brushes.Transparent;
+        // docs: OS may suppress transparency (battery saver / RDP)
+        TransparencyBackgroundFallback = new SolidColorBrush(Color.Parse("#1e1e2e"));
 
         var shell = new Border
         {
@@ -199,19 +198,12 @@ public sealed class TileOverlayWindow : Window
         };
         shell.PointerPressed += OnSurfacePointerPressed;
         shell.ContextMenu = BuildContextMenu();
-
-        _scaler = new LayoutTransformControl
-        {
-            Child = shell,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Stretch
-        };
-        ApplyScale(userScale);
-        Content = _scaler;
+        Content = shell;
 
         KeyDown += (_, e) =>
         {
-            if (e.Key == Key.Escape && !IsDesktopWidget)
+            if (e.Key == Key.Escape && !IsDesktopWidget
+                && ModuleOverlaySettings.CloseOnEscape(ModuleId))
             {
                 e.Handled = true;
                 Close();
@@ -239,24 +231,19 @@ public sealed class TileOverlayWindow : Window
         Height = 360;
     }
 
-    public void ApplyScale(double userScale)
-    {
-        var s = Math.Clamp(userScale, 0.75, 2.0);
-        _scaler.LayoutTransform = new ScaleTransform(s, s);
-    }
-
     public void SendToDesktop()
     {
         _stuckToDesktop = true;
         Topmost = false;
-        SetZOrder(HwndBottom);
+        // Avalonia Topmost cannot place HWND below other windows; SetWindowPos required.
+        Win32WindowChrome.SetZOrder(this, Win32WindowChrome.HwndBottom);
     }
 
     public void BringToFront()
     {
         _stuckToDesktop = false;
         Topmost = true;
-        SetZOrder(HwndTopmost);
+        Win32WindowChrome.SetZOrder(this, Win32WindowChrome.HwndTopmost);
         Activate();
     }
 
@@ -264,7 +251,7 @@ public sealed class TileOverlayWindow : Window
     {
         _stuckToDesktop = false;
         Topmost = false;
-        SetZOrder(HwndNoTopmost);
+        Win32WindowChrome.SetZOrder(this, Win32WindowChrome.HwndNoTopmost);
     }
 
     public void AlignTo(AlignPreset preset)
@@ -312,7 +299,7 @@ public sealed class TileOverlayWindow : Window
         var menu = new ContextMenu();
 
         var configure = new MenuItem { Header = "Configure in Host" };
-        configure.Click += (_, _) => TileHostUiBridge.OpenModuleConfig?.Invoke(ModuleId);
+        configure.Click += (_, _) => _hostUi.OpenModuleConfig(ModuleId);
         menu.Items.Add(configure);
 
         var align = new MenuItem { Header = "Align" };
@@ -343,7 +330,7 @@ public sealed class TileOverlayWindow : Window
         menu.Items.Add(new Separator());
 
         var refresh = new MenuItem { Header = "Refresh" };
-        refresh.Click += (_, _) => TileHostUiBridge.RefreshOverlay?.Invoke(ModuleId);
+        refresh.Click += (_, _) => _hostUi.RefreshOverlay(ModuleId);
         menu.Items.Add(refresh);
 
         var close = new MenuItem { Header = "Unload" };
@@ -379,32 +366,6 @@ public sealed class TileOverlayWindow : Window
         }
         return false;
     }
-
-    private void SetZOrder(IntPtr insertAfter)
-    {
-        try
-        {
-            var hwnd = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
-            if (hwnd == IntPtr.Zero) return;
-            SetWindowPos(hwnd, insertAfter, 0, 0, 0, 0,
-                SwpNomove | SwpNosize | SwpNoactivate);
-        }
-        catch
-        {
-            // best-effort
-        }
-    }
-
-    private static readonly IntPtr HwndBottom = new(1);
-    private static readonly IntPtr HwndTopmost = new(-1);
-    private static readonly IntPtr HwndNoTopmost = new(-2);
-    private const uint SwpNomove = 0x0002;
-    private const uint SwpNosize = 0x0001;
-    private const uint SwpNoactivate = 0x0010;
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool SetWindowPos(
-        IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint uFlags);
 }
 
 public enum AlignPreset

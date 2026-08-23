@@ -11,6 +11,7 @@ public sealed record LockKeyState(LockKeyKind Key, bool IsOn);
 
 public interface ILockKeysService : IDisposable
 {
+    bool IsActive { get; }
     LockKeyState Caps { get; }
     LockKeyState Num { get; }
     LockKeyState Scroll { get; }

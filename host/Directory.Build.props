@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Overridden in release CI via /p:Version=yyyy.M.d-bN -->
+    <Version>0.0.0-dev</Version>
+  </PropertyGroup>
+</Project>

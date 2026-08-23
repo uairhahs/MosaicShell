@@ -1,15 +1,18 @@
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
+using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Host.Tiles.Tessera;
 
 public sealed class TesseraFlyoutViewModel
 {
-    private TesseraFlyoutViewModel(HostServices services, string kind, string styleId, IReadOnlyDictionary<string, string> payload)
+    private TesseraFlyoutViewModel(HostServices services, string kind, string styleId, IReadOnlyDictionary<string, string> payload, IHostUiBridge? hostUi)
     {
         Services = services;
+        HostUi = hostUi;
         Kind = kind;
         StyleId = styleId;
         Payload = payload;
@@ -23,7 +26,8 @@ public sealed class TesseraFlyoutViewModel
         ThumbnailPng = media?.ThumbnailPng;
         MediaPositionSeconds = media?.PositionSeconds ?? 0;
         MediaDurationSeconds = media?.DurationSeconds ?? 0;
-        ShowMediaStrip = payload.GetValueOrDefault("showMediaStrip") == "1"
+        ShowMediaStrip = TesseraLayoutCoverage.UsesStackedMediaStrip(styleId)
+                         && payload.GetValueOrDefault("showMediaStrip") == "1"
                          && !string.IsNullOrWhiteSpace(MediaTitle)
                          && MediaTitle != "No media";
         LockName = payload.GetValueOrDefault("lock") ?? "CapsLock";
@@ -32,11 +36,13 @@ public sealed class TesseraFlyoutViewModel
         Settings = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
     }
 
-    public static TesseraFlyoutViewModel FromRequest(HostServices services, FlyoutRequest request) =>
+    public static TesseraFlyoutViewModel FromRequest(
+        HostServices services, FlyoutRequest request, IHostUiBridge? hostUi = null) =>
         new(services, request.Kind, request.StyleId ?? "Fluent",
-            request.Payload ?? new Dictionary<string, string>());
+            request.Payload ?? new Dictionary<string, string>(), hostUi);
 
     public HostServices Services { get; }
+    public IHostUiBridge? HostUi { get; }
     public TesseraSettings Settings { get; }
     public string Kind { get; }
     public string StyleId { get; }
@@ -59,8 +65,8 @@ public sealed class TesseraFlyoutViewModel
 
     public double PrimaryValue => Kind.Equals("bright", StringComparison.OrdinalIgnoreCase) ? Brightness : Volume;
     public string PrimaryPercent => Kind.Equals("bright", StringComparison.OrdinalIgnoreCase)
-        ? $"{VolumePercent.ToPercent(Brightness)}"
-        : IsMuted ? "Mute" : $"{VolumePercent.ToPercent(Volume)}";
+        ? $"{VolumePercent.ToPercent(Brightness)}%"
+        : IsMuted ? "Mute" : $"{VolumePercent.ToPercent(Volume)}%";
 
     public string KindLabel => Kind.ToLowerInvariant() switch
     {
@@ -120,30 +126,49 @@ public sealed class TesseraFlyoutViewModel
     {
         await Services.Media.ToggleShuffleAsync();
         if (icon is not null)
-            icon.Foreground = new Avalonia.Media.SolidColorBrush(
-                Avalonia.Media.Color.FromArgb(255, 255, 255, 255));
+            SetToggleIconActive(icon, !IsToggleIconActive(icon));
     }
 
     public async Task ToggleRepeatAsync(Material.Icons.Avalonia.MaterialIcon? icon = null)
     {
         await Services.Media.ToggleRepeatAsync();
         if (icon is not null)
-            icon.Foreground = new Avalonia.Media.SolidColorBrush(
-                Avalonia.Media.Color.FromArgb(255, 255, 255, 255));
+            SetToggleIconActive(icon, !IsToggleIconActive(icon));
     }
 
     public async Task ToggleLikeAsync(Material.Icons.Avalonia.MaterialIcon? icon = null)
     {
-        await Services.Media.ToggleLikeAsync();
+        var wantLiked = icon is null || icon.Kind != Material.Icons.MaterialIconKind.Heart;
+        await Services.Media.ToggleLikeAsync(wantLiked);
         if (icon is not null)
-        {
-            var on = icon.Kind != Material.Icons.MaterialIconKind.Heart;
-            icon.Kind = on ? Material.Icons.MaterialIconKind.Heart : Material.Icons.MaterialIconKind.HeartOutline;
-            icon.Foreground = on
-                ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromRgb(255, 80, 100))
-                : TesseraPalette.FontBrush;
-        }
+            TesseraMediaPanel.ApplyLikeIcon(
+                icon,
+                wantLiked ? MediaLikePolicy.Liked : MediaLikePolicy.Unrated);
     }
+
+    public bool SupportsMediaDislike =>
+        MediaLikePolicy.SupportsDislike(Services.Media.Current?.AppId);
+
+    public async Task ToggleDislikeAsync(Material.Icons.Avalonia.MaterialIcon? icon = null)
+    {
+        var wantDisliked = icon is null || icon.Kind != Material.Icons.MaterialIconKind.ThumbDown;
+        await Services.Media.ToggleDislikeAsync(wantDisliked);
+        if (icon is not null)
+            TesseraMediaPanel.ApplyDislikeIcon(
+                icon,
+                wantDisliked ? MediaLikePolicy.Disliked : MediaLikePolicy.Unrated);
+    }
+
+    private static bool IsToggleIconActive(Material.Icons.Avalonia.MaterialIcon icon) =>
+        icon.Foreground is Avalonia.Media.SolidColorBrush b
+        && b.Color.A > 200
+        && b.Color.R > 200
+        && b.Color.G > 200;
+
+    private static void SetToggleIconActive(Material.Icons.Avalonia.MaterialIcon icon, bool on) =>
+        icon.Foreground = on
+            ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromRgb(255, 255, 255))
+            : TesseraPalette.FontBrush;
 
     public IReadOnlyList<AudioOutputDevice> Devices => Services.AudioDevices.GetOutputDevices();
 

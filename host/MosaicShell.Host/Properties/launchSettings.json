@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "MosaicShell.Host": {
+      "commandName": "Project",
+      "nativeDebugging": false
+    }
+  }
+}

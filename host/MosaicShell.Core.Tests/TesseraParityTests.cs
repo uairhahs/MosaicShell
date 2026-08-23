@@ -1,6 +1,7 @@
 using FluentAssertions;
 using MosaicShell.Core;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Capabilities.BuiltIn;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
@@ -52,8 +53,10 @@ public class TesseraParityTests : IDisposable
     {
         var s = new TesseraSettings();
         s.FlyoutScalePercent.Should().Be(100);
+        s.UseBackdropBlur.Should().BeTrue();
         s.UseBakedFrost.Should().BeTrue();
         s.UseAcrylicBackdrop.Should().BeTrue();
+        s.UseOsAcrylic.Should().BeFalse();
         s.UseFocusDim.Should().BeTrue();
         Math.Clamp(s.FlyoutScalePercent, 50, 150).Should().Be(100);
     }
@@ -100,7 +103,7 @@ public class TesseraParityTests : IDisposable
     {
         var s = new TesseraSettings
         {
-            Style = "Win11",
+            Style = "Windows11",
             Position = "BC",
             MonitorIndex = 2,
             XPad = 12,
@@ -109,15 +112,42 @@ public class TesseraParityTests : IDisposable
             Ani = 1,
             AniDir = "Bottom",
             EnableFlightFlyouts = false,
-            ShowMediaStripOnVolume = false
+            ShowMediaStripOnVolume = false,
+            UseOsAcrylic = true,
+            AccentColor = "#D8E2F8"
         };
         ModuleSettingsStore.Save("Tessera", s);
         var loaded = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
-        loaded.Style.Should().Be("Win11");
+        loaded.Style.Should().Be("Windows11");
+        loaded.AccentColor.Should().Be("#D8E2F8");
         loaded.Position.Should().Be("BC");
         loaded.MonitorIndex.Should().Be(2);
         loaded.AniDir.Should().Be("Bottom");
         loaded.EnableFlightFlyouts.Should().BeFalse();
+        loaded.UseOsAcrylic.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task TesseraCapability_picks_up_settings_changes_without_rearm()
+    {
+        ModuleSettingsStore.Save("Tessera", new TesseraSettings { Style = "Fluent" });
+        var services = HostServicesFakes.Create();
+        var ui = new BridgeUi(new CaptureFlyouts(_shown));
+        var registry = new CapabilityRegistry();
+        BuiltInCapabilityFactories.RegisterAll(registry);
+        var daemon = new CapabilityDaemon(registry, services, ui);
+        (await daemon.ArmAsync("Tessera")).Should().BeTrue();
+
+        services.Audio.MasterVolume = 0.5;
+        _shown.Should().ContainSingle();
+        _shown[0].StyleId.Should().Be("Fluent");
+
+        ModuleSettingsStore.Save("Tessera", new TesseraSettings { Style = "Windows11", FlyoutScalePercent = 120 });
+        _shown.Clear();
+        services.Audio.MasterVolume = 0.6;
+        _shown.Should().ContainSingle();
+        _shown[0].StyleId.Should().Be("Windows11");
+        _shown[0].Payload!["flyoutScale"].Should().Be("120");
     }
 
     [Fact]
@@ -152,17 +182,40 @@ public class TesseraParityTests : IDisposable
             EnableFlightFlyouts = true
         });
 
-        var ui = new CaptureUi(_shown);
+        var ui = new BridgeUi(new CaptureFlyouts(_shown));
         var registry = new CapabilityRegistry();
         BuiltInCapabilityFactories.RegisterAll(registry);
         var daemon = new CapabilityDaemon(registry, services, ui);
         (await daemon.ArmAsync("Tessera")).Should().BeTrue();
 
         lockSvc.Raise(new LockKeyState(LockKeyKind.CapsLock, true));
-        _shown.Should().Contain(r => r.Kind == "locks");
+        _shown.Should().Contain(r => r.Kind == "locks" && r.Payload!["on"] == "1");
+
+        lockSvc.Raise(new LockKeyState(LockKeyKind.CapsLock, false));
+        _shown.Should().Contain(r => r.Kind == "locks" && r.Payload!["on"] == "0");
 
         air.Raise();
         _shown.Should().Contain(r => r.Kind == "flight");
+    }
+
+    [Fact]
+    public async Task Armed_tessera_shows_media_flyout_on_track_change()
+    {
+        ModuleSettingsStore.Save("Tessera", new TesseraSettings { EnableMediaFlyouts = true });
+        var services = HostServicesFakes.Create();
+        var media = (FakeMediaSessionService)services.Media;
+        media.Current = new MediaSessionInfo("Track A", "Artist", "app", true, null, 0, 100);
+
+        var ui = new BridgeUi(new CaptureFlyouts(_shown));
+        var registry = new CapabilityRegistry();
+        BuiltInCapabilityFactories.RegisterAll(registry);
+        var daemon = new CapabilityDaemon(registry, services, ui);
+        (await daemon.ArmAsync("Tessera")).Should().BeTrue();
+        _shown.Clear();
+
+        media.Current = new MediaSessionInfo("Track B", "Artist", "app", true, null, 0, 100);
+
+        _shown.Should().Contain(r => r.Kind == "media" && r.ModuleId == "Tessera");
     }
 
     [Fact]
@@ -173,12 +226,13 @@ public class TesseraParityTests : IDisposable
 
     private sealed class RaisingLockKeys : ILockKeysService
     {
+        public bool IsActive { get; private set; }
         public LockKeyState Caps => new(LockKeyKind.CapsLock, false);
         public LockKeyState Num => new(LockKeyKind.NumLock, false);
         public LockKeyState Scroll => new(LockKeyKind.ScrollLock, false);
         public event EventHandler<LockKeyState>? Changed;
-        public void Start() { }
-        public void Stop() { }
+        public void Start() => IsActive = true;
+        public void Stop() => IsActive = false;
         public void Dispose() { }
         public void Raise(LockKeyState s) => Changed?.Invoke(this, s);
     }
@@ -196,20 +250,5 @@ public class TesseraParityTests : IDisposable
             IsEnabled = !IsEnabled;
             Changed?.Invoke(this, EventArgs.Empty);
         }
-    }
-
-    private sealed class CaptureUi(List<FlyoutRequest> shown) : ICapabilityUiBridge
-    {
-        public IFlyoutPresenter Flyouts { get; } = new CaptureFlyouts(shown);
-    }
-
-    private sealed class CaptureFlyouts(List<FlyoutRequest> shown) : IFlyoutPresenter
-    {
-        public void Show(FlyoutRequest request) => shown.Add(request);
-        public void Update(FlyoutRequest request) => shown.Add(request);
-        public void SoftRefresh(FlyoutRequest request) { }
-        public void Hide(string moduleId) { }
-        public void HideAll() { }
-        public bool IsVisible(string moduleId) => shown.Any(r => r.ModuleId.Equals(moduleId, StringComparison.OrdinalIgnoreCase));
     }
 }

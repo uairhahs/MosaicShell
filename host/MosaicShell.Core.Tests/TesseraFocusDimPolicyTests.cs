@@ -1,5 +1,5 @@
 using FluentAssertions;
-using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Modules.Tessera;
 
 namespace MosaicShell.Core.Tests;
 
@@ -30,5 +30,27 @@ public class TesseraFocusDimPolicyTests
     {
         TesseraFocusDimPolicy.MustPassThroughInput.Should().BeTrue();
         TesseraFocusDimPolicy.InstantDismissOnOutsideClick.Should().BeTrue();
+        TesseraFocusDimPolicy.InstantDismissMustCloseFocusDim.Should().BeTrue();
+        TesseraFocusDimPolicy.ShouldCloseFocusDimOnTransientDismiss().Should().BeTrue();
+    }
+
+    [Fact]
+    public void Dim_uses_constant_layered_alpha_not_composition_fallback_brush()
+    {
+        // High-alpha Transparent FallbackBrush under RedirectionSurface paints a black fill.
+        TesseraFocusDimPolicy.UseConstantLayeredAlpha.Should().BeTrue();
+        TesseraFocusDimPolicy.MaxCompositionFallbackAlpha.Should().Be((byte)0);
+        TesseraFocusDimPolicy.ResolveLayeredAlpha()
+            .Should().Be(TesseraFocusDimPolicy.OverlayAlpha);
+        TesseraFocusDimPolicy.ResolveLayeredAlpha()
+            .Should().BeLessThan((byte)100);
+    }
+
+    [Fact]
+    public void Crust_rgb_is_mocha_base()
+    {
+        TesseraFocusDimPolicy.CrustR.Should().Be(0x11);
+        TesseraFocusDimPolicy.CrustG.Should().Be(0x11);
+        TesseraFocusDimPolicy.CrustB.Should().Be(0x1b);
     }
 }

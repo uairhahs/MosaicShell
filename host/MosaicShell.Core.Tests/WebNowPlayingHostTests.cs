@@ -118,7 +118,7 @@ public class WebNowPlayingHostTests
     [Fact]
     public void MakePlayerData_field_layout_matches_extension()
     {
-        // Mirrors extension makePlayerData: id|name|title|artist|album|cover|state|pos|dur|vol|...
+        // Mirrors extension makePlayerData: id|name|title|artist|album|cover|state|pos|dur|vol|..
         var blob = "9|YouTube Music|Hello|World|Alb|https://cdn.example/cover.png|0|10|200|80|0|1|0|0|1|1|1|1|1|1|1|1|1|1|100|200|300|";
         var f = WebNowPlayingReduxHost.SplitFields(blob);
         f[0].Should().Be("9");
@@ -165,11 +165,85 @@ public class WebNowPlayingHostTests
         session.Host.Active.CoverPng.Should().Equal(TinyPng);
     }
 
-    private static string BuildPlayerAdded(long id, string title, string coverSrc)
+    [Fact]
+    public async Task Host_resets_stale_rating_when_title_changes_without_rating_field()
+    {
+        await using var session = await WnpTestSession.StartAsync();
+        _ = await session.ReceiveTextAsync();
+
+        await session.SendTextAsync(BuildPlayerAdded(id: 5, title: "Liked Song", coverSrc: "", rating: 5));
+        await session.WaitForChangeAsync();
+        session.Host.Active!.Rating.Should().Be(5);
+
+        await session.SendTextAsync("1 5 ||New Song||||0|42|180|");
+        await session.WaitForChangeAsync();
+        session.Host.Active!.Title.Should().Be("New Song");
+        session.Host.Active!.Rating.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Host_set_like_sends_rating_5_for_unrated_track()
+    {
+        await using var session = await WnpTestSession.StartAsync();
+        _ = await session.ReceiveTextAsync();
+
+        await session.SendTextAsync(BuildPlayerAdded(id: 8, title: "Fresh", coverSrc: "", rating: 0));
+        await session.WaitForChangeAsync();
+
+        var evt = session.WaitForOutboundEventAsync();
+        await session.Host.TrySetLikeAsync(wantLiked: true);
+        var msg = await evt;
+        msg.Should().MatchRegex(@"^8 \d+ 5 1$");
+    }
+
+    [Fact]
+    public async Task Host_set_like_sends_rating_5_when_stale_host_rating_but_ui_wants_like()
+    {
+        await using var session = await WnpTestSession.StartAsync();
+        _ = await session.ReceiveTextAsync();
+
+        await session.SendTextAsync(BuildPlayerAdded(id: 10, title: "Stale", coverSrc: "", rating: 5));
+        await session.WaitForChangeAsync();
+
+        var evt = session.WaitForOutboundEventAsync();
+        await session.Host.TrySetLikeAsync(wantLiked: true);
+        var msg = await evt;
+        msg.Should().MatchRegex(@"^10 \d+ 5 1$");
+    }
+
+    [Fact]
+    public async Task Host_set_unlike_sends_ytm_toggle_rating_when_host_knows_liked()
+    {
+        await using var session = await WnpTestSession.StartAsync();
+        _ = await session.ReceiveTextAsync();
+
+        await session.SendTextAsync(BuildPlayerAdded(id: 9, title: "Liked", coverSrc: "", rating: 5));
+        await session.WaitForChangeAsync();
+
+        var evt = session.WaitForOutboundEventAsync();
+        await session.Host.TrySetLikeAsync(wantLiked: false);
+        var msg = await evt;
+        msg.Should().MatchRegex(@"^9 \d+ 5 1$");
+    }
+
+    [Fact]
+    public async Task Host_set_unlike_is_noop_when_host_rating_unrated()
+    {
+        await using var session = await WnpTestSession.StartAsync();
+        _ = await session.ReceiveTextAsync();
+
+        await session.SendTextAsync(BuildPlayerAdded(id: 11, title: "Fresh", coverSrc: "", rating: 0));
+        await session.WaitForChangeAsync();
+
+        await session.Host.TrySetLikeAsync(wantLiked: false);
+        // No outbound event, must not send SET_RATING 0 (YTM thumbs-down).
+    }
+
+    private static string BuildPlayerAdded(long id, string title, string coverSrc, int rating = 0)
     {
         static string Esc(string s) => string.IsNullOrEmpty(s) ? "\u0001" : s.Replace("|", "\\|");
         var data =
-            $"{id}|YouTube Music|{Esc(title)}|Artist|\u0001|{Esc(coverSrc)}|0|5|100|100|0|1|0|0|1|1|1|1|1|1|1|1|1|1|1|2|3|";
+            $"{id}|YouTube Music|{Esc(title)}|Artist|\u0001|{Esc(coverSrc)}|0|5|100|100|{rating}|1|0|0|1|1|1|1|1|1|1|1|1|1|1|2|3|";
         return $"0 {id} {data}";
     }
 
@@ -233,6 +307,8 @@ public class WebNowPlayingHostTests
 
             return tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
         }
+
+        public Task<string> WaitForOutboundEventAsync() => ReceiveTextCoreAsync();
 
         private async Task<string> ReceiveTextCoreAsync()
         {

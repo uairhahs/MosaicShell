@@ -1,9 +1,12 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Material.Icons;
 using Material.Icons.Avalonia;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Services.WebNowPlaying;
 
@@ -19,6 +22,8 @@ public sealed class TesseraLiveBindings
     public TextBlock? Percent { get; set; }
     public TextBlock? SlashMeter { get; set; }
     public MaterialIcon? Glyph { get; set; }
+    /// <summary>Pixel M3: two-tone inset volume icon (on-primary / on-secondary-container).</summary>
+    public bool MaterialYouVolumeGlyph { get; set; }
     public TesseraTrack? MediaScrub { get; set; }
     public TextBlock? MediaPos { get; set; }
     public TextBlock? MediaDur { get; set; }
@@ -26,16 +31,72 @@ public sealed class TesseraLiveBindings
     public TextBlock? MediaTitle { get; set; }
     public TextBlock? MediaArtist { get; set; }
     public MaterialIcon? PlayPauseIcon { get; set; }
+    public MaterialIcon? LikeIcon { get; set; }
+    public MaterialIcon? DislikeIcon { get; set; }
+    public TextBlock? StatusLabel { get; set; }
+    /// <summary>Plainext: title uses {@code Title > Playing &lt;} and progress uses slash meter.</summary>
+    public bool PlainTextMedia { get; set; }
+    /// <summary>Hide percent at rest; show while dragging or wheeling (M3-style value indicator).</summary>
+    public bool PercentOnAdjustOnly { get; set; }
 }
 
 /// <summary>Root wrapper - live pump updates Bindings directly (volume / scrub / art).</summary>
 public sealed class TesseraLiveHost : ContentControl
 {
-    public TesseraLiveBindings Bindings { get; } = new();
+    public TesseraLiveBindings Bindings { get; }
+
+    /// <summary>Root wrapper - live pump updates Bindings directly (volume / scrub / art).</summary>
+    public TesseraLiveHost(TesseraLiveBindings? sharedBindings = null)
+    {
+        Bindings = sharedBindings ?? new TesseraLiveBindings();
+    }
+
+    /// <summary>Module-config preview, must not sample live desktop backdrop.</summary>
+    public bool IsEmbeddedPreview { get; init; }
+
+    /// <summary>Find live host when flyout root is wrapped (scale decorator, shared backdrop parent).</summary>
+    public static TesseraLiveHost? FindIn(Control? root)
+    {
+        if (root is TesseraLiveHost host) return host;
+        if (root is Decorator { Child: Control decorated }) return FindIn(decorated);
+        if (root is Panel panel)
+        {
+            foreach (var c in panel.Children)
+            {
+                var found = FindIn(c);
+                if (found is not null) return found;
+            }
+            return null;
+        }
+        if (root is ContentControl { Content: Control content }) return FindIn(content);
+        if (root is Visual visual)
+        {
+            foreach (var v in visual.GetVisualChildren())
+            {
+                if (v is Control c)
+                {
+                    var found = FindIn(c);
+                    if (found is not null) return found;
+                }
+            }
+        }
+        return null;
+    }
 
     public void ApplyLive(HostServices services, FlyoutRequest request)
     {
         var b = Bindings;
+        if (request.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
+            || request.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase))
+        {
+            var live = TesseraFlyoutRequestBuilder.RefreshStatusPayload(
+                services, request.Kind, request.Payload);
+            request = request with { Payload = live };
+            if (b.StatusLabel is not null)
+                b.StatusLabel.Text = TesseraStatusLabels.Format(request);
+            return;
+        }
+
         var media = services.Media.Current;
         var isBright = request.Kind.Equals("bright", StringComparison.OrdinalIgnoreCase);
 
@@ -55,13 +116,9 @@ public sealed class TesseraLiveHost : ContentControl
             if (b.Percent is not null)
             {
                 var pct = VolumePercent.ToPercent(shown);
-                if (muted) b.Percent.Text = "Mute";
-                else if (b.SlashMeter is not null)
-                    b.Percent.Text = $"Speakers: {pct}%";
-                else if (b.VolumeRing is not null)
-                    b.Percent.Text = $"{pct}%";
-                else
-                    b.Percent.Text = $"{pct}";
+                b.Percent.Text = TesseraVolumeLabel.Volume(muted, pct, b.SlashMeter is not null);
+                if (b.PercentOnAdjustOnly)
+                    b.Percent.IsVisible = adjusting;
             }
             if (b.SlashMeter is not null)
                 b.SlashMeter.Text = TesseraChrome.SlashFill(shown);
@@ -72,6 +129,11 @@ public sealed class TesseraLiveHost : ContentControl
                     : shown < 0.20 ? MaterialIconKind.VolumeLow
                     : shown < 0.50 ? MaterialIconKind.VolumeMedium
                     : MaterialIconKind.VolumeHigh;
+                if (b.MaterialYouVolumeGlyph)
+                {
+                    var trackH = b.VolumeTrack?.Bounds.Height ?? 0;
+                    TesseraMaterialYouM3.ApplyVolumeGlyphTone(b.Glyph, shown, muted, trackH);
+                }
             }
         }
         else if (isBright && b.VolumeTrack is not null)
@@ -82,12 +144,23 @@ public sealed class TesseraLiveHost : ContentControl
             if (b.Percent is not null)
             {
                 var shown = b.VolumeTrack.IsUserAdjusting ? b.VolumeTrack.Value : br;
-                b.Percent.Text = $"{VolumePercent.ToPercent(shown)}";
+                b.Percent.Text = TesseraVolumeLabel.Brightness(VolumePercent.ToPercent(shown), b.PlainTextMedia);
             }
+            if (b.SlashMeter is not null)
+                b.SlashMeter.Text = TesseraChrome.SlashFill(br);
         }
 
         if (b.MediaTitle is not null)
-            b.MediaTitle.Text = string.IsNullOrWhiteSpace(media?.Title) ? " " : media!.Title!;
+        {
+            if (b.PlainTextMedia && media is not null)
+            {
+                var title = string.IsNullOrWhiteSpace(media.Title) ? " " : media.Title!;
+                var state = media.IsPlaying ? "Playing" : "Paused";
+                b.MediaTitle.Text = $"{title} > {state} <";
+            }
+            else
+                b.MediaTitle.Text = string.IsNullOrWhiteSpace(media?.Title) ? " " : media!.Title!;
+        }
         if (b.MediaArtist is not null)
             b.MediaArtist.Text = string.IsNullOrWhiteSpace(media?.Artist) ? " " : media!.Artist!;
 
@@ -101,14 +174,30 @@ public sealed class TesseraLiveHost : ContentControl
         if (b.PlayPauseIcon is not null)
             b.PlayPauseIcon.Kind = media?.IsPlaying == true ? MaterialIconKind.Pause : MaterialIconKind.Play;
 
+        if (b.LikeIcon is not null)
+            TesseraMediaPanel.ApplyLikeIcon(b.LikeIcon, media?.LikeRating);
+
+        if (b.DislikeIcon is not null)
+            TesseraMediaPanel.ApplyDislikeIcon(b.DislikeIcon, media?.LikeRating);
+
         if (media is not null)
         {
             var dur = media.DurationSeconds;
             var pos = media.PositionSeconds;
             var progress = dur > 0.5 ? Math.Clamp(pos / dur, 0, 1) : 0;
             b.MediaScrub?.SetValueSilent(progress);
-            if (b.MediaPos is not null) b.MediaPos.Text = FormatTime(pos);
-            if (b.MediaDur is not null) b.MediaDur.Text = FormatTime(dur);
+            if (b.MediaPos is not null)
+            {
+                if (b.PlainTextMedia)
+                    b.MediaPos.Text =
+                        $"{FormatTime(pos)} {TesseraChrome.SlashFill(progress, 16)} {FormatTime(dur)}";
+                else
+                    b.MediaPos.Text = b.MediaDur is not null
+                        ? FormatTime(pos)
+                        : $"{FormatTime(pos)} / {FormatTime(dur)}";
+            }
+            if (b.MediaDur is not null)
+                b.MediaDur.Text = FormatTime(dur);
         }
     }
 

@@ -1,10 +1,10 @@
+using System;
+using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Platform;
-using MosaicShell.Core.Capabilities;
-using MosaicShell.Core.Services;
+using Avalonia.Threading;
 
 namespace MosaicShell.Host.Tiles.Tessera;
 
@@ -17,7 +17,11 @@ public sealed class TesseraStylePreview : Border
     public static readonly StyledProperty<bool> ShowMediaStripProperty =
         AvaloniaProperty.Register<TesseraStylePreview, bool>(nameof(ShowMediaStrip), true);
 
-    private static readonly Lazy<byte[]?> LogoPng = new(LoadLogoPng);
+    public static readonly StyledProperty<string?> AccentColorProperty =
+        AvaloniaProperty.Register<TesseraStylePreview, string?>(nameof(AccentColor));
+
+    private static int _suspendDepth;
+    private static event Action? RebuildFlushRequested;
 
     private readonly ContentControl _host = new()
     {
@@ -25,6 +29,9 @@ public sealed class TesseraStylePreview : Border
         VerticalAlignment = VerticalAlignment.Center,
         IsHitTestVisible = false
     };
+
+    private bool _rebuildPending;
+    private bool _rebuildPosted;
 
     public TesseraStylePreview()
     {
@@ -44,7 +51,6 @@ public sealed class TesseraStylePreview : Border
             VerticalAlignment = VerticalAlignment.Center,
             Child = _host
         };
-        Rebuild();
     }
 
     public string? StyleId
@@ -59,47 +65,94 @@ public sealed class TesseraStylePreview : Border
         set => SetValue(ShowMediaStripProperty, value);
     }
 
+    public string? AccentColor
+    {
+        get => GetValue(AccentColorProperty);
+        set => SetValue(AccentColorProperty, value);
+    }
+
+    public static IDisposable EnterSuspendRebuild()
+    {
+        Interlocked.Increment(ref _suspendDepth);
+        return new SuspendScope();
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        RebuildFlushRequested += HandleRebuildFlush;
+        if (_rebuildPending || _host.Content is null)
+            ScheduleRebuild();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        RebuildFlushRequested -= HandleRebuildFlush;
+        base.OnDetachedFromVisualTree(e);
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == StyleIdProperty || change.Property == ShowMediaStripProperty)
+
+        if (change.Property == IsVisibleProperty)
+        {
+            if (IsVisible && _rebuildPending)
+                ScheduleRebuild();
+            return;
+        }
+
+        if (change.Property == StyleIdProperty || change.Property == ShowMediaStripProperty
+            || change.Property == AccentColorProperty)
+        {
+            ScheduleRebuild();
+        }
+    }
+
+    private void HandleRebuildFlush()
+    {
+        if (_rebuildPending)
+            ScheduleRebuild();
+    }
+
+    private void ScheduleRebuild()
+    {
+        if (Volatile.Read(ref _suspendDepth) > 0)
+        {
+            _rebuildPending = true;
+            return;
+        }
+
+        if (!IsVisible || !IsEffectivelyVisible)
+        {
+            _rebuildPending = true;
+            return;
+        }
+
+        if (_rebuildPosted)
+            return;
+
+        _rebuildPosted = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            _rebuildPosted = false;
+            if (Volatile.Read(ref _suspendDepth) > 0 || !IsVisible || !IsEffectivelyVisible)
+            {
+                _rebuildPending = true;
+                return;
+            }
+
+            _rebuildPending = false;
             Rebuild();
+        }, DispatcherPriority.Background);
     }
 
     private void Rebuild()
     {
         try
         {
-            var services = HostServicesFakes.Create();
-            services.Audio.MasterVolume = 0.62;
-            if (services.Media is FakeMediaSessionService media)
-            {
-                media.Current = new MediaSessionInfo(
-                    Title: "Sample track",
-                    Artist: "Artist",
-                    AppId: "preview",
-                    IsPlaying: true,
-                    ThumbnailPng: LogoPng.Value,
-                    PositionSeconds: 42,
-                    DurationSeconds: 180);
-            }
-
-            var payload = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["volume"] = "0.62",
-                ["muted"] = "0",
-                ["showMediaStrip"] = ShowMediaStrip ? "1" : "0",
-                ["mediaTitle"] = "Sample track",
-                ["mediaArtist"] = "Artist",
-                ["mediaPlaying"] = "1"
-            };
-
             var style = string.IsNullOrWhiteSpace(StyleId) ? "Fluent" : StyleId!;
-            var request = new FlyoutRequest("Tessera", "vol", style, Payload: payload);
-            var vm = TesseraFlyoutViewModel.FromRequest(services, request);
-            var flyout = TesseraStyleFactory.Create(style, vm);
-            flyout.IsHitTestVisible = false;
-            _host.Content = flyout;
+            _host.Content = TesseraPreviewExporter.BuildFlyout(style, ShowMediaStrip, AccentColor);
         }
         catch
         {
@@ -114,20 +167,16 @@ public sealed class TesseraStylePreview : Border
         }
     }
 
-    private static byte[]? LoadLogoPng()
+    private sealed class SuspendScope : IDisposable
     {
-        try
+        private int _disposed;
+
+        public void Dispose()
         {
-            // Source of truth: .github/res/MosaicShell.png (linked into Assets via csproj)
-            var uri = new Uri("avares://MosaicShell.Host/Assets/MosaicShell.png");
-            using var stream = AssetLoader.Open(uri);
-            using var ms = new MemoryStream();
-            stream.CopyTo(ms);
-            return ms.ToArray();
-        }
-        catch
-        {
-            return null;
+            if (Interlocked.Exchange(ref _disposed, 1) != 0)
+                return;
+            if (Interlocked.Decrement(ref _suspendDepth) == 0)
+                RebuildFlushRequested?.Invoke();
         }
     }
 }

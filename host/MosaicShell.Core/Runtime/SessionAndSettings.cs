@@ -1,6 +1,7 @@
 using System.Text.Json;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Modules;
+using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Core.Runtime;
 
@@ -54,13 +55,17 @@ public static class ModuleSettingsStore
         if (!File.Exists(path))
         {
             var created = factory();
+            StyleIds.TryMigratePersistedStyle(created);
             Save(moduleId, created);
             return created;
         }
 
         try
         {
-            return JsonSerializer.Deserialize<T>(File.ReadAllText(path), JsonOptions) ?? factory();
+            var loaded = JsonSerializer.Deserialize<T>(File.ReadAllText(path), JsonOptions) ?? factory();
+            if (StyleIds.TryMigratePersistedStyle(loaded))
+                Save(moduleId, loaded);
+            return loaded;
         }
         catch
         {
@@ -84,14 +89,14 @@ public static class ModuleSettingsStore
 
 public static class ModuleUninstaller
 {
-    public static bool Uninstall(string moduleId, ITileRuntime? runtime = null, CapabilityDaemon? daemon = null)
+    public static bool Uninstall(string moduleId, ITileRuntime? runtime = null, ICapabilityHost? capabilityHost = null)
     {
         if (!ModuleCatalog.TryGet(moduleId, out _))
             return false;
 
         runtime?.Stop(moduleId);
-        if (daemon is not null)
-            daemon.DisarmAsync(moduleId).GetAwaiter().GetResult();
+        if (capabilityHost is not null)
+            capabilityHost.DisarmAsync(moduleId).GetAwaiter().GetResult();
         ModuleSettingsStore.Delete(moduleId);
 
         var dir = Path.Combine(AppPaths.ModulesDirectory, moduleId);
@@ -114,6 +119,11 @@ public sealed class ModuleManifest
     public string Id { get; set; } = "";
     public string Version { get; set; } = "0.0.0";
     public string? DisplayName { get; set; }
+    /// <summary>Hub / Library blurb for discovered modules.</summary>
+    public string? Description { get; set; }
+    /// <summary>Optional how-to text for module config (third-party modules).</summary>
+    public string? UsageSummary { get; set; }
+    public string? HowToTrigger { get; set; }
     public Dictionary<string, string>? DefaultSettings { get; set; }
 
     /// <summary>Widget | Capability | Hybrid</summary>
