@@ -13,7 +13,7 @@
         MinWidth="780" MinHeight="560"
         Background="#11111b"
         ExtendClientAreaToDecorationsHint="True"
-        Icon="/Assets/mosaicshell.ico"
+        Icon="avares://MosaicShell.Host/Assets/mosaicshell.ico"
         Title="MosaicShell">
 
   <Design.DataContext>
@@ -195,7 +195,7 @@
             BorderBrush="#313244" BorderThickness="0,1,0,0">
       <Grid ColumnDefinitions="Auto,*,Auto">
         <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-          <Image Source="/Assets/MosaicShell.png" Width="28" Height="28"
+          <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="28" Height="28"
                  RenderOptions.BitmapInterpolationMode="HighQuality" />
           <TextBlock Text="MosaicShell" FontWeight="SemiBold" FontSize="14"
                      Foreground="#cdd6f4" VerticalAlignment="Center" />
@@ -221,7 +221,7 @@
           <DockPanel IsVisible="{Binding IsHome}">
             <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
               <StackPanel Orientation="Horizontal" Spacing="14">
-                <Image Source="/Assets/MosaicShell.png" Width="48" Height="48"
+                <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="48" Height="48"
                        RenderOptions.BitmapInterpolationMode="HighQuality" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock Text="Home" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
@@ -778,7 +778,7 @@
               <TextBlock Text="Back" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
-          <Image Source="/Assets/MosaicShell.png" MaxWidth="280" HorizontalAlignment="Left"
+          <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" MaxWidth="280" HorizontalAlignment="Left"
                  RenderOptions.BitmapInterpolationMode="HighQuality" />
           <TextBlock Text="Welcome" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
           <TextBlock Text="Your desktop, composed." Foreground="#89dceb" FontSize="14" />
@@ -802,7 +802,7 @@
             </StackPanel>
           </Button>
           <StackPanel Orientation="Horizontal" Spacing="16">
-            <Image Source="/Assets/MosaicShell.png" Width="72" Height="72"
+            <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="72" Height="72"
                    RenderOptions.BitmapInterpolationMode="HighQuality" />
             <StackPanel VerticalAlignment="Center">
               <TextBlock Text="MosaicShell" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
@@ -824,7 +824,7 @@
 
       <DockPanel IsVisible="{Binding IsSettings}" Margin="0,12,0,0">
       <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="12" Margin="40,8,40,16">
-        <Image Source="/Assets/MosaicShell.png" Width="40" Height="40"
+        <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="40" Height="40"
                RenderOptions.BitmapInterpolationMode="HighQuality" />
         <TextBlock Text="Settings" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4"
                    VerticalAlignment="Center" />
