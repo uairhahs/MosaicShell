@@ -2,7 +2,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="MosaicShell.Host.App"
              xmlns:local="using:MosaicShell.Host"
-             xmlns:hub="using:MosaicShell.Core.Modules"
              RequestedThemeVariant="Dark">
 
     <Application.DataTemplates>
@@ -28,47 +27,5 @@
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="avares://Material.Icons.Avalonia/MaterialIconStyles.xaml" />
-
-        <!-- Slim Mocha overlay scrollbars (HostScrollbarChromeSpec) -->
-        <Style Selector="ScrollViewer">
-            <Setter Property="AllowAutoHide" Value="True" />
-        </Style>
-        <Style Selector="ScrollBar">
-            <Setter Property="AllowAutoHide" Value="True" />
-        </Style>
-        <Style Selector="ScrollBar:vertical">
-            <Setter Property="Width" Value="{x:Static hub:HostScrollbarChromeSpec.Thickness}" />
-            <Setter Property="MinWidth" Value="{x:Static hub:HostScrollbarChromeSpec.Thickness}" />
-        </Style>
-        <Style Selector="ScrollBar:horizontal">
-            <Setter Property="Height" Value="{x:Static hub:HostScrollbarChromeSpec.Thickness}" />
-            <Setter Property="MinHeight" Value="{x:Static hub:HostScrollbarChromeSpec.Thickness}" />
-        </Style>
-        <Style Selector="ScrollBar /template/ RepeatButton">
-            <Setter Property="IsVisible" Value="False" />
-            <Setter Property="Opacity" Value="0" />
-            <Setter Property="Width" Value="0" />
-            <Setter Property="Height" Value="0" />
-            <Setter Property="MinWidth" Value="0" />
-            <Setter Property="MinHeight" Value="0" />
-        </Style>
-        <Style Selector="ScrollBar /template/ Rectangle#TrackRect">
-            <Setter Property="Fill" Value="{DynamicResource HostScrollTrackBrush}" />
-            <Setter Property="Stroke" Value="Transparent" />
-            <Setter Property="Opacity" Value="0" />
-        </Style>
-        <Style Selector="ScrollBar /template/ Thumb">
-            <Setter Property="Background" Value="{DynamicResource HostScrollThumbBrush}" />
-            <Setter Property="CornerRadius" Value="4" />
-        </Style>
-        <Style Selector="ScrollBar /template/ Thumb:pointerover">
-            <Setter Property="Background" Value="{DynamicResource HostScrollThumbHoverBrush}" />
-        </Style>
-        <Style Selector="ScrollBar /template/ Thumb:pressed">
-            <Setter Property="Background" Value="{DynamicResource HostScrollThumbPressedBrush}" />
-        </Style>
-        <Style Selector="ScrollBar /template/ Thumb /template/ Border">
-            <Setter Property="CornerRadius" Value="4" />
-        </Style>
     </Application.Styles>
 </Application>

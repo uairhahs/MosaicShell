@@ -78,6 +78,8 @@ MosaicShell is a fork of [JaxCore](https://github.com/Jax-Core/JaxCore) by [@Enh
 
 Issues and pull requests are welcome. If you are building a module or widget compatible with MosaicShell, open an issue to discuss integration.
 
+**Development norms** (TDD, Core → Host dependency hierarchy, extensibility seams): [docs/development.md](docs/development.md). Agents and humans should follow the same contracts so Host does not accumulate parallel magic numbers or untested UI workarounds.
+
 ---
 
 ## License

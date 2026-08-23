@@ -7,6 +7,8 @@
 - **Styles** = `StyleCatalog` + per-module manifest `Styles`
 - **Third-party modules** = see [`module-sdk.md`](module-sdk.md) (manifest discovery + package install)
 
+**How to grow this tree without debt:** [`development.md`](development.md) (TDD, Core → Host hierarchy, extensibility seams). Cursor always-apply rules mirror that guide under [`.cursor/rules/`](../.cursor/rules/).
+
 ## Tessera install vs runtime
 
 | Piece | Location |

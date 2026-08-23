@@ -2,11 +2,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using Avalonia.Media;
 using Avalonia.Threading;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Capabilities.BuiltIn;
-using MosaicShell.Core.Modules;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
@@ -30,15 +28,7 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
-        Resources["ScrollBarSize"] = HostScrollbarChromeSpec.Thickness;
-        Resources["HostScrollThumbBrush"] = ToBrush(HostScrollbarChromeSpec.Thumb);
-        Resources["HostScrollThumbHoverBrush"] = ToBrush(HostScrollbarChromeSpec.ThumbHover);
-        Resources["HostScrollThumbPressedBrush"] = ToBrush(HostScrollbarChromeSpec.ThumbPressed);
-        Resources["HostScrollTrackBrush"] = ToBrush(HostScrollbarChromeSpec.Track);
     }
-
-    private static IBrush ToBrush(HostChromeArgb color) =>
-        new SolidColorBrush(Color.FromArgb(color.A, color.R, color.G, color.B));
 
     public override void OnFrameworkInitializationCompleted()
     {
