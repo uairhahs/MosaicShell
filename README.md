@@ -28,10 +28,19 @@ It continues the JaxCore idea of a modular desktop (forked from [Jax-Core/JaxCor
 | Requirement | Minimum |
 |-------------|---------|
 | OS | Windows 10 x64 or later |
-| .NET SDK | 10.0 |
+| .NET | 10.0 Desktop Runtime (framework-dependent builds) or use the self-contained Host |
 | RAM | 6 GB |
 
-## Install (Host)
+## Install
+
+### Release zip (recommended)
+
+1. Download the latest `MosaicShell-*.zip` from [Releases](https://github.com/uairhahs/MosaicShell/releases).
+2. Extract it.
+3. Run `Installer\MosaicShell.Installer.exe` and follow the wizard (pick modules, optional Start Menu / logon).
+4. Or run `Host-sc\MosaicShell.Host.exe` for a self-contained Host without installing the Desktop Runtime.
+
+### From source (developers)
 
 ```powershell
 cd host
@@ -43,7 +52,7 @@ dotnet run --project MosaicShell.Host
 
 See [host/README.md](host/README.md) and [`.github/docs/parity.md`](.github/docs/parity.md).
 
-**Honest MVP vs fidelity:** `tile_*_mvp` flags mean wiring, settings, and flagship behavior slices are in place, not full Jax-Core visual parity. Tessera layout is signed off (`tessera_layout_fidelity`; proofs in [`.github/res/Tessera/`](.github/res/Tessera/)). Other `*_layout_fidelity` flags stay false until in-repo screenshot proofs exist (see [`.github/docs/parity.md`](.github/docs/parity.md)). Install modules from the bundled `Tiles/{Id}/` stub via `Mosaicist install-module <id>`.
+**Honest MVP vs fidelity:** `tile_*_mvp` flags mean wiring, settings, and flagship behavior slices are in place, not full Jax-Core visual parity. Tessera layout is signed off (`tessera_layout_fidelity`; proofs in [`.github/res/Tessera/`](.github/res/Tessera/)). Other `*_layout_fidelity` flags stay false until in-repo screenshot proofs exist (see [`.github/docs/parity.md`](.github/docs/parity.md)). Install modules from the bundled `Tiles/{Id}/` stub via `Mosaicist install-module <id>` or the setup wizard.
 
 ---
 

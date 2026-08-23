@@ -98,7 +98,7 @@ public class HotkeyOverlayCapabilityTests
 
     private sealed class CountingFlyouts : IFlyoutPresenter
     {
-        public event Action<string>? TransientDismissed;
+        public event Action<string>? TransientDismissed { add { } remove { } }
         public int ShowCount { get; private set; }
         public void Show(FlyoutRequest request) => ShowCount++;
         public void Update(FlyoutRequest request) => ShowCount++;

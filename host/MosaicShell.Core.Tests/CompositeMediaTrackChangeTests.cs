@@ -116,7 +116,7 @@ public class CompositeMediaTrackChangeTests
     {
         public MediaSessionInfo? Current { get; private set; }
         public event EventHandler? Changed;
-        public event EventHandler? ProgressChanged;
+        public event EventHandler? ProgressChanged { add { } remove { } }
 
         public void Set(MediaSessionInfo info)
         {

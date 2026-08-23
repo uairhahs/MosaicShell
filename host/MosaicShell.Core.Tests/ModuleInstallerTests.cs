@@ -111,4 +111,36 @@ public class ModuleInstallerTests : IDisposable
         File.Exists(Path.Combine(AppPaths.ModulesDirectory, "Canvas", "stale.txt")).Should().BeFalse();
         File.Exists(Path.Combine(AppPaths.ModulesDirectory, "Canvas", "README.md")).Should().BeTrue();
     }
+
+    [Fact]
+    public async Task Install_from_release_bundle_layout_without_sln()
+    {
+        var bundle = Path.Combine(Path.GetTempPath(), "ms-rel-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(bundle, "Host"));
+            Directory.CreateDirectory(Path.Combine(bundle, "Mosaicist"));
+            Directory.CreateDirectory(Path.Combine(bundle, "Tiles", "Canvas"));
+            File.WriteAllText(Path.Combine(bundle, "Host", "MosaicShell.Host.exe"), "stub");
+            File.WriteAllText(Path.Combine(bundle, "Mosaicist", "Mosaicist.exe"), "stub");
+            File.WriteAllText(
+                Path.Combine(bundle, "Tiles", "Canvas", "module.native.json"),
+                """{"id":"Canvas","runtime":"avalonia"}""");
+            File.WriteAllText(Path.Combine(bundle, "Tiles", "Canvas", "README.md"), "from-release");
+
+            ReleaseBundleLayout.IsBundleRoot(bundle).Should().BeTrue();
+            ModuleInstaller.FindRepoRoot(Path.Combine(bundle, "Host")).Should().Be(bundle);
+
+            var installer = new ModuleInstaller();
+            await installer.InstallAsync("Canvas", sourceTreeRoot: bundle);
+
+            File.Exists(Path.Combine(AppPaths.ModulesDirectory, "Canvas", "README.md")).Should().BeTrue();
+            (await File.ReadAllTextAsync(Path.Combine(AppPaths.ModulesDirectory, "Canvas", "README.md")))
+                .Should().Be("from-release");
+        }
+        finally
+        {
+            try { Directory.Delete(bundle, recursive: true); } catch { /* ignore */ }
+        }
+    }
 }

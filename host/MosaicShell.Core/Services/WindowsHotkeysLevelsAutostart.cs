@@ -318,7 +318,6 @@ public sealed class WindowsAutostartService : IAutostartService
         }
 
         var exe = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "MosaicShell.Host.exe");
-        var contents = $"[InternetShortcut]\r\nURL=file:///{exe.Replace('\\', '/')}\r\nIconIndex=0\r\n";
-        File.WriteAllText(ShortcutPath, contents);
+        MosaicShell.Core.Install.StartupShortcutPolicy.WriteHostShortcut(ShortcutPath, exe, trayOnly: false);
     }
 }

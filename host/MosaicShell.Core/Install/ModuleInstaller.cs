@@ -183,9 +183,20 @@ public sealed class ModuleInstaller
         return null;
     }
 
-    private static string? FindRepoRoot()
+    /// <summary>
+    /// Locates a source tree with <c>Tiles/</c>: release bundle first, then dev repo.
+    /// </summary>
+    public static string? FindRepoRoot(string? startDirectory = null)
     {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        var bundle = ReleaseBundleLayout.TryFindRoot(startDirectory);
+        if (bundle is not null)
+            return bundle;
+
+        var dir = new DirectoryInfo(
+            string.IsNullOrWhiteSpace(startDirectory)
+                ? AppContext.BaseDirectory
+                : Path.GetFullPath(startDirectory));
+
         while (dir is not null)
         {
             if (Directory.Exists(Path.Combine(dir.FullName, "Tiles"))
@@ -196,6 +207,7 @@ public sealed class ModuleInstaller
                 return dir.Parent!.FullName;
             dir = dir.Parent;
         }
+
         return null;
     }
 

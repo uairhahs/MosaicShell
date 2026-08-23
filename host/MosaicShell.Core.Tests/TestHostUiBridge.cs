@@ -68,7 +68,7 @@ internal static class TestCapabilityContext
 
 internal sealed class CaptureFlyouts(List<FlyoutRequest> shown) : IFlyoutPresenter
 {
-    public event Action<string>? TransientDismissed;
+    public event Action<string>? TransientDismissed { add { } remove { } }
 
     public void Show(FlyoutRequest request) => shown.Add(request);
     public void Update(FlyoutRequest request) => shown.Add(request);

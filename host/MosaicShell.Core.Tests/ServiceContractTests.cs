@@ -25,13 +25,13 @@ public class ServiceContractTests
     }
 
     [Fact]
-    public void Fake_media_playpause_toggles_flag()
+    public async Task Fake_media_playpause_toggles_flag()
     {
         var media = new FakeMediaSessionService
         {
             Current = new MediaSessionInfo("Song", "Artist", "app", false)
         };
-        media.PlayPauseAsync().GetAwaiter().GetResult();
+        await media.PlayPauseAsync();
         media.Current!.IsPlaying.Should().BeTrue();
     }
 

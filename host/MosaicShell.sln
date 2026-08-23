@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MosaicShell.Core.Tests", "M
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MosaicShell.Worker", "MosaicShell.Worker\MosaicShell.Worker.csproj", "{B2E8F4A1-9C3D-4E5F-A6B7-8D9E0F1A2B3C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MosaicShell.Installer", "MosaicShell.Installer\MosaicShell.Installer.csproj", "{C3F9A2B4-1D5E-4F6A-8B9C-0D1E2F3A4B5C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +44,9 @@ Global
 		{B2E8F4A1-9C3D-4E5F-A6B7-8D9E0F1A2B3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2E8F4A1-9C3D-4E5F-A6B7-8D9E0F1A2B3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B2E8F4A1-9C3D-4E5F-A6B7-8D9E0F1A2B3C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3F9A2B4-1D5E-4F6A-8B9C-0D1E2F3A4B5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3F9A2B4-1D5E-4F6A-8B9C-0D1E2F3A4B5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3F9A2B4-1D5E-4F6A-8B9C-0D1E2F3A4B5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3F9A2B4-1D5E-4F6A-8B9C-0D1E2F3A4B5C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

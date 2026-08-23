@@ -81,7 +81,7 @@ public class TesseraCapabilityHookThreadTests : IDisposable
         public LockKeyState Caps => new(LockKeyKind.CapsLock, false);
         public LockKeyState Num => new(LockKeyKind.NumLock, false);
         public LockKeyState Scroll => new(LockKeyKind.ScrollLock, false);
-        public event EventHandler<LockKeyState>? Changed;
+        public event EventHandler<LockKeyState>? Changed { add { } remove { } }
 
         public void Start()
         {
@@ -110,7 +110,7 @@ public class TesseraCapabilityHookThreadTests : IDisposable
         public bool IsActive { get; private set; }
         public bool StartOnHostThread { get; private set; }
         public bool StopOnHostThread { get; private set; }
-        public event EventHandler<LegacyVolumeKey>? Pressed;
+        public event EventHandler<LegacyVolumeKey>? Pressed { add { } remove { } }
 
         public void Start()
         {
