@@ -85,6 +85,26 @@ public class WebNowPlayingMergeTests
     }
 
     [Fact]
+    public void Merge_prefers_smtc_position_when_wnp_lags_after_skip()
+    {
+        var smtc = new MediaSessionInfo(
+            "Song", "Artist", "music.youtube.com-x!App", true,
+            ThumbnailPng: null, PositionSeconds: 0.5, DurationSeconds: 180);
+        var wnp = new WnpPlayerSnapshot
+        {
+            Title = "Song",
+            Artist = "Artist",
+            Name = "YouTube Music",
+            State = WnpState.Playing,
+            PositionSeconds = 42,
+            DurationSeconds = 180,
+        };
+
+        var merged = CompositeMediaSessionService.Merge(smtc, wnp)!;
+        merged.PositionSeconds.Should().BeApproximately(0.5, 0.01);
+    }
+
+    [Fact]
     public void Merge_still_overlays_wnp_title_when_smtc_and_wnp_agree()
     {
         var smtc = new MediaSessionInfo(

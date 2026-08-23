@@ -546,7 +546,17 @@ public partial class MainViewModel : ViewModelBase
             case "tessera":
             {
                 PersistTesseraFromUi();
-                StatusMessage = "Tessera settings saved - re-arm if you changed legacy hooks or flyout sources.";
+                if (_daemon?.IsArmed("Tessera") == true)
+                {
+                    var ok = await _daemon.ReArmAsync("Tessera");
+                    StatusMessage = ok
+                        ? "Tessera settings saved and re-armed."
+                        : "Tessera settings saved but re-arm failed.";
+                }
+                else
+                {
+                    StatusMessage = "Tessera settings saved. Arm from Tiles to apply flyout hooks.";
+                }
                 break;
             }
             case "phono":

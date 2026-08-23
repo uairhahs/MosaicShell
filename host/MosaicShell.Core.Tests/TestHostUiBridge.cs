@@ -32,8 +32,20 @@ internal sealed class RecordingHostUiBridge : IHostUiBridge
 
 internal sealed class BridgeUi(IFlyoutPresenter flyouts, IHostUiBridge? hostUi = null) : ICapabilityUiBridge
 {
+    private bool _inHostThread;
+
     public IFlyoutPresenter Flyouts { get; } = flyouts;
     public IHostUiBridge HostUi { get; } = hostUi ?? NullHostUiBridge.Instance;
+
+    /// <summary>True while a RunOnHostThread delegate is executing (test assertions).</summary>
+    public bool InHostThread => _inHostThread;
+
+    public void RunOnHostThread(Action action)
+    {
+        _inHostThread = true;
+        try { action(); }
+        finally { _inHostThread = false; }
+    }
 }
 
 internal sealed class CaptureFlyouts(List<FlyoutRequest> shown) : IFlyoutPresenter

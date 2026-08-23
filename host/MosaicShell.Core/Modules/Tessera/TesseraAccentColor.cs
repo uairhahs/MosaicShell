@@ -41,7 +41,6 @@ public static class TesseraAccentColor
         new("Windows blue", "#0273CD"),
         new("Blue", "#89B4FA"),
         new("Sapphire", "#74C7EC"),
-        new("Sky", "#89DCEB"),
         new("Teal", "#94E2D5"),
         new("Green", "#A6E3A1"),
         new("Yellow", "#F9E2AF"),

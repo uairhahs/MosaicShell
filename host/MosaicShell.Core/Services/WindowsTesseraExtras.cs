@@ -5,268 +5,142 @@ using NAudio.CoreAudioApi;
 namespace MosaicShell.Core.Services;
 
 /// <summary>
-/// Caps/Num/Scroll via WH_KEYBOARD_LL on a dedicated STA GetMessage pump
-/// (same pattern as <see cref="WindowsShellFlyoutHook"/>).
-/// Toggle truth is edge-flipped on key-down, do not poll GetKeyState afterward on this
-/// thread (message-only queues keep stale toggle bits and would undo real Caps presses).
+/// Caps/Num/Scroll via GetKeyState polling while armed. Does not depend on WH_KEYBOARD_LL
+/// or the Host UI message pump (Avalonia does not reliably deliver LL hook callbacks).
 /// </summary>
 public sealed class WindowsLockKeysService : ILockKeysService
 {
-    private readonly object _sync = new();
-    private Thread? _thread;
-    private volatile bool _running;
-    private IntPtr _hwnd;
-    private IntPtr _hook;
-    private LowLevelKeyboardProc? _proc;
-    private WndProc? _wndProc;
+    private readonly object _gate = new();
+    private Timer? _poll;
+    private int _startRef;
     private bool _caps, _num, _scroll;
+    private bool _active;
+    private EventHandler<LockKeyState>? _changed;
 
+    public bool IsActive => _active;
     public LockKeyState Caps => new(LockKeyKind.CapsLock, _caps);
     public LockKeyState Num => new(LockKeyKind.NumLock, _num);
     public LockKeyState Scroll => new(LockKeyKind.ScrollLock, _scroll);
-    public event EventHandler<LockKeyState>? Changed;
+
+    public event EventHandler<LockKeyState>? Changed
+    {
+        add
+        {
+            if (value is null) return;
+            lock (_gate)
+            {
+                _changed += value;
+                EnsurePollLocked();
+            }
+        }
+        remove
+        {
+            if (value is null) return;
+            lock (_gate)
+            {
+                _changed -= value;
+                TryReleasePollLocked();
+            }
+        }
+    }
 
     public void Start()
     {
-        lock (_sync)
+        lock (_gate)
         {
-            if (_running) return;
-            // Snapshot once before the pump; after that only LL edge-toggles mutate state.
-            _caps = LockKeyInputPolicy.IsToggleBitOn(GetKeyState(LockKeyInputPolicy.VkCapital));
-            _num = LockKeyInputPolicy.IsToggleBitOn(GetKeyState(LockKeyInputPolicy.VkNumlock));
-            _scroll = LockKeyInputPolicy.IsToggleBitOn(GetKeyState(LockKeyInputPolicy.VkScroll));
-            _running = true;
-            _thread = new Thread(MessageLoop)
-            {
-                IsBackground = true,
-                Name = "MosaicShell.LockKeys"
-            };
-            _thread.SetApartmentState(ApartmentState.STA);
-            _thread.Start();
+            if (++_startRef == 1)
+                EnsurePollLocked();
         }
-
-        for (var i = 0; i < 50 && _hwnd == IntPtr.Zero && _running; i++)
-            Thread.Sleep(10);
-
-        if (_hwnd == IntPtr.Zero)
-            Debug.WriteLine("[LockKeys] message HWND soft-failed");
-        else if (_hook == IntPtr.Zero)
-            Debug.WriteLine("[LockKeys] keyboard hook soft-failed");
     }
 
     public void Stop()
     {
-        Thread? thread;
-        lock (_sync)
+        lock (_gate)
         {
-            if (!_running) return;
-            _running = false;
-            thread = _thread;
-            _thread = null;
+            if (_startRef <= 0)
+                return;
+            --_startRef;
+            TryReleasePollLocked();
         }
-
-        var hwnd = _hwnd;
-        if (hwnd != IntPtr.Zero)
-        {
-            try { PostMessage(hwnd, WmQuit, IntPtr.Zero, IntPtr.Zero); } catch { /* ignore */ }
-        }
-
-        thread?.Join(1500);
-        _hwnd = IntPtr.Zero;
-        _hook = IntPtr.Zero;
     }
 
-    private void MessageLoop()
+    private void SyncFromKeyboard()
+    {
+        _caps = LockKeyInputPolicy.IsToggleBitOn(GetKeyState(LockKeyInputPolicy.VkCapital));
+        _num = LockKeyInputPolicy.IsToggleBitOn(GetKeyState(LockKeyInputPolicy.VkNumlock));
+        _scroll = LockKeyInputPolicy.IsToggleBitOn(GetKeyState(LockKeyInputPolicy.VkScroll));
+    }
+
+    private void EnsurePollLocked()
+    {
+        if (_active) return;
+        SyncFromKeyboard();
+        var ms = LockKeyPollPolicy.PollIntervalMs;
+        _poll = new Timer(PollCallback, null, ms, ms);
+        _active = true;
+        TryLog($"poll ok thread={Environment.CurrentManagedThreadId}");
+    }
+
+    private void ReleasePollLocked()
+    {
+        if (!_active) return;
+        _poll?.Dispose();
+        _poll = null;
+        _active = false;
+    }
+
+    private void TryReleasePollLocked()
+    {
+        if (_startRef > 0 || _changed is not null)
+            return;
+        ReleasePollLocked();
+    }
+
+    private void PollCallback(object? _)
+    {
+        lock (_gate)
+        {
+            if (!_active) return;
+            try
+            {
+                SampleToggleLocked(LockKeyKind.CapsLock, LockKeyInputPolicy.VkCapital, ref _caps);
+                SampleToggleLocked(LockKeyKind.NumLock, LockKeyInputPolicy.VkNumlock, ref _num);
+                SampleToggleLocked(LockKeyKind.ScrollLock, LockKeyInputPolicy.VkScroll, ref _scroll);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[LockKeys] poll {ex.Message}");
+            }
+        }
+    }
+
+    private void SampleToggleLocked(LockKeyKind kind, int vk, ref bool field)
+    {
+        var on = LockKeyInputPolicy.IsToggleBitOn(GetKeyState(vk));
+        if (on == field) return;
+
+        field = on;
+        var state = new LockKeyState(kind, on);
+        TryLog($"edge {state.Key} on={state.IsOn} handlers={_changed?.GetInvocationList().Length ?? 0}");
+        try { _changed?.Invoke(this, state); }
+        catch (Exception ex) { Debug.WriteLine($"[LockKeys] {ex.Message}"); }
+    }
+
+    private static void TryLog(string line)
     {
         try
         {
-            _wndProc = WndProcImpl;
-            var className = "MosaicShell.LockKeys." + Guid.NewGuid().ToString("N");
-            var wc = new WndClass
-            {
-                lpfnWndProc = Marshal.GetFunctionPointerForDelegate(_wndProc),
-                hInstance = GetModuleHandle(null),
-                lpszClassName = className
-            };
-            if (RegisterClass(ref wc) == 0 && Marshal.GetLastWin32Error() != 1410)
-            {
-                Debug.WriteLine("[LockKeys] RegisterClass failed");
-                return;
-            }
-
-            _hwnd = CreateWindowEx(
-                0, className, "MosaicShell LockKeys",
-                0, 0, 0, 0, 0,
-                HwndMessage, IntPtr.Zero, wc.hInstance, IntPtr.Zero);
-            if (_hwnd == IntPtr.Zero)
-            {
-                Debug.WriteLine("[LockKeys] CreateWindowEx failed");
-                return;
-            }
-
-            // Install on THIS pump thread so WH_KEYBOARD_LL callbacks are delivered here.
-            InstallHook();
-
-            while (_running)
-            {
-                var gm = GetMessage(out var msg, IntPtr.Zero, 0, 0);
-                if (gm <= 0) break;
-                TranslateMessage(ref msg);
-                DispatchMessage(ref msg);
-            }
-
-            RemoveHook();
-            try { DestroyWindow(_hwnd); } catch { /* ignore */ }
-            _hwnd = IntPtr.Zero;
+            AppPaths.EnsureLayout();
+            var path = Path.Combine(AppPaths.CacheDirectory, "lockkeys.log");
+            File.AppendAllText(path, $"{DateTime.Now:HH:mm:ss.fff} {line}{Environment.NewLine}");
         }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[LockKeys] {ex.Message}");
-            _hwnd = IntPtr.Zero;
-        }
-    }
-
-    private IntPtr WndProcImpl(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam) =>
-        DefWindowProc(hWnd, msg, wParam, lParam);
-
-    private void InstallHook()
-    {
-        if (_hook != IntPtr.Zero) return;
-        _proc = HookCallback;
-        _hook = SetWindowsHookEx(WhKeyboardLl, _proc, GetModuleHandle(null), 0);
-        if (_hook == IntPtr.Zero)
-            _hook = SetWindowsHookEx(WhKeyboardLl, _proc, GetModuleHandle("user32.dll"), 0);
-        if (_hook == IntPtr.Zero)
-            Debug.WriteLine($"[LockKeys] SetWindowsHookEx failed err={Marshal.GetLastWin32Error()}");
-    }
-
-    private void RemoveHook()
-    {
-        if (_hook == IntPtr.Zero) return;
-        UnhookWindowsHookEx(_hook);
-        _hook = IntPtr.Zero;
-        _proc = null;
-    }
-
-    private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-    {
-        var msg = (int)wParam;
-        var vk = Marshal.ReadInt32(lParam);
-        if (LockKeyInputPolicy.ShouldSampleFromHook(nCode, msg, vk)
-            && LockKeyInputPolicy.IsToggleKeyDown(msg))
-        {
-            ApplyToggleEdge(vk);
-        }
-
-        return CallNextHookEx(_hook, nCode, wParam, lParam);
-    }
-
-    private void ApplyToggleEdge(int vk)
-    {
-        LockKeyState state;
-        switch (LockKeyInputPolicy.KindFromVirtualKey(vk))
-        {
-            case LockKeyKind.CapsLock:
-                _caps = !_caps;
-                state = new LockKeyState(LockKeyKind.CapsLock, _caps);
-                break;
-            case LockKeyKind.NumLock:
-                _num = !_num;
-                state = new LockKeyState(LockKeyKind.NumLock, _num);
-                break;
-            case LockKeyKind.ScrollLock:
-                _scroll = !_scroll;
-                state = new LockKeyState(LockKeyKind.ScrollLock, _scroll);
-                break;
-            default:
-                return;
-        }
-
-        // Off the pump thread: Host Show uses UIThread.Invoke; Stop() Joins this thread.
-        ThreadPool.QueueUserWorkItem(_ =>
-        {
-            try { Changed?.Invoke(this, state); }
-            catch (Exception ex) { Debug.WriteLine($"[LockKeys] {ex.Message}"); }
-        });
+        catch { /* soft-fail */ }
     }
 
     public void Dispose() => Stop();
 
-    private const int WhKeyboardLl = 13;
-    private const uint WmQuit = 0x0012;
-    private const IntPtr HwndMessage = -3;
-
-    private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
-    private delegate IntPtr WndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct WndClass
-    {
-        public uint style;
-        public IntPtr lpfnWndProc;
-        public int cbClsExtra;
-        public int cbWndExtra;
-        public IntPtr hInstance;
-        public IntPtr hIcon;
-        public IntPtr hCursor;
-        public IntPtr hbrBackground;
-        public string? lpszMenuName;
-        public string lpszClassName;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct Msg
-    {
-        public IntPtr hwnd;
-        public uint message;
-        public IntPtr wParam;
-        public IntPtr lParam;
-        public uint time;
-        public int ptX;
-        public int ptY;
-    }
-
     [DllImport("user32.dll")]
     private static extern short GetKeyState(int nVirtKey);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool UnhookWindowsHookEx(IntPtr hhk);
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-    private static extern IntPtr GetModuleHandle(string? lpModuleName);
-
-    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    private static extern ushort RegisterClass(ref WndClass lpWndClass);
-
-    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    private static extern IntPtr CreateWindowEx(
-        int dwExStyle, string lpClassName, string lpWindowName, int dwStyle,
-        int x, int y, int nWidth, int nHeight,
-        IntPtr hWndParent, IntPtr hMenu, IntPtr hInstance, IntPtr lpParam);
-
-    [DllImport("user32.dll")]
-    private static extern bool DestroyWindow(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr DefWindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
-
-    [DllImport("user32.dll")]
-    private static extern bool TranslateMessage(ref Msg lpMsg);
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr DispatchMessage(ref Msg lpMsg);
-
-    [DllImport("user32.dll")]
-    private static extern int GetMessage(out Msg lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
-
-    [DllImport("user32.dll")]
-    private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 }
 
 public sealed class WindowsAirplaneModeService : IAirplaneModeService
@@ -351,12 +225,13 @@ public sealed class WindowsAudioDeviceService : IAudioDeviceService
 
 public sealed class NullLockKeysService : ILockKeysService
 {
+    public bool IsActive { get; private set; }
     public LockKeyState Caps => new(LockKeyKind.CapsLock, false);
     public LockKeyState Num => new(LockKeyKind.NumLock, false);
     public LockKeyState Scroll => new(LockKeyKind.ScrollLock, false);
     public event EventHandler<LockKeyState>? Changed { add { } remove { } }
-    public void Start() { }
-    public void Stop() { }
+    public void Start() => IsActive = true;
+    public void Stop() => IsActive = false;
     public void Dispose() { }
 }
 

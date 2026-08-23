@@ -18,4 +18,4 @@ dotnet run --project MosaicShell.Host
 
 In Host: Library → Slate → Arm, then wait for the idle timeout (default 5 minutes).
 
-Promised Rainmeter-era behavior: [`docs/legacy/slate.md`](../../docs/legacy/slate.md).
+Promised Rainmeter-era behavior: [`.cursor/docs/legacy/slate.md`](../../.cursor/docs/legacy/slate.md).

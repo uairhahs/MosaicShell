@@ -15,6 +15,14 @@ public static class MediaSessionChangePolicy
     /// <summary>Large backward seek without title change still counts as a track boundary.</summary>
     public const double MinBackwardJumpSeconds = 8.0;
 
+    /// <summary>
+    /// SMTC often skips MediaPropertiesChanged on skip (YTM/Chrome). Poll timeline even
+    /// when no Tessera flyout is pumping.
+    /// </summary>
+    public const bool MustPollTimelineIndependentlyOfFlyout = true;
+
+    public const int TimelinePollMs = 500;
+
     public static bool LooksLikeNewTrackPosition(double prevPositionSeconds, double nextPositionSeconds)
     {
         if (prevPositionSeconds >= MinPrevSecondsForRestart

@@ -77,6 +77,12 @@ public sealed class CapabilityDaemon : IDisposable
             if (_instances.TryGetValue(moduleId, out var existing) && existing.IsArmed)
                 return true;
 
+            if (_instances.TryGetValue(moduleId, out var stale))
+            {
+                try { stale.Dispose(); } catch { /* ignore */ }
+                _instances.Remove(moduleId);
+            }
+
             var manifest = ModuleManifest.TryLoad(moduleId) ?? ModuleManifest.CreateDefault(moduleId);
             capability = factory.Create(manifest, _services, _ui);
             _instances[moduleId] = capability;

@@ -20,6 +20,9 @@ public sealed class AvaloniaCapabilityUiBridge : ICapabilityUiBridge
 
     public IFlyoutPresenter Flyouts { get; }
     public IHostUiBridge HostUi { get; }
+
+    public void RunOnHostThread(Action action) =>
+        Dispatcher.UIThread.Invoke(action);
 }
 
 public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
@@ -186,6 +189,20 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
 
         if (reuse is not null)
         {
+            if (!reuseWasVisible
+                && string.Equals(reuse.Kind, request.Kind, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(reuse.StyleId ?? "", request.StyleId ?? "", StringComparison.OrdinalIgnoreCase))
+            {
+                if (TryPatchLive(reuse, request, resetDismiss))
+                {
+                    if (!reuse.IsVisible)
+                        reuse.Show();
+                    Log($"revive kind={request.Kind} style={request.StyleId}");
+                    reuse.RevealAfterLayout();
+                    return;
+                }
+            }
+
             Control reusedContent;
             try { reusedContent = BuildContent(request); }
             catch (Exception ex)
@@ -267,7 +284,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         if (!existing.TryApplyLive(request, _services, resetDismiss))
             return false;
 
-        // Patch path: no PresentFlyout / RestackAboveDim / ScheduleOutsideClickArm
+        Log($"patch kind={request.Kind} style={request.StyleId}");
         // (PatchImpliesPresent|Win32Restack|OutsideClickRearm are false, Core tests).
         existing.EnsureLivePump();
         _outsideClick?.RefreshBounds(existing);

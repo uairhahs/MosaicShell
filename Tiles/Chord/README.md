@@ -18,4 +18,4 @@ dotnet run --project MosaicShell.Host
 
 In Host: Library → Chord → Arm, then press the configured hotkey.
 
-Promised Rainmeter-era behavior: [`docs/legacy/chord.md`](../../docs/legacy/chord.md).
+Promised Rainmeter-era behavior: [`.cursor/docs/legacy/chord.md`](../../.cursor/docs/legacy/chord.md).

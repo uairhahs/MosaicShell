@@ -1,8 +1,7 @@
 namespace MosaicShell.Core.Services;
 
 /// <summary>
-/// Pure helpers for Caps/Num/Scroll detection. Win32 <c>GetKeyState</c> toggle bits are only
-/// reliable on a thread that pumps input (UI or a dedicated hook loop), not on thread-pool timers.
+/// Pure helpers for Caps/Num/Scroll detection.
 /// </summary>
 public static class LockKeyInputPolicy
 {
@@ -15,24 +14,16 @@ public static class LockKeyInputPolicy
     public const int WmSyskeydown = 0x0104;
     public const int WmSyskeyup = 0x0105;
 
-    /// <summary>Poll interval on the lock-keys message thread (ms).</summary>
-    public const int PollIntervalMs = 50;
-
-    /// <summary>Delay after a toggle key event before re-sampling (ms).</summary>
-    public const int PostToggleSampleDelayMs = 40;
+    /// <summary>
+    /// Legacy volume WH_KEYBOARD_LL must install on the arming thread (same as before).
+    /// Lock keys use <see cref="LockKeyPollPolicy"/> polling instead of LL hooks.
+    /// </summary>
+    public const bool MustInstallOnCallingThreadLikeLegacyVolumeHook = true;
 
     /// <summary>
-    /// WH_KEYBOARD_LL must be installed on a dedicated STA thread that runs GetMessage,
-    /// not on a thread-pool timer and not solely on the Avalonia UI arm path
-    /// (ConfigureAwait can leave the hook on a thread with no pump).
+    /// After arm, mutate Caps/Num/Scroll only via key-down edge toggles on the LL callback.
     /// </summary>
-    public const bool MustUseDedicatedMessagePump = true;
-
-    /// <summary>
-    /// After arm, mutate Caps/Num/Scroll only via key-down edge toggles.
-    /// Polling GetKeyState on a message-only pump thread reads stale bits and undoes real presses.
-    /// </summary>
-    public const bool MustNotPollGetKeyStateOnPumpThread = true;
+    public const bool MustEdgeToggleOnKeyDown = true;
 
     public static bool IsToggleVirtualKey(int vk) =>
         vk is VkCapital or VkNumlock or VkScroll;
@@ -40,7 +31,7 @@ public static class LockKeyInputPolicy
     public static bool IsKeyboardMessage(int msg) =>
         msg is WmKeydown or WmKeyup or WmSyskeydown or WmSyskeyup;
 
-    /// <summary>WH_KEYBOARD_LL should schedule a toggle sample for this event.</summary>
+    /// <summary>WH_KEYBOARD_LL should handle this event for lock keys.</summary>
     public static bool ShouldSampleFromHook(int nCode, int msg, int vk) =>
         nCode >= 0 && IsKeyboardMessage(msg) && IsToggleVirtualKey(vk);
 

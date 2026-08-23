@@ -23,6 +23,12 @@ public interface ICapabilityUiBridge
 {
     IFlyoutPresenter Flyouts { get; }
     IHostUiBridge HostUi { get; }
+
+    /// <summary>
+    /// Run on the Host message-pump thread (Avalonia UI thread). Tests may run inline.
+    /// Required for WH_KEYBOARD_LL hook install/start per TesseraArmPolicy.
+    /// </summary>
+    void RunOnHostThread(Action action);
 }
 
 public sealed record FlyoutRequest(

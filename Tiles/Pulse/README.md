@@ -20,4 +20,4 @@ dotnet run --project MosaicShell.Host
 
 In Host: Library → Pulse → Start.
 
-Promised Rainmeter-era behavior: [`docs/legacy/pulse.md`](../../docs/legacy/pulse.md).
+Promised Rainmeter-era behavior: [`.cursor/docs/legacy/pulse.md`](../../.cursor/docs/legacy/pulse.md).

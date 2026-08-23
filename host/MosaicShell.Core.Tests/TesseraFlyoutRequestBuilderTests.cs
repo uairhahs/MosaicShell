@@ -148,6 +148,7 @@ public class TesseraFlyoutRequestBuilderTests
 
     private sealed class FakeLockKeysService(bool capsOn) : ILockKeysService
     {
+        public bool IsActive => false;
         public LockKeyState Caps => new(LockKeyKind.CapsLock, capsOn);
         public LockKeyState Num => new(LockKeyKind.NumLock, false);
         public LockKeyState Scroll => new(LockKeyKind.ScrollLock, false);

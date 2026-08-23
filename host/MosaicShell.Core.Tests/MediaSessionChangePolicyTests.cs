@@ -16,4 +16,11 @@ public class MediaSessionChangePolicyTests
     public void LooksLikeNewTrackPosition_detects_skip_and_large_rewind(
         double prev, double next, bool expected) =>
         MediaSessionChangePolicy.LooksLikeNewTrackPosition(prev, next).Should().Be(expected);
+
+    [Fact]
+    public void Timeline_poll_must_run_without_visible_flyout()
+    {
+        MediaSessionChangePolicy.MustPollTimelineIndependentlyOfFlyout.Should().BeTrue();
+        MediaSessionChangePolicy.TimelinePollMs.Should().BePositive();
+    }
 }

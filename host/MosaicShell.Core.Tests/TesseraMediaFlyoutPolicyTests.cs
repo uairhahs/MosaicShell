@@ -12,7 +12,7 @@ public class TesseraMediaFlyoutPolicyTests
     [InlineData(false, false, "", TesseraMediaChangeAction.Ignore)]
     [InlineData(true, true, "vol", TesseraMediaChangeAction.SoftRefreshVisible)]
     [InlineData(true, true, "bright", TesseraMediaChangeAction.SoftRefreshVisible)]
-    [InlineData(true, true, "media", TesseraMediaChangeAction.SoftRefreshVisible)]
+    [InlineData(true, true, "media", TesseraMediaChangeAction.PresentMediaFlyout)]
     [InlineData(true, true, "locks", TesseraMediaChangeAction.PresentMediaFlyout)]
     [InlineData(false, true, "vol", TesseraMediaChangeAction.SoftRefreshVisible)]
     public void Resolve_track_change_actions(
@@ -21,4 +21,11 @@ public class TesseraMediaFlyoutPolicyTests
         string lastKind,
         TesseraMediaChangeAction expected) =>
         TesseraMediaFlyoutPolicy.Resolve(enableMedia, visible, lastKind).Should().Be(expected);
+
+    [Fact]
+    public void Armed_timeline_poll_is_required_while_media_flyouts_enabled()
+    {
+        TesseraMediaFlyoutPolicy.MustPollTimelineWhileArmed.Should().BeTrue();
+        TesseraMediaFlyoutPolicy.ArmedTimelinePollMs.Should().BePositive();
+    }
 }

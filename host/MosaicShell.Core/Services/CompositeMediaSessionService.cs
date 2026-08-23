@@ -71,18 +71,37 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
 
     private void Rebuild(bool raiseProgress)
     {
-        var next = Merge(_smtc.Current, _wnp.Active);
+        var smtc = _smtc.Current;
+        var wnp = _wnp.Active;
         var prev = _current;
+        var next = Merge(smtc, wnp);
         _current = next;
 
         if (prev is null && next is null) return;
 
-        if (raiseProgress
-            && prev is not null && next is not null
+        var raiseChanged = false;
+
+        if (prev is not null && smtc is not null)
+        {
+            if (!string.IsNullOrWhiteSpace(smtc.Title)
+                && !string.Equals(prev.Title, smtc.Title, StringComparison.Ordinal))
+                raiseChanged = true;
+
+            if (!raiseChanged
+                && MediaSessionChangePolicy.LooksLikeNewTrackPosition(
+                    prev.PositionSeconds, smtc.PositionSeconds))
+                raiseChanged = true;
+        }
+
+        if (!raiseChanged
+            && prev is not null
+            && next is not null
             && MediaSessionChangePolicy.LooksLikeNewTrackPosition(
                 prev.PositionSeconds, next.PositionSeconds))
+            raiseChanged = true;
+
+        if (raiseChanged)
         {
-            // Title may still be stale; position restart must present the media flyout.
             Changed?.Invoke(this, EventArgs.Empty);
             return;
         }
@@ -153,8 +172,13 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
         if (wnp is not null && wnp.DurationSeconds > 0
             && (dur <= 0.5 || LooksLikeBrowserSession(smtc.AppId)))
         {
-            pos = wnp.PositionSeconds;
-            dur = wnp.DurationSeconds;
+            // WNP position often lags a skip; do not mask SMTC restart edges.
+            if (!MediaSessionChangePolicy.LooksLikeNewTrackPosition(
+                    wnp.PositionSeconds, smtc.PositionSeconds))
+            {
+                pos = wnp.PositionSeconds;
+                dur = wnp.DurationSeconds;
+            }
         }
 
         return smtc with

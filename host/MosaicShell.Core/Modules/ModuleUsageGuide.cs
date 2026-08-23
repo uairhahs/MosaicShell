@@ -54,7 +54,7 @@ public static class ModuleUsageGuide
         }
 
         if (id == "tessera")
-            return "Arm from Tiles, then change volume / brightness / media (or use Try now in settings).";
+            return "Arm from Tiles, then change volume, brightness, Caps Lock, or media (track skip / media keys), or use Try now in settings.";
 
         var manifest = ModuleManifest.TryLoad(moduleId);
         if (!string.IsNullOrWhiteSpace(manifest?.HowToTrigger))

@@ -3,7 +3,9 @@ using MosaicShell.Core;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Capabilities.BuiltIn;
+using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
+using MosaicShell.Core.Settings;
 
 namespace MosaicShell.Core.Tests;
 
@@ -31,6 +33,8 @@ public class ShellFlyoutTriggerTests : IDisposable
     [InlineData(ShellFlyoutTriggerDecoder.HsHellAppCommand, ShellFlyoutTriggerDecoder.MediaVolMinus, ShellFlyoutKind.Volume)]
     [InlineData(ShellFlyoutTriggerDecoder.HsHellAppCommand, ShellFlyoutTriggerDecoder.MediaVolMute, ShellFlyoutKind.Volume)]
     [InlineData(ShellFlyoutTriggerDecoder.HsHellAppCommand, ShellFlyoutTriggerDecoder.MediaPlayPause, ShellFlyoutKind.Media)]
+    [InlineData(ShellFlyoutTriggerDecoder.HsHellAppCommand, ShellFlyoutTriggerDecoder.MediaNext, ShellFlyoutKind.Media)]
+    [InlineData(ShellFlyoutTriggerDecoder.HsHellAppCommand, ShellFlyoutTriggerDecoder.MediaPrevious, ShellFlyoutKind.Media)]
     public void Decoder_matches_modernflyouts_constants(long wParam, long lParam, ShellFlyoutKind expected)
     {
         ShellFlyoutTriggerDecoder.TryDecode((nint)wParam, (nint)lParam, out var kind).Should().BeTrue();
@@ -75,6 +79,41 @@ public class ShellFlyoutTriggerTests : IDisposable
         await cap.ArmAsync();
         hook.Raise(ShellFlyoutKind.Volume);
         shown.Should().Contain(r => r.Kind == "vol");
+        await cap.DisarmAsync();
+    }
+
+    [Fact]
+    public async Task Tessera_shows_media_on_shell_media_next_trigger()
+    {
+        ModuleSettingsStore.Save("Tessera", new TesseraSettings { EnableMediaFlyouts = true });
+        var hook = new FakeShellFlyoutTriggerSource();
+        var shown = new List<FlyoutRequest>();
+        var services = new HostServices
+        {
+            Audio = new FakeAudioService(),
+            AppAudio = new FakeAppAudioService(),
+            Brightness = new FakeBrightnessService(),
+            Media = new FakeMediaSessionService(),
+            Hotkeys = new FakeHotkeyService(),
+            Metrics = new FakeSystemMetricsService(),
+            AudioLevels = new FakeAudioLevelService(),
+            Autostart = new FakeAutostartService(),
+            BrightnessChanges = new NullBrightnessChangeSource(),
+            OsdSuppressor = new NullNativeOsdSuppressor(),
+            LegacyVolumeKeys = new NullLegacyMediaKeyHook(),
+            Idle = new NullIdleService(),
+            Fullscreen = new NullFullscreenProbe(),
+            LockKeys = new NullLockKeysService(),
+            Airplane = new NullAirplaneModeService(),
+            AudioDevices = new NullAudioDeviceService(),
+            ShellFlyoutTriggers = hook,
+        };
+
+        var ui = new BridgeUi(new CaptureFlyouts(shown));
+        var cap = new TesseraCapability(services, ui);
+        await cap.ArmAsync();
+        hook.Raise(ShellFlyoutKind.Media);
+        shown.Should().Contain(r => r.Kind == "media" && r.ModuleId == "Tessera");
         await cap.DisarmAsync();
     }
 }

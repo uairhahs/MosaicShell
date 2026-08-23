@@ -18,4 +18,4 @@ dotnet run --project MosaicShell.Host
 
 In Host: Library → Mixdeck → Arm (or Tessera Material You deep-link).
 
-Promised Rainmeter-era behavior: [`docs/legacy/mixdeck.md`](../../docs/legacy/mixdeck.md).
+Promised Rainmeter-era behavior: [`.cursor/docs/legacy/mixdeck.md`](../../.cursor/docs/legacy/mixdeck.md).

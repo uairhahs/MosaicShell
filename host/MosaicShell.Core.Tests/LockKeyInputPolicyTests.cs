@@ -47,16 +47,9 @@ public class LockKeyInputPolicyTests
     }
 
     [Fact]
-    public void Poll_and_post_toggle_delays_are_positive()
+    public void Lock_keys_use_poll_policy()
     {
-        LockKeyInputPolicy.PollIntervalMs.Should().BePositive();
-        LockKeyInputPolicy.PostToggleSampleDelayMs.Should().BePositive();
-    }
-
-    [Fact]
-    public void Lock_keys_must_use_dedicated_pump_without_stale_GetKeyState_poll()
-    {
-        LockKeyInputPolicy.MustUseDedicatedMessagePump.Should().BeTrue();
-        LockKeyInputPolicy.MustNotPollGetKeyStateOnPumpThread.Should().BeTrue();
+        LockKeyPollPolicy.PreferPollOverLowLevelHook.Should().BeTrue();
+        LockKeyInputPolicy.MustEdgeToggleOnKeyDown.Should().BeTrue();
     }
 }

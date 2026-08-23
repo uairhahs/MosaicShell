@@ -223,12 +223,13 @@ public class TesseraParityTests : IDisposable
 
     private sealed class RaisingLockKeys : ILockKeysService
     {
+        public bool IsActive { get; private set; }
         public LockKeyState Caps => new(LockKeyKind.CapsLock, false);
         public LockKeyState Num => new(LockKeyKind.NumLock, false);
         public LockKeyState Scroll => new(LockKeyKind.ScrollLock, false);
         public event EventHandler<LockKeyState>? Changed;
-        public void Start() { }
-        public void Stop() { }
+        public void Start() => IsActive = true;
+        public void Stop() => IsActive = false;
         public void Dispose() { }
         public void Raise(LockKeyState s) => Changed?.Invoke(this, s);
     }

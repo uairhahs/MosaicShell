@@ -426,15 +426,11 @@
 
           <!-- Tessera vs other modules (single fill slot, avoids DockPanel starving Tessera) -->
           <Grid>
-          <!-- Tessera: left = scrolling settings + pinned Save; right = full-height Appearance -->
+          <!-- Tessera: left = scrolling settings; right = full-height Appearance; Save / Try now pinned bottom -->
           <Grid IsVisible="{Binding ShowTesseraExtras}"
-                ColumnDefinitions="*,*">
+                RowDefinitions="*,Auto">
+            <Grid Grid.Row="0" ColumnDefinitions="*,*">
             <DockPanel Margin="0,0,16,0">
-              <Border DockPanel.Dock="Bottom" Classes="section" Margin="0,8,0,0" Padding="16,12">
-                <Button Classes="primary" Content="Save" HorizontalAlignment="Left"
-                        Command="{Binding SaveModuleConfigCommand}" />
-              </Border>
-
               <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                             VerticalScrollBarVisibility="Auto">
                 <StackPanel HorizontalAlignment="Stretch" Margin="0,0,8,8" Spacing="0">
@@ -539,81 +535,92 @@
               </ScrollViewer>
             </DockPanel>
 
-            <!-- Full-height right: Appearance -->
-            <Border Grid.Column="1" Classes="section" Margin="0"
-                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-              <ScrollViewer HorizontalScrollBarVisibility="Disabled"
-                            VerticalScrollBarVisibility="Auto">
-                <StackPanel Spacing="12">
-                  <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Classes="sectionTitle" Text="Appearance" Margin="0" VerticalAlignment="Center" />
-                    <Button Grid.Column="1" Classes="primary" Content="Try now"
-                            Command="{Binding PreviewTesseraFlyoutCommand}"
-                            ToolTip.Tip="Save placement/style and preview a volume flyout on the desktop" />
-                  </Grid>
-                  <TextBlock Classes="sectionHint" Margin="0"
-                             Text="Pick a template. Live scaled preview below - Try now opens it on the desktop." />
+            <!-- Full-height right: Appearance (ScrollViewer beside cards, like Additional settings) -->
+            <ScrollViewer Grid.Column="1"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto">
+              <StackPanel HorizontalAlignment="Stretch" Margin="0,0,8,8" Spacing="0">
+                <TextBlock Classes="sectionTitle" Text="Appearance" Margin="0,0,0,8" />
 
-                  <ComboBox MinWidth="220" HorizontalAlignment="Stretch"
-                            ItemsSource="{Binding ModuleStyleOptions}"
-                            SelectedItem="{Binding SelectedModuleStyle}" />
-                  <TextBlock Text="Saves on Try now / Save"
-                             Foreground="#6c7086" FontSize="12" />
-
-                  <tessera:TesseraStylePreview IsVisible="{Binding TesseraConfigPreviewReady}"
-                                               StyleId="{Binding ModuleStyle}"
-                                               ShowMediaStrip="{Binding TesseraMediaStrip}"
-                                               AccentColor="{Binding TesseraAccentHex}" />
-
-                  <Border Height="1" Background="#313244" Margin="0,4" />
-                  <TextBlock Classes="sectionTitle" Text="More appearance" Margin="0" />
-                  <TextBlock Classes="sectionHint" Margin="0"
-                             Text="Host material language - soft frost tint (not OS acrylic). Optional baked wash is a light MagickMeter-style texture." />
-                  <StackPanel Spacing="8">
-                    <TextBlock Text="Accent colour" Foreground="#a6adc8" FontSize="12" />
-                    <ItemsControl ItemsSource="{Binding TesseraAccentSwatches}">
-                      <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                          <WrapPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                      </ItemsControl.ItemsPanel>
-                      <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:TesseraAccentSwatchVm">
-                          <Button Classes="accentSwatch"
-                                  Classes.selected="{Binding IsSelected}"
-                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).SelectTesseraAccentCommand}"
-                                  CommandParameter="{Binding Hex}"
-                                  ToolTip.Tip="{Binding Name}">
-                            <Panel Width="20" Height="20">
-                              <Ellipse Width="20" Height="20" Fill="{Binding Fill}" />
-                              <icons:MaterialIcon Kind="Palette" Width="11" Height="11"
-                                                  HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                  Foreground="#11111b"
-                                                  IsVisible="{Binding IsSystem}" />
-                            </Panel>
-                          </Button>
-                        </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <TextBox Classes="config" Text="{Binding TesseraAccentHex}"
-                             PlaceholderText="#0273CD or leave blank for Windows accent"
-                             ToolTip.Tip="Hex accent used by every Tessera style (sliders, play, toggles, highlights). Empty = system accent." />
+                <Border Classes="section">
+                  <StackPanel Spacing="12">
+                    <TextBlock Classes="sectionHint" Margin="0"
+                               Text="Pick a template. Live scaled preview below. Try now opens it on the desktop." />
+                    <ComboBox MinWidth="220" HorizontalAlignment="Stretch"
+                              ItemsSource="{Binding ModuleStyleOptions}"
+                              SelectedItem="{Binding SelectedModuleStyle}" />
+                    <TextBlock Text="Saves on Try now / Save"
+                               Foreground="#6c7086" FontSize="12" />
+                    <tessera:TesseraStylePreview IsVisible="{Binding TesseraConfigPreviewReady}"
+                                                 StyleId="{Binding ModuleStyle}"
+                                                 ShowMediaStrip="{Binding TesseraMediaStrip}"
+                                                 AccentColor="{Binding TesseraAccentHex}" />
                   </StackPanel>
-                  <CheckBox Content="Soft frost tint" IsChecked="{Binding TesseraAcrylicBackdrop}"
-                            ToolTip.Tip="Slightly translucent Mocha crust. Off = denser solid panel." />
-                  <CheckBox Content="Skia backdrop blur" IsChecked="{Binding TesseraBackdropBlur}"
-                            IsEnabled="{Binding TesseraAcrylicBackdrop}"
-                            ToolTip.Tip="Live Skia backdrop blur on Tessera glass panels. Off uses gradient + grain fallback only." />
-                  <CheckBox Content="Subtle desktop dim (Focus)" IsChecked="{Binding TesseraFocusDim}"
-                            ToolTip.Tip="Very light dim behind the flyout. Never blocks input; outside click dismisses instantly." />
-                  <StackPanel Spacing="4" Margin="0,4,0,0">
-                    <TextBlock Text="Flyout scale %" Foreground="#a6adc8" FontSize="12" />
-                    <NumericUpDown Classes="config" Minimum="50" Maximum="150" Increment="5"
-                                   FormatString="0" Value="{Binding TesseraFlyoutScalePercent}"
-                                   ToolTip.Tip="Size multiplier for Tessera flyouts on the desktop (100 = default)." />
+                </Border>
+
+                <Border Classes="section" Margin="0">
+                  <StackPanel Spacing="12">
+                    <TextBlock Classes="sectionTitle" Text="More appearance" Margin="0" />
+                    <TextBlock Classes="sectionHint" Margin="0"
+                               Text="Host material language: soft frost tint (not OS acrylic). Optional baked wash is a light MagickMeter-style texture." />
+                    <StackPanel Spacing="8">
+                      <TextBlock Text="Accent colour" Foreground="#a6adc8" FontSize="12" />
+                      <ItemsControl ItemsSource="{Binding TesseraAccentSwatches}">
+                        <ItemsControl.ItemsPanel>
+                          <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" />
+                          </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:TesseraAccentSwatchVm">
+                            <Button Classes="accentSwatch"
+                                    Classes.selected="{Binding IsSelected}"
+                                    Command="{Binding #Root.((vm:MainViewModel)DataContext).SelectTesseraAccentCommand}"
+                                    CommandParameter="{Binding Hex}"
+                                    ToolTip.Tip="{Binding Name}">
+                              <Panel Width="20" Height="20">
+                                <Ellipse Width="20" Height="20" Fill="{Binding Fill}" />
+                                <icons:MaterialIcon Kind="Palette" Width="11" Height="11"
+                                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                    Foreground="#11111b"
+                                                    IsVisible="{Binding IsSystem}" />
+                              </Panel>
+                            </Button>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                      <TextBox Classes="config" Text="{Binding TesseraAccentHex}"
+                               PlaceholderText="#0273CD or leave blank for Windows accent"
+                               ToolTip.Tip="Hex accent used by every Tessera style (sliders, play, toggles, highlights). Empty = system accent." />
+                    </StackPanel>
+                    <CheckBox Content="Soft frost tint" IsChecked="{Binding TesseraAcrylicBackdrop}"
+                              ToolTip.Tip="Slightly translucent Mocha crust. Off = denser solid panel." />
+                    <CheckBox Content="Skia backdrop blur" IsChecked="{Binding TesseraBackdropBlur}"
+                              IsEnabled="{Binding TesseraAcrylicBackdrop}"
+                              ToolTip.Tip="Live Skia backdrop blur on Tessera glass panels. Off uses gradient + grain fallback only." />
+                    <CheckBox Content="Subtle desktop dim (Focus)" IsChecked="{Binding TesseraFocusDim}"
+                              ToolTip.Tip="Very light dim behind the flyout. Never blocks input; outside click dismisses instantly." />
+                    <StackPanel Spacing="4" Margin="0,4,0,0">
+                      <TextBlock Text="Flyout scale %" Foreground="#a6adc8" FontSize="12" />
+                      <NumericUpDown Classes="config" Minimum="50" Maximum="150" Increment="5"
+                                     FormatString="0" Value="{Binding TesseraFlyoutScalePercent}"
+                                     ToolTip.Tip="Size multiplier for Tessera flyouts on the desktop (100 = default)." />
+                    </StackPanel>
                   </StackPanel>
-                </StackPanel>
-              </ScrollViewer>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+            </Grid>
+
+            <Border Grid.Row="1" Classes="section" Margin="0,8,0,0" Padding="16,12">
+              <Grid ColumnDefinitions="Auto,*">
+                <Button Classes="primary" Content="Save"
+                        Command="{Binding SaveModuleConfigCommand}" />
+                <Button Grid.Column="1" Classes="action" Content="Try Now"
+                        HorizontalAlignment="Right"
+                        Command="{Binding PreviewTesseraFlyoutCommand}"
+                        ToolTip.Tip="Save placement/style and preview a volume flyout on the desktop" />
+              </Grid>
             </Border>
           </Grid>
 
@@ -623,7 +630,7 @@
               <StackPanel Orientation="Horizontal" Spacing="10">
                 <Button Classes="primary" Content="Save" HorizontalAlignment="Left"
                         Command="{Binding SaveModuleConfigCommand}" />
-                <Button Classes="action" Content="Try now"
+                <Button Classes="action" Content="Try Now"
                         IsVisible="{Binding ConfigCanTryOverlay}"
                         Command="{Binding TryCapabilityOverlayCommand}"
                         ToolTip.Tip="Arm (if needed) and open the overlay so you can see what this module does" />

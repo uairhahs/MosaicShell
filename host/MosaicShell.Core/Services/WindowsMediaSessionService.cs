@@ -13,6 +13,7 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
     private string? _lastAppId;
     private bool _disposed;
     private int _updateGen;
+    private Timer? _timelinePoll;
 
     public WindowsMediaSessionService()
     {
@@ -32,6 +33,13 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
             _manager.CurrentSessionChanged += (_, _) => _ = RefreshAsync();
             _manager.SessionsChanged += (_, _) => _ = RefreshAsync();
             await RefreshAsync();
+            if (MediaSessionChangePolicy.MustPollTimelineIndependentlyOfFlyout)
+            {
+                var ms = MediaSessionChangePolicy.TimelinePollMs;
+                _timelinePoll = new Timer(
+                    _ => { try { PumpTimeline(); } catch { /* soft-fail */ } },
+                    null, ms, ms);
+            }
         }
         catch
         {
@@ -427,6 +435,8 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
     {
         if (_disposed) return;
         _disposed = true;
+        _timelinePoll?.Dispose();
+        _timelinePoll = null;
         if (_session is not null)
         {
             _session.MediaPropertiesChanged -= OnProps;

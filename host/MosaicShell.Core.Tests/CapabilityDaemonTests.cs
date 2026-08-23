@@ -116,5 +116,6 @@ public class CapabilityDaemonTests : IDisposable
     {
         public IFlyoutPresenter Flyouts { get; } = new NullFlyoutPresenter();
         public IHostUiBridge HostUi { get; } = NullHostUiBridge.Instance;
+        public void RunOnHostThread(Action action) => action();
     }
 }
