@@ -155,9 +155,14 @@ public sealed class TesseraCapability : IModuleCapability
                     Flyouts.SoftRefresh(BuildRequest(Flyouts.OpenKind, null));
                     break;
                 case MediaFlyoutAction.PresentMediaFlyout:
-                    if (!Flyouts.ShouldColdPresentMedia(FlyoutSyncTrigger.MediaSession))
+                    if (!Flyouts.ShouldColdPresentMedia(
+                            FlyoutSyncTrigger.MediaSession,
+                            signal.IsTrackBoundary))
                         break;
-                    PresentMediaFlyout(pumpFirst: false, FlyoutSyncTrigger.MediaSession);
+                    PresentMediaFlyout(
+                        pumpFirst: false,
+                        FlyoutSyncTrigger.MediaSession,
+                        signal.IsTrackBoundary);
                     break;
             }
         });
@@ -210,9 +215,12 @@ public sealed class TesseraCapability : IModuleCapability
     private static double StepVolume(double current, int deltaPercent) =>
         VolumePercent.Step(current, deltaPercent);
 
-    private void PresentMediaFlyout(bool pumpFirst, FlyoutSyncTrigger trigger)
+    private void PresentMediaFlyout(
+        bool pumpFirst,
+        FlyoutSyncTrigger trigger,
+        bool isTrackBoundary = false)
     {
-        if (!Flyouts.ShouldColdPresentMedia(trigger))
+        if (!Flyouts.ShouldColdPresentMedia(trigger, isTrackBoundary))
             return;
 
         if (_presentingMedia)

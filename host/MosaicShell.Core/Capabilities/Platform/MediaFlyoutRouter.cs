@@ -48,12 +48,6 @@ public static class MediaFlyoutRouter
             previous.PositionSeconds, next.PositionSeconds);
     }
 
-    public static bool ShouldResetDismissForMediaChange(MediaSessionInfo? previous, MediaSessionInfo? next)
-    {
-        if (next is null) return false;
-        if (previous is null) return true;
-
-        return !string.IsNullOrWhiteSpace(next.Title)
-               && !string.Equals(previous.Title, next.Title, StringComparison.Ordinal);
-    }
+    public static bool ShouldResetDismissForMediaChange(MediaSessionInfo? previous, MediaSessionInfo? next) =>
+        IsTrackBoundary(previous, next);
 }

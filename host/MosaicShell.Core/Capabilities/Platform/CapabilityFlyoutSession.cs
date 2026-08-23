@@ -45,7 +45,9 @@ public sealed class CapabilityFlyoutSession
         string nextStyle,
         MediaSessionInfo? currentMedia = null)
     {
-        if (FlyoutAutoPresentPolicy.IsUserIntentTrigger(trigger))
+        var trackBoundary = MediaFlyoutRouter.IsTrackBoundary(_lastMediaIdentity, currentMedia);
+        if (FlyoutAutoPresentPolicy.IsUserIntentTrigger(trigger)
+            || (trigger == FlyoutSyncTrigger.MediaSession && trackBoundary))
             _suppressAutoPresent = false;
 
         var openKind = OpenKind;
@@ -67,7 +69,7 @@ public sealed class CapabilityFlyoutSession
 
         if (action == FlyoutSyncAction.Present)
         {
-            if (!FlyoutAutoPresentPolicy.ShouldColdPresent(_suppressAutoPresent, trigger))
+            if (!FlyoutAutoPresentPolicy.ShouldColdPresent(_suppressAutoPresent, trigger, trackBoundary))
                 return;
             _presenter.Show(request);
         }
@@ -95,8 +97,8 @@ public sealed class CapabilityFlyoutSession
 
     public void ClearMediaIdentity() => _lastMediaIdentity = null;
 
-    public bool ShouldColdPresentMedia(FlyoutSyncTrigger trigger) =>
-        FlyoutAutoPresentPolicy.ShouldColdPresent(_suppressAutoPresent, trigger);
+    public bool ShouldColdPresentMedia(FlyoutSyncTrigger trigger, bool isTrackBoundary = false) =>
+        FlyoutAutoPresentPolicy.ShouldColdPresent(_suppressAutoPresent, trigger, isTrackBoundary);
 
     private void SchedulePresentSettle()
     {

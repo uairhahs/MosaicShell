@@ -2,7 +2,8 @@ namespace MosaicShell.Core.Capabilities.Platform;
 
 /// <summary>
 /// After user dismiss (auto or outside click), block cold Present/revive from passive events
-/// until the next user-intent trigger (volume, brightness, lock, shell media hook).
+/// until the next user-intent trigger (volume, brightness, lock, shell media hook) or a genuine
+/// track boundary from the player (title change or position restart).
 /// </summary>
 public static class FlyoutAutoPresentPolicy
 {
@@ -12,6 +13,11 @@ public static class FlyoutAutoPresentPolicy
             or FlyoutSyncTrigger.StatusToggle
             or FlyoutSyncTrigger.ShellMedia;
 
-    public static bool ShouldColdPresent(bool suppressAfterUserDismiss, FlyoutSyncTrigger trigger) =>
-        !suppressAfterUserDismiss || IsUserIntentTrigger(trigger);
+    public static bool ShouldColdPresent(
+        bool suppressAfterUserDismiss,
+        FlyoutSyncTrigger trigger,
+        bool isTrackBoundary = false) =>
+        !suppressAfterUserDismiss
+        || IsUserIntentTrigger(trigger)
+        || (trigger == FlyoutSyncTrigger.MediaSession && isTrackBoundary);
 }

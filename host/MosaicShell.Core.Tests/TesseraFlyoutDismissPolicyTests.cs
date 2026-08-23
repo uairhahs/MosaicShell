@@ -30,12 +30,12 @@ public class TesseraFlyoutDismissPolicyTests
     }
 
     [Fact]
-    public void Media_position_restart_with_stale_title_does_not_reset_auto_dismiss()
+    public void Media_position_restart_with_stale_title_resets_auto_dismiss()
     {
         var prev = new MediaSessionInfo("A", "Artist", "app", true, null, 40, 180);
         var next = new MediaSessionInfo("A", "Artist", "app", true, null, 0.5, 180);
         TesseraFlyoutDismissPolicy.ShouldResetAutoDismiss(
-            TesseraFlyoutRefreshTrigger.MediaSessionChanged, prev, next).Should().BeFalse();
+            TesseraFlyoutRefreshTrigger.MediaSessionChanged, prev, next).Should().BeTrue();
     }
 }
 
@@ -66,11 +66,11 @@ public class TesseraMediaTrackBoundaryTests
     }
 
     [Fact]
-    public void Position_restart_with_stale_title_is_boundary_but_not_dismiss_reset()
+    public void Position_restart_with_stale_title_is_boundary_and_resets_dismiss()
     {
         var prev = new MediaSessionInfo("A", "Artist", "app", true, null, 40, 180);
         var next = new MediaSessionInfo("A", "Artist", "app", true, null, 0.5, 180);
         TesseraMediaFlyoutPolicy.IsTrackBoundary(prev, next).Should().BeTrue();
-        TesseraMediaFlyoutPolicy.ShouldResetDismissForMediaChange(prev, next).Should().BeFalse();
+        TesseraMediaFlyoutPolicy.ShouldResetDismissForMediaChange(prev, next).Should().BeTrue();
     }
 }

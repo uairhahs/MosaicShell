@@ -30,6 +30,13 @@ public class TesseraFlyoutAutoPresentPolicyTests
             suppressAfterUserDismiss: true,
             TesseraFlyoutRefreshTrigger.MediaSessionChanged).Should().BeFalse();
 
+    [Fact]
+    public void Cold_present_allowed_for_track_boundary_while_suppressed() =>
+        TesseraFlyoutAutoPresentPolicy.ShouldColdPresent(
+            suppressAfterUserDismiss: true,
+            TesseraFlyoutRefreshTrigger.MediaSessionChanged,
+            isTrackBoundary: true).Should().BeTrue();
+
     [Theory]
     [InlineData(TesseraFlyoutRefreshTrigger.VolumeTick)]
     [InlineData(TesseraFlyoutRefreshTrigger.BrightnessTick)]

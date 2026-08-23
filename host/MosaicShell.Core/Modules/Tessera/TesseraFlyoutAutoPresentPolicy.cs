@@ -12,8 +12,10 @@ public static class TesseraFlyoutAutoPresentPolicy
 
     public static bool ShouldColdPresent(
         bool suppressAfterUserDismiss,
-        TesseraFlyoutRefreshTrigger trigger) =>
+        TesseraFlyoutRefreshTrigger trigger,
+        bool isTrackBoundary = false) =>
         FlyoutAutoPresentPolicy.ShouldColdPresent(
             suppressAfterUserDismiss,
-            FlyoutSyncTriggerMapping.FromTessera(trigger));
+            FlyoutSyncTriggerMapping.FromTessera(trigger),
+            isTrackBoundary);
 }

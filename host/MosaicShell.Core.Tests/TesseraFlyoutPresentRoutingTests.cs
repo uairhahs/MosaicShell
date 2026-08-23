@@ -93,8 +93,8 @@ public class TesseraFlyoutPresentRoutingTests : IDisposable
 
         media.Current = new MediaSessionInfo("Track A", "Artist", "app", true, null, 0.5, 180);
 
-        _flyouts.SoftRefreshCount.Should().Be(1);
-        _flyouts.UpdateCount.Should().Be(0);
+        _flyouts.UpdateCount.Should().Be(1, "track boundary resets auto-dismiss via Patch");
+        _flyouts.SoftRefreshCount.Should().Be(0);
         await cap.DisarmAsync();
     }
 
@@ -161,7 +161,7 @@ public class TesseraFlyoutPresentRoutingTests : IDisposable
     }
 
     [Fact]
-    public async Task Track_change_after_transient_dismiss_does_not_present()
+    public async Task Track_change_after_transient_dismiss_presents()
     {
         var media = new FakeMediaSessionService();
         var services = TesseraServices(media: media);
@@ -179,8 +179,48 @@ public class TesseraFlyoutPresentRoutingTests : IDisposable
 
         media.Current = new MediaSessionInfo("Track B", "Artist", "app", true, null, 0, 100);
 
-        _flyouts.ShowCount.Should().Be(0);
+        _flyouts.ShowCount.Should().Be(1);
         _flyouts.UpdateCount.Should().Be(0);
+        await cap.DisarmAsync();
+    }
+
+    [Fact]
+    public async Task Position_restart_after_transient_dismiss_presents()
+    {
+        var media = new FakeMediaSessionService();
+        var services = TesseraServices(media: media);
+        var cap = new TesseraCapability(TestCapabilityContext.Create(services, _ui));
+        await cap.ArmAsync();
+
+        media.Current = new MediaSessionInfo("Track A", "Artist", "app", true, null, 40, 180);
+        _flyouts.ShowCount.Should().Be(1);
+
+        _flyouts.RaiseTransientDismiss();
+
+        _flyouts.ShowCount = 0;
+        _flyouts.UpdateCount = 0;
+
+        media.Current = new MediaSessionInfo("Track A", "Artist", "app", true, null, 0.5, 180);
+
+        _flyouts.ShowCount.Should().Be(1);
+        await cap.DisarmAsync();
+    }
+
+    [Fact]
+    public async Task Late_art_after_transient_dismiss_does_not_present()
+    {
+        var media = new FakeMediaSessionService();
+        var services = TesseraServices(media: media);
+        var cap = new TesseraCapability(TestCapabilityContext.Create(services, _ui));
+        await cap.ArmAsync();
+
+        media.Current = new MediaSessionInfo("Track A", "Artist", "app", true, null, 10, 180);
+        _flyouts.RaiseTransientDismiss();
+
+        _flyouts.ShowCount = 0;
+        media.Current = new MediaSessionInfo("Track A", "Artist", "app", true, [1, 2, 3], 10, 180);
+
+        _flyouts.ShowCount.Should().Be(0);
         await cap.DisarmAsync();
     }
 
