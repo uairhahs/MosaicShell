@@ -69,6 +69,7 @@ public partial class MainViewModel : ViewModelBase
         ModuleStyleOptions = new ObservableCollection<StyleDescriptor>();
 
         RefreshLibrary();
+        HostBuildLabel = HostBuildVersion.ReadCurrent();
         Navigate(Hub.WelcomeCompleted ? "Home" : "Welcome");
     }
 
@@ -174,6 +175,7 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _autostartEnabled;
     [ObservableProperty] private bool _closeMinimizesToTray = true;
     [ObservableProperty] private string _updateStatus = "";
+    [ObservableProperty] private string _hostBuildLabel = HostBuildVersionPolicy.LocalDevLabel;
 
     public void RestoreSessions()
     {
@@ -858,7 +860,7 @@ public partial class MainViewModel : ViewModelBase
         try
         {
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
-            var result = await UpdateChecker.CheckGitHubAsync(http);
+            var result = await UpdateChecker.CheckGitHubAsync(http, currentVersion: HostBuildLabel);
             UpdateStatus = result.UpdateAvailable
                 ? $"Update available: {result.LatestVersion} (you have {result.CurrentVersion})"
                 : $"Up to date ({result.CurrentVersion}).";

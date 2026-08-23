@@ -109,6 +109,7 @@ public class HubParityBacklogTests
     {
         ["tessera_layout_fidelity"] = nameof(StyleCatalogTests.Tessera_layout_fidelity_github_screenshots_cover_every_style),
         ["tessera_os_acrylic_win11_eval"] = nameof(TesseraOsAcrylicSignOffPolicyTests.Win11_os_acrylic_eval_is_signed_off_in_core),
+        ["update_check_against_github_releases"] = nameof(UpdateCheckerTests.Check_reports_newer_date_build_tag),
         ["tessera_osd_flyout"] = nameof(TesseraCapabilityTests.Armed_tessera_shows_flyout_on_volume_change),
         ["tessera_named_styles"] = nameof(StyleCatalogTests.Tessera_has_eleven_jaxcore_layouts),
         ["tessera_locks_flight"] = nameof(TesseraParityTests.Armed_tessera_emits_locks_and_flight),

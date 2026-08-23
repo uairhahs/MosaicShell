@@ -40,24 +40,32 @@ jobs:
 
       - name: Publish Host + Mosaicist
         working-directory: host
+        env:
+          BUILD_VERSION: ${{ steps.tag.outputs.name }}
         run: |
           $out = Join-Path $env:GITHUB_WORKSPACE "artifacts"
           New-Item -ItemType Directory -Force -Path $out | Out-Null
+          $version = $env:BUILD_VERSION
+          Write-Host "Stamping version: $version"
 
           dotnet publish MosaicShell.Host `
             -c Release -r win-x64 --self-contained false `
+            -p:Version=$version `
             -o (Join-Path $out "Host")
 
           dotnet publish Mosaicist `
             -c Release -r win-x64 --self-contained false `
+            -p:Version=$version `
             -o (Join-Path $out "Mosaicist")
 
           Copy-Item -Recurse -Force `
             (Join-Path $env:GITHUB_WORKSPACE "Tiles") `
             (Join-Path $out "Tiles")
 
+          Set-Content -Path (Join-Path $out "VERSION.txt") -Value $version -Encoding utf8
+
           @"
-          MosaicShell Host release
+          MosaicShell Host release $version
 
           Requires .NET 10 runtime (Windows x64).
 
@@ -88,4 +96,5 @@ jobs:
           gh release create $name $zip `
             --title "MosaicShell $name" `
             --generate-notes `
+            --prerelease `
             --target "${{ github.sha }}"
