@@ -13,6 +13,7 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
     private string? _lastAppId;
     private bool _disposed;
     private int _updateGen;
+    private Timer? _timelinePoll;
 
     public WindowsMediaSessionService()
     {
@@ -32,6 +33,13 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
             _manager.CurrentSessionChanged += (_, _) => _ = RefreshAsync();
             _manager.SessionsChanged += (_, _) => _ = RefreshAsync();
             await RefreshAsync();
+            if (MediaSessionChangePolicy.MustPollTimelineIndependentlyOfFlyout)
+            {
+                var ms = MediaSessionChangePolicy.TimelinePollMs;
+                _timelinePoll = new Timer(
+                    _ => { try { PumpTimeline(); } catch { /* soft-fail */ } },
+                    null, ms, ms);
+            }
         }
         catch
         {
@@ -157,6 +165,8 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
         if (!string.Equals(prev.Artist, next.Artist, StringComparison.Ordinal)) return true;
         if (!string.Equals(prev.AppId, next.AppId, StringComparison.Ordinal)) return true;
         if (prev.IsPlaying != next.IsPlaying) return true;
+        if (MediaSessionChangePolicy.LooksLikeNewTrackPosition(prev.PositionSeconds, next.PositionSeconds))
+            return true;
         var prevLen = prev.ThumbnailPng?.Length ?? 0;
         var nextLen = next.ThumbnailPng?.Length ?? 0;
         if (prevLen != nextLen) return true;
@@ -216,13 +226,17 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
 
             if (moved)
             {
+                var priorPos = prev.PositionSeconds;
                 Current = prev with
                 {
                     PositionSeconds = pos,
                     DurationSeconds = dur,
                     IsPlaying = playing
                 };
-                ProgressChanged?.Invoke(this, EventArgs.Empty);
+                if (MediaSessionChangePolicy.LooksLikeNewTrackPosition(priorPos, pos))
+                    Changed?.Invoke(this, EventArgs.Empty);
+                else
+                    ProgressChanged?.Invoke(this, EventArgs.Empty);
             }
 
             var cur = Current;
@@ -415,12 +429,15 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
         catch { /* repeat not supported */ }
     }
 
-    public Task ToggleLikeAsync() => Task.CompletedTask; // SMTC has no standard like API
+    public Task ToggleLikeAsync(bool wantLiked) => Task.CompletedTask; // SMTC has no standard like API
+    public Task ToggleDislikeAsync(bool wantDisliked) => Task.CompletedTask;
 
     public void Dispose()
     {
         if (_disposed) return;
         _disposed = true;
+        _timelinePoll?.Dispose();
+        _timelinePoll = null;
         if (_session is not null)
         {
             _session.MediaPropertiesChanged -= OnProps;

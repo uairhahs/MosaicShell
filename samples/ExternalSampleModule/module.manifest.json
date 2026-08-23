@@ -1,0 +1,12 @@
+{
+  "Id": "HelloTile",
+  "Version": "1.0.0",
+  "DisplayName": "Hello Tile",
+  "Description": "Sample external widget installed from a package (no Host recompile).",
+  "UsageSummary": "Install with Mosaicist install-package, then open from Tiles.",
+  "HowToTrigger": "Select the tile in Library and use Try overlay / Open.",
+  "Kind": "Widget",
+  "Styles": [ "DEFAULT" ],
+  "DefaultStyle": "DEFAULT",
+  "DefaultArmed": false
+}

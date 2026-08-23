@@ -1,5 +1,6 @@
 using FluentAssertions;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Modules.Tessera;
 
 namespace MosaicShell.Core.Tests;
 

@@ -231,8 +231,8 @@ public sealed class WindowsHotkeyService : IHotkeyService
 
 public sealed class WindowsAudioLevelService : IAudioLevelService
 {
-    private WasapiLoopbackCapture? _capture;
-    private readonly float[] _bands = new float[16];
+    private WasapiRecorder? _capture;
+    private readonly float[] _bands = new float[AudioLevelMeter.BandCount];
     private double _peak;
     private readonly object _gate = new();
 
@@ -255,7 +255,9 @@ public sealed class WindowsAudioLevelService : IAudioLevelService
         if (_capture is not null) return;
         try
         {
-            _capture = new WasapiLoopbackCapture();
+            _capture = new WasapiRecorderBuilder()
+                .WithLoopbackCapture()
+                .Build();
             _capture.DataAvailable += OnData;
             _capture.StartRecording();
         }
@@ -278,28 +280,20 @@ public sealed class WindowsAudioLevelService : IAudioLevelService
         _capture = null;
     }
 
-    private void OnData(object? sender, WaveInEventArgs e)
+    private void OnData(ReadOnlySpan<byte> buffer, AudioClientBufferFlags flags, long devicePosition, long qpcPosition)
     {
-        if (e.BytesRecorded < 4) return;
-        var samples = e.BytesRecorded / 4;
-        double sum = 0;
-        var bandAcc = new double[16];
-        var bandCount = new int[16];
-        for (var i = 0; i < samples; i++)
-        {
-            var sample = BitConverter.ToSingle(e.Buffer, i * 4);
-            var a = Math.Abs(sample);
-            sum += a;
-            var band = Math.Clamp(i * 16 / Math.Max(1, samples), 0, 15);
-            bandAcc[band] += a;
-            bandCount[band]++;
-        }
+        _ = flags;
+        _ = devicePosition;
+        _ = qpcPosition;
+        if (buffer.Length < 4) return;
+
+        Span<float> bands = stackalloc float[AudioLevelMeter.BandCount];
+        AudioLevelMeter.ProcessIeeeFloat(buffer, bands, out var peak);
 
         lock (_gate)
         {
-            _peak = Math.Clamp(sum / samples * 4, 0, 1);
-            for (var b = 0; b < 16; b++)
-                _bands[b] = (float)Math.Clamp(bandCount[b] == 0 ? 0 : bandAcc[b] / bandCount[b] * 6, 0, 1);
+            _peak = peak;
+            bands.CopyTo(_bands);
         }
     }
 

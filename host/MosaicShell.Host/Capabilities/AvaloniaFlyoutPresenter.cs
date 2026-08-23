@@ -1,14 +1,10 @@
-using System.Runtime.InteropServices;
 using Avalonia;
-using Avalonia.Animation;
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Media;
-using Avalonia.Platform;
-using Avalonia.Styling;
 using Avalonia.Threading;
-using Avalonia.VisualTree;
+using MosaicShell.Core;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 using MosaicShell.Host.Tiles.Tessera;
 
@@ -16,25 +12,99 @@ namespace MosaicShell.Host.Capabilities;
 
 public sealed class AvaloniaCapabilityUiBridge : ICapabilityUiBridge
 {
-    public AvaloniaCapabilityUiBridge(IFlyoutPresenter flyouts) => Flyouts = flyouts;
+    public AvaloniaCapabilityUiBridge(IFlyoutPresenter flyouts, IHostUiBridge hostUi)
+    {
+        Flyouts = flyouts;
+        HostUi = hostUi;
+    }
+
     public IFlyoutPresenter Flyouts { get; }
+    public IHostUiBridge HostUi { get; }
+
+    public void RunOnHostThread(Action action) =>
+        Dispatcher.UIThread.Invoke(action);
 }
 
-public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
+public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
 {
+    public event Action<string>? TransientDismissed;
+
     private readonly HostServices _services;
+    private IHostUiBridge? _hostUi;
     private readonly object _gate = new();
     private readonly Dictionary<string, FlyoutWindow> _windows = new(StringComparer.OrdinalIgnoreCase);
     private FocusDimWindow? _focusDim;
     private TesseraOutsideClickWatcher? _outsideClick;
+    private DispatcherTimer? _outsideClickArm;
+    private readonly TesseraFlyoutLiveSyncCoalescer _patchCoalesce = new();
+    private readonly TesseraFlyoutUpdateDispatchGate _updateDispatch = new();
+    private DispatcherTimer? _deferredPatch;
+    private FlyoutRequest? _pendingPatch;
+    private FlyoutRequest? _pendingUpdate;
+    private bool _pendingResetDismiss;
 
-    public AvaloniaFlyoutPresenter(HostServices services) => _services = services;
+    public AvaloniaFlyoutPresenter(HostServices services, IHostUiBridge? hostUi = null)
+    {
+        _services = services;
+        _hostUi = hostUi;
+        Log($"presenter ctor build={typeof(AvaloniaFlyoutPresenter).Assembly.GetName().Version}");
+    }
 
-    public void Show(FlyoutRequest request) =>
-        Dispatcher.UIThread.Post(() => SafeShowOrUpdate(request, resetDismiss: true));
+    public void AttachHostUi(IHostUiBridge hostUi) => _hostUi = hostUi;
 
-    public void Update(FlyoutRequest request) =>
-        Dispatcher.UIThread.Post(() => SafeShowOrUpdate(request, resetDismiss: true));
+    public void Show(FlyoutRequest request)
+    {
+        Log($"Show queued kind={request.Kind} style={request.StyleId} thread={Environment.CurrentManagedThreadId}");
+        if (IsImmediateStatusKind(request))
+            Dispatcher.UIThread.Invoke(() => SafeShowOrUpdate(request, resetDismiss: true));
+        else
+            Dispatcher.UIThread.Post(() => SafeShowOrUpdate(request, resetDismiss: true));
+    }
+
+    private static bool IsImmediateStatusKind(FlyoutRequest request) =>
+        request.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
+        || request.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase);
+
+    public void Update(FlyoutRequest request)
+    {
+        Log($"Update queued kind={request.Kind} style={request.StyleId} thread={Environment.CurrentManagedThreadId}");
+        if (IsImmediateStatusKind(request))
+        {
+            Dispatcher.UIThread.Invoke(() => SafeShowOrUpdate(request, resetDismiss: true));
+            return;
+        }
+
+        _pendingUpdate = request;
+        _pendingResetDismiss = true;
+        if (_updateDispatch.TryEnqueue() != TesseraFlyoutUpdateDispatchKind.PostNow)
+            return;
+
+        Dispatcher.UIThread.Post(FlushPendingUpdate);
+    }
+
+    private void FlushPendingUpdate()
+    {
+        if (_pendingUpdate is not { } pending)
+        {
+            _updateDispatch.CompleteDispatch();
+            return;
+        }
+
+        var reset = _pendingResetDismiss;
+        _pendingUpdate = null;
+        try
+        {
+            SafeShowOrUpdate(pending, reset);
+        }
+        finally
+        {
+            _updateDispatch.CompleteDispatch();
+        }
+
+        if (_pendingUpdate is not null
+            && _updateDispatch.TryEnqueue() == TesseraFlyoutUpdateDispatchKind.PostNow)
+            Dispatcher.UIThread.Post(FlushPendingUpdate);
+    }
 
     public void SoftRefresh(FlyoutRequest request) =>
         Dispatcher.UIThread.Post(() =>
@@ -43,29 +113,58 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
             {
                 lock (_gate)
                 {
-                    if (!_windows.TryGetValue(request.ModuleId, out var existing) || !existing.IsVisible)
+                    if (ShouldUseStackedOsAcrylic(request))
+                    {
+                        var volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Volume);
+                        if (!_windows.TryGetValue(volumeKey, out var volumeWin)
+                            || !volumeWin.IsFlyoutSessionShowing)
+                            return;
+
+                        if (!_patchCoalesce.TryBeginFlush(MonoNow(), out _))
+                            return;
+
+                        volumeWin.ApplyLiveOnly(request, _services);
                         return;
+                    }
+
+                    if (!_windows.TryGetValue(request.ModuleId, out var existing)
+                        || !existing.IsFlyoutSessionShowing)
+                        return;
+
+                    if (!_patchCoalesce.TryBeginFlush(MonoNow(), out _))
+                        return;
+
                     existing.ApplyLiveOnly(request, _services);
                 }
             }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Tessera soft] {ex}"); }
+            catch (Exception ex) { Log($"soft refresh {ex}"); }
         });
 
     public void Hide(string moduleId)
     {
         Dispatcher.UIThread.Post(() =>
         {
+            if (moduleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            {
+                CloseStackedSession();
+                FlyoutWindow? single;
+                lock (_gate)
+                {
+                    _windows.Remove(moduleId, out single);
+                }
+                try { single?.Close(); } catch { /* ignore */ }
+                StopOutsideClickWatcher();
+                CloseFocusDim();
+                CancelDeferredPatch();
+                return;
+            }
+
             FlyoutWindow? w;
             lock (_gate)
             {
                 if (!_windows.Remove(moduleId, out w)) return;
             }
             try { w.Close(); } catch { /* ignore */ }
-            if (moduleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
-            {
-                StopOutsideClickWatcher();
-                CloseFocusDim();
-            }
         });
     }
 
@@ -73,84 +172,301 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
     {
         Dispatcher.UIThread.Post(() =>
         {
+            CloseStackedSession();
             List<string> ids;
             lock (_gate) ids = _windows.Keys.ToList();
             foreach (var id in ids)
                 Hide(id);
             StopOutsideClickWatcher();
             CloseFocusDim();
+            CancelDeferredPatch();
         });
     }
 
     public bool IsVisible(string moduleId)
     {
+        if (moduleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase) && IsStackedTesseraVisible())
+            return true;
+
         lock (_gate)
-            return _windows.TryGetValue(moduleId, out var w) && w.IsVisible;
+            return _windows.TryGetValue(moduleId, out var w) && w.IsFlyoutSessionShowing;
     }
 
     private void SafeShowOrUpdate(FlyoutRequest request, bool resetDismiss = true)
     {
         try { ShowOrUpdateCore(request, resetDismiss); }
-        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Tessera flyout] {ex}"); }
+        catch (Exception ex)
+        {
+            Log($"EXCEPTION {ex}");
+            CloseFocusDim();
+        }
     }
+
+    private static TimeSpan MonoNow() => TimeSpan.FromMilliseconds(Environment.TickCount64);
 
     private void ShowOrUpdateCore(FlyoutRequest request, bool resetDismiss = true)
     {
+        if (ShouldUseStackedOsAcrylic(request))
+        {
+            ShowOrUpdateStacked(request, resetDismiss);
+            return;
+        }
+
+        if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            CloseStackedSession();
+
+        ShowOrUpdateCoreSinglePath(request, resetDismiss);
+    }
+
+    private void ShowOrUpdateCoreSinglePath(FlyoutRequest request, bool resetDismiss = true)
+    {
+        Log($"ShowOrUpdateCore enter kind={request.Kind}");
+        FlyoutWindow? reuse = null;
+        var reuseWasVisible = false;
+
         lock (_gate)
         {
-            if (_windows.TryGetValue(request.ModuleId, out var existing) && existing.IsVisible)
+            if (_windows.TryGetValue(request.ModuleId, out var existing)
+                && TesseraFlyoutLiveSyncPolicy.MustReuseRegisteredFlyoutHwnd)
             {
-                if (existing.TryApplyLive(request, _services, resetDismiss))
-                {
-                    SyncFocusDim(request);
-                    RestackAboveDim(existing);
-                    if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
-                        EnsureOutsideClickWatcher(existing);
-                    return;
-                }
-                existing.ApplyRequest(request, BuildContent(request));
-                SyncFocusDim(request);
-                RestackAboveDim(existing);
-                if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
-                    EnsureOutsideClickWatcher(existing);
-                return;
-            }
+                reuse = existing;
+                reuseWasVisible = existing.IsFlyoutSessionShowing;
 
-            if (_windows.TryGetValue(request.ModuleId, out var old))
+                if (reuseWasVisible)
+                {
+                    var action = TesseraFlyoutLiveSyncPolicy.ResolveAction(
+                        isVisible: true,
+                        openKind: existing.Kind,
+                        nextKind: request.Kind,
+                        openStyle: existing.StyleId,
+                        nextStyle: request.StyleId);
+
+                    if (action == TesseraFlyoutSyncAction.Patch)
+                    {
+                        if (!_patchCoalesce.TryBeginFlush(MonoNow(), out var retryAfter))
+                        {
+                            _pendingPatch = request;
+                            _pendingResetDismiss = resetDismiss;
+                            ScheduleDeferredPatch(retryAfter);
+                            return;
+                        }
+
+                        if (TryPatchLive(existing, request, resetDismiss))
+                            return;
+
+                        Log($"live-apply missed kind={request.Kind} style={request.StyleId}, rebuilding");
+                    }
+                }
+            }
+            else if (_windows.TryGetValue(request.ModuleId, out var old))
             {
                 try { old.Close(); } catch { /* ignore */ }
                 _windows.Remove(request.ModuleId);
             }
         }
 
-        SyncFocusDim(request);
-        var content = BuildContent(request);
+        if (reuse is not null)
+        {
+            if (!reuseWasVisible
+                && string.Equals(reuse.Kind, request.Kind, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(reuse.StyleId ?? "", request.StyleId ?? "", StringComparison.OrdinalIgnoreCase))
+            {
+                if (TryPatchLive(reuse, request, resetDismiss))
+                {
+                    if (!reuse.IsVisible)
+                        reuse.Show();
+                    Log($"revive kind={request.Kind} style={request.StyleId}");
+                    reuse.RevealAfterLayout();
+                    return;
+                }
+            }
+
+            Control reusedContent;
+            try { reusedContent = BuildContent(request); }
+            catch (Exception ex)
+            {
+                Log($"BuildContent failed on reuse, using fallback: {ex}");
+                reusedContent = BuildFallbackContent(request, ex.Message);
+            }
+
+            reuse.ApplyRequest(request, reusedContent);
+            WireTesseraSession(reuse);
+            if (!reuse.IsVisible)
+                reuse.Show();
+            reuse.EnsureLivePump();
+            PresentFlyout(reuse, request);
+            if (!reuseWasVisible)
+                reuse.PlayShowAnimation();
+            reuse.RevealAfterLayout();
+            return;
+        }
+
+        Control content;
+        try
+        {
+            content = BuildContent(request);
+        }
+        catch (Exception ex)
+        {
+            Log($"BuildContent failed, using fallback: {ex}");
+            content = BuildFallbackContent(request, ex.Message);
+            Log("FALLBACK content, Tessera live session unsuccessful");
+        }
+
+        if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+        {
+            var hasHost = content is Control c && TesseraLiveHost.FindIn(c) is not null;
+            var isFallback = content is Border { Child: TextBlock };
+            if (!TesseraFlyoutLiveSyncPolicy.IsSuccessfulTesseraContent(hasHost, isFallback))
+                Log($"live session unsuccessful hasLiveHost={hasHost} fallback={isFallback}");
+        }
+
         var window = new FlyoutWindow(request, content, _services);
+        WireTesseraSession(window);
         window.Closed += (_, _) =>
         {
-            lock (_gate) _windows.Remove(request.ModuleId);
-            if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            lock (_gate)
+            {
+                // ClosedMustOnlyUnregisterSameInstance: a superseded HWND must not clear the live session.
+                if (_windows.TryGetValue(request.ModuleId, out var current)
+                    && ReferenceEquals(current, window))
+                    _windows.Remove(request.ModuleId);
+            }
+            if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase)
+                && !IsVisible("Tessera"))
             {
                 StopOutsideClickWatcher();
                 CloseFocusDim();
+                CancelDeferredPatch();
             }
         };
         lock (_gate) _windows[request.ModuleId] = window;
+
+        // Two unowned Topmost windows: the one shown LAST usually wins Z-order on Win32.
+        // Show FocusDim first (if enabled), then the flyout, then HWND-stack as belt-and-suspenders.
+        SyncFocusDim(request);
+
+        // Consolidation (60e883e) used unowned Show(). Show(owner) from 83a9e57 made the
+        // flyout lose Z-order to unowned FocusDim and often paint as an empty Transparent HWND.
+        // SoftFrost: Show at Opacity 0, layout, then reveal, avoids black composition-clear flash.
         window.Show();
-        RestackAboveDim(window);
+
+        window.EnsureLivePump();
+        PresentFlyout(window, request);
         window.PlayShowAnimation();
-        if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
-            StartOutsideClickWatcher(window);
+        window.RevealAfterLayout();
     }
 
-    private static void RestackAboveDim(Window flyout)
+    private bool TryPatchLive(FlyoutWindow existing, FlyoutRequest request, bool resetDismiss)
     {
-        try
+        if (!existing.TryApplyLive(request, _services, resetDismiss))
+            return false;
+
+        Log($"patch kind={request.Kind} style={request.StyleId}");
+        // (PatchImpliesPresent|Win32Restack|OutsideClickRearm are false, Core tests).
+        existing.EnsureLivePump();
+        _outsideClick?.RefreshBounds(existing);
+        return true;
+    }
+
+    private void ScheduleDeferredPatch(TimeSpan delay)
+    {
+        if (delay <= TimeSpan.Zero)
+            delay = TesseraFlyoutLiveSyncPolicy.MinFlushInterval;
+
+        _deferredPatch?.Stop();
+        _deferredPatch = new DispatcherTimer { Interval = delay };
+        _deferredPatch.Tick += (_, _) =>
         {
-            flyout.Topmost = false;
-            flyout.Topmost = true;
+            _deferredPatch?.Stop();
+            _deferredPatch = null;
+            if (_pendingPatch is not { } pending)
+                return;
+            var reset = _pendingResetDismiss;
+            _pendingPatch = null;
+            SafeShowOrUpdate(pending, reset);
+        };
+        _deferredPatch.Start();
+    }
+
+    private void CancelDeferredPatch()
+    {
+        _deferredPatch?.Stop();
+        _deferredPatch = null;
+        _pendingPatch = null;
+        _pendingUpdate = null;
+        _updateDispatch.CompleteDispatch();
+    }
+
+    private void PresentFlyout(FlyoutWindow window, FlyoutRequest request)
+    {
+        window.FinishLayout();
+        // Keep dim in sync on live updates; first Show already called SyncFocusDim.
+        SyncFocusDim(request);
+        RestackAboveDim(window);
+
+        var focusDimOn = TesseraFocusDimPolicy.EnabledFromPayload(request.Payload);
+        var layered = TesseraFlyoutWindowPolicy.MustApplyPresentableLayeredAlpha
+            ? Win32WindowChrome.ForceOpaqueLayer(window)
+            : "skipped";
+        var screen = window.Screens?.ScreenFromWindow(window)
+                     ?? window.Screens?.ScreenFromPoint(window.Position);
+        Log(
+            $"presented kind={request.Kind} style={request.StyleId} visible={window.IsVisible} " +
+            $"bounds={window.Bounds.Width:0}x{window.Bounds.Height:0} " +
+            $"desired={window.DesiredSize.Width:0}x{window.DesiredSize.Height:0} " +
+            $"pos={window.Position} mon={request.MonitorIndex} focusDim={focusDimOn} " +
+            $"screen=({screen?.WorkingArea.X},{screen?.WorkingArea.Y} {screen?.WorkingArea.Width}x{screen?.WorkingArea.Height}) " +
+            $"scaling={window.RenderScaling:0.##} " +
+            $"hint={string.Join('|', window.TransparencyLevelHint)} " +
+            $"actual={window.ActualTransparencyLevel} layered={layered}");
+
+        if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            ScheduleOutsideClickArm(window);
+    }
+
+    private void ScheduleOutsideClickArm(FlyoutWindow window)
+    {
+        // One arm timer only, PresentFlyout used to start a new one per volume tick.
+        _outsideClickArm?.Stop();
+        _outsideClickArm = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1500) };
+        var captured = window;
+        _outsideClickArm.Tick += (_, _) =>
+        {
+            _outsideClickArm?.Stop();
+            _outsideClickArm = null;
+            if (captured.IsVisible)
+            {
+                StartOutsideClickWatcher(captured);
+                Log("outside-click armed");
+            }
+        };
+        _outsideClickArm.Start();
+    }
+
+    private void RestackAboveDim(FlyoutWindow flyout)
+    {
+        void Stack(string when)
+        {
+            try
+            {
+                flyout.Topmost = true;
+                if (_focusDim is not null)
+                    _focusDim.Topmost = true;
+
+                var ok = Win32WindowChrome.TryStackAbove(flyout, _focusDim, out var detail);
+                Log($"z-order {when} ok={ok} {detail}");
+            }
+            catch (Exception ex)
+            {
+                Log($"z-order {when} EXCEPTION {ex}");
+            }
         }
-        catch { /* ignore */ }
+
+        Stack("immediate");
+        // Dim click-through / HWND often lands at Loaded, restack then and once more at Input.
+        Dispatcher.UIThread.Post(() => Stack("loaded"), DispatcherPriority.Loaded);
+        Dispatcher.UIThread.Post(() => Stack("input"), DispatcherPriority.Input);
     }
 
     private void SyncFocusDim(FlyoutRequest request)
@@ -165,8 +481,10 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         if (_focusDim is null)
         {
             _focusDim = new FocusDimWindow(request.MonitorIndex);
+            // Show dim BEFORE the flyout (caller order) so the flyout is the later topmost peer.
             _focusDim.Show();
             _focusDim.FadeIn();
+            Log($"focusDim shown mon={request.MonitorIndex}");
         }
         else
         {
@@ -193,23 +511,56 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         _outsideClick.Start();
     }
 
-    private void EnsureOutsideClickWatcher(FlyoutWindow flyout)
-    {
-        if (_outsideClick is null || !_outsideClick.IsActive)
-            StartOutsideClickWatcher(flyout);
-    }
-
     private void StopOutsideClickWatcher()
     {
+        _outsideClickArm?.Stop();
+        _outsideClickArm = null;
         _outsideClick?.Dispose();
         _outsideClick = null;
     }
 
     private void DismissTesseraImmediate()
     {
-        FlyoutWindow? flyout;
-        lock (_gate) _windows.Remove("Tessera", out flyout);
-        try { flyout?.Close(); } catch { /* ignore */ }
+        Log("outside-click dismiss");
+        if (_stackedSession is not null)
+        {
+            DismissStackedTesseraImmediate();
+            return;
+        }
+
+        DismissTesseraSingleImmediate();
+    }
+
+    private void WireTesseraSession(FlyoutWindow window)
+    {
+        window.TransientDismissed -= OnFlyoutTransientDismissed;
+        window.TransientDismissed += OnFlyoutTransientDismissed;
+    }
+
+    private void OnFlyoutTransientDismissed(string moduleId)
+    {
+        if (_stackedSession is not null
+            && TesseraOsAcrylicStackedPolicy.TransientDismissMustHideAllSlots)
+        {
+            lock (_gate)
+            {
+                foreach (var slotKey in _stackedSession.SlotKeys)
+                {
+                    if (_windows.TryGetValue(slotKey, out var window)
+                        && window.IsFlyoutSessionShowing)
+                        window.TransientDismissWithoutNotify();
+                }
+            }
+
+            StopStackedAutoDismiss();
+        }
+
+        try { TransientDismissed?.Invoke(moduleId); }
+        catch { /* ignore */ }
+
+        if (!TesseraFocusDimPolicy.ShouldCloseFocusDimOnTransientDismiss())
+            return;
+        Log("transient-dismiss, closing focusDim");
         StopOutsideClickWatcher();
         CloseFocusDim();
     }
@@ -220,9 +571,22 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         {
             var material = TesseraFlyoutMaterialFactory.FromPayload(request.Payload);
             TesseraPalette.ApplyMaterial(material);
-            TesseraBakedFrost.SetEnabled(BakedFrostFromPayload(request.Payload));
-            var vm = TesseraFlyoutViewModel.FromRequest(_services, request);
-            Control root = TesseraStyleFactory.Create(request.StyleId ?? "Fluent", vm);
+
+            var osAcrylicEligible = TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(
+                request.Payload, request.StyleId);
+            var settingsWantBlur = TesseraFlyoutRequestBuilder.BackdropBlurFromPayload(request.Payload);
+            var glass = TesseraFlyoutGlassBinder.ApplyForLiveFlyout(settingsWantBlur, osAcrylicEligible);
+            Log(
+                $"glass mode={glass.Mode} backdrop={glass.UseBackdropBlur} " +
+                $"embeddedPreview={glass.UseEmbeddedPreview} softFrostHwnd={glass.SoftFrostHwndReady} " +
+                $"osAcrylic={glass.OsAcrylicEligible}");
+
+            var vm = TesseraFlyoutViewModel.FromRequest(_services, request, _hostUi);
+            var root = TesseraStyleFactory.Create(
+                request.StyleId ?? "Fluent",
+                vm,
+                accentColor: TesseraFlyoutRequestBuilder.AccentFromPayload(request.Payload),
+                embeddedPreview: glass.UseEmbeddedPreview);
             var scale = FlyoutScaleFromPayload(request.Payload);
             if (Math.Abs(scale - 1.0) > 0.01)
             {
@@ -232,21 +596,32 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
                     Child = root
                 };
             }
-            return root;
+
+            return TesseraChrome.WrapFlyoutContent(root);
         }
 
-        return new Border
+        return BuildFallbackContent(request, null);
+    }
+
+    private static Control BuildFallbackContent(FlyoutRequest request, string? error) =>
+        new Border
         {
-            Background = new SolidColorBrush(Color.Parse("#E6202020")),
+            MinWidth = 220,
+            MinHeight = 80,
+            Background = new SolidColorBrush(Color.FromArgb(250, 0x11, 0x11, 0x1b)),
+            BorderBrush = new SolidColorBrush(Color.Parse("#89dceb")),
+            BorderThickness = new Thickness(2),
             CornerRadius = new CornerRadius(12),
             Padding = new Thickness(20),
             Child = new TextBlock
             {
-                Text = $"{request.ModuleId} · {request.Kind}",
-                Foreground = Brushes.White
+                Text = error is null
+                    ? $"{request.ModuleId} · {request.Kind}"
+                    : $"Flyout error\n{error}",
+                Foreground = Brushes.White,
+                TextWrapping = TextWrapping.Wrap
             }
         };
-    }
 
     private static double FlyoutScaleFromPayload(IReadOnlyDictionary<string, string>? payload)
     {
@@ -257,655 +632,5 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         return Math.Clamp(pct, 50, 150) / 100.0;
     }
 
-    private static bool BakedFrostFromPayload(IReadOnlyDictionary<string, string>? payload)
-    {
-        if (payload is null || !payload.TryGetValue("bakedFrost", out var raw) || string.IsNullOrWhiteSpace(raw))
-            return false;
-        return raw is not ("0" or "false" or "False" or "off" or "Off");
-    }
-}
-
-internal sealed class FlyoutWindow : Window
-{
-    private FlyoutRequest _request;
-    private readonly HostServices _services;
-    private readonly TesseraFlyoutMaterial _material;
-    private DispatcherTimer? _dismiss;
-    private DispatcherTimer? _live;
-    private bool _hover;
-    private Size _lastSize;
-    private bool _clientSizeLocked;
-
-    public FlyoutWindow(FlyoutRequest request, Control content, HostServices services)
-    {
-        _request = request;
-        _services = services;
-        _material = TesseraFlyoutMaterialFactory.FromPayload(request.Payload);
-        TesseraPalette.ApplyMaterial(_material);
-        Title = $"MosaicShell - {request.ModuleId}";
-        SizeToContent = SizeToContent.WidthAndHeight;
-        CanResize = false;
-        SystemDecorations = SystemDecorations.None;
-        Topmost = true;
-        ShowInTaskbar = false;
-        ShowActivated = false;
-        Focusable = true;
-        IsHitTestVisible = true;
-        TransparencyLevelHint = new[] { WindowTransparencyLevel.Transparent };
-        Background = Brushes.Transparent;
-        Content = content;
-        Opacity = 1;
-        PointerEntered += (_, _) => { _hover = true; };
-        PointerExited += (_, _) => { _hover = false; };
-        PointerWheelChanged += OnWheel;
-        Opened += (_, _) =>
-        {
-            Relayout();
-            StartLivePump();
-        };
-        LayoutUpdated += OnLayoutUpdated;
-        Closed += (_, _) => StopLivePump();
-        ResetDismissTimer();
-    }
-
-    private void StartLivePump()
-    {
-        if (!string.Equals(_request.ModuleId, "Tessera", StringComparison.OrdinalIgnoreCase))
-            return;
-        _live?.Stop();
-        _live = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
-        double lastVol = double.NaN;
-        bool lastMute = false;
-        _live.Tick += (_, _) =>
-        {
-            try
-            {
-                _services.Media.PumpTimeline();
-
-                var vol = _services.Audio.MasterVolume;
-                var mute = _services.Audio.IsMuted;
-                var volPct = (int)Math.Round(Math.Clamp(vol, 0, 1) * 100);
-                var lastPct = double.IsNaN(lastVol) ? int.MinValue : (int)Math.Round(Math.Clamp(lastVol, 0, 1) * 100);
-                if (double.IsNaN(lastVol) || volPct != lastPct || mute != lastMute)
-                {
-                    lastVol = vol;
-                    lastMute = mute;
-                    ResetDismissTimer();
-                }
-
-                if (Content is TesseraLiveHost host)
-                {
-                    host.ApplyLive(_services, _request);
-                    return;
-                }
-
-                var soft = new FlyoutRequest(
-                    _request.ModuleId,
-                    _request.Kind,
-                    _request.StyleId,
-                    _request.Anchor,
-                    _request.AutoDismissMs,
-                    BuildLivePayload(),
-                    _request.MonitorIndex,
-                    _request.XPad,
-                    _request.YPad,
-                    _request.Ani,
-                    _request.AniDir);
-                TryApplyLive(soft, _services, resetDismiss: false);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[Tessera live] {ex.Message}");
-            }
-        };
-        _live.Start();
-    }
-
-    private void StopLivePump()
-    {
-        _live?.Stop();
-        _live = null;
-    }
-
-    private Dictionary<string, string> BuildLivePayload()
-    {
-        var media = _services.Media.Current;
-        return new Dictionary<string, string>
-        {
-            ["volume"] = _services.Audio.MasterVolume.ToString("0.###"),
-            ["muted"] = _services.Audio.IsMuted ? "1" : "0",
-            ["brightness"] = _services.Brightness.IsSupported
-                ? _services.Brightness.Brightness.ToString("0.###")
-                : "0.5",
-            ["mediaTitle"] = media?.Title ?? "",
-            ["mediaArtist"] = media?.Artist ?? "",
-            ["mediaPlaying"] = media?.IsPlaying == true ? "1" : "0",
-            ["showMediaStrip"] = _request.Payload?.GetValueOrDefault("showMediaStrip") ?? "1",
-        };
-    }
-
-    public void ApplyLiveOnly(FlyoutRequest request, HostServices services)
-    {
-        _request = request;
-        if (Content is TesseraLiveHost host)
-            host.ApplyLive(services, request);
-        else
-            TryApplyLive(request, services, resetDismiss: false);
-    }
-
-    public bool TryApplyLive(FlyoutRequest request, HostServices services, bool resetDismiss = true)
-    {
-        if (!request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase)) return false;
-        if (!string.Equals(_request.Kind, request.Kind, StringComparison.OrdinalIgnoreCase)) return false;
-        if (!string.Equals(_request.StyleId ?? "", request.StyleId ?? "", StringComparison.OrdinalIgnoreCase)) return false;
-        if (Content is not Visual root) return false;
-
-        var vm = TesseraFlyoutViewModel.FromRequest(services, request);
-        var track = FindNamed<TesseraTrack>(root, "TesseraTrack");
-        var percent = FindNamed<TextBlock>(root, "TesseraPercent");
-        var glyph = FindNamed<Control>(root, "TesseraGlyph");
-        var mediaRoot = FindNamed<Control>(root, "TesseraMediaRoot");
-
-        if (vm.ShowMediaStrip != (mediaRoot is not null)
-            && (request.Kind.Equals("vol", StringComparison.OrdinalIgnoreCase)
-                || request.Kind.Equals("bright", StringComparison.OrdinalIgnoreCase)))
-            return false;
-
-        if (Content is TesseraLiveHost liveHost)
-        {
-            liveHost.ApplyLive(services, request);
-            _request = request;
-            if (resetDismiss) ResetDismissTimer();
-            return true;
-        }
-
-        if (track is null && percent is null && mediaRoot is null) return false;
-
-        var value = request.Kind.Equals("bright", StringComparison.OrdinalIgnoreCase)
-            ? vm.Brightness
-            : services.Audio.MasterVolume;
-        var muted = services.Audio.IsMuted;
-        if (track is null || !track.IsUserAdjusting)
-            track?.SetValueSilent(value);
-        if (percent is not null)
-        {
-            var shown = track is { IsUserAdjusting: true } ? track.Value : value;
-            percent.Text = request.Kind.Equals("bright", StringComparison.OrdinalIgnoreCase)
-                ? $"{VolumePercent.ToPercent(shown)}"
-                : muted ? "Mute" : $"{VolumePercent.ToPercent(shown)}";
-        }
-        if (glyph is not null && !request.Kind.Equals("bright", StringComparison.OrdinalIgnoreCase))
-        {
-            var g = track is { IsUserAdjusting: true } ? track.Value : value;
-            var kind = muted || g <= 0.001
-                ? Material.Icons.MaterialIconKind.VolumeOff
-                : g < 0.20 ? Material.Icons.MaterialIconKind.VolumeLow
-                : g < 0.50 ? Material.Icons.MaterialIconKind.VolumeMedium
-                : Material.Icons.MaterialIconKind.VolumeHigh;
-            if (glyph is Material.Icons.Avalonia.MaterialIcon mi)
-                mi.Kind = kind;
-        }
-
-        ApplyMediaLive(root, vm, services.Media.Current);
-
-        _request = request;
-        if (resetDismiss) ResetDismissTimer();
-        return true;
-    }
-
-    private static void ApplyMediaLive(Visual root, TesseraFlyoutViewModel vm, MediaSessionInfo? media)
-    {
-        var titleText = media?.Title ?? vm.MediaTitle;
-        var artistText = media?.Artist ?? vm.MediaArtist;
-        var playing = media?.IsPlaying ?? vm.IsPlaying;
-        var posSec = media?.PositionSeconds ?? vm.MediaPositionSeconds;
-        var durSec = media?.DurationSeconds ?? vm.MediaDurationSeconds;
-        var progress = durSec > 0.5 ? Math.Clamp(posSec / durSec, 0, 1) : 0;
-        var thumb = TesseraLiveHost.ResolveThumbnail(media?.ThumbnailPng ?? vm.ThumbnailPng, titleText);
-
-        if (FindNamed<TextBlock>(root, "TesseraMediaTitle") is { } title)
-            title.Text = string.IsNullOrWhiteSpace(titleText) ? " " : titleText;
-        if (FindNamed<TextBlock>(root, "TesseraMediaArtist") is { } artist)
-            artist.Text = string.IsNullOrWhiteSpace(artistText) ? " " : artistText;
-
-        if (FindNamed<Border>(root, "TesseraMediaArt") is { } art)
-        {
-            var fillHost = double.IsNaN(art.Width) || art.Width <= 1.0;
-            TesseraMediaPanel.ApplyArtToBorder(art, thumb, fillHost);
-        }
-
-        if (FindNamed<Border>(root, "TesseraMediaWash") is { } wash)
-            TesseraMediaPanel.ApplyArtToBorder(wash, thumb, fillHost: true);
-
-        if (FindNamed<Button>(root, "TesseraPlayPause") is { Content: Material.Icons.Avalonia.MaterialIcon playIcon })
-            playIcon.Kind = playing
-                ? Material.Icons.MaterialIconKind.Pause
-                : Material.Icons.MaterialIconKind.Play;
-
-        if (FindNamed<TesseraTrack>(root, "TesseraMediaScrub") is { } scrub)
-            scrub.SetValueSilent(progress);
-        if (FindNamed<TextBlock>(root, "TesseraMediaPos") is { } pos)
-            pos.Text = FormatMediaTime(posSec);
-        if (FindNamed<TextBlock>(root, "TesseraMediaDur") is { } dur)
-            dur.Text = FormatMediaTime(durSec);
-    }
-
-    private static string FormatMediaTime(double seconds)
-    {
-        if (seconds <= 0 || double.IsNaN(seconds)) return "0:00";
-        var t = TimeSpan.FromSeconds(seconds);
-        return t.TotalHours >= 1 ? t.ToString(@"h\:mm\:ss") : t.ToString(@"m\:ss");
-    }
-
-    private static T? FindNamed<T>(Visual root, string name) where T : class
-    {
-        if (root is Control { Name: { } n } && n == name && root is T direct)
-            return direct;
-        foreach (var child in root.GetVisualChildren())
-        {
-            if (child is Control c && c.Name == name && child is T match)
-                return match;
-            if (child is Visual nested)
-            {
-                var found = FindNamed<T>(nested, name);
-                if (found is not null) return found;
-            }
-        }
-        return null;
-    }
-
-    public void ApplyRequest(FlyoutRequest request, Control content)
-    {
-        _request = request;
-        Content = content;
-        _lastSize = default;
-        if (_material.ShouldLockClientSize)
-        {
-            _clientSizeLocked = false;
-            SizeToContent = SizeToContent.WidthAndHeight;
-            Width = double.NaN;
-            Height = double.NaN;
-        }
-        ResetDismissTimer();
-        Relayout();
-    }
-
-    private void OnLayoutUpdated(object? sender, EventArgs e)
-    {
-        var s = Bounds.Size;
-        if (s.Width < 2 || s.Height < 2) return;
-        if (Math.Abs(s.Width - _lastSize.Width) < 0.5 && Math.Abs(s.Height - _lastSize.Height) < 0.5)
-            return;
-        _lastSize = s;
-        RelayoutImmediate();
-    }
-
-    public void Relayout() =>
-        Dispatcher.UIThread.Post(RelayoutImmediate, DispatcherPriority.Loaded);
-
-    private void RelayoutImmediate()
-    {
-        try
-        {
-            InvalidateMeasure();
-            UpdateLayout();
-
-            var dipW = Math.Max(Bounds.Width, DesiredSize.Width);
-            var dipH = Math.Max(Bounds.Height, DesiredSize.Height);
-            if (dipW < 40 || dipH < 24) return;
-
-            if (_material.ShouldLockClientSize && !_clientSizeLocked)
-            {
-                Width = dipW;
-                Height = dipH;
-                SizeToContent = SizeToContent.Manual;
-                _clientSizeLocked = true;
-            }
-
-            var screens = Screens?.All?.ToList() ?? [];
-            var screen = ResolveScreen(screens, _request.MonitorIndex) ?? Screens?.Primary;
-            var area = screen?.WorkingArea ?? new PixelRect(0, 0, 1920, 1080);
-            var scale = screen?.Scaling > 0.1 ? screen.Scaling : (Screens?.Primary?.Scaling ?? 1.0);
-            var w = Math.Max(1, (int)Math.Ceiling(dipW * scale));
-            var h = Math.Max(1, (int)Math.Ceiling(dipH * scale));
-
-            var xPad = Math.Clamp(_request.XPad, 0, 200);
-            var yPad = Math.Clamp(_request.YPad, 0, 200);
-            var (x, y) = FlyoutAnchor.Compute(
-                area.X, area.Y, area.Width, area.Height,
-                w, h,
-                _request.Anchor ?? "TL",
-                xPad,
-                yPad);
-            Position = new PixelPoint(x, y);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[Tessera position] {ex.Message}");
-        }
-    }
-
-    private static Screen? ResolveScreen(IReadOnlyList<Screen> screens, int monitorIndexOneBased)
-    {
-        if (screens.Count == 0) return null;
-        if (monitorIndexOneBased <= 1)
-            return screens.FirstOrDefault(s => s.IsPrimary) ?? screens[0];
-
-        var idx = Math.Clamp(monitorIndexOneBased - 1, 0, screens.Count - 1);
-        return screens[idx];
-    }
-
-    public void PlayShowAnimation()
-    {
-        try
-        {
-            Relayout();
-            if (_request.Ani <= 0)
-            {
-                Opacity = 0;
-                AnimateDouble(this, OpacityProperty, 0, 1, 160);
-                return;
-            }
-
-            var dir = (_request.AniDir ?? "Left").ToLowerInvariant();
-            var dist = _request.Ani >= 2 ? 28.0 : 14.0;
-            double dx = 0, dy = 0;
-            switch (dir)
-            {
-                case "right": dx = dist; break;
-                case "top": dy = -dist; break;
-                case "bottom": dy = dist; break;
-                default: dx = -dist; break;
-            }
-
-            var tt = new TranslateTransform(dx, dy);
-            RenderTransform = tt;
-            Opacity = 0;
-            AnimateDouble(this, OpacityProperty, 0, 1, 180);
-            AnimateDouble(tt, TranslateTransform.XProperty, dx, 0, 200);
-            AnimateDouble(tt, TranslateTransform.YProperty, dy, 0, 200);
-        }
-        catch
-        {
-            Opacity = 1;
-            RenderTransform = null;
-        }
-    }
-
-    private void ResetDismissTimer()
-    {
-        _dismiss?.Stop();
-        if (_request.AutoDismissMs <= 0) return;
-        _dismiss = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(_request.AutoDismissMs) };
-        _dismiss.Tick += (_, _) =>
-        {
-            if (_hover) return;
-            _dismiss.Stop();
-            try { Close(); } catch { /* ignore */ }
-        };
-        _dismiss.Start();
-    }
-
-    private void OnWheel(object? sender, PointerWheelEventArgs e)
-    {
-        if (!_request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase)) return;
-        ResetDismissTimer();
-    }
-
-    private static void AnimateDouble(Animatable target, AvaloniaProperty property, double from, double to, int ms)
-    {
-        var animation = new Animation
-        {
-            Duration = TimeSpan.FromMilliseconds(ms),
-            FillMode = FillMode.Forward,
-            Children =
-            {
-                new KeyFrame { Cue = new Cue(0.0), Setters = { new Setter(property, from) } },
-                new KeyFrame { Cue = new Cue(1.0), Setters = { new Setter(property, to) } }
-            }
-        };
-        _ = animation.RunAsync(target);
-    }
-}
-
-internal sealed class FocusDimWindow : Window
-{
-    private int _monitorIndex;
-
-    private const int GwlExStyle = -20;
-
-    public FocusDimWindow(int monitorIndexOneBased)
-    {
-        _monitorIndex = monitorIndexOneBased;
-        Title = "MosaicShell - Focus dim";
-        SystemDecorations = SystemDecorations.None;
-        CanResize = false;
-        Topmost = true;
-        ShowInTaskbar = false;
-        ShowActivated = false;
-        Focusable = false;
-        IsHitTestVisible = false;
-        TransparencyLevelHint = new[] { WindowTransparencyLevel.Transparent };
-        Background = Brushes.Transparent;
-        Opacity = 0;
-        Content = new Border
-        {
-            IsHitTestVisible = false,
-            Background = new SolidColorBrush(Color.FromArgb(68, 17, 17, 27))
-        };
-        Opened += (_, _) =>
-        {
-            PlaceOnMonitor(_monitorIndex);
-            ApplyWin32ClickThrough();
-        };
-    }
-
-    public void PlaceOnMonitor(int monitorIndexOneBased)
-    {
-        _monitorIndex = monitorIndexOneBased;
-        try
-        {
-            var screens = Screens?.All?.ToList() ?? [];
-            var screen = ResolveScreen(screens, _monitorIndex) ?? Screens?.Primary;
-            if (screen is null) return;
-
-            var bounds = screen.Bounds;
-            var scale = screen.Scaling > 0.1 ? screen.Scaling : 1.0;
-            Position = new PixelPoint(bounds.X, bounds.Y);
-            Width = Math.Max(1, bounds.Width / scale);
-            Height = Math.Max(1, bounds.Height / scale);
-            ApplyWin32ClickThrough();
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[FocusDim] {ex.Message}");
-        }
-    }
-
-    public void FadeIn()
-    {
-        Opacity = 0;
-        AnimateOpacity(0, 1, 180);
-    }
-
-    public void InstantClose()
-    {
-        try
-        {
-            Opacity = 0;
-            Close();
-        }
-        catch { /* ignore */ }
-    }
-
-    private void ApplyWin32ClickThrough()
-    {
-        try
-        {
-            var handle = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
-            if (handle == IntPtr.Zero) return;
-
-            var current = GetWindowLongPtr(handle, GwlExStyle);
-            var next = current | 0x80800A0; // WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE
-            if (next != current)
-                SetWindowLongPtr(handle, GwlExStyle, next);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[FocusDim click-through] {ex.Message}");
-        }
-    }
-
-    private void AnimateOpacity(double from, double to, int ms)
-    {
-        var animation = new Animation
-        {
-            Duration = TimeSpan.FromMilliseconds(ms),
-            FillMode = FillMode.Forward,
-            Children =
-            {
-                new KeyFrame { Cue = new Cue(0.0), Setters = { new Setter(OpacityProperty, from) } },
-                new KeyFrame { Cue = new Cue(1.0), Setters = { new Setter(OpacityProperty, to) } }
-            }
-        };
-        _ = animation.RunAsync(this);
-    }
-
-    private static Screen? ResolveScreen(IReadOnlyList<Screen> screens, int monitorIndexOneBased)
-    {
-        if (screens.Count == 0) return null;
-        if (monitorIndexOneBased <= 1)
-            return screens.FirstOrDefault(s => s.IsPrimary) ?? screens[0];
-
-        var idx = Math.Clamp(monitorIndexOneBased - 1, 0, screens.Count - 1);
-        return screens[idx];
-    }
-
-    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW", SetLastError = true)]
-    private static extern nint GetWindowLongPtr(nint hWnd, int nIndex);
-
-    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
-    private static extern nint SetWindowLongPtr(nint hWnd, int nIndex, nint dwNewLong);
-}
-
-internal sealed class TesseraOutsideClickWatcher : IDisposable
-{
-    private delegate nint LowLevelMouseProc(int nCode, nint wParam, nint lParam);
-
-    // Fields are written by Win32 via SetWindowsHookEx / Marshal.PtrToStructure.
-#pragma warning disable CS0649
-    private struct Point
-    {
-        public int x;
-        public int y;
-    }
-
-    private struct MsllHookStruct
-    {
-        public Point pt;
-        public uint mouseData;
-        public uint flags;
-        public uint time;
-        public nint dwExtraInfo;
-    }
-#pragma warning restore CS0649
-
-    private readonly FlyoutWindow _flyout;
-    private readonly Action _dismiss;
-    private nint _hook;
-    private LowLevelMouseProc? _proc;
-
-    private const int WhMouseLl = 14;
-    private const int WmLButtonDown = 0x0201;
-    private const int WmRButtonDown = 0x0204;
-    private const int WmMButtonDown = 0x0207;
-    private const int WmNcLButtonDown = 0x00A1;
-
-    public bool IsActive => _hook != IntPtr.Zero;
-
-    public TesseraOutsideClickWatcher(FlyoutWindow flyout, Action dismiss)
-    {
-        _flyout = flyout;
-        _dismiss = dismiss;
-    }
-
-    public void Start()
-    {
-        if (IsActive) return;
-        _proc = HookCallback;
-        using var process = System.Diagnostics.Process.GetCurrentProcess();
-        using var module = process.MainModule;
-        var hMod = module is null ? IntPtr.Zero : GetModuleHandle(module.ModuleName);
-        _hook = SetWindowsHookEx(WhMouseLl, _proc, hMod, 0);
-    }
-
-    public void Dispose()
-    {
-        if (_hook != IntPtr.Zero)
-        {
-            UnhookWindowsHookEx(_hook);
-            _hook = IntPtr.Zero;
-        }
-        _proc = null;
-    }
-
-    private nint HookCallback(int nCode, nint wParam, nint lParam)
-    {
-        if (nCode >= 0)
-        {
-            var msg = (int)wParam;
-            if (msg is WmNcLButtonDown or WmLButtonDown or WmRButtonDown or WmMButtonDown)
-            {
-                try
-                {
-                    var info = Marshal.PtrToStructure<MsllHookStruct>(lParam);
-                    if (!PointHitsFlyout(info.pt.x, info.pt.y))
-                        Dispatcher.UIThread.Post(_dismiss, DispatcherPriority.Send);
-                }
-                catch { /* ignore */ }
-            }
-        }
-        return CallNextHookEx(_hook, nCode, wParam, lParam);
-    }
-
-    private bool PointHitsFlyout(int screenX, int screenY)
-    {
-        try
-        {
-            if (!_flyout.IsVisible) return false;
-
-            var position = _flyout.Position;
-            var bounds = _flyout.Bounds;
-            if (bounds.Width < 2 || bounds.Height < 2) return false;
-
-            var screens = _flyout.Screens?.All?.ToList() ?? [];
-            var screen = screens.FirstOrDefault(s =>
-            {
-                var b = s.Bounds;
-                return screenX >= b.X && screenX < b.X + b.Width
-                       && screenY >= b.Y && screenY < b.Y + b.Height;
-            }) ?? _flyout.Screens?.Primary;
-            var scale = screen?.Scaling > 0.1 ? screen.Scaling : 1.0;
-            var w = (int)Math.Ceiling(bounds.Width * scale);
-            var h = (int)Math.Ceiling(bounds.Height * scale);
-            return screenX >= position.X && screenX < position.X + w
-                   && screenY >= position.Y && screenY < position.Y + h;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern nint SetWindowsHookEx(int idHook, LowLevelMouseProc lpfn, nint hMod, uint dwThreadId);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool UnhookWindowsHookEx(nint hhk);
-
-    [DllImport("user32.dll")]
-    private static extern nint CallNextHookEx(nint hhk, int nCode, nint wParam, nint lParam);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-    private static extern nint GetModuleHandle(string lpModuleName);
+    private static void Log(string message) => TesseraFlyoutDiagnostics.Log(message);
 }

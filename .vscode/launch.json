@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "MosaicShell.Host",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/host/MosaicShell.Host/MosaicShell.Host.csproj"
+        },
+        {
+            "name": "MosaicShell.Host (exe)",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/host/MosaicShell.Host/bin/Debug/net10.0-windows10.0.19041.0/MosaicShell.Host.exe",
+            "cwd": "${workspaceFolder}/host/MosaicShell.Host",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        }
+    ]
+}

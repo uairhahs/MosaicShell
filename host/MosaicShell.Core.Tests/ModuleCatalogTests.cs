@@ -63,8 +63,31 @@ public class ModuleCatalogTests : IDisposable
     }
 
     [Fact]
-    public void TryGet_unknown_id_returns_false()
+    public void TryGet_unknown_id_returns_false_when_not_installed()
     {
         ModuleCatalog.TryGet("NotAModule", out _).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Discover_installed_manifest_appears_in_All()
+    {
+        var id = "ExtSample";
+        var dir = Path.Combine(AppPaths.ModulesDirectory, id);
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(Path.Combine(dir, "module.manifest.json"), """
+            {
+              "Id": "ExtSample",
+              "DisplayName": "External Sample",
+              "Description": "Discovered from disk.",
+              "Kind": "Widget",
+              "Styles": [ "DEFAULT" ]
+            }
+            """);
+
+        ModuleCatalog.TryGet(id, out var info).Should().BeTrue();
+        info!.DisplayName.Should().Be("External Sample");
+        info.Kind.Should().Be(ModuleKind.Widget);
+        ModuleCatalog.All.Select(m => m.Id).Should().Contain(id);
+        ModuleCatalog.Widgets.Select(m => m.Id).Should().Contain(id);
     }
 }

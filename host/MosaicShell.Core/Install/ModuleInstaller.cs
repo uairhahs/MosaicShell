@@ -1,6 +1,5 @@
 using System.IO.Compression;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using MosaicShell.Core.Runtime;
 
 namespace MosaicShell.Core.Install;
@@ -12,94 +11,111 @@ public sealed class ModuleInstallProgress
 }
 
 /// <summary>
-/// Installs modules from a local source tree, a local .zip/.rmskin package, or a GitHub release asset.
-/// Never executes downloaded scripts. Local tree installs are always native stubs.
+/// Installs modules from repo <c>Tiles/{Id}/</c> stubs, a packaged folder, or a zip
+/// containing <c>module.manifest.json</c> (+ optional DLLs).
 /// </summary>
 public sealed class ModuleInstaller
 {
-    private readonly ReleaseDownloader _downloader;
-    private readonly HttpClient _http;
-
-    public ModuleInstaller(HttpClient? http = null)
-    {
-        _http = http ?? new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
-        if (!_http.DefaultRequestHeaders.UserAgent.Any())
-            _http.DefaultRequestHeaders.UserAgent.ParseAdd("MosaicShell-Mosaicist/0.1");
-        _downloader = new ReleaseDownloader(_http);
-    }
-
-    public async Task InstallAsync(
+    public Task InstallAsync(
         string moduleId,
         IProgress<ModuleInstallProgress>? progress = null,
         CancellationToken ct = default,
         string? sourceTreeRoot = null)
     {
+        ct.ThrowIfCancellationRequested();
         AppPaths.EnsureLayout();
 
         if (TryInstallFromSourceTree(moduleId, progress, sourceTreeRoot))
-            return;
+            return Task.CompletedTask;
 
-        progress?.Report(new ModuleInstallProgress { Stage = "resolve", Detail = "Looking up GitHub release…" });
-        var assetUrl = await ResolveLatestAssetUrlAsync(moduleId, ct);
-        progress?.Report(new ModuleInstallProgress { Stage = "download", Detail = assetUrl });
-
-        var downloaded = await _downloader.DownloadAsync(
-            new ReleaseAsset
-            {
-                Url = assetUrl,
-                FileName = $"{moduleId}-latest.rmskin"
-            },
-            AppPaths.CacheDirectory,
-            ct);
-
-        await InstallPackageAsync(downloaded, moduleId, progress, ct);
+        throw new InvalidOperationException(
+            $"No native install stub for '{moduleId}'. Expected Tiles/{moduleId}/module.native.json " +
+            "in the MosaicShell repo, or use InstallFromPackageAsync for a folder/zip package.");
     }
 
-    public async Task InstallPackageAsync(
+    /// <summary>
+    /// Install from a directory or .zip that contains <c>module.manifest.json</c>
+    /// (and optionally module.dll / capability.dll / tile.dll).
+    /// </summary>
+    public Task InstallFromPackageAsync(
         string packagePath,
-        string moduleId,
         IProgress<ModuleInstallProgress>? progress = null,
         CancellationToken ct = default)
     {
-        progress?.Report(new ModuleInstallProgress { Stage = "extract", Detail = packagePath });
-        var work = Path.Combine(AppPaths.CacheDirectory, $"extract-{moduleId}-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(work);
+        ct.ThrowIfCancellationRequested();
+        AppPaths.EnsureLayout();
+
+        if (string.IsNullOrWhiteSpace(packagePath))
+            throw new ArgumentException("Package path is required.", nameof(packagePath));
+
+        var full = Path.GetFullPath(packagePath);
+        progress?.Report(new ModuleInstallProgress { Stage = "package", Detail = full });
+
+        string staging;
+        var cleanupStaging = false;
+        if (File.Exists(full) && full.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            staging = Path.Combine(Path.GetTempPath(), "mosaic-pkg-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(staging);
+            ZipFile.ExtractToDirectory(full, staging);
+            cleanupStaging = true;
+        }
+        else if (Directory.Exists(full))
+        {
+            staging = full;
+        }
+        else
+        {
+            throw new FileNotFoundException("Package folder or zip not found.", full);
+        }
 
         try
         {
-            // .rmskin is already a zip archive, just extract in place (no temp copy; avoids file locks).
-            var unpack = Path.Combine(work, "unpacked");
-            await Task.Run(() => ZipFile.ExtractToDirectory(packagePath, unpack), ct);
+            var manifestPath = FindManifest(staging)
+                ?? throw new InvalidOperationException(
+                    "Package must contain module.manifest.json (at root or one level down).");
 
-            var skinSource = FindSkinRoot(unpack, moduleId)
-                             ?? throw new InvalidOperationException(
-                                 $"Could not find skin folder for '{moduleId}' inside package.");
+            var sourceDir = Path.GetDirectoryName(manifestPath)!;
+            var manifest = JsonSerializer.Deserialize<ModuleManifest>(File.ReadAllText(manifestPath))
+                           ?? throw new InvalidOperationException("Could not parse module.manifest.json.");
+            var moduleId = string.IsNullOrWhiteSpace(manifest.Id)
+                ? Path.GetFileName(sourceDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+                : manifest.Id;
+            if (string.IsNullOrWhiteSpace(moduleId))
+                throw new InvalidOperationException("module.manifest.json must set Id.");
 
             var dest = Path.Combine(AppPaths.ModulesDirectory, moduleId);
             if (Directory.Exists(dest))
                 Directory.Delete(dest, recursive: true);
+            CopyDirectory(sourceDir, dest);
 
-            progress?.Report(new ModuleInstallProgress { Stage = "copy", Detail = dest });
-            CopyDirectory(skinSource, dest);
+            // Ensure destination has a manifest with Id set.
+            manifest.Id = moduleId;
+            File.WriteAllText(
+                Path.Combine(dest, "module.manifest.json"),
+                JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true }));
 
             var marker = new
             {
                 Id = moduleId,
                 InstalledUtc = DateTime.UtcNow,
-                Source = packagePath,
-                Runtime = "avalonia"
+                Source = full,
+                Runtime = "avalonia",
+                Package = true
             };
-            await File.WriteAllTextAsync(
+            File.WriteAllText(
                 Path.Combine(dest, "module.json"),
-                JsonSerializer.Serialize(marker, new JsonSerializerOptions { WriteIndented = true }),
-                ct);
-            ModuleManifest.WriteDefault(moduleId);
+                JsonSerializer.Serialize(marker, new JsonSerializerOptions { WriteIndented = true }));
 
             progress?.Report(new ModuleInstallProgress { Stage = "done", Detail = dest });
+            return Task.CompletedTask;
         }
         finally
         {
-            try { Directory.Delete(work, recursive: true); } catch { /* ignore */ }
+            if (cleanupStaging)
+            {
+                try { Directory.Delete(staging, recursive: true); } catch { /* ignore */ }
+            }
         }
     }
 
@@ -118,7 +134,7 @@ public sealed class ModuleInstaller
         };
 
         var source = candidates.FirstOrDefault(Directory.Exists);
-        if (source is null) return false;
+        if (source is null || !IsNativeModuleStub(source)) return false;
 
         progress?.Report(new ModuleInstallProgress { Stage = "local", Detail = source });
         var dest = Path.Combine(AppPaths.ModulesDirectory, moduleId);
@@ -146,82 +162,26 @@ public sealed class ModuleInstaller
         return true;
     }
 
-    private async Task<string> ResolveLatestAssetUrlAsync(string moduleId, CancellationToken ct)
-    {
-        var orgs = new[] { "uairhahs", "MosaicShell" };
-        Exception? last = null;
-        foreach (var org in orgs)
-        {
-            try
-            {
-                var url = $"https://api.github.com/repos/{org}/{moduleId}/releases/latest";
-                using var req = new HttpRequestMessage(HttpMethod.Get, url);
-                req.Headers.Accept.ParseAdd("application/vnd.github+json");
-                using var res = await _http.SendAsync(req, ct);
-                if (!res.IsSuccessStatusCode)
-                {
-                    last = new HttpRequestException($"{(int)res.StatusCode} from {url}");
-                    continue;
-                }
-
-                await using var stream = await res.Content.ReadAsStreamAsync(ct);
-                var release = await JsonSerializer.DeserializeAsync<GitHubRelease>(stream, cancellationToken: ct)
-                              ?? throw new InvalidOperationException("Empty release payload.");
-                var asset = release.Assets?.FirstOrDefault(a =>
-                                a.Name?.EndsWith(".rmskin", StringComparison.OrdinalIgnoreCase) == true)
-                            ?? release.Assets?.FirstOrDefault();
-                if (asset?.BrowserDownloadUrl is null)
-                    throw new InvalidOperationException($"No downloadable asset on {org}/{moduleId} latest release.");
-                return asset.BrowserDownloadUrl;
-            }
-            catch (Exception ex)
-            {
-                last = ex;
-            }
-        }
-
-        throw new InvalidOperationException(
-            $"Could not resolve a release for '{moduleId}'. Last error: {last?.Message}");
-    }
-
-    private static string? FindSkinRoot(string unpackRoot, string moduleId)
-    {
-        var skins = Path.Combine(unpackRoot, "Skins");
-        if (Directory.Exists(skins))
-        {
-            var direct = Path.Combine(skins, moduleId);
-            if (Directory.Exists(direct)) return direct;
-
-            var tiles = Path.Combine(skins, "Tiles", moduleId);
-            if (Directory.Exists(tiles)) return tiles;
-
-            foreach (var dir in Directory.GetDirectories(skins))
-            {
-                if (Path.GetFileName(dir).Equals(moduleId, StringComparison.OrdinalIgnoreCase))
-                    return dir;
-                var nested = Path.Combine(dir, moduleId);
-                if (Directory.Exists(nested)) return nested;
-            }
-        }
-
-        var named = Directory.GetDirectories(unpackRoot, moduleId, SearchOption.AllDirectories)
-            .FirstOrDefault(LooksLikeModuleRoot);
-        if (named is not null) return named;
-
-        var directRoot = Path.Combine(unpackRoot, moduleId);
-        return Directory.Exists(directRoot) ? directRoot : null;
-    }
-
     /// <summary>Native modules ship a stub folder with module.native.json (or native.marker).</summary>
     public static bool IsNativeModuleStub(string dir) =>
         File.Exists(Path.Combine(dir, "module.native.json"))
         || File.Exists(Path.Combine(dir, "native.marker"));
 
-    private static bool LooksLikeModuleRoot(string dir) =>
-        IsNativeModuleStub(dir)
-        || File.Exists(Path.Combine(dir, "Main.ini"))
-        || Directory.Exists(Path.Combine(dir, "Main"))
-        || Directory.GetFiles(dir, "*.ini", SearchOption.AllDirectories).Length > 0;
+    private static string? FindManifest(string root)
+    {
+        var direct = Path.Combine(root, "module.manifest.json");
+        if (File.Exists(direct))
+            return direct;
+
+        foreach (var dir in Directory.EnumerateDirectories(root))
+        {
+            var nested = Path.Combine(dir, "module.manifest.json");
+            if (File.Exists(nested))
+                return nested;
+        }
+
+        return null;
+    }
 
     private static string? FindRepoRoot()
     {
@@ -231,7 +191,6 @@ public sealed class ModuleInstaller
             if (Directory.Exists(Path.Combine(dir.FullName, "Tiles"))
                 && File.Exists(Path.Combine(dir.FullName, "host", "MosaicShell.sln")))
                 return dir.FullName;
-            // host/MosaicShell.Host/bin/... → walk to repo
             if (File.Exists(Path.Combine(dir.FullName, "MosaicShell.sln"))
                 && Directory.Exists(Path.Combine(dir.Parent?.FullName ?? "", "Tiles")))
                 return dir.Parent!.FullName;
@@ -250,20 +209,5 @@ public sealed class ModuleInstaller
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             File.Copy(file, target, overwrite: true);
         }
-    }
-
-    private sealed class GitHubRelease
-    {
-        [JsonPropertyName("assets")]
-        public List<GitHubAsset>? Assets { get; set; }
-    }
-
-    private sealed class GitHubAsset
-    {
-        [JsonPropertyName("name")]
-        public string? Name { get; set; }
-
-        [JsonPropertyName("browser_download_url")]
-        public string? BrowserDownloadUrl { get; set; }
     }
 }

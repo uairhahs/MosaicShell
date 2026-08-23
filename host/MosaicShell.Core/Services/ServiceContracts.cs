@@ -30,7 +30,9 @@ public sealed record MediaSessionInfo(
     bool IsPlaying,
     byte[]? ThumbnailPng = null,
     double PositionSeconds = 0,
-    double DurationSeconds = 0);
+    double DurationSeconds = 0,
+    /// <summary>WNP like rating when known (0 unrated, 1 disliked, 5 liked); null for native SMTC-only.</summary>
+    int? LikeRating = null);
 
 public interface IMediaSessionService : IDisposable
 {
@@ -50,8 +52,10 @@ public interface IMediaSessionService : IDisposable
     Task SeekAsync(double positionSeconds);
     Task ToggleShuffleAsync();
     Task ToggleRepeatAsync();
-    /// <summary>Like/favorite when the player supports it (WNP rating / SMTC best-effort).</summary>
-    Task ToggleLikeAsync();
+    /// <summary>Like or remove like (never thumbs-down). <paramref name="wantLiked"/> comes from UI heart state.</summary>
+    Task ToggleLikeAsync(bool wantLiked);
+    /// <summary>Dislike or clear dislike (YouTube Music / like-dislike players only).</summary>
+    Task ToggleDislikeAsync(bool wantDisliked);
 }
 
 public sealed record HotkeyBinding(string Id, string Gesture);

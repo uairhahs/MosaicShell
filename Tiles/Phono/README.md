@@ -20,4 +20,4 @@ dotnet run --project MosaicShell.Host
 
 In Host: Library → Phono → Start.
 
-Promised Rainmeter-era behavior: [`docs/legacy/phono.md`](../../docs/legacy/phono.md).
+Promised Rainmeter-era behavior: [`.cursor/docs/legacy/phono.md`](../../.cursor/docs/legacy/phono.md).

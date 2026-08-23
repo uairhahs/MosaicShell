@@ -18,4 +18,4 @@ dotnet run --project MosaicShell.Host
 
 In Host: Library → Inlay → Arm, then press the configured hotkey.
 
-Promised Rainmeter-era behavior: [`docs/legacy/inlay.md`](../../docs/legacy/inlay.md).
+Promised Rainmeter-era behavior: [`.cursor/docs/legacy/inlay.md`](../../.cursor/docs/legacy/inlay.md).

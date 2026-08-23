@@ -1,57 +1,69 @@
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.Platform;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
 
 namespace MosaicShell.Core.Capabilities.BuiltIn;
 
+/// <summary>
+/// Tessera OSD replacement. Platform (<see cref="CapabilityFlyoutSession"/>,
+/// <see cref="MediaSessionPlatform"/>) owns flyout routing and media signals;
+/// this module builds requests and wires Tessera-specific hooks/settings.
+/// </summary>
 public sealed class TesseraCapability : IModuleCapability
 {
-    private readonly HostServices _services;
-    private readonly ICapabilityUiBridge _ui;
+    private readonly ICapabilityContext _ctx;
+    private readonly TesseraFlyoutRequestBuilder _requests = new();
     private TesseraSettings _settings = new();
-    private readonly object _gate = new();
-    private DateTimeOffset _lastShowUtc = DateTimeOffset.MinValue;
-    private string _lastKind = "";
+    private DateTime _settingsMtimeUtc = DateTime.MinValue;
     private LockKeyState? _lastLock;
+    private bool _presentingMedia;
+    private bool _mediaAcquired;
 
-    public TesseraCapability(HostServices services, ICapabilityUiBridge ui)
-    {
-        _services = services;
-        _ui = ui;
-    }
+    public TesseraCapability(ICapabilityContext context) => _ctx = context;
 
     public string ModuleId => "Tessera";
     public bool IsArmed { get; private set; }
 
+    private HostServices Services => _ctx.Services;
+    private CapabilityFlyoutSession Flyouts => _ctx.Flyouts;
+
     public Task ArmAsync(CancellationToken cancellationToken = default)
     {
         if (IsArmed) return Task.CompletedTask;
-        _settings = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
-        _services.Audio.Changed += OnVolume;
-        _services.Media.Changed += OnMedia;
-        _services.Media.ProgressChanged += OnMediaProgress;
-        _services.BrightnessChanges.Changed += OnBrightness;
-        _services.BrightnessChanges.Start();
-        _services.OsdSuppressor.Start();
-        _services.ShellFlyoutTriggers.Triggered += OnShellTrigger;
-        _services.ShellFlyoutTriggers.Start();
+        ReloadSettings();
+        Services.Audio.Changed += OnVolume;
+        Services.BrightnessChanges.Changed += OnBrightness;
+        Services.BrightnessChanges.Start();
+        Services.OsdSuppressor.Start();
+        Services.ShellFlyoutTriggers.Triggered += OnShellTrigger;
+        Services.ShellFlyoutTriggers.Start();
         if (_settings.UseLegacyVolumeHooks)
         {
-            _services.LegacyVolumeKeys.Pressed += OnLegacyKey;
-            _services.LegacyVolumeKeys.Start();
+            Services.LegacyVolumeKeys.Pressed += OnLegacyKey;
+            StartLegacyVolumeHook();
         }
         if (_settings.EnableLockFlyouts)
         {
-            _services.LockKeys.Changed += OnLock;
-            _services.LockKeys.Start();
+            Services.LockKeys.Changed += OnLock;
+            StartLockKeysHook();
         }
         if (_settings.EnableFlightFlyouts)
         {
-            _services.Airplane.Changed += OnFlight;
-            _services.Airplane.Start();
+            Services.Airplane.Changed += OnFlight;
+            Services.Airplane.Start();
         }
 
+        if (_settings.EnableMediaFlyouts || _settings.ShowMediaStripOnVolume)
+        {
+            _ctx.Media.Acquire();
+            _ctx.Media.Signal += OnMediaSignal;
+            _mediaAcquired = true;
+        }
+
+        Flyouts.SetPresentSettleHandler(OnMediaPresentSettle);
         IsArmed = true;
         return Task.CompletedTask;
     }
@@ -59,107 +71,124 @@ public sealed class TesseraCapability : IModuleCapability
     public Task DisarmAsync(CancellationToken cancellationToken = default)
     {
         if (!IsArmed) return Task.CompletedTask;
-        _services.Audio.Changed -= OnVolume;
-        _services.Media.Changed -= OnMedia;
-        _services.Media.ProgressChanged -= OnMediaProgress;
-        _services.BrightnessChanges.Changed -= OnBrightness;
-        _services.BrightnessChanges.Stop();
-        _services.OsdSuppressor.Stop();
-        _services.ShellFlyoutTriggers.Triggered -= OnShellTrigger;
-        _services.ShellFlyoutTriggers.Stop();
-        _services.LegacyVolumeKeys.Pressed -= OnLegacyKey;
-        _services.LegacyVolumeKeys.Stop();
-        _services.LockKeys.Changed -= OnLock;
-        _services.LockKeys.Stop();
-        _services.Airplane.Changed -= OnFlight;
-        _services.Airplane.Stop();
-        _ui.Flyouts.Hide(ModuleId);
+        Flyouts.SetPresentSettleHandler(null);
+        if (_mediaAcquired)
+        {
+            _ctx.Media.Signal -= OnMediaSignal;
+            _ctx.Media.Release();
+            _mediaAcquired = false;
+        }
+        Services.Audio.Changed -= OnVolume;
+        Services.BrightnessChanges.Changed -= OnBrightness;
+        Services.BrightnessChanges.Stop();
+        Services.OsdSuppressor.Stop();
+        Services.ShellFlyoutTriggers.Triggered -= OnShellTrigger;
+        Services.ShellFlyoutTriggers.Stop();
+        Services.LegacyVolumeKeys.Pressed -= OnLegacyKey;
+        StopLegacyVolumeHook();
+        Services.LockKeys.Changed -= OnLock;
+        StopLockKeysHook();
+        Services.Airplane.Changed -= OnFlight;
+        Services.Airplane.Stop();
+        Flyouts.Hide();
+        Flyouts.ClearMediaIdentity();
         IsArmed = false;
         return Task.CompletedTask;
     }
 
-    private void OnShellTrigger(object? s, ShellFlyoutKind kind)
-    {
-        switch (kind)
+    private void OnShellTrigger(object? s, ShellFlyoutKind kind) =>
+        _ctx.Ui.RunOnHostThread(() =>
         {
-            case ShellFlyoutKind.Volume:
-                ShowOrUpdate("vol");
-                break;
-            case ShellFlyoutKind.Brightness:
-                ShowOrUpdate("bright");
-                break;
-            case ShellFlyoutKind.Media:
-                if (_settings.EnableMediaFlyouts) ShowOrUpdate("media");
-                break;
-        }
-    }
+            EnsureSettingsFresh();
+            switch (kind)
+            {
+                case ShellFlyoutKind.Volume:
+                    RouteFlyout("vol", FlyoutSyncTrigger.Volume);
+                    break;
+                case ShellFlyoutKind.Brightness:
+                    RouteFlyout("bright", FlyoutSyncTrigger.Brightness);
+                    break;
+                case ShellFlyoutKind.Media:
+                    if (_settings.EnableMediaFlyouts)
+                        PresentMediaFlyout(pumpFirst: true, FlyoutSyncTrigger.ShellMedia);
+                    break;
+            }
+        });
 
-    private void OnVolume(object? s, EventArgs e) => ShowOrUpdate("vol");
-    private void OnBrightness(object? s, EventArgs e) => ShowOrUpdate("bright");
-    private void OnMedia(object? s, EventArgs e)
-    {
-        // Prefer refreshing an already-visible volume/brightness strip (art/title) in place.
-        // Only open a dedicated media flyout when nothing is showing (or media flyouts enabled).
-        string? refreshKind = null;
-        lock (_gate)
+    private void OnVolume(object? s, EventArgs e) =>
+        _ctx.Ui.RunOnHostThread(() => RouteFlyout("vol", FlyoutSyncTrigger.Volume));
+
+    private void OnBrightness(object? s, EventArgs e) =>
+        _ctx.Ui.RunOnHostThread(() => RouteFlyout("bright", FlyoutSyncTrigger.Brightness));
+
+    private void OnMediaSignal(MediaSessionSignal signal) =>
+        _ctx.Ui.RunOnHostThread(() =>
         {
-            if (_ui.Flyouts.IsVisible(ModuleId)
-                && (_lastKind.Equals("vol", StringComparison.OrdinalIgnoreCase)
-                    || _lastKind.Equals("bright", StringComparison.OrdinalIgnoreCase)
-                    || _lastKind.Equals("media", StringComparison.OrdinalIgnoreCase)))
-                refreshKind = _lastKind;
-        }
+            EnsureSettingsFresh();
+            if (signal.Kind == MediaSessionSignalKind.Progress)
+            {
+                if (!Flyouts.IsVisible) return;
+                if (Flyouts.OpenKind is not ("vol" or "bright" or "media")) return;
+                Flyouts.SoftRefresh(BuildRequest(Flyouts.OpenKind, null));
+                return;
+            }
 
-        if (refreshKind is not null)
-        {
-            SoftUpdateVisible(refreshKind);
-            return;
-        }
+            var current = signal.Current;
+            var visible = Flyouts.IsVisible;
+            var action = MediaFlyoutRouter.Resolve(
+                _settings.EnableMediaFlyouts,
+                visible,
+                Flyouts.OpenKind);
 
-        if (_settings.EnableMediaFlyouts) ShowOrUpdate("media");
-    }
+            if (action == MediaFlyoutAction.PresentMediaFlyout
+                && visible
+                && Flyouts.OpenKind.Equals("media", StringComparison.OrdinalIgnoreCase)
+                && !signal.IsTrackBoundary)
+            {
+                Flyouts.SoftRefresh(BuildRequest("media", null));
+                return;
+            }
 
-    /// <summary>Timeline ticks: update scrubber/time on an already-open flyout only.</summary>
-    private void OnMediaProgress(object? s, EventArgs e)
-    {
-        if (!_ui.Flyouts.IsVisible(ModuleId)) return;
-        string kind;
-        lock (_gate) kind = _lastKind;
-        if (kind is not ("vol" or "bright" or "media")) return;
-        SoftUpdateVisible(kind);
-    }
-
-    private void SoftUpdateVisible(string kind)
-    {
-        try
-        {
-            // Progress / art refresh - must not reset auto-dismiss
-            _ui.Flyouts.SoftRefresh(BuildRequest(kind, null));
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[TesseraCapability soft] {ex}");
-        }
-    }
+            switch (action)
+            {
+                case MediaFlyoutAction.SoftRefreshVisible:
+                    Flyouts.SoftRefresh(BuildRequest(Flyouts.OpenKind, null));
+                    break;
+                case MediaFlyoutAction.PresentMediaFlyout:
+                    if (!Flyouts.ShouldColdPresentMedia(
+                            FlyoutSyncTrigger.MediaSession,
+                            signal.IsTrackBoundary))
+                        break;
+                    PresentMediaFlyout(
+                        pumpFirst: false,
+                        FlyoutSyncTrigger.MediaSession,
+                        signal.IsTrackBoundary);
+                    break;
+            }
+        });
 
     private void OnLock(object? s, LockKeyState state)
     {
+        EnsureSettingsFresh();
         if (!_settings.EnableLockFlyouts) return;
         _lastLock = state;
-        ShowOrUpdate("locks", new Dictionary<string, string>
+        var payload = new Dictionary<string, string>
         {
             ["lock"] = state.Key.ToString(),
             ["on"] = state.IsOn ? "1" : "0"
-        });
+        };
+        _ctx.Ui.RunOnHostThread(() => RouteFlyout("locks", FlyoutSyncTrigger.StatusToggle, payload));
     }
 
     private void OnFlight(object? s, EventArgs e)
     {
-        if (!_settings.EnableFlightFlyouts || !_services.Airplane.IsSupported) return;
-        ShowOrUpdate("flight", new Dictionary<string, string>
+        EnsureSettingsFresh();
+        if (!_settings.EnableFlightFlyouts || !Services.Airplane.IsSupported) return;
+        var payload = new Dictionary<string, string>
         {
-            ["on"] = _services.Airplane.IsEnabled ? "1" : "0"
-        });
+            ["on"] = Services.Airplane.IsEnabled ? "1" : "0"
+        };
+        _ctx.Ui.RunOnHostThread(() => RouteFlyout("flight", FlyoutSyncTrigger.StatusToggle, payload));
     }
 
     private void OnLegacyKey(object? s, LegacyVolumeKey key)
@@ -167,48 +196,69 @@ public sealed class TesseraCapability : IModuleCapability
         switch (key)
         {
             case LegacyVolumeKey.Up:
-                _services.Audio.MasterVolume = StepVolume(
-                    _services.Audio.MasterVolume,
+                Services.Audio.MasterVolume = StepVolume(
+                    Services.Audio.MasterVolume,
                     Math.Max(1, (int)Math.Round(_settings.LegacyVolumeStep * 100)));
                 break;
             case LegacyVolumeKey.Down:
-                _services.Audio.MasterVolume = StepVolume(
-                    _services.Audio.MasterVolume,
+                Services.Audio.MasterVolume = StepVolume(
+                    Services.Audio.MasterVolume,
                     -Math.Max(1, (int)Math.Round(_settings.LegacyVolumeStep * 100)));
                 break;
             case LegacyVolumeKey.Mute:
-                _services.Audio.IsMuted = !_services.Audio.IsMuted;
+                Services.Audio.IsMuted = !Services.Audio.IsMuted;
                 break;
         }
-        ShowOrUpdate("vol");
+        RouteFlyout("vol", FlyoutSyncTrigger.Volume);
     }
 
     private static double StepVolume(double current, int deltaPercent) =>
         VolumePercent.Step(current, deltaPercent);
 
-    private void ShowOrUpdate(string kind, IReadOnlyDictionary<string, string>? payload = null)
+    private void PresentMediaFlyout(
+        bool pumpFirst,
+        FlyoutSyncTrigger trigger,
+        bool isTrackBoundary = false)
+    {
+        if (!Flyouts.ShouldColdPresentMedia(trigger, isTrackBoundary))
+            return;
+
+        if (_presentingMedia)
+        {
+            RouteFlyout("media", trigger);
+            return;
+        }
+
+        _presentingMedia = true;
+        try
+        {
+            if (pumpFirst && MediaPresentPolicy.ShouldPumpBeforeShellMediaPresent)
+                _ctx.Media.PumpTimeline();
+            RouteFlyout("media", trigger);
+        }
+        finally
+        {
+            _presentingMedia = false;
+        }
+    }
+
+    private void RouteFlyout(
+        string kind,
+        FlyoutSyncTrigger trigger,
+        IReadOnlyDictionary<string, string>? payload = null)
     {
         try
         {
-            lock (_gate)
-            {
-                _settings = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
-                var now = DateTimeOffset.UtcNow;
-                if (kind == _lastKind && (now - _lastShowUtc).TotalMilliseconds < 40 && _ui.Flyouts.IsVisible(ModuleId))
-                {
-                    _ui.Flyouts.Update(BuildRequest(kind, payload));
-                    return;
-                }
-                _lastKind = kind;
-                _lastShowUtc = now;
-            }
+            EnsureSettingsFresh();
+            try { Services.OsdSuppressor.SuppressBurst(3500); } catch { /* soft-fail */ }
 
-            try { _services.OsdSuppressor.SuppressBurst(3500); } catch { /* soft-fail */ }
             var request = BuildRequest(kind, payload);
-            if (_ui.Flyouts.IsVisible(ModuleId))
-                _ui.Flyouts.Update(request);
-            else
-                _ui.Flyouts.Show(request);
+            Flyouts.Route(
+                request,
+                trigger,
+                _settings.EnableMediaFlyouts,
+                _settings.Style,
+                Services.Media.Current);
         }
         catch (Exception ex)
         {
@@ -216,41 +266,56 @@ public sealed class TesseraCapability : IModuleCapability
         }
     }
 
+    private void OnMediaPresentSettle()
+    {
+        if (!IsArmed) return;
+        try
+        {
+            _ctx.Media.PumpTimeline();
+            if (!Flyouts.OpenKind.Equals("media", StringComparison.OrdinalIgnoreCase)) return;
+            if (!Flyouts.IsVisible)
+            {
+                if (!Flyouts.ShouldColdPresentMedia(FlyoutSyncTrigger.MediaSession))
+                    return;
+                PresentMediaFlyout(pumpFirst: false, FlyoutSyncTrigger.MediaSession);
+                return;
+            }
+
+            Flyouts.SoftRefresh(BuildRequest("media", null));
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TesseraCapability media settle] {ex}");
+        }
+    }
+
     private FlyoutRequest BuildRequest(string kind, IReadOnlyDictionary<string, string>? payload)
     {
-        var p = payload is null ? new Dictionary<string, string>() : new Dictionary<string, string>(payload);
-        p["volume"] = _services.Audio.MasterVolume.ToString("0.###");
-        p["muted"] = _services.Audio.IsMuted ? "1" : "0";
-        p["brightness"] = _services.Brightness.IsSupported ? _services.Brightness.Brightness.ToString("0.###") : "0.5";
-        p["mediaTitle"] = _services.Media.Current?.Title ?? "";
-        p["mediaArtist"] = _services.Media.Current?.Artist ?? "";
-        p["mediaPlaying"] = _services.Media.Current?.IsPlaying == true ? "1" : "0";
-        p["showMediaStrip"] = _settings.ShowMediaStripOnVolume ? "1" : "0";
-        p["acrylic"] = _settings.UseAcrylicBackdrop ? "1" : "0";
-        p["focusDim"] = _settings.UseFocusDim ? "1" : "0";
-        p["flyoutScale"] = Math.Clamp(_settings.FlyoutScalePercent, 50, 150).ToString();
-        p["bakedFrost"] = _settings.UseBakedFrost ? "1" : "0";
-        if (_lastLock is not null && kind == "locks")
-        {
-            p["lock"] = _lastLock.Key.ToString();
-            p["on"] = _lastLock.IsOn ? "1" : "0";
-        }
-        if (kind == "flight")
-            p["on"] = _services.Airplane.IsEnabled ? "1" : "0";
-
-        return new FlyoutRequest(
-            ModuleId,
-            kind,
-            _settings.Style,
-            _settings.Position,
-            _settings.AutoDismissMs,
-            p,
-            _settings.MonitorIndex,
-            _settings.XPad,
-            _settings.YPad,
-            _settings.Ani,
-            _settings.AniDir);
+        EnsureSettingsFresh();
+        return _requests.Build(Services, _settings, kind, payload, _lastLock);
     }
+
+    private void ReloadSettings()
+    {
+        _settings = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
+        var path = ModuleSettingsStore.PathFor("Tessera");
+        _settingsMtimeUtc = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
+    }
+
+    private void EnsureSettingsFresh()
+    {
+        var path = ModuleSettingsStore.PathFor("Tessera");
+        var mtime = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
+        if (mtime != _settingsMtimeUtc)
+            ReloadSettings();
+    }
+
+    private void StartLockKeysHook() => Services.LockKeys.Start();
+    private void StopLockKeysHook() => Services.LockKeys.Stop();
+    private void StartLegacyVolumeHook() =>
+        _ctx.Ui.RunOnHostThread(() => Services.LegacyVolumeKeys.Start());
+    private void StopLegacyVolumeHook() =>
+        _ctx.Ui.RunOnHostThread(() => Services.LegacyVolumeKeys.Stop());
 
     public void Dispose() => DisarmAsync().GetAwaiter().GetResult();
 }

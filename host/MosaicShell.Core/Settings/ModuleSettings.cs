@@ -2,7 +2,7 @@ namespace MosaicShell.Core.Settings;
 
 public sealed class ChronoSettings
 {
-    public string Style { get; set; } = "Center";
+    public string Style { get; set; } = "Square";
     public bool TwentyFourHour { get; set; } = true;
     public bool ShowSeconds { get; set; } = true;
 }
@@ -18,7 +18,7 @@ public sealed class CanvasSettings
 
 public sealed class PhonoSettings
 {
-    public string Style { get; set; } = "Simple";
+    public string Style { get; set; } = "Compact";
     public bool ShowArtist { get; set; } = true;
 }
 
@@ -50,32 +50,49 @@ public sealed class TesseraSettings
     public bool ShowMediaStripOnVolume { get; set; } = true;
     /// <summary>Soft frost tint on flyout shell (not OS acrylic).</summary>
     public bool UseAcrylicBackdrop { get; set; } = true;
+    /// <summary>
+    /// Win11 OS AcrylicBlur on eligible Tessera flyouts. Honored only after Win11 eval sign-off; default off.
+    /// </summary>
+    public bool UseOsAcrylic { get; set; }
     /// <summary>Subtle click-through desktop dim behind flyout.</summary>
     public bool UseFocusDim { get; set; } = true;
     /// <summary>Flyout size multiplier percent (50-150). Default 100.</summary>
     public int FlyoutScalePercent { get; set; } = 100;
-    /// <summary>Optional Skia-baked soft frost wash under tint (MagickMeter-style).</summary>
-    public bool UseBakedFrost { get; set; } = true;
+    /// <summary>Skia live backdrop blur on Tessera glass.</summary>
+    public bool UseBackdropBlur { get; set; } = true;
+
+    /// <summary>Legacy JSON key; mirrors <see cref="UseBackdropBlur"/>.</summary>
+    public bool UseBakedFrost
+    {
+        get => UseBackdropBlur;
+        set => UseBackdropBlur = value;
+    }
+    /// <summary>Custom flyout accent (#RRGGBB). Empty = Windows system accent.</summary>
+    public string AccentColor { get; set; } = "";
 }
 
 public sealed class MixdeckSettings
 {
     public string Style { get; set; } = "Fluent";
+    /// <summary>YourMixer-inspired palette (Default, Dark, Light, Accent, Frost, Midnight, Sunset).</summary>
+    public string ColorScheme { get; set; } = "Default";
     public string HotkeyGesture { get; set; } = "Ctrl+Alt+M";
     public bool CloseOnEscape { get; set; } = true;
 }
 
 public sealed class InlaySettings
 {
-    public string Style { get; set; } = "Win11";
+    public string Style { get; set; } = "Windows11";
     public string HotkeyGesture { get; set; } = "Ctrl+Alt+I";
+    public bool CloseOnEscape { get; set; } = true;
     public List<string> Pins { get; set; } = ["notepad", "calc"];
 }
 
 public sealed class ChordSettings
 {
-    public string Style { get; set; } = "Center";
+    public string Style { get; set; } = "Square";
     public string HotkeyGesture { get; set; } = "Ctrl+Alt+K";
+    public bool CloseOnEscape { get; set; } = true;
     public List<ChordAction> Actions { get; set; } =
     [
         new() { Name = "Notepad", Target = "notepad" },
@@ -95,11 +112,12 @@ public sealed class SubstrateSettings
     public string Style { get; set; } = "DEFAULT";
     public string HotkeyGesture { get; set; } = "Ctrl+Alt+Q";
     public bool ShowMute { get; set; } = true;
+    public bool CloseOnEscape { get; set; } = true;
 }
 
 public sealed class SlateSettings
 {
-    public string Style { get; set; } = "Center";
+    public string Style { get; set; } = "Square";
     public bool HideOnFullscreen { get; set; } = true;
     public int IdleSeconds { get; set; } = 300;
 }

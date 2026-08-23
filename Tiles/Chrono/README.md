@@ -20,4 +20,4 @@ dotnet run --project MosaicShell.Host
 
 In Host: Library → Chrono → Start.
 
-Promised Rainmeter-era behavior: [`docs/legacy/chrono.md`](../../docs/legacy/chrono.md).
+Promised Rainmeter-era behavior: [`.cursor/docs/legacy/chrono.md`](../../.cursor/docs/legacy/chrono.md).

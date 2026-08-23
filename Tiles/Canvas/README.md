@@ -18,4 +18,4 @@ dotnet run --project MosaicShell.Host
 
 In Host: Library → Canvas → Start.
 
-Promised Rainmeter-era behavior: [`docs/legacy/canvas.md`](../../docs/legacy/canvas.md).
+Promised Rainmeter-era behavior: [`.cursor/docs/legacy/canvas.md`](../../.cursor/docs/legacy/canvas.md).

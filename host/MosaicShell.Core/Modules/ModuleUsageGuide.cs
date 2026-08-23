@@ -20,11 +20,19 @@ public static class ModuleUsageGuide
             case "slate":
                 return "Idle / screensaver clock. Arm it; after the idle timeout the clock overlay appears (unless fullscreen hide is on).";
             case "mixdeck":
-                return "Per-app volume mixer. Arm it, then press the hotkey (or Tessera Pixel) to open the overlay.";
+                return "Per-app volume mixer. Arm it, then press the hotkey (or Tessera Material You) to open the overlay.";
             case "tessera":
                 return "System flyouts for volume, brightness, and media. Arm it to replace the OS OSD while Host runs in the tray.";
             default:
+            {
+                var manifest = ModuleManifest.TryLoad(moduleId);
+                if (!string.IsNullOrWhiteSpace(manifest?.UsageSummary))
+                    return manifest!.UsageSummary!;
+                if (ModuleCatalog.TryGet(moduleId, out var info) && info is not null
+                    && !string.IsNullOrWhiteSpace(info.Description))
+                    return info.Description;
                 return "";
+            }
         }
     }
 
@@ -46,9 +54,14 @@ public static class ModuleUsageGuide
         }
 
         if (id == "tessera")
-            return "Arm from Tiles, then change volume / brightness / media (or use Try now in settings).";
+            return "Arm from Tiles, then change volume, brightness, Caps Lock, or media (track skip / media keys), or use Try now in settings.";
 
-        return "";
+        var manifest = ModuleManifest.TryLoad(moduleId);
+        if (!string.IsNullOrWhiteSpace(manifest?.HowToTrigger))
+            return manifest!.HowToTrigger!;
+        return ModuleCatalog.IsCapability(moduleId)
+            ? "Arm from Tiles, then use the module's configured trigger."
+            : "";
     }
 
     public static string CurrentHotkey(string moduleId)

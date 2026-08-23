@@ -5,6 +5,8 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Material.Icons;
 using Material.Icons.Avalonia;
+using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.Services;
 using System.IO;
 
 namespace MosaicShell.Host.Tiles.Tessera;
@@ -12,26 +14,26 @@ namespace MosaicShell.Host.Tiles.Tessera;
 public enum TesseraMediaMode
 {
     FluentSide,
-    Win11Below,
+    Windows11Below,
     ModernCard,
     SimpleRow,
     GnomePill,
-    AmberCard,
+    MeterCard,
     CoreUiBlock,
-    SmoutiSide
+    RadialSide
 }
 
 public static class TesseraMediaPanel
 {
-    public static Control Create(TesseraFlyoutViewModel vm, TesseraMediaMode mode) => mode switch
+    public static Control Create(TesseraFlyoutViewModel vm, TesseraMediaMode mode, double coreUiHeight = 72) => mode switch
     {
-        TesseraMediaMode.Win11Below => Win11(vm),
+        TesseraMediaMode.Windows11Below => Windows11(vm),
         TesseraMediaMode.ModernCard => ModernCard(vm),
         TesseraMediaMode.SimpleRow => SimpleRow(vm),
         TesseraMediaMode.GnomePill => GnomePill(vm),
-        TesseraMediaMode.AmberCard => AmberCard(vm),
-        TesseraMediaMode.CoreUiBlock => CoreUiBlock(vm),
-        TesseraMediaMode.SmoutiSide => SmoutiSide(vm),
+        TesseraMediaMode.MeterCard => MeterCard(vm),
+        TesseraMediaMode.CoreUiBlock => CoreUiBlock(vm, coreUiHeight),
+        TesseraMediaMode.RadialSide => RadialSide(vm),
         _ => Fluent(vm),
     };
 
@@ -50,11 +52,11 @@ public static class TesseraMediaPanel
             Children = { title, artist }
         };
         var playIcon = PlayIcon(vm, 16);
-        var transport = TransportRow(vm, playIcon, shuffleRepeat: true, spacing: 12, btnSize: 28);
+        var (transport, likeIcon, dislikeIcon) = TransportRow(vm, playIcon, shuffleRepeat: true, spacing: 12, btnSize: 28);
         transport.Margin = new Thickness(0, 6, 0, 0);
         var (scrubCol, scrub, pos, dur) = ScrubberStacked(vm, mediaW - 80);
         scrubCol.Margin = new Thickness(28, 4, 28, 10);
-        TesseraLiveAmbient.RegisterMedia(art, title, artist, scrub, pos, dur, playIcon);
+        TesseraLiveAmbient.RegisterMedia(art, title, artist, scrub, pos, dur, playIcon, likeIcon, dislikeIcon);
 
         return new Border
         {
@@ -74,48 +76,46 @@ public static class TesseraMediaPanel
         };
     }
 
-    private static Control Win11(TesseraFlyoutViewModel vm)
+    private static Control Windows11(TesseraFlyoutViewModel vm)
     {
-        const double w = TesseraWin11Metrics.Width;
-        var art = AlbumArt(vm, 64);
-        var title = Text(vm.MediaTitle, 14, FontWeight.SemiBold, 200);
-        var artist = Text(vm.MediaArtist, 12, FontWeight.Normal, 200, muted: true);
-        var textCol = new StackPanel { Spacing = 4, VerticalAlignment = VerticalAlignment.Center, Children = { title, artist } };
-        var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,72"), Margin = new Thickness(14, 12, 14, 0) };
+        const double w = TesseraWindows11Metrics.Width;
+        const double pad = TesseraWindows11Metrics.Pad;
+        var art = AlbumArt(vm, 80);
+        art.HorizontalAlignment = HorizontalAlignment.Right;
+        art.VerticalAlignment = VerticalAlignment.Top;
+        var header = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 6,
+            Children =
+            {
+                new MaterialIcon
+                {
+                    Kind = MaterialIconKind.MusicNote,
+                    Width = 12,
+                    Height = 12,
+                    Foreground = TesseraPalette.FontBrush,
+                    VerticalAlignment = VerticalAlignment.Center
+                },
+                TesseraChrome.Label("Media playing", 10, muted: true)
+            }
+        };
+        var title = Text(vm.MediaTitle, 12, FontWeight.SemiBold, w - 80 - pad * 3);
+        var artist = Text(vm.MediaArtist, 11, FontWeight.Normal, w - 80 - pad * 3, muted: true);
+        var textCol = new StackPanel { Spacing = 4, Margin = new Thickness(0, 4, 0, 0), Children = { header, title, artist } };
+        var top = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,80"),
+            Margin = new Thickness(pad, 8, pad, 0)
+        };
         Grid.SetColumn(textCol, 0);
         Grid.SetColumn(art, 1);
-        art.HorizontalAlignment = HorizontalAlignment.Right;
-        header.Children.Add(textCol);
-        header.Children.Add(art);
-        var playIcon = PlayIcon(vm);
-        var transport = TransportRow(vm, playIcon, shuffleRepeat: false, spacing: 28);
-        transport.Margin = new Thickness(0, 12, 0, 14);
-        TesseraLiveAmbient.RegisterMedia(art, title, artist, null, null, null, playIcon);
-        return new Border
-        {
-            Name = "TesseraMediaRoot",
-            Width = w,
-            Background = Brushes.Transparent,
-            Child = new StackPanel { Children = { header, transport } }
-        };
-    }
+        top.Children.Add(textCol);
+        top.Children.Add(art);
 
-    private static Control ModernCard(TesseraFlyoutViewModel vm)
-    {
-        var art = AlbumArt(vm, 44);
-        art.HorizontalAlignment = HorizontalAlignment.Right;
-        var header = TesseraChrome.Label("Media playing", 10, muted: true);
-        header.Margin = new Thickness(0, 0, 0, 4);
-        var title = Text(vm.MediaTitle, 15, FontWeight.Bold, 220);
-        var artist = Text(vm.MediaArtist, 11, FontWeight.Normal, 220, muted: true);
         var playIcon = PlayIcon(vm, 16);
-        var likeIcon = new MaterialIcon
-        {
-            Kind = MaterialIconKind.HeartOutline,
-            Width = 14,
-            Height = 14,
-            Foreground = TesseraPalette.FontBrush
-        };
+        var likeIcon = CreateLikeIcon(14);
+        MaterialIcon? dislikeIcon = null;
         var shuffleIcon = new MaterialIcon
         {
             Kind = MaterialIconKind.Shuffle,
@@ -123,36 +123,107 @@ public static class TesseraMediaPanel
             Height = 14,
             Foreground = new SolidColorBrush(Color.FromArgb(180, 255, 255, 255))
         };
+        var (scrubCol, scrub, pos, dur) = ScrubberStacked(vm, w - pad * 2);
+        scrub.AccentBrushOverride = TesseraStylePalette.Windows11.AccentBrush;
+        scrubCol.Margin = new Thickness(pad, 6, pad, 0);
+        var transportKids = new List<Control>();
+        dislikeIcon = AppendRatingButtons(vm, transportKids, likeIcon, 28);
+        transportKids.Add(GlyphBtn(MaterialIconKind.SkipPrevious, () => _ = vm.PreviousAsync(), size: 28));
+        transportKids.Add(GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: 28, playStyle: true));
+        transportKids.Add(GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: 28));
+        transportKids.Add(GlyphBtn(shuffleIcon, () => _ = vm.ToggleShuffleAsync(shuffleIcon), size: 28));
+        var transport = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Spacing = 16,
+            Margin = new Thickness(0, 8, 0, 10),
+            Children = { }
+        };
+        foreach (var kid in transportKids)
+            transport.Children.Add(kid);
+        TesseraLiveAmbient.RegisterMedia(art, title, artist, scrub, pos, dur, playIcon, likeIcon, dislikeIcon);
+        return new Border
+        {
+            Name = "TesseraMediaRoot",
+            Width = w,
+            Height = TesseraWindows11Metrics.MediaHeight,
+            Background = Brushes.Transparent,
+            Child = new StackPanel { Children = { top, scrubCol, transport } }
+        };
+    }
+
+    private static Control ModernCard(TesseraFlyoutViewModel vm)
+    {
+        // Modern.inc: dark MediaC shell + square cover top-right (80×80), not full-card art wash.
+        const double artSize = 80;
+        var art = AlbumArt(vm, artSize);
+        art.HorizontalAlignment = HorizontalAlignment.Right;
+        art.VerticalAlignment = VerticalAlignment.Top;
+        var header = TesseraChrome.Label("Media playing", 10, muted: true);
+        header.Margin = new Thickness(0, 0, 0, 4);
+        var title = Text(vm.MediaTitle, 15, FontWeight.Bold, 220);
+        var artist = Text(vm.MediaArtist, 11, FontWeight.Normal, 220, muted: true);
+        var playIcon = PlayIcon(vm, 16);
+        var likeIcon = CreateLikeIcon(14);
+        MaterialIcon? dislikeIcon = null;
+        var shuffleIcon = new MaterialIcon
+        {
+            Kind = MaterialIconKind.Shuffle,
+            Width = 14,
+            Height = 14,
+            Foreground = new SolidColorBrush(Color.FromArgb(180, 255, 255, 255))
+        };
+        var transportKids = new List<Control>();
+        dislikeIcon = AppendRatingButtons(vm, transportKids, likeIcon, 28);
+        transportKids.Add(GlyphBtn(MaterialIconKind.SkipPrevious, () => _ = vm.PreviousAsync(), size: 28));
+        transportKids.Add(GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: 28, playStyle: true));
+        transportKids.Add(GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: 28));
+        transportKids.Add(GlyphBtn(shuffleIcon, () => _ = vm.ToggleShuffleAsync(shuffleIcon), size: 28));
         var transport = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             HorizontalAlignment = HorizontalAlignment.Center,
             Spacing = 12,
             Margin = new Thickness(0, 6, 0, 0),
-            Children =
-            {
-                GlyphBtn(likeIcon, () => _ = vm.ToggleLikeAsync(likeIcon), size: 28),
-                GlyphBtn(MaterialIconKind.SkipPrevious, () => _ = vm.PreviousAsync(), size: 28),
-                GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: 28),
-                GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: 28),
-                GlyphBtn(shuffleIcon, () => _ = vm.ToggleShuffleAsync(shuffleIcon), size: 28)
-            }
+            Children = { }
         };
+        foreach (var kid in transportKids)
+            transport.Children.Add(kid);
         var (scrub, track, pos, dur) = ScrubberStacked(vm, 260);
-        TesseraLiveAmbient.RegisterMedia(art, title, artist, track, pos, dur, playIcon);
+        TesseraLiveAmbient.RegisterMedia(art, title, artist, track, pos, dur, playIcon, likeIcon, dislikeIcon);
         var top = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
-        var left = new StackPanel { Children = { header, title, artist } };
+        var left = new StackPanel
+        {
+            Margin = new Thickness(0, 0, 8, 0),
+            Children = { header, title, artist }
+        };
         Grid.SetColumn(left, 0);
         Grid.SetColumn(art, 1);
         top.Children.Add(left);
         top.Children.Add(art);
-        return TesseraChrome.WithArtWash(
-            new StackPanel { Spacing = 4, Children = { top, scrub, transport } },
-            vm.ThumbnailPng, 12, new Thickness(12), 320);
+        var body = new StackPanel { Spacing = 4, Children = { top, scrub, transport } };
+
+        if (TesseraStackedBuildContext.IsActive && TesseraGlass.UseOsAcrylicChrome)
+        {
+            return new Border
+            {
+                Width = TesseraStackedPlacementSpec.ModernFlyoutsMediaWidthDip,
+                Height = TesseraStackedPlacementSpec.ModernFlyoutsMediaHeightDip,
+                CornerRadius = new CornerRadius(12),
+                Background = Brushes.Transparent,
+                Padding = new Thickness(12),
+                ClipToBounds = true,
+                Child = body
+            };
+        }
+
+        return TesseraChrome.Glass(body, 12, new Thickness(12), w: 320, h: 190);
     }
 
     private static Control SimpleRow(TesseraFlyoutViewModel vm)
     {
+        var stackedOsAcrylic = TesseraStackedBuildContext.IsActive && TesseraGlass.UseOsAcrylicChrome;
         var art = AlbumArt(vm, 64);
         var title = Text(vm.MediaTitle, 15, FontWeight.SemiBold, 200);
         var artist = Text(vm.MediaArtist, 12, FontWeight.Normal, 200, muted: true);
@@ -161,7 +232,7 @@ public static class TesseraMediaPanel
         var heart = GlyphBtn(MaterialIconKind.Heart, () => { });
         heart.HorizontalAlignment = HorizontalAlignment.Left;
         TesseraLiveAmbient.RegisterMedia(art, title, artist, null, time, null, null);
-        return TesseraChrome.Glass(new StackPanel
+        var body = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 12,
@@ -170,20 +241,38 @@ public static class TesseraMediaPanel
                 art,
                 new StackPanel { Spacing = 4, VerticalAlignment = VerticalAlignment.Center, Children = { title, artist, time, heart } }
             }
-        }, 14, new Thickness(12), w: 320);
+        };
+
+        if (stackedOsAcrylic)
+        {
+            return new Border
+            {
+                Width = TesseraStackedPlacementSpec.CompactMediaWidthDip,
+                Height = TesseraStackedPlacementSpec.CompactMediaHeightDip,
+                CornerRadius = new CornerRadius(14),
+                Background = Brushes.Transparent,
+                Padding = new Thickness(12),
+                ClipToBounds = true,
+                Child = body
+            };
+        }
+
+        return TesseraChrome.Glass(body, 14, new Thickness(12), w: 320);
     }
 
     private static Control GnomePill(TesseraFlyoutViewModel vm)
     {
+        var stackedOsAcrylic = TesseraStackedBuildContext.IsActive && TesseraGlass.UseOsAcrylicChrome;
         var art = AlbumArt(vm, 36);
         art.CornerRadius = new CornerRadius(18);
         var title = Text(vm.MediaTitle, 13, FontWeight.SemiBold, 140);
         var artist = Text(vm.MediaArtist, 11, FontWeight.Normal, 140, muted: true);
         var playIcon = PlayIcon(vm, 16);
-        var play = GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: 32);
+        var prev = GlyphBtn(MaterialIconKind.SkipPrevious, () => _ = vm.PreviousAsync(), size: 32);
+        var play = GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: 32, playStyle: true);
         var next = GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: 32);
         TesseraLiveAmbient.RegisterMedia(art, title, artist, null, null, null, playIcon);
-        return TesseraChrome.Glass(new StackPanel
+        var body = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 10,
@@ -192,116 +281,265 @@ public static class TesseraMediaPanel
             {
                 art,
                 new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center, Width = 140, Children = { title, artist } },
+                prev,
                 play,
                 next
             }
-        }, 28, new Thickness(10, 8), w: 300);
+        };
+
+        if (stackedOsAcrylic)
+        {
+            return new Border
+            {
+                Width = TesseraStackedPlacementSpec.GnomeMediaWidthDip,
+                Height = TesseraStackedPlacementSpec.GnomeMediaHeightDip,
+                CornerRadius = new CornerRadius(TesseraStackedPlacementSpec.GnomePillCornerRadiusDip),
+                Background = Brushes.Transparent,
+                Padding = new Thickness(10, 8),
+                ClipToBounds = true,
+                Child = body
+            };
+        }
+
+        return TesseraChrome.Glass(body, 28, new Thickness(10, 8), w: 340);
     }
 
-    private static Control AmberCard(TesseraFlyoutViewModel vm)
+    private static Control MeterCard(TesseraFlyoutViewModel vm)
     {
-        var art = AlbumArt(vm, 120);
+        var stacked = TesseraStackedBuildContext.IsActive;
+        var stackedOsAcrylic = stacked && TesseraGlass.UseOsAcrylicChrome;
+        var artSize = stacked
+            ? (int)TesseraStackedPlacementSpec.MeterMediaArtDip
+            : 120;
+        var art = AlbumArt(vm, artSize);
         art.HorizontalAlignment = HorizontalAlignment.Center;
-        art.Margin = new Thickness(0, 8, 0, 8);
+        art.Margin = stacked
+            ? new Thickness(0, 0, 0, TesseraStackedPlacementSpec.MeterMediaArtBottomMarginDip)
+            : new Thickness(0, 8, 0, 8);
         var title = Text(vm.MediaTitle, 15, FontWeight.SemiBold, 160);
         title.HorizontalAlignment = HorizontalAlignment.Center;
         title.TextAlignment = TextAlignment.Center;
+        title.Height = TesseraStackedPlacementSpec.MeterMediaTitleLineDip;
         var artist = Text(vm.MediaArtist, 12, FontWeight.Normal, 160, muted: true);
         artist.HorizontalAlignment = HorizontalAlignment.Center;
         artist.TextAlignment = TextAlignment.Center;
+        artist.Height = TesseraStackedPlacementSpec.MeterMediaArtistLineDip;
         var playIcon = PlayIcon(vm);
-        var transport = TransportRow(vm, playIcon, shuffleRepeat: false, spacing: 20);
-        transport.Margin = new Thickness(0, 10, 0, 4);
+        var transportBtn = stacked
+            ? TesseraStackedPlacementSpec.MeterMediaTransportBtnDip
+            : 32;
+        var (transport, _, _) = TransportRow(
+            vm,
+            playIcon,
+            shuffleRepeat: false,
+            spacing: stacked ? 16 : 20,
+            btnSize: transportBtn);
         TesseraLiveAmbient.RegisterMedia(art, title, artist, null, null, null, playIcon);
-        return TesseraChrome.Glass(new StackPanel
+
+        Control body;
+        if (stacked)
         {
-            Width = 180,
-            Children = { art, title, artist, transport }
-        }, 16, new Thickness(14, 10));
+            transport.HorizontalAlignment = HorizontalAlignment.Center;
+            transport.Margin = new Thickness(0, TesseraStackedPlacementSpec.MeterMediaTransportTopMarginDip, 0, 0);
+            var header = new StackPanel
+            {
+                Width = TesseraStackedPlacementSpec.MeterMediaBodyWidthDip,
+                Spacing = TesseraStackedPlacementSpec.MeterMediaHeaderSpacingDip,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Top,
+                Children = { art, title, artist }
+            };
+            var dock = new DockPanel
+            {
+                Width = TesseraStackedPlacementSpec.MeterMediaBodyWidthDip,
+                LastChildFill = true,
+                VerticalAlignment = VerticalAlignment.Stretch
+            };
+            DockPanel.SetDock(transport, Dock.Bottom);
+            dock.Children.Add(transport);
+            dock.Children.Add(header);
+            body = dock;
+        }
+        else
+        {
+            transport.Margin = new Thickness(0, 10, 0, 4);
+            body = new StackPanel
+            {
+                Width = TesseraStackedPlacementSpec.MeterMediaBodyWidthDip,
+                Children = { art, title, artist, transport }
+            };
+        }
+
+        if (TesseraGlass.SuppressInnerSkiaGlass)
+        {
+            var pad = stacked
+                ? new Thickness(
+                    TesseraStackedPlacementSpec.MeterMediaPadHorizontalDip,
+                    TesseraStackedPlacementSpec.MeterMediaPadTopDip,
+                    TesseraStackedPlacementSpec.MeterMediaPadHorizontalDip,
+                    TesseraStackedPlacementSpec.MeterMediaPadBottomDip)
+                : new Thickness(14, 10);
+            var border = new Border
+            {
+                CornerRadius = new CornerRadius(16),
+                Background = stackedOsAcrylic ? Brushes.Transparent : TesseraChrome.TileFace,
+                Padding = pad,
+                ClipToBounds = true,
+                Child = body
+            };
+            if (stacked)
+            {
+                border.Width = TesseraStackedPlacementSpec.MeterMediaWidthDip;
+                border.Height = TesseraStackedPlacementSpec.MeterMediaHeightDip;
+            }
+
+            return border;
+        }
+
+        return TesseraChrome.Glass(body, 16, new Thickness(14, 10));
     }
 
-    private static Control CoreUiBlock(TesseraFlyoutViewModel vm)
+    private static Control CoreUiBlock(TesseraFlyoutViewModel vm, double height = 150)
     {
-        var title = Text(vm.MediaTitle, 13, FontWeight.Bold, 160);
-        var artist = Text(vm.MediaArtist, 11, FontWeight.SemiBold, 160, muted: false);
-        artist.Foreground = new SolidColorBrush(Color.FromRgb(220, 220, 225));
+        const double pad = TesseraStyleMetrics.CoreUiPad;
+        var artSize = height - pad * 2;
+        var art = AlbumArt(vm, artSize);
+        art.Name = "TesseraMediaArt";
         var header = TesseraChrome.Mono("Media playing", 8, muted: true);
+        var title = Text(vm.MediaTitle, 12, FontWeight.Bold, 220);
+        title.FontFamily = new FontFamily("Poppins, Segoe UI");
+        var artist = Text(vm.MediaArtist, 11, FontWeight.Normal, 220, muted: true);
+        artist.FontFamily = new FontFamily("Poppins, Segoe UI");
         var time = TesseraChrome.Mono($"{FormatTime(vm.MediaPositionSeconds)} / {FormatTime(vm.MediaDurationSeconds)}", 9, muted: true);
         time.Name = "TesseraMediaPos";
-        var artBorder = new Border { Name = "TesseraMediaArt", Width = 1, Height = 1, IsVisible = false };
-        var text = new StackPanel { Spacing = 2, Children = { header, title, artist, time } };
-        var tile = TesseraChrome.ArtTile(text, vm.ThumbnailPng, 8, new Thickness(8), 72, out var artHost);
-        TesseraLiveAmbient.RegisterMedia(artHost, title, artist, null, time, null, null);
-        return tile;
+
+        var textCol = new StackPanel
+        {
+            Spacing = 4,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(8, 0, pad, 0),
+            Children = { header, title, artist, time }
+        };
+
+        var row = new Grid
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            ColumnDefinitions = new ColumnDefinitions($"{artSize},*")
+        };
+        Grid.SetColumn(art, 0);
+        Grid.SetColumn(textCol, 1);
+        row.Children.Add(art);
+        row.Children.Add(textCol);
+
+        TesseraLiveAmbient.RegisterMedia(art, title, artist, null, time, null, null);
+        return TesseraChrome.CoreUiTile(row, h: height, pad: new Thickness(pad));
     }
 
-    private static Control SmoutiSide(TesseraFlyoutViewModel vm)
+    private static Control RadialSide(TesseraFlyoutViewModel vm)
     {
-        var title = Text(vm.MediaTitle, 12, FontWeight.SemiBold, 160);
-        var artist = Text(vm.MediaArtist, 10, FontWeight.Normal, 160, muted: true);
-        var pos = Text(FormatTime(vm.MediaPositionSeconds), 11, FontWeight.Bold, 48);
-        var dur = Text(FormatTime(vm.MediaDurationSeconds), 10, FontWeight.Normal, 40, muted: true);
-        var scrub = new TesseraTrack { IsVertical = false, Width = 160, Height = 14, Value = vm.MediaProgress, TrackThickness = 2 };
+        var title = Text(vm.MediaTitle, 13, FontWeight.SemiBold, 220);
+        title.Foreground = TesseraStylePalette.Radial.BrightBrush;
+        title.TextTrimming = TextTrimming.CharacterEllipsis;
+        var artist = Text(vm.MediaArtist, 11, FontWeight.Normal, 220, muted: true);
+        artist.Foreground = TesseraStylePalette.Radial.AccentHiBrush;
+        artist.TextTrimming = TextTrimming.CharacterEllipsis;
+        var pos = Text(FormatTime(vm.MediaPositionSeconds), 14, FontWeight.Bold, 48);
+        pos.Foreground = TesseraStylePalette.Radial.BrightBrush;
+        var dur = Text(FormatTime(vm.MediaDurationSeconds), 11, FontWeight.Normal, 44, muted: true);
+        dur.Foreground = TesseraStylePalette.Radial.AccentHiBrush;
+        var scrub = new TesseraTrack
+        {
+            IsVertical = false,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Height = 16,
+            Value = vm.MediaProgress,
+            TrackThickness = 3,
+            ShowThumb = false,
+            AccentBrushOverride = TesseraStylePalette.Radial.AccentBrush,
+            TrackBackBrushOverride = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255))
+        };
         scrub.ValueChanged += (_, v) =>
         {
             var d = vm.Services.Media.Current?.DurationSeconds ?? vm.MediaDurationSeconds;
             if (d > 0) _ = vm.SeekAsync(v * d);
         };
-        var playIcon = PlayIcon(vm, 14);
-        var likeIcon = new MaterialIcon
-        {
-            Kind = MaterialIconKind.HeartOutline,
-            Width = 12,
-            Height = 12,
-            Foreground = TesseraPalette.FontBrush
-        };
+        var playIcon = PlayIcon(vm, 16);
+        playIcon.Foreground = TesseraStylePalette.Radial.BrightBrush;
+        var likeIcon = CreateLikeIcon(14, TesseraStylePalette.Radial.BrightBrush);
+        MaterialIcon? dislikeIcon = null;
         var shuffleIcon = new MaterialIcon
         {
             Kind = MaterialIconKind.Shuffle,
-            Width = 12,
-            Height = 12,
-            Foreground = new SolidColorBrush(Color.FromArgb(180, 255, 255, 255))
+            Width = 14,
+            Height = 14,
+            Foreground = TesseraStylePalette.Radial.AccentHiBrush
         };
         var repeatIcon = new MaterialIcon
         {
             Kind = MaterialIconKind.Repeat,
-            Width = 12,
-            Height = 12,
-            Foreground = new SolidColorBrush(Color.FromArgb(180, 255, 255, 255))
+            Width = 14,
+            Height = 14,
+            Foreground = TesseraStylePalette.Radial.AccentHiBrush
         };
-        TesseraLiveAmbient.RegisterMedia(new Border { Name = "TesseraMediaArt", Width = 1, Height = 1, IsVisible = false },
-            title, artist, scrub, pos, dur, playIcon);
+        var topIconKids = new List<Control>();
+        dislikeIcon = AppendRatingButtons(vm, topIconKids, likeIcon, 24, TesseraStylePalette.Radial.BrightBrush);
+        topIconKids.Add(GlyphBtn(repeatIcon, () => _ = vm.ToggleRepeatAsync(repeatIcon), size: 24));
+        topIconKids.Add(GlyphBtn(shuffleIcon, () => _ = vm.ToggleShuffleAsync(shuffleIcon), size: 24));
+        TesseraLiveAmbient.RegisterMedia(
+            new Border { Name = "TesseraMediaArt", Width = 1, Height = 1, IsVisible = false },
+            title, artist, scrub, pos, dur, playIcon, likeIcon, dislikeIcon);
 
-        // Compact side column - keep Smouti under ~110px tall
-        return new StackPanel
+        var topIcons = new StackPanel
         {
-            Spacing = 3,
-            Width = 170,
-            VerticalAlignment = VerticalAlignment.Center,
-            Children =
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 0, 0, 2),
+            Children = { }
+        };
+        foreach (var kid in topIconKids)
+            topIcons.Children.Add(kid);
+        var timeRow = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
+            Margin = new Thickness(0, 6, 0, 6)
+        };
+        Grid.SetColumn(pos, 0);
+        Grid.SetColumn(scrub, 1);
+        Grid.SetColumn(dur, 2);
+        scrub.Margin = new Thickness(8, 0);
+        scrub.VerticalAlignment = VerticalAlignment.Center;
+        pos.VerticalAlignment = VerticalAlignment.Center;
+        dur.VerticalAlignment = VerticalAlignment.Center;
+        timeRow.Children.Add(pos);
+        timeRow.Children.Add(scrub);
+        timeRow.Children.Add(dur);
+
+        var transport = new Border
+        {
+            CornerRadius = new CornerRadius(8),
+            Background = new SolidColorBrush(Color.FromArgb(120, 0, 0, 0)),
+            Padding = new Thickness(8, 4),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Child = new StackPanel
             {
-                title,
-                artist,
-                new StackPanel
+                Orientation = Orientation.Horizontal,
+                Spacing = 6,
+                Children =
                 {
-                    Orientation = Orientation.Horizontal,
-                    Spacing = 6,
-                    Children = { pos, scrub, dur }
-                },
-                new StackPanel
-                {
-                    Orientation = Orientation.Horizontal,
-                    Spacing = 4,
-                    Children =
-                    {
-                        GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: 26),
-                        GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: 26),
-                        GlyphBtn(likeIcon, () => _ = vm.ToggleLikeAsync(likeIcon), size: 24),
-                        GlyphBtn(repeatIcon, () => _ = vm.ToggleRepeatAsync(repeatIcon), size: 24),
-                        GlyphBtn(shuffleIcon, () => _ = vm.ToggleShuffleAsync(shuffleIcon), size: 24)
-                    }
+                    GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: 26, playStyle: true),
+                    GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: 26)
                 }
             }
+        };
+
+        return new StackPanel
+        {
+            Spacing = 4,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            MaxWidth = 300,
+            Children = { topIcons, timeRow, title, artist, transport }
         };
     }
 
@@ -326,10 +564,12 @@ public static class TesseraMediaPanel
         return (col, track, pos, dur);
     }
 
-    private static StackPanel TransportRow(
+    private static (StackPanel Row, MaterialIcon? LikeIcon, MaterialIcon? DislikeIcon) TransportRow(
         TesseraFlyoutViewModel vm, MaterialIcon playIcon, bool shuffleRepeat, double spacing, double btnSize = 32)
     {
         var kids = new List<Control>();
+        MaterialIcon? likeIcon = null;
+        MaterialIcon? dislikeIcon = null;
         if (shuffleRepeat)
         {
             var shuffleIcon = new MaterialIcon
@@ -342,18 +582,13 @@ public static class TesseraMediaPanel
             kids.Add(GlyphBtn(shuffleIcon, () => _ = vm.ToggleShuffleAsync(shuffleIcon), btnSize));
         }
         kids.Add(GlyphBtn(MaterialIconKind.SkipPrevious, () => _ = vm.PreviousAsync(), size: btnSize));
-        kids.Add(GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: btnSize));
+        kids.Add(GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: btnSize, playStyle: true));
         kids.Add(GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: btnSize));
         if (shuffleRepeat)
         {
-            var likeIcon = new MaterialIcon
-            {
-                Kind = MaterialIconKind.HeartOutline,
-                Width = btnSize * 0.5,
-                Height = btnSize * 0.5,
-                Foreground = TesseraPalette.FontBrush
-            };
-            // Official Fluent/Modern: heart often opposite shuffle; keep both wired
+            likeIcon = CreateLikeIcon(btnSize * 0.5);
+            var ratingKids = new List<Control>();
+            dislikeIcon = AppendRatingButtons(vm, ratingKids, likeIcon, btnSize);
             var repeatIcon = new MaterialIcon
             {
                 Kind = MaterialIconKind.Repeat,
@@ -361,7 +596,8 @@ public static class TesseraMediaPanel
                 Height = btnSize * 0.5,
                 Foreground = new SolidColorBrush(Color.FromArgb(180, 255, 255, 255))
             };
-            kids.Insert(0, GlyphBtn(likeIcon, () => _ = vm.ToggleLikeAsync(likeIcon), btnSize));
+            for (var i = ratingKids.Count - 1; i >= 0; i--)
+                kids.Insert(0, ratingKids[i]);
             kids.Add(GlyphBtn(repeatIcon, () => _ = vm.ToggleRepeatAsync(repeatIcon), btnSize));
         }
         var sp = new StackPanel
@@ -371,7 +607,58 @@ public static class TesseraMediaPanel
             Spacing = spacing
         };
         foreach (var c in kids) sp.Children.Add(c);
-        return sp;
+        return (sp, likeIcon, dislikeIcon);
+    }
+
+    private static MaterialIcon CreateLikeIcon(double size, IBrush? foreground = null) =>
+        new()
+        {
+            Kind = MaterialIconKind.HeartOutline,
+            Width = size,
+            Height = size,
+            Foreground = foreground ?? TesseraPalette.FontBrush
+        };
+
+    private static MaterialIcon CreateDislikeIcon(double size, IBrush? foreground = null) =>
+        new()
+        {
+            Kind = MaterialIconKind.ThumbDownOutline,
+            Width = size,
+            Height = size,
+            Foreground = foreground ?? TesseraPalette.FontBrush
+        };
+
+    private static MaterialIcon? AppendRatingButtons(
+        TesseraFlyoutViewModel vm,
+        ICollection<Control> children,
+        MaterialIcon likeIcon,
+        double btnSize,
+        IBrush? dislikeForeground = null)
+    {
+        children.Add(GlyphBtn(likeIcon, () => _ = vm.ToggleLikeAsync(likeIcon), btnSize));
+        if (!vm.SupportsMediaDislike)
+            return null;
+        var dislikeIcon = CreateDislikeIcon(likeIcon.Width, dislikeForeground ?? likeIcon.Foreground);
+        children.Add(GlyphBtn(dislikeIcon, () => _ = vm.ToggleDislikeAsync(dislikeIcon), btnSize));
+        return dislikeIcon;
+    }
+
+    internal static void ApplyLikeIcon(MaterialIcon icon, int? likeRating)
+    {
+        var liked = MediaLikePolicy.ShouldShowLikedHeart(likeRating);
+        icon.Kind = liked ? MaterialIconKind.Heart : MaterialIconKind.HeartOutline;
+        icon.Foreground = liked
+            ? new SolidColorBrush(Color.FromRgb(255, 80, 100))
+            : TesseraPalette.FontBrush;
+    }
+
+    internal static void ApplyDislikeIcon(MaterialIcon icon, int? likeRating)
+    {
+        var disliked = MediaLikePolicy.ShouldShowDislikedThumb(likeRating);
+        icon.Kind = disliked ? MaterialIconKind.ThumbDown : MaterialIconKind.ThumbDownOutline;
+        icon.Foreground = disliked
+            ? new SolidColorBrush(Color.FromRgb(160, 180, 220))
+            : TesseraPalette.FontBrush;
     }
 
     private static MaterialIcon PlayIcon(TesseraFlyoutViewModel vm, double size = 20) =>
@@ -488,7 +775,7 @@ public static class TesseraMediaPanel
         }
     }
 
-    private static Button GlyphBtn(MaterialIconKind kind, Action act, bool dim = false, double size = 36)
+    private static Control GlyphBtn(MaterialIconKind kind, Action act, bool dim = false, double size = 36, bool playStyle = false)
     {
         var icon = new MaterialIcon
         {
@@ -499,23 +786,11 @@ public static class TesseraMediaPanel
                 ? new SolidColorBrush(Color.FromArgb(150, 255, 255, 255))
                 : TesseraPalette.FontBrush
         };
-        return GlyphBtn(icon, act, size);
+        return GlyphBtn(icon, act, size, playStyle);
     }
 
-    private static Button GlyphBtn(MaterialIcon icon, Action act, double size = 36)
-    {
-        var b = new Button
-        {
-            Width = size,
-            Height = size,
-            Padding = new Thickness(0),
-            Background = Brushes.Transparent,
-            BorderThickness = new Thickness(0),
-            Content = icon
-        };
-        b.Click += (_, _) => act();
-        return b;
-    }
+    private static Control GlyphBtn(MaterialIcon icon, Action act, double size = 36, bool playStyle = false) =>
+        TesseraChrome.IconButton(icon, act, size, circularHighlight: !playStyle);
 
     private static TextBlock Text(string text, double size, FontWeight weight, double maxWidth, bool muted = false) =>
         new()
