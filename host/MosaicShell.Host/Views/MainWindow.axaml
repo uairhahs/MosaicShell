@@ -597,7 +597,7 @@
                               ToolTip.Tip="Slightly translucent Mocha crust. Off = denser solid panel." />
                     <CheckBox Content="Skia backdrop blur" IsChecked="{Binding TesseraBackdropBlur}"
                               IsEnabled="{Binding TesseraAcrylicBackdrop}"
-                              ToolTip.Tip="Live Skia backdrop blur on Tessera glass panels. Off uses gradient + grain fallback only." />
+                              ToolTip.Tip="Lighter, more translucent Skia frost so the desktop shows through. Live pixel sampling is off (black-box safe); this adjusts fake-glass richness only. No effect on OS acrylic trial (--tessera-os-acrylic)." />
                     <CheckBox Content="Subtle desktop dim (Focus)" IsChecked="{Binding TesseraFocusDim}"
                               ToolTip.Tip="Very light dim behind the flyout. Never blocks input; outside click dismisses instantly." />
                     <StackPanel Spacing="4" Margin="0,4,0,0">

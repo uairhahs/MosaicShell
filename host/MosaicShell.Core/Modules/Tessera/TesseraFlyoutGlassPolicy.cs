@@ -69,6 +69,13 @@ public static class TesseraFlyoutGlassPolicy
         && settingsWantBlur
         && !ForbidLiveBackdropPixelSampling;
 
+    /// <summary>
+    /// User-facing Skia frost richness while live pixel sampling stays forbidden.
+    /// Lighter tint + frost slab so wallpaper shows through the Transparent HWND.
+    /// </summary>
+    public static bool ShouldUseSimulatedBackdropBlur(bool softFrostHwndReady, bool settingsWantBlur) =>
+        softFrostHwndReady && settingsWantBlur;
+
     public static bool ShouldAllowGdiScreenCapture(bool softFrostHwndReady, bool settingsWantBlur) =>
         ShouldEnableBackdropBlur(softFrostHwndReady, settingsWantBlur)
         && !ForbidLiveBackdropPixelSampling;

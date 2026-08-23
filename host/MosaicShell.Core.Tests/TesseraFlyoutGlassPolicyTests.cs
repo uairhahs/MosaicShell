@@ -58,6 +58,20 @@ public class TesseraFlyoutGlassPolicyTests
     }
 
     [Theory]
+    [InlineData(true, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    public void Simulated_backdrop_blur_follows_user_setting_when_hwnd_ready(
+        bool softFrostHwndReady,
+        bool settingsWantBlur,
+        bool expectSimulated)
+    {
+        TesseraFlyoutGlassPolicy
+            .ShouldUseSimulatedBackdropBlur(softFrostHwndReady, settingsWantBlur)
+            .Should().Be(expectSimulated);
+    }
+
+    [Theory]
     [InlineData(true, true, TesseraFlyoutGlassMode.SkiaFallback)]
     [InlineData(true, false, TesseraFlyoutGlassMode.SkiaFallback)]
     [InlineData(false, true, TesseraFlyoutGlassMode.EmbeddedSimple)]

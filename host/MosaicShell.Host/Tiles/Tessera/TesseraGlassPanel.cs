@@ -401,7 +401,10 @@ internal sealed class TesseraGlassBackground : Control
             // Always paint translucent frost chrome. Do NOT GDI/BitBlt or shared-capture into
             // this layer, that self-captures the flyout as opaque black (Soft frost → black boxes).
             // Real wallpaper shows through Transparent HWND + alpha frost (4fcc41a fake-glass recipe).
-            TesseraGlassDrawOperation.DrawFallbackGlass(lc, round, w, h, tint);
+            var simulatedBlur = TesseraGlass.UseBackdropBlur
+                && !TesseraGlass.PreviewMode
+                && !TesseraGlass.IsEmbeddedPreviewContext(this);
+            TesseraGlassDrawOperation.DrawFallbackGlass(lc, round, w, h, tint, lighterFrost: simulatedBlur);
         }
 
         var drewBackdrop = false;
@@ -431,7 +434,16 @@ internal sealed class TesseraGlassBackground : Control
         }
         else
         {
-            TesseraGlassDrawOperation.DrawShellTint(lc, round, tint, drewBackdrop, lightTintOnly: false);
+            var simulatedBlur = TesseraGlass.UseBackdropBlur
+                && !maySample
+                && !TesseraGlass.PreviewMode
+                && !TesseraGlass.IsEmbeddedPreviewContext(this);
+            TesseraGlassDrawOperation.DrawShellTint(
+                lc,
+                round,
+                tint,
+                drewBackdrop || simulatedBlur,
+                lightTintOnly: false);
             TesseraGlassDrawOperation.DrawGlassChrome(lc, round, w, h);
         }
 
@@ -564,22 +576,31 @@ internal sealed class TesseraGlassDrawOperation : ICustomDrawOperation
         return true;
     }
 
-    internal static void DrawFallbackGlass(SKCanvas canvas, SKRoundRect round, int w, int h, Color tint)
+    internal static void DrawFallbackGlass(
+        SKCanvas canvas,
+        SKRoundRect round,
+        int w,
+        int h,
+        Color tint,
+        bool lighterFrost = false)
     {
         // Recipe from 4fcc41a (pre-consolidation), dark slab + highlight so Soft frost reads.
+        var baseAlpha = lighterFrost ? (byte)68 : (byte)96;
         using var basePaint = new SKPaint
         {
-            Color = new SKColor(17, 17, 27, 96),
+            Color = new SKColor(17, 17, 27, baseAlpha),
             IsAntialias = true
         };
         canvas.DrawRoundRect(round, basePaint);
 
+        var hiTop = lighterFrost ? (byte)36 : (byte)28;
+        var hiBottom = lighterFrost ? (byte)10 : (byte)6;
         using var highlight = new SKPaint
         {
             Shader = SKShader.CreateLinearGradient(
                 new SKPoint(0, 0),
                 new SKPoint(w * 0.55f, h * 0.55f),
-                [new SKColor(255, 255, 255, 28), new SKColor(255, 255, 255, 6)],
+                [new SKColor(255, 255, 255, hiTop), new SKColor(255, 255, 255, hiBottom)],
                 [0f, 1f],
                 SKShaderTileMode.Clamp),
             IsAntialias = true,
@@ -587,10 +608,11 @@ internal sealed class TesseraGlassDrawOperation : ICustomDrawOperation
         };
         canvas.DrawRoundRect(round, highlight);
 
+        var grainAlpha = lighterFrost ? (byte)14 : (byte)10;
         using var noisePaint = new SKPaint
         {
             Shader = SKShader.CreatePerlinNoiseFractalNoise(0.85f, 0.6f, 2, 0),
-            Color = new SKColor(255, 255, 255, 10),
+            Color = new SKColor(255, 255, 255, grainAlpha),
             IsAntialias = true,
             BlendMode = SKBlendMode.Overlay
         };

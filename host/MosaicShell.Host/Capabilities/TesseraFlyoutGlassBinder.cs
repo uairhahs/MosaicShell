@@ -29,14 +29,16 @@ internal static class TesseraFlyoutGlassBinder
         var useEmbedded = TesseraFlyoutGlassPolicy.ShouldUseEmbeddedPreviewBuild(
             isConfigOrExportPreview: false,
             softFrostHwndReady: softFrostHwnd);
-        var useBackdrop = TesseraFlyoutGlassPolicy.ShouldEnableBackdropBlur(softFrostHwnd, settingsWantBlur);
+        var useSimulatedBackdrop = TesseraFlyoutGlassPolicy.ShouldUseSimulatedBackdropBlur(
+            softFrostHwnd,
+            settingsWantBlur);
         var allowGdi = TesseraFlyoutGlassPolicy.ShouldAllowGdiScreenCapture(softFrostHwnd, settingsWantBlur);
 
-        TesseraGlass.UseBackdropBlur = useBackdrop;
+        TesseraGlass.UseBackdropBlur = useSimulatedBackdrop;
         TesseraGlass.AllowGdiScreenCapture = allowGdi;
         TesseraGlass.UseOsAcrylicChrome = mode == TesseraFlyoutGlassMode.OsAcrylic;
         TesseraGlass.SuppressInnerSkiaGlass = TesseraFlyoutGlassPolicy.SuppressMeterInnerSkiaGlass(mode);
 
-        return new Binding(mode, useEmbedded, softFrostHwnd, useBackdrop, allowGdi, osAcrylicEligible);
+        return new Binding(mode, useEmbedded, softFrostHwnd, useSimulatedBackdrop, allowGdi, osAcrylicEligible);
     }
 }
