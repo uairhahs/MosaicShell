@@ -80,6 +80,26 @@
       <Setter Property="HorizontalContentAlignment" Value="Center" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
+    <Style Selector="Button.accentSwatch">
+      <Setter Property="Width" Value="28" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="MinWidth" Value="28" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0,0,8,8" />
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="2" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.accentSwatch:pointerover">
+      <Setter Property="BorderBrush" Value="#a6adc8" />
+    </Style>
+    <Style Selector="Button.accentSwatch.selected">
+      <Setter Property="BorderBrush" Value="#cdd6f4" />
+    </Style>
     <Style Selector="Border.card">
       <Setter Property="Background" Value="#1e1e2e" />
       <Setter Property="CornerRadius" Value="12" />
@@ -225,8 +245,12 @@
                           Padding="20,18"
                           PointerPressed="OnDiscoverCardPressed">
                     <Grid ColumnDefinitions="Auto,*">
-                      <Image Width="48" Height="48" Margin="0,0,20,0" VerticalAlignment="Center"
-                             Source="{Binding IconPath}" />
+                      <Border Width="48" Height="48" CornerRadius="12" Margin="0,0,20,0"
+                              Background="#313244" VerticalAlignment="Center">
+                        <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="26" Height="26"
+                                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                                            Foreground="{Binding GlyphBrush}" />
+                      </Border>
                       <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
                         <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold" Foreground="#cdd6f4" />
                         <TextBlock Text="{Binding Body}" FontSize="14" Foreground="#a6adc8" TextWrapping="Wrap" />
@@ -271,8 +295,12 @@
                       <Border Classes="row">
                         <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
                           <CheckBox Grid.Column="0" IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center" Margin="0,0,6,0" />
-                          <Image Grid.Column="1" Width="32" Height="32" Margin="0,0,8,0"
-                                 Source="{Binding IconPath}" VerticalAlignment="Center" />
+                          <Border Grid.Column="1" Width="36" Height="36" CornerRadius="8" Margin="0,0,8,0"
+                                  Background="#313244" VerticalAlignment="Center">
+                            <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="20" Height="20"
+                                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                Foreground="{Binding GlyphBrush}" />
+                          </Border>
                           <Border Grid.Column="2" Classes="libraryHit"
                                   PointerPressed="OnLibraryTileBodyPressed"
                                   ToolTip.Tip="Tile settings">
@@ -323,8 +351,12 @@
                       <Border Classes="row">
                         <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
                           <CheckBox Grid.Column="0" IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center" Margin="0,0,6,0" />
-                          <Image Grid.Column="1" Width="32" Height="32" Margin="0,0,8,0"
-                                 Source="{Binding IconPath}" VerticalAlignment="Center" />
+                          <Border Grid.Column="1" Width="36" Height="36" CornerRadius="8" Margin="0,0,8,0"
+                                  Background="#313244" VerticalAlignment="Center">
+                            <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="20" Height="20"
+                                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                Foreground="{Binding GlyphBrush}" />
+                          </Border>
                           <Border Grid.Column="2" Classes="libraryHit"
                                   PointerPressed="OnLibraryTileBodyPressed"
                                   ToolTip.Tip="Tile settings">
@@ -402,8 +434,7 @@
               </Border>
 
               <ScrollViewer HorizontalScrollBarVisibility="Disabled"
-                            VerticalScrollBarVisibility="Visible"
-                            AllowAutoHide="False">
+                            VerticalScrollBarVisibility="Auto">
                 <StackPanel HorizontalAlignment="Stretch" Margin="0,0,8,8" Spacing="0">
                   <TextBlock Classes="sectionTitle" Text="Additional settings" Margin="0,0,0,8" />
 
@@ -510,8 +541,7 @@
             <Border Grid.Column="1" Classes="section" Margin="0"
                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
               <ScrollViewer HorizontalScrollBarVisibility="Disabled"
-                            VerticalScrollBarVisibility="Auto"
-                            AllowAutoHide="False">
+                            VerticalScrollBarVisibility="Auto">
                 <StackPanel Spacing="12">
                   <Grid ColumnDefinitions="*,Auto">
                     <TextBlock Classes="sectionTitle" Text="Appearance" Margin="0" VerticalAlignment="Center" />
@@ -537,8 +567,32 @@
                   <TextBlock Classes="sectionTitle" Text="More appearance" Margin="0" />
                   <TextBlock Classes="sectionHint" Margin="0"
                              Text="Host material language - soft frost tint (not OS acrylic). Optional baked wash is a light MagickMeter-style texture." />
-                  <StackPanel Spacing="4">
+                  <StackPanel Spacing="8">
                     <TextBlock Text="Accent colour" Foreground="#a6adc8" FontSize="12" />
+                    <ItemsControl ItemsSource="{Binding TesseraAccentSwatches}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <WrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:TesseraAccentSwatchVm">
+                          <Button Classes="accentSwatch"
+                                  Classes.selected="{Binding IsSelected}"
+                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).SelectTesseraAccentCommand}"
+                                  CommandParameter="{Binding Hex}"
+                                  ToolTip.Tip="{Binding Name}">
+                            <Panel Width="20" Height="20">
+                              <Ellipse Width="20" Height="20" Fill="{Binding Fill}" />
+                              <icons:MaterialIcon Kind="Palette" Width="11" Height="11"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                  Foreground="#11111b"
+                                                  IsVisible="{Binding IsSystem}" />
+                            </Panel>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                     <TextBox Classes="config" Text="{Binding TesseraAccentHex}"
                              Watermark="#0273CD or leave blank for Windows accent"
                              ToolTip.Tip="Hex accent used by every Tessera style (sliders, play, toggles, highlights). Empty = system accent." />
@@ -574,7 +628,7 @@
               </StackPanel>
             </Border>
             <ScrollViewer HorizontalScrollBarVisibility="Disabled"
-                          VerticalScrollBarVisibility="Auto" AllowAutoHide="False">
+                          VerticalScrollBarVisibility="Auto">
               <StackPanel Spacing="12" Margin="0,0,8,8">
                 <Border Classes="section" IsVisible="{Binding ConfigCanTryOverlay}">
                   <StackPanel Spacing="8">
@@ -753,8 +807,7 @@
                    VerticalAlignment="Center" />
       </StackPanel>
       <ScrollViewer HorizontalScrollBarVisibility="Disabled"
-                    VerticalScrollBarVisibility="Visible"
-                    AllowAutoHide="False"
+                    VerticalScrollBarVisibility="Auto"
                     HorizontalAlignment="Stretch">
         <StackPanel Spacing="0" HorizontalAlignment="Stretch">
 

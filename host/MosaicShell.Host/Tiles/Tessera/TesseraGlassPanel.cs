@@ -340,7 +340,7 @@ internal sealed class TesseraGlassBackground : Control
     {
         var screenX = int.MinValue;
         var screenY = int.MinValue;
-        if (this.GetVisualRoot() is not null)
+        if (VisualRoot is not null)
         {
             try
             {

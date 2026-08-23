@@ -174,7 +174,7 @@ public sealed class TileOverlayWindow : Window
         MinWidth = 160;
         MinHeight = 100;
         CanResize = true;
-        SystemDecorations = SystemDecorations.None;
+        WindowDecorations = Avalonia.Controls.WindowDecorations.None;
         Topmost = !IsDesktopWidget && !_stuckToDesktop;
         ShowInTaskbar = false;
         TransparencyLevelHint = [WindowTransparencyLevel.Transparent];

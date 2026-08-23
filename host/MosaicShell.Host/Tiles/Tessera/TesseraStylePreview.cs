@@ -123,7 +123,7 @@ public sealed class TesseraStylePreview : Border
             return;
         }
 
-        if (!IsVisible)
+        if (!IsVisible || !IsEffectivelyVisible)
         {
             _rebuildPending = true;
             return;
@@ -136,7 +136,7 @@ public sealed class TesseraStylePreview : Border
         Dispatcher.UIThread.Post(() =>
         {
             _rebuildPosted = false;
-            if (Volatile.Read(ref _suspendDepth) > 0 || !IsVisible)
+            if (Volatile.Read(ref _suspendDepth) > 0 || !IsVisible || !IsEffectivelyVisible)
             {
                 _rebuildPending = true;
                 return;

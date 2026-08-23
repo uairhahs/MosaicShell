@@ -1,5 +1,5 @@
-# local only fodlers
-
+# local only folders
+.cursor
 .local
 .venv
 .github/docs

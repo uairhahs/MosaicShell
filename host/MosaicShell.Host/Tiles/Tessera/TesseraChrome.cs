@@ -162,7 +162,10 @@ internal static class TesseraChrome
         return tile;
     }
 
-    /// <summary>Wrap Tessera flyout content so glass panels can find the shared backdrop host as an ancestor.</summary>
+    /// <summary>
+    /// Wrap Tessera flyout content so glass panels can find the shared backdrop host as an ancestor.
+    /// Scaffold is dormant for live sampling (ForbidLiveBackdropPixelSampling) but kept for extensibility.
+    /// </summary>
     public static Control WrapFlyoutContent(Control content) =>
         new TesseraSharedBackdropHost { Child = content };
 

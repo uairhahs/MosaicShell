@@ -1,6 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.Win32;
-using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.HostPlatform;
 
 namespace MosaicShell.Host;
 
@@ -18,10 +18,9 @@ sealed class Program
         var builder = AppBuilder.Configure<App>()
             .UsePlatformDetect();
 
-        // Soft frost (4fcc41a): WinUIComposition composites Transparent over wallpaper.
-        // DXGI/RedirectionSurface often clears Transparent to black. Opaque recovery
-        // (PreferWinUiCompositionForSoftFrost=false) should prefer DXGI first instead.
-        if (TesseraFlyoutWindowPolicy.PreferWinUiCompositionForSoftFrost)
+        // Neutral host-platform hint (SoftFrost maps into PreferWinUiComposition).
+        // Do not import Tessera module types from Program.
+        if (Win32HostCompositionPolicy.PreferWinUiComposition)
         {
             builder = builder.With(new Win32PlatformOptions
             {

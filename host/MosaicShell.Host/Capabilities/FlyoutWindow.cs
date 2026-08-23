@@ -36,13 +36,13 @@ internal sealed class FlyoutWindow : Window
         _services = services;
         _material = TesseraFlyoutMaterialFactory.FromPayload(request.Payload);
         TesseraPalette.ApplyMaterial(_material);
-        // Win32 title is for HWND identity only — SystemDecorations.None; never a visible chrome strip.
+        // Win32 title is for HWND identity only — WindowDecorations.None; never a visible chrome strip.
         Title = $"MosaicShell - {request.ModuleId}";
 
         // docs: SizeToContent for content-sized tool windows
         SizeToContent = SizeToContent.WidthAndHeight;
         CanResize = false;
-        SystemDecorations = SystemDecorations.None;
+        WindowDecorations = Avalonia.Controls.WindowDecorations.None;
         Topmost = true;
         ShowInTaskbar = false;
         ShowActivated = false;

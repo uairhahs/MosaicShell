@@ -32,4 +32,33 @@ public class TesseraAccentColorTests
         TesseraAccentColor.NormalizeOrEmpty("").Should().BeEmpty();
         TesseraAccentColor.NormalizeOrEmpty("nope").Should().BeEmpty();
     }
+
+    [Fact]
+    public void Presets_start_with_system_then_curated_circles()
+    {
+        TesseraAccentColor.Presets.Should().HaveCountGreaterThanOrEqualTo(10);
+        TesseraAccentColor.Presets[0].Name.Should().Be("System");
+        TesseraAccentColor.Presets[0].Hex.Should().BeEmpty();
+        TesseraAccentColor.Presets[0].IsSystem.Should().BeTrue();
+
+        var colors = TesseraAccentColor.Presets.Skip(1).ToList();
+        foreach (var p in colors)
+        {
+            var ok = TesseraAccentColor.TryParse(p.Hex, out _, out _, out _);
+            ok.Should().BeTrue($"preset {p.Name} hex {p.Hex}");
+        }
+        colors.Select(p => TesseraAccentColor.NormalizeOrEmpty(p.Hex)).Should().OnlyHaveUniqueItems();
+        colors.Select(p => TesseraAccentColor.NormalizeOrEmpty(p.Hex)).Should().Contain("#0273CD");
+    }
+
+    [Fact]
+    public void MatchesPreset_normalizes_hex_and_treats_blank_as_system()
+    {
+        var blue = TesseraAccentColor.Presets.First(p => p.Hex.Equals("#0273CD", StringComparison.OrdinalIgnoreCase)
+                                                         || TesseraAccentColor.NormalizeOrEmpty(p.Hex) == "#0273CD");
+        TesseraAccentColor.MatchesPreset("0273cd", blue).Should().BeTrue();
+        TesseraAccentColor.MatchesPreset("#0273CD", TesseraAccentColor.Presets[0]).Should().BeFalse();
+        TesseraAccentColor.MatchesPreset("", TesseraAccentColor.Presets[0]).Should().BeTrue();
+        TesseraAccentColor.MatchesPreset("  ", TesseraAccentColor.Presets[0]).Should().BeTrue();
+    }
 }

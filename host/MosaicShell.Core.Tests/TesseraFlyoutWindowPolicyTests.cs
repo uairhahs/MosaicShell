@@ -5,6 +5,21 @@ namespace MosaicShell.Core.Tests;
 
 public class TesseraFlyoutWindowPolicyTests
 {
+    /// <summary>Single ship-gate fact — SoftFrost must not flip off silently.</summary>
+    [Fact]
+    public void Ship_gate_soft_frost_hwnd_is_on()
+    {
+        TesseraFlyoutWindowPolicy.SoftFrostHwndReady.Should().BeTrue();
+        TesseraFlyoutWindowPolicy.PreferWinUiCompositionForSoftFrost.Should().BeTrue();
+        TesseraFlyoutWindowPolicy.MustApplyPresentableLayeredAlpha.Should().BeFalse(
+            "LWA_ALPHA=255 makes the HWND opaque and blocks glass");
+        TesseraFlyoutWindowPolicy.WindowBackgroundBrushIsTransparent.Should().BeTrue();
+        TesseraFlyoutWindowPolicy.MustRequestOpaqueToolWindow.Should().BeFalse();
+        TesseraFlyoutWindowPolicy.SoftFrostCompositionFallbackAlpha.Should().Be((byte)0);
+        TesseraFlyoutWindowPolicy.PresentableLayeredAlpha.Should().Be((byte)255);
+        TesseraFlyoutWindowPolicy.ForbidDebugTitleChrome.Should().BeTrue();
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -17,60 +32,29 @@ public class TesseraFlyoutWindowPolicyTests
     }
 
     [Fact]
-    public void Soft_frost_prefers_winui_composition_over_dxgi_black_clear()
+    public void Composition_fallback_alpha_is_zero_while_soft_frost_hwnd_ship_gate_on()
     {
-        TesseraFlyoutWindowPolicy.SoftFrostHwndReady.Should().BeTrue();
-        TesseraFlyoutWindowPolicy.PreferWinUiCompositionForSoftFrost.Should().BeTrue();
-    }
-
-    [Fact]
-    public void Soft_frost_composition_fallback_alpha_is_zero()
-    {
-        TesseraFlyoutWindowPolicy.SoftFrostHwndReady.Should().BeTrue();
-        TesseraFlyoutWindowPolicy.SoftFrostCompositionFallbackAlpha.Should().Be((byte)0);
-
+        // Behavior follows SoftFrostHwndReady, not the material acrylic flag.
         foreach (var frost in new[] { true, false })
         {
             TesseraFlyoutWindowPolicy
                 .ResolveCompositionFallbackAlpha(TesseraFlyoutMaterialFactory.Create(frost))
-                .Should().Be((byte)0, "mocha ≥170 fallback matte-slabs Soft frost");
+                .Should().Be((byte)0);
         }
-    }
-
-    [Fact]
-    public void Soft_frost_hwnd_skips_opaque_lwa_alpha()
-    {
-        TesseraFlyoutWindowPolicy.SoftFrostHwndReady.Should().BeTrue();
-        TesseraFlyoutWindowPolicy.MustApplyPresentableLayeredAlpha.Should().BeFalse(
-            "LWA_ALPHA=255 makes the HWND opaque and blocks glass");
-        TesseraFlyoutWindowPolicy.PresentableLayeredAlpha.Should().Be((byte)255);
     }
 
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void Soft_frost_hwnd_honors_material_transparent_hints(bool softFrost)
+    public void Resolve_transparency_hints_never_request_os_acrylic(bool softFrostMaterial)
     {
-        var material = TesseraFlyoutMaterialFactory.Create(softFrost);
+        var material = TesseraFlyoutMaterialFactory.Create(softFrostMaterial);
         material.TransparencyHints.Should().Contain("Transparent");
+        material.TransparencyHints.Should().NotContain("AcrylicBlur");
+        material.TransparencyHints.Should().NotContain("Blur");
 
-        TesseraFlyoutWindowPolicy.SoftFrostHwndReady.Should().BeTrue();
+        // Ship SoftFrost: opaque tool window off → honor material Transparent hints.
         TesseraFlyoutWindowPolicy.MustRequestOpaqueToolWindow.Should().BeFalse();
-
-        var hints = TesseraFlyoutWindowPolicy.ResolveTransparencyHints(material);
-        hints.Should().Equal("Transparent");
-        hints.Should().NotContain("AcrylicBlur");
-    }
-
-    [Fact]
-    public void Window_background_brush_is_transparent_for_soft_frost()
-    {
-        TesseraFlyoutWindowPolicy.WindowBackgroundBrushIsTransparent.Should().BeTrue();
-    }
-
-    [Fact]
-    public void Host_must_not_wrap_flyout_in_debug_title_chrome()
-    {
-        TesseraFlyoutWindowPolicy.ForbidDebugTitleChrome.Should().BeTrue();
+        TesseraFlyoutWindowPolicy.ResolveTransparencyHints(material).Should().Equal("Transparent");
     }
 }

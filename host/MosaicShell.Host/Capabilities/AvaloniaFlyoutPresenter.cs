@@ -402,28 +402,17 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
             TesseraPalette.ApplyMaterial(material);
 
             var settingsWantBlur = TesseraFlyoutRequestBuilder.BackdropBlurFromPayload(request.Payload);
-            var softFrostHwnd = TesseraFlyoutWindowPolicy.SoftFrostHwndReady;
-            var glassMode = TesseraFlyoutGlassPolicy.ResolveLiveMode(softFrostHwnd, settingsWantBlur);
-            var useEmbedded = TesseraFlyoutGlassPolicy.ShouldUseEmbeddedPreviewBuild(
-                isConfigOrExportPreview: false,
-                softFrostHwndReady: softFrostHwnd);
-            TesseraGlass.UseBackdropBlur = TesseraFlyoutGlassPolicy.ShouldEnableBackdropBlur(
-                softFrostHwnd,
-                settingsWantBlur);
-            TesseraGlass.AllowGdiScreenCapture = TesseraFlyoutGlassPolicy.ShouldAllowGdiScreenCapture(
-                softFrostHwnd,
-                settingsWantBlur);
-
+            var glass = TesseraFlyoutGlassBinder.ApplyForLiveFlyout(settingsWantBlur);
             Log(
-                $"glass mode={glassMode} backdrop={TesseraGlass.UseBackdropBlur} " +
-                $"embeddedPreview={useEmbedded} softFrostHwnd={softFrostHwnd}");
+                $"glass mode={glass.Mode} backdrop={glass.UseBackdropBlur} " +
+                $"embeddedPreview={glass.UseEmbeddedPreview} softFrostHwnd={glass.SoftFrostHwndReady}");
 
             var vm = TesseraFlyoutViewModel.FromRequest(_services, request, _hostUi);
             var root = TesseraStyleFactory.Create(
                 request.StyleId ?? "Fluent",
                 vm,
                 accentColor: null,
-                embeddedPreview: useEmbedded);
+                embeddedPreview: glass.UseEmbeddedPreview);
             var scale = FlyoutScaleFromPayload(request.Payload);
             if (Math.Abs(scale - 1.0) > 0.01)
             {

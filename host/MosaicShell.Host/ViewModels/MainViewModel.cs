@@ -17,7 +17,9 @@ using MosaicShell.Host.Input;
 using MosaicShell.Host.Tiles;
 using MosaicShell.Host.Tiles.Tessera;
 using System.Collections.ObjectModel;
+using Avalonia;
 using Avalonia.Input;
+using Avalonia.Media;
 using Avalonia.Threading;
 
 namespace MosaicShell.Host.ViewModels;
@@ -54,10 +56,15 @@ public partial class MainViewModel : ViewModelBase
 
         HomeCards =
         [
-            new("Welcome", "First-run picks, batch install, startup.", "Welcome", "/Assets/Modules/Inlay.png"),
-            new("Tiles", "Install widgets or set tiles (Tessera flyouts, launchers).", "Tiles", "/Assets/Modules/Tessera.png"),
-            new("About", "MosaicShell is a native host re-write. The app adds desktop customisation and a tool suite to tailor your experience which rely solely on the background CapabilityDaemon for persistence.", "About", "/Assets/MosaicShell.png"),
+            HomeCard("Welcome", "First-run picks, batch install, startup.", "Welcome"),
+            HomeCard("Tiles", "Install widgets or set tiles (Tessera flyouts, launchers).", "Tiles"),
+            HomeCard("About", "MosaicShell is a native host re-write. The app adds desktop customisation and a tool suite to tailor your experience which rely solely on the background CapabilityDaemon for persistence.", "About"),
         ];
+
+        TesseraAccentSwatches = [];
+        foreach (var preset in TesseraAccentColor.Presets)
+            TesseraAccentSwatches.Add(TesseraAccentSwatchVm.From(preset));
+        SyncTesseraAccentSwatches();
 
         ModuleStyleOptions = new ObservableCollection<string>();
 
@@ -73,6 +80,7 @@ public partial class MainViewModel : ViewModelBase
     }
 
     public ObservableCollection<DiscoverCard> HomeCards { get; }
+    public ObservableCollection<TesseraAccentSwatchVm> TesseraAccentSwatches { get; }
     public ObservableCollection<LibraryItemViewModel> Modules { get; } = [];
     public ObservableCollection<LibraryItemViewModel> Widgets { get; } = [];
     public ObservableCollection<string> ModuleStyleOptions { get; }
@@ -205,6 +213,24 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand] private void OpenCard(DiscoverCard? card) { if (card is not null) Navigate(card.TargetPage); }
+
+    [RelayCommand]
+    private void SelectTesseraAccent(string? hex) =>
+        TesseraAccentHex = TesseraAccentColor.NormalizeOrEmpty(hex);
+
+    partial void OnTesseraAccentHexChanged(string value) => SyncTesseraAccentSwatches();
+
+    private void SyncTesseraAccentSwatches()
+    {
+        foreach (var swatch in TesseraAccentSwatches)
+            swatch.IsSelected = TesseraAccentColor.MatchesPreset(TesseraAccentHex, new TesseraAccentPreset(swatch.Name, swatch.Hex));
+    }
+
+    private static DiscoverCard HomeCard(string title, string body, string page)
+    {
+        var glyph = HubGlyphCatalog.ForHomeCard(page);
+        return new(title, body, page, HubGlyphUi.Kind(glyph), HubGlyphUi.Brush(glyph));
+    }
 
     [RelayCommand]
     private void GoBack()
@@ -979,7 +1005,7 @@ public partial class MainViewModel : ViewModelBase
     }
 }
 
-public sealed record DiscoverCard(string Title, string Body, string TargetPage, string IconPath);
+public sealed record DiscoverCard(string Title, string Body, string TargetPage, MaterialIconKind GlyphKind, IBrush GlyphBrush);
 
 public partial class LibraryItemViewModel : ObservableObject
 {
@@ -987,6 +1013,8 @@ public partial class LibraryItemViewModel : ObservableObject
     public required string Name { get; init; }
     public required string Description { get; init; }
     public required string IconPath { get; init; }
+    public required MaterialIconKind GlyphKind { get; init; }
+    public required IBrush GlyphBrush { get; init; }
     public bool IsCapability { get; init; }
 
     [ObservableProperty] private bool _isInstalled;
@@ -1067,12 +1095,15 @@ public partial class LibraryItemViewModel : ObservableObject
         else
             status = running ? "Running" : "Ready";
 
+        var glyph = HubGlyphCatalog.ForModule(info.Id);
         var item = new LibraryItemViewModel
         {
             Id = info.Id,
             Name = info.DisplayName,
             Description = info.Description,
             IconPath = $"/Assets/Modules/{info.Id}.png",
+            GlyphKind = HubGlyphUi.Kind(glyph),
+            GlyphBrush = HubGlyphUi.Brush(glyph),
             IsCapability = isCap,
             IsInstalled = installed,
             IsRunning = running && installed && !isCap,
@@ -1098,4 +1129,34 @@ public sealed record TesseraNamedChoice(string Code, string Label)
 public sealed record TesseraAniChoice(int Value, string Label)
 {
     public override string ToString() => Label;
+}
+
+public sealed partial class TesseraAccentSwatchVm : ObservableObject
+{
+    public required string Name { get; init; }
+    public required string Hex { get; init; }
+    public required IBrush Fill { get; init; }
+    public bool IsSystem { get; init; }
+
+    [ObservableProperty] private bool _isSelected;
+
+    public static TesseraAccentSwatchVm From(TesseraAccentPreset preset) => new()
+    {
+        Name = preset.Name,
+        Hex = preset.Hex,
+        IsSystem = preset.IsSystem,
+        Fill = preset.IsSystem ? SystemFill() : new SolidColorBrush(Color.Parse(TesseraAccentColor.NormalizeOrEmpty(preset.Hex))),
+    };
+
+    private static IBrush SystemFill() => new LinearGradientBrush
+    {
+        StartPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
+        EndPoint = new RelativePoint(1, 0, RelativeUnit.Relative),
+        GradientStops =
+        {
+            new GradientStop(Color.Parse("#CBA6F7"), 0),
+            new GradientStop(Color.Parse("#89B4FA"), 0.5),
+            new GradientStop(Color.Parse("#94E2D5"), 1),
+        }
+    };
 }

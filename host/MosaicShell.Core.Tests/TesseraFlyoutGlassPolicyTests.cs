@@ -13,42 +13,10 @@ public class TesseraFlyoutGlassPolicyTests
     }
 
     [Fact]
-    public void Soft_frost_hwnd_ready_uses_skia_not_presentable_matte()
+    public void Live_backdrop_pixel_sampling_stays_forbidden()
     {
-        TesseraFlyoutWindowPolicy.SoftFrostHwndReady.Should().BeTrue();
-        TesseraFlyoutGlassPolicy.PreferPresentableShellUntilSoftFrostHwnd.Should().BeTrue();
-
-        TesseraFlyoutGlassPolicy.ShouldUseEmbeddedPreviewBuild(isConfigOrExportPreview: false)
-            .Should().BeFalse();
-
-        // Pixel sampling forbidden → SkiaFallback (translucent frost), not GDI SkiaBackdrop.
-        TesseraFlyoutGlassPolicy
-            .ResolveLiveMode(softFrostHwndReady: true, useBackdropBlur: true)
-            .Should().Be(TesseraFlyoutGlassMode.SkiaFallback);
-    }
-
-    [Fact]
-    public void Live_backdrop_pixel_sampling_is_forbidden_to_avoid_black_self_capture()
-    {
-        TesseraFlyoutGlassPolicy.ForbidLiveBackdropPixelSampling.Should().BeTrue();
-        TesseraFlyoutGlassPolicy
-            .ShouldEnableBackdropBlur(softFrostHwndReady: true, settingsWantBlur: true)
-            .Should().BeFalse();
-        TesseraFlyoutGlassPolicy
-            .ShouldAllowGdiScreenCapture(softFrostHwndReady: true, settingsWantBlur: true)
-            .Should().BeFalse();
-    }
-
-    [Fact]
-    public void Opaque_hwnd_recovery_still_prefers_presentable_shell()
-    {
-        TesseraFlyoutGlassPolicy
-            .ShouldUseEmbeddedPreviewBuild(isConfigOrExportPreview: false, softFrostHwndReady: false)
-            .Should().BeTrue();
-
-        TesseraFlyoutGlassPolicy
-            .ResolveLiveMode(softFrostHwndReady: false, useBackdropBlur: true)
-            .Should().Be(TesseraFlyoutGlassMode.EmbeddedSimple);
+        TesseraFlyoutGlassPolicy.ForbidLiveBackdropPixelSampling.Should().BeTrue(
+            "shared-backdrop scaffold stays dormant; GDI/self-capture blanks Soft frost");
     }
 
     [Fact]
@@ -59,21 +27,33 @@ public class TesseraFlyoutGlassPolicyTests
             .Should().BeTrue();
     }
 
-    [Fact]
-    public void Backdrop_blur_requires_soft_frost_settings_and_sampling_allowed()
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void Embedded_preview_for_live_depends_on_soft_frost_hwnd(
+        bool softFrostHwndReady,
+        bool expectEmbedded)
     {
         TesseraFlyoutGlassPolicy
-            .ShouldEnableBackdropBlur(softFrostHwndReady: false, settingsWantBlur: true)
-            .Should().BeFalse();
+            .ShouldUseEmbeddedPreviewBuild(isConfigOrExportPreview: false, softFrostHwndReady)
+            .Should().Be(expectEmbedded);
+    }
 
-        TesseraFlyoutGlassPolicy
-            .ShouldEnableBackdropBlur(softFrostHwndReady: true, settingsWantBlur: false)
-            .Should().BeFalse();
-
-        // Sampling currently forbidden — Soft frost uses translucent Skia frost only.
+    [Theory]
+    [InlineData(true, true, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    public void Backdrop_blur_stays_off_while_sampling_forbidden(
+        bool softFrostHwndReady,
+        bool settingsWantBlur,
+        bool expectEnabled)
+    {
         TesseraFlyoutGlassPolicy.ForbidLiveBackdropPixelSampling.Should().BeTrue();
         TesseraFlyoutGlassPolicy
-            .ShouldEnableBackdropBlur(softFrostHwndReady: true, settingsWantBlur: true)
+            .ShouldEnableBackdropBlur(softFrostHwndReady, settingsWantBlur)
+            .Should().Be(expectEnabled);
+        TesseraFlyoutGlassPolicy
+            .ShouldAllowGdiScreenCapture(softFrostHwndReady, settingsWantBlur)
             .Should().BeFalse();
     }
 
@@ -95,9 +75,11 @@ public class TesseraFlyoutGlassPolicyTests
     [Fact]
     public void Soft_frost_material_still_asks_for_transparent_not_os_acrylic()
     {
+        // R5: OS Acrylic/Mica stays shelved — material contract forces Transparent only.
         var m = TesseraFlyoutMaterialFactory.Create(useAcrylic: true);
         m.TransparencyHints.Should().Equal("Transparent");
         m.TransparencyHints.Should().NotContain("AcrylicBlur");
         m.TransparencyHints.Should().NotContain("Blur");
+        m.TransparencyHints.Should().NotContain("Mica");
     }
 }

@@ -23,7 +23,7 @@ internal sealed class FocusDimWindow : Window
     {
         _monitorIndex = monitorIndexOneBased;
         Title = "MosaicShell - Focus dim";
-        SystemDecorations = SystemDecorations.None;
+        WindowDecorations = Avalonia.Controls.WindowDecorations.None;
         CanResize = false;
         Topmost = true;
         ShowInTaskbar = false;

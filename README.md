@@ -28,7 +28,7 @@ Forked from [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore), archived No
 | Requirement | Minimum |
 |-------------|---------|
 | OS | Windows 10 x64 or later |
-| .NET SDK | 8.0 |
+| .NET SDK | 10.0 |
 | RAM | 6 GB |
 
 ## Install (Host)

@@ -36,6 +36,9 @@ public static class TesseraFlyoutGlassPolicy
     /// GDI BitBlt / shared-surface sampling of "what's behind" self-captures the flyout
     /// (opaque black) and overwrites frost. Soft frost uses Transparent HWND + Skia fake glass
     /// (tint/noise/edge) instead — same practical approach as most Avalonia glass UIs.
+    /// Shared-backdrop Host wrap stays as a dormant scaffold for future extensibility;
+    /// do not flip this without measured non-blanking pixel usability (size ≠ content).
+    /// OS Acrylic/Mica is out of scope — material contract stays Transparent-only.
     /// </summary>
     public const bool ForbidLiveBackdropPixelSampling = true;
 
