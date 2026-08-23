@@ -138,44 +138,69 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
     private void ShowOrUpdateCore(FlyoutRequest request, bool resetDismiss = true)
     {
         Log($"ShowOrUpdateCore enter kind={request.Kind}");
+        FlyoutWindow? reuse = null;
+        var reuseWasVisible = false;
+
         lock (_gate)
         {
-            if (_windows.TryGetValue(request.ModuleId, out var existing) && existing.IsVisible)
+            if (_windows.TryGetValue(request.ModuleId, out var existing)
+                && TesseraFlyoutLiveSyncPolicy.MustReuseRegisteredFlyoutHwnd)
             {
-                var action = TesseraFlyoutLiveSyncPolicy.ResolveAction(
-                    isVisible: true,
-                    openKind: existing.Kind,
-                    nextKind: request.Kind,
-                    openStyle: existing.StyleId,
-                    nextStyle: request.StyleId);
+                reuse = existing;
+                reuseWasVisible = existing.IsVisible;
 
-                if (action == TesseraFlyoutSyncAction.Patch)
+                if (reuseWasVisible)
                 {
-                    if (!_patchCoalesce.TryBeginFlush(MonoNow(), out var retryAfter))
+                    var action = TesseraFlyoutLiveSyncPolicy.ResolveAction(
+                        isVisible: true,
+                        openKind: existing.Kind,
+                        nextKind: request.Kind,
+                        openStyle: existing.StyleId,
+                        nextStyle: request.StyleId);
+
+                    if (action == TesseraFlyoutSyncAction.Patch)
                     {
-                        _pendingPatch = request;
-                        _pendingResetDismiss = resetDismiss;
-                        ScheduleDeferredPatch(retryAfter);
-                        return;
+                        if (!_patchCoalesce.TryBeginFlush(MonoNow(), out var retryAfter))
+                        {
+                            _pendingPatch = request;
+                            _pendingResetDismiss = resetDismiss;
+                            ScheduleDeferredPatch(retryAfter);
+                            return;
+                        }
+
+                        if (TryPatchLive(existing, request, resetDismiss))
+                            return;
+
+                        Log($"live-apply missed kind={request.Kind} style={request.StyleId} — rebuilding");
                     }
-
-                    if (TryPatchLive(existing, request, resetDismiss))
-                        return;
-
-                    Log($"live-apply missed kind={request.Kind} style={request.StyleId} — rebuilding");
                 }
-
-                existing.ApplyRequest(request, BuildContent(request));
-                existing.EnsureLivePump();
-                PresentFlyout(existing, request);
-                return;
             }
-
-            if (_windows.TryGetValue(request.ModuleId, out var old))
+            else if (_windows.TryGetValue(request.ModuleId, out var old))
             {
                 try { old.Close(); } catch { /* ignore */ }
                 _windows.Remove(request.ModuleId);
             }
+        }
+
+        if (reuse is not null)
+        {
+            Control reusedContent;
+            try { reusedContent = BuildContent(request); }
+            catch (Exception ex)
+            {
+                Log($"BuildContent failed on reuse, using fallback: {ex}");
+                reusedContent = BuildFallbackContent(request, ex.Message);
+            }
+
+            reuse.ApplyRequest(request, reusedContent);
+            if (!reuse.IsVisible)
+                reuse.Show();
+            reuse.EnsureLivePump();
+            PresentFlyout(reuse, request);
+            if (!reuseWasVisible)
+                reuse.PlayShowAnimation();
+            reuse.RevealAfterLayout();
+            return;
         }
 
         Control content;
@@ -201,8 +226,15 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         var window = new FlyoutWindow(request, content, _services);
         window.Closed += (_, _) =>
         {
-            lock (_gate) _windows.Remove(request.ModuleId);
-            if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            lock (_gate)
+            {
+                // ClosedMustOnlyUnregisterSameInstance: a superseded HWND must not clear the live session.
+                if (_windows.TryGetValue(request.ModuleId, out var current)
+                    && ReferenceEquals(current, window))
+                    _windows.Remove(request.ModuleId);
+            }
+            if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase)
+                && !IsVisible("Tessera"))
             {
                 StopOutsideClickWatcher();
                 CloseFocusDim();
@@ -217,11 +249,13 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
 
         // Consolidation (60e883e) used unowned Show(). Show(owner) from 83a9e57 made the
         // flyout lose Z-order to unowned FocusDim and often paint as an empty Transparent HWND.
+        // SoftFrost: Show at Opacity 0, layout, then reveal — avoids black composition-clear flash.
         window.Show();
 
         window.EnsureLivePump();
-        window.PlayShowAnimation();
         PresentFlyout(window, request);
+        window.PlayShowAnimation();
+        window.RevealAfterLayout();
     }
 
     private bool TryPatchLive(FlyoutWindow existing, FlyoutRequest request, bool resetDismiss)
@@ -388,8 +422,11 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
     {
         Log("outside-click dismiss");
         FlyoutWindow? flyout;
-        lock (_gate) _windows.Remove("Tessera", out flyout);
-        try { flyout?.Close(); } catch { /* ignore */ }
+        lock (_gate) _windows.TryGetValue("Tessera", out flyout);
+        if (flyout is null) return;
+
+        // Keep the HWND registered — TransientDismiss Hides so the next Try now reuses it.
+        flyout.TransientDismiss();
         StopOutsideClickWatcher();
         CloseFocusDim();
     }
@@ -411,7 +448,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
             var root = TesseraStyleFactory.Create(
                 request.StyleId ?? "Fluent",
                 vm,
-                accentColor: null,
+                accentColor: TesseraFlyoutRequestBuilder.AccentFromPayload(request.Payload),
                 embeddedPreview: glass.UseEmbeddedPreview);
             var scale = FlyoutScaleFromPayload(request.Payload);
             if (Math.Abs(scale - 1.0) > 0.01)

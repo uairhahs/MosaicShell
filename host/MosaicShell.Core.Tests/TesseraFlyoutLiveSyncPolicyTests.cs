@@ -6,6 +6,32 @@ namespace MosaicShell.Core.Tests;
 public class TesseraFlyoutLiveSyncPolicyTests
 {
     [Fact]
+    public void Closed_must_only_unregister_the_same_window_instance()
+    {
+        // Superseded HWND Closed must not clear the live session entry — that orphans
+        // SoftFrost surfaces and stacks black/frost layers on rapid Try now.
+        TesseraFlyoutLiveSyncPolicy.ClosedMustOnlyUnregisterSameInstance.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Registered_flyout_hwnd_must_be_reused_never_close_and_recreate()
+    {
+        // Close()+immediate Show() overlaps SoftFrost composition surfaces (random stack/black).
+        // Host must Hide/revive the registered HWND instead of Close+new.
+        TesseraFlyoutLiveSyncPolicy.MustReuseRegisteredFlyoutHwnd.Should().BeTrue();
+        TesseraFlyoutLiveSyncPolicy.TransientDismissMustHideNotClose.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Soft_frost_reveal_must_be_generation_gated()
+    {
+        // HideUntilCompositionReady posts Opacity=1; rapid rebuild must invalidate stale reveals
+        // or SoftFrost paints stacked/black frames mid-swap.
+        TesseraFlyoutWindowPolicy.HideUntilCompositionReady.Should().BeTrue();
+        TesseraFlyoutWindowPolicy.RevealMustBeGenerationGated.Should().BeTrue();
+    }
+
+    [Fact]
     public void Patch_must_not_imply_present_restack_or_outside_click_rearm()
     {
         TesseraFlyoutLiveSyncPolicy.PatchImpliesPresent.Should().BeFalse();

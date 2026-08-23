@@ -24,6 +24,25 @@ public static class TesseraFlyoutLiveSyncPolicy
     public const bool PatchImpliesWin32Restack = false;
     public const bool PatchImpliesOutsideClickRearm = false;
 
+    /// <summary>
+    /// Host dictionary Closed handlers must only Remove when the closing window is still
+    /// the registered instance. Otherwise a superseded flyout's Closed unregisters the
+    /// live session and rapid Try now stacks orphan SoftFrost HWNDs.
+    /// </summary>
+    public const bool ClosedMustOnlyUnregisterSameInstance = true;
+
+    /// <summary>
+    /// While a flyout HWND is registered, Host must ApplyRequest/Show on that instance —
+    /// never Close()+new. SoftFrost composition surfaces overlap and stack when recreated.
+    /// </summary>
+    public static bool MustReuseRegisteredFlyoutHwnd => true;
+
+    /// <summary>
+    /// Auto-dismiss / outside-click must <c>Hide</c> (opacity 0) the SoftFrost HWND, not
+    /// <c>Close</c>, so the next Present can revive the same surface without a dying HWND.
+    /// </summary>
+    public static bool TransientDismissMustHideNotClose => true;
+
     /// <summary>Live pump may call Media.PumpTimeline while visible.</summary>
     public const bool PumpMayAdvanceMediaTimeline = true;
 

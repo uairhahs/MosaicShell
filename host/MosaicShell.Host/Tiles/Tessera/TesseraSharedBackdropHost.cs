@@ -81,12 +81,11 @@ internal sealed class TesseraSharedBackdropHost : Decorator
             dest.ClipRoundRect(round, antialias: true);
             using var paint = new SKPaint
             {
-                IsAntialias = true,
-                FilterQuality = SKFilterQuality.Medium
+                IsAntialias = true
             };
             var src = SKRect.Create(offsetX, offsetY, w, h);
             var dst = SKRect.Create(0, 0, w, h);
-            dest.DrawImage(_blurred, src, dst, paint);
+            dest.DrawImage(_blurred, src, dst, TesseraGlassPanel.MediumSampling, paint);
             dest.Restore();
             return true;
         }
@@ -138,8 +137,7 @@ internal sealed class TesseraSharedBackdropHost : Decorator
         using var paint = new SKPaint
         {
             ImageFilter = blurFilter,
-            IsAntialias = true,
-            FilterQuality = SKFilterQuality.Medium
+            IsAntialias = true
         };
 
         var w = (int)Math.Ceiling(Bounds.Width);
@@ -149,7 +147,7 @@ internal sealed class TesseraSharedBackdropHost : Decorator
         if (surface is null)
             return false;
 
-        surface.Canvas.DrawImage(capture, 0, 0, paint);
+        surface.Canvas.DrawImage(capture, 0, 0, TesseraGlassPanel.MediumSampling, paint);
         _blurred = surface.Snapshot();
         return _blurred is not null;
     }

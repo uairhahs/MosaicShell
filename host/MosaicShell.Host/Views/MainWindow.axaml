@@ -594,7 +594,7 @@
                       </ItemsControl.ItemTemplate>
                     </ItemsControl>
                     <TextBox Classes="config" Text="{Binding TesseraAccentHex}"
-                             Watermark="#0273CD or leave blank for Windows accent"
+                             PlaceholderText="#0273CD or leave blank for Windows accent"
                              ToolTip.Tip="Hex accent used by every Tessera style (sliders, play, toggles, highlights). Empty = system accent." />
                   </StackPanel>
                   <CheckBox Content="Soft frost tint" IsChecked="{Binding TesseraAcrylicBackdrop}"
@@ -669,7 +669,7 @@
                                          FilterMode="ContainsOrdinal"
                                          ItemsSource="{Binding LaunchTargetChoices}"
                                          Text="{Binding LaunchTargetQuery}"
-                                         Watermark="Search targets…" />
+                                         PlaceholderText="Search targets…" />
                         <Button Classes="action" Content="Add pin"
                                 Command="{Binding AddLaunchTargetPinCommand}" />
                       </StackPanel>
@@ -694,14 +694,14 @@
                       <TextBlock Classes="sectionTitle" Text="Actions" Margin="0" />
                       <TextBlock Classes="sectionHint" Margin="0"
                                  Text="Optional display name + search a launch target." />
-                      <TextBox Width="200" HorizontalAlignment="Left" Watermark="Action name (optional)"
+                      <TextBox Width="200" HorizontalAlignment="Left" PlaceholderText="Action name (optional)"
                                Text="{Binding ChordActionName}" />
                       <StackPanel Orientation="Horizontal" Spacing="8">
                         <AutoCompleteBox Width="320" MinimumPrefixLength="0"
                                          FilterMode="ContainsOrdinal"
                                          ItemsSource="{Binding LaunchTargetChoices}"
                                          Text="{Binding LaunchTargetQuery}"
-                                         Watermark="Search targets…" />
+                                         PlaceholderText="Search targets…" />
                         <Button Classes="action" Content="Add action"
                                 Command="{Binding AddChordActionFromPickerCommand}" />
                       </StackPanel>

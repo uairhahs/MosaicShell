@@ -54,6 +54,10 @@ public static class TesseraGlassPanel
     internal const byte BlurredTintAlphaMax = 48;
     internal const byte FallbackTintAlphaMax = 80;
 
+    /// <summary>Former SKFilterQuality.Medium — SkiaSharp 3 sampling for DrawImage.</summary>
+    internal static readonly SKSamplingOptions MediumSampling =
+        new(SKFilterMode.Linear, SKMipmapMode.Linear);
+
     /// <summary>Cap shell tint so backdrop blur stays visible (true glass, not matte slab).</summary>
     public static Color NormalizeTint(Color color)
     {
@@ -479,10 +483,10 @@ internal sealed class TesseraGlassDrawOperation : ICustomDrawOperation
         var radius = (float)Math.Max(0, _cornerRadius);
         var round = new SKRoundRect(SKRect.Create(0, 0, w, h), radius, radius);
 
-        using var blit = new SKPaint { IsAntialias = true, FilterQuality = SKFilterQuality.Medium };
+        using var blit = new SKPaint { IsAntialias = true };
         canvas.Save();
         canvas.ClipRoundRect(round, antialias: true);
-        canvas.DrawImage(layer, 0, 0, blit);
+        canvas.DrawImage(layer, 0, 0, TesseraGlassPanel.MediumSampling, blit);
         canvas.Restore();
     }
 
@@ -497,13 +501,12 @@ internal sealed class TesseraGlassDrawOperation : ICustomDrawOperation
         using var paint = new SKPaint
         {
             ImageFilter = blurFilter,
-            IsAntialias = true,
-            FilterQuality = SKFilterQuality.Medium
+            IsAntialias = true
         };
 
         dest.Save();
         dest.ClipRoundRect(round, antialias: true);
-        dest.DrawImage(source, 0, 0, paint);
+        dest.DrawImage(source, 0, 0, TesseraGlassPanel.MediumSampling, paint);
         dest.Restore();
         return true;
     }
@@ -530,8 +533,7 @@ internal sealed class TesseraGlassDrawOperation : ICustomDrawOperation
         {
             Shader = shader,
             ImageFilter = blurFilter,
-            IsAntialias = true,
-            FilterQuality = SKFilterQuality.Medium
+            IsAntialias = true
         };
 
         dest.Save();

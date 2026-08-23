@@ -116,6 +116,36 @@ public class TesseraFlyoutRequestBuilderTests
         request.Payload["bakedFrost"].Should().Be("0");
     }
 
+    [Fact]
+    public void BuildPayload_emits_normalized_accent_for_live_flyouts()
+    {
+        var services = HostServicesFakes.Create();
+        var settings = new TesseraSettings { AccentColor = "d8e2f8" };
+        var request = new TesseraFlyoutRequestBuilder().Build(services, settings, "vol");
+        request.Payload!["accent"].Should().Be("#D8E2F8");
+    }
+
+    [Fact]
+    public void BuildPayload_emits_empty_accent_for_system()
+    {
+        var services = HostServicesFakes.Create();
+        var settings = new TesseraSettings { AccentColor = "" };
+        var request = new TesseraFlyoutRequestBuilder().Build(services, settings, "vol");
+        request.Payload!["accent"].Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("#CBA6F7", "#CBA6F7")]
+    [InlineData("", null)]
+    [InlineData(null, null)]
+    public void AccentFromPayload_returns_normalized_or_null_for_system(string? raw, string? expected)
+    {
+        IReadOnlyDictionary<string, string>? payload = raw is null
+            ? null
+            : new Dictionary<string, string> { ["accent"] = raw };
+        TesseraFlyoutRequestBuilder.AccentFromPayload(payload).Should().Be(expected);
+    }
+
     private sealed class FakeLockKeysService(bool capsOn) : ILockKeysService
     {
         public LockKeyState Caps => new(LockKeyKind.CapsLock, capsOn);

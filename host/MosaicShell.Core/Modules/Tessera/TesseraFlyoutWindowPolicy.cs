@@ -43,6 +43,18 @@ public static class TesseraFlyoutWindowPolicy
     /// </summary>
     public const bool PreferWinUiCompositionForSoftFrost = SoftFrostHwndReady;
 
+    /// <summary>
+    /// SoftFrost Transparent HWND paints solid black for 1+ frames until composition
+    /// settles (cold Show / Try now). Host must Show at Opacity 0, finish layout, then reveal.
+    /// </summary>
+    public static bool HideUntilCompositionReady => SoftFrostHwndReady;
+
+    /// <summary>
+    /// Posted Opacity=1 reveals must carry a generation so rapid ApplyRequest / Try now
+    /// invalidates stale reveals (otherwise SoftFrost flashes stacked clear frames).
+    /// </summary>
+    public static bool RevealMustBeGenerationGated => HideUntilCompositionReady;
+
     public static IReadOnlyList<string> ResolveTransparencyHints(TesseraFlyoutMaterial material) =>
         MustRequestOpaqueToolWindow ? ["None"] : material.TransparencyHints;
 

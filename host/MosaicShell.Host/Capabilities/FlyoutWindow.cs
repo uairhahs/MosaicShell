@@ -25,6 +25,7 @@ internal sealed class FlyoutWindow : Window
     private readonly TesseraFlyoutMaterial _material;
     private DispatcherTimer? _dismiss;
     private DispatcherTimer? _live;
+    private int _revealGeneration;
     private bool _hover;
     private Size _lastSize;
     private bool _clientSizeLocked;
@@ -66,7 +67,8 @@ internal sealed class FlyoutWindow : Window
             : new SolidColorBrush(Color.FromArgb(fallbackAlpha, 0x11, 0x11, 0x1b));
 
         Content = content;
-        Opacity = 1;
+        // SoftFrost Transparent HWND clears black for 1+ frames until composition settles.
+        Opacity = TesseraFlyoutWindowPolicy.HideUntilCompositionReady ? 0 : 1;
         PointerEntered += (_, _) => { _hover = true; };
         PointerExited += (_, _) => { _hover = false; };
         PointerWheelChanged += OnWheel;
@@ -172,6 +174,11 @@ internal sealed class FlyoutWindow : Window
     public void ApplyRequest(FlyoutRequest request, Control content)
     {
         _request = request;
+        // Invalidate any posted SoftFrost reveal from the previous surface.
+        _revealGeneration++;
+        RenderTransform = null;
+        if (TesseraFlyoutWindowPolicy.HideUntilCompositionReady)
+            Opacity = 0;
         Content = content;
         _lastSize = default;
         if (_material.ShouldLockClientSize)
@@ -184,6 +191,30 @@ internal sealed class FlyoutWindow : Window
         ResetDismissTimer();
         Relayout();
         EnsureLivePump();
+    }
+
+    /// <summary>
+    /// SoftFrost: reveal after layout so the black composition-clear frame is never visible.
+    /// Generation-gated so rapid Try now / ApplyRequest does not apply a stale Opacity=1.
+    /// </summary>
+    public void RevealAfterLayout()
+    {
+        if (!TesseraFlyoutWindowPolicy.HideUntilCompositionReady)
+        {
+            Opacity = 1;
+            return;
+        }
+
+        var generation = _revealGeneration;
+        // Post past the first layout/paint so WinUI composition has a settled Transparent surface.
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!IsVisible) return;
+            if (TesseraFlyoutWindowPolicy.RevealMustBeGenerationGated
+                && generation != _revealGeneration)
+                return;
+            Opacity = 1;
+        }, DispatcherPriority.Loaded);
     }
 
     private void OnLayoutUpdated(object? sender, EventArgs e)
@@ -268,7 +299,9 @@ internal sealed class FlyoutWindow : Window
         try
         {
             Relayout();
-            Opacity = 1;
+            // SoftFrost starts at Opacity 0 — RevealAfterLayout owns the reveal.
+            if (!TesseraFlyoutWindowPolicy.HideUntilCompositionReady)
+                Opacity = 1;
             RenderTransform = null;
 
             if (_request.Ani <= 0)
@@ -292,7 +325,8 @@ internal sealed class FlyoutWindow : Window
         }
         catch
         {
-            Opacity = 1;
+            if (!TesseraFlyoutWindowPolicy.HideUntilCompositionReady)
+                Opacity = 1;
             RenderTransform = null;
         }
     }
@@ -306,9 +340,29 @@ internal sealed class FlyoutWindow : Window
         {
             if (_hover) return;
             _dismiss.Stop();
-            try { Close(); } catch { /* ignore */ }
+            TransientDismiss();
         };
         _dismiss.Start();
+    }
+
+    /// <summary>
+    /// SoftFrost-safe dismiss: hide the HWND without destroying it so the next Present
+    /// can revive the same surface (Close+new stacks composition layers).
+    /// </summary>
+    public void TransientDismiss()
+    {
+        _dismiss?.Stop();
+        _revealGeneration++;
+        RenderTransform = null;
+        Opacity = 0;
+        try
+        {
+            if (TesseraFlyoutLiveSyncPolicy.TransientDismissMustHideNotClose)
+                Hide();
+            else
+                Close();
+        }
+        catch { /* ignore */ }
     }
 
     private void OnWheel(object? sender, PointerWheelEventArgs e)

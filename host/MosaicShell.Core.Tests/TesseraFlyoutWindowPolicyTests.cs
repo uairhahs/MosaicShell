@@ -18,6 +18,17 @@ public class TesseraFlyoutWindowPolicyTests
         TesseraFlyoutWindowPolicy.SoftFrostCompositionFallbackAlpha.Should().Be((byte)0);
         TesseraFlyoutWindowPolicy.PresentableLayeredAlpha.Should().Be((byte)255);
         TesseraFlyoutWindowPolicy.ForbidDebugTitleChrome.Should().BeTrue();
+        TesseraFlyoutWindowPolicy.HideUntilCompositionReady.Should().BeTrue(
+            "SoftFrost cold Show must hide until layout or Try now flashes a black HWND");
+    }
+
+    [Fact]
+    public void Soft_frost_must_hide_until_composition_ready()
+    {
+        // Transparent HWND paints black for 1+ frames before WinUI composition settles
+        // (Try now / cold Show). Host must Show at Opacity 0, finish layout, then reveal.
+        TesseraFlyoutWindowPolicy.SoftFrostHwndReady.Should().BeTrue();
+        TesseraFlyoutWindowPolicy.HideUntilCompositionReady.Should().BeTrue();
     }
 
     [Theory]

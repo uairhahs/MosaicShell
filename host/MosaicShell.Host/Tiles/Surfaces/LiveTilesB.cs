@@ -272,7 +272,7 @@ public sealed class MixdeckTileView : UserControl
 public sealed class InlayTileView : UserControl
 {
     private readonly InlaySettings _settings;
-    private readonly TextBox _search = new() { Watermark = "Search apps…" };
+    private readonly TextBox _search = new() { PlaceholderText = "Search apps…" };
     private readonly bool _win11;
     private readonly StackPanel? _pinsColumn;
     private readonly StackPanel? _appsColumn;
@@ -431,7 +431,7 @@ public sealed class InlayTileView : UserControl
 
 public sealed class ChordTileView : UserControl
 {
-    private readonly TextBox _box = new() { Watermark = "Type to launch… (Enter)" };
+    private readonly TextBox _box = new() { PlaceholderText = "Type to launch… (Enter)" };
     private readonly ChordSettings _settings;
     private readonly StackPanel _actions = new() { Spacing = 4 };
     private readonly Border _shell;

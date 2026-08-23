@@ -63,6 +63,7 @@ public sealed class TesseraFlyoutRequestBuilder
         p["flyoutScale"] = Math.Clamp(settings.FlyoutScalePercent, 50, 150).ToString();
         p["backdropBlur"] = settings.UseBackdropBlur ? "1" : "0";
         p["bakedFrost"] = settings.UseBackdropBlur ? "1" : "0";
+        p["accent"] = TesseraAccentColor.NormalizeOrEmpty(settings.AccentColor);
 
         if (kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
             && !p.ContainsKey("on")
@@ -139,5 +140,17 @@ public sealed class TesseraFlyoutRequestBuilder
             return raw is not ("0" or "false" or "False" or "off" or "Off");
         }
         return true;
+    }
+
+    /// <summary>
+    /// Custom accent from flyout payload (#RRGGBB). Null/empty = Windows system accent.
+    /// Host must pass this into TesseraStyleFactory so live flyouts match config preview.
+    /// </summary>
+    public static string? AccentFromPayload(IReadOnlyDictionary<string, string>? payload)
+    {
+        if (payload is null || !payload.TryGetValue("accent", out var raw))
+            return null;
+        var normalized = TesseraAccentColor.NormalizeOrEmpty(raw);
+        return string.IsNullOrEmpty(normalized) ? null : normalized;
     }
 }
