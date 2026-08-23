@@ -2,7 +2,7 @@
 
 Follow these before changing Host UI, Tessera glass, tile chrome, or capabilities:
 
-1. [`docs/development.md`](docs/development.md) — full TDD + hierarchy + extensibility guide
+1. [`docs/development.md`](docs/development.md), full TDD + hierarchy + extensibility guide
 2. Always-apply Cursor rules in [`.cursor/rules/`](.cursor/rules/):
    - `tdd.mdc`
    - `dependency-hierarchy.mdc`

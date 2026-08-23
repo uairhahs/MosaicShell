@@ -64,15 +64,44 @@ public class WebNowPlayingMergeTests
     }
 
     [Fact]
-    public void SplitFields_handles_escape_and_empty_marker()
+    public void Merge_prefers_smtc_title_when_wnp_is_stale_on_browser_session()
     {
-        var blob = $"1|YouTube Music|A\\|B|{((char)1)}|album|http://x|";
-        var fields = WebNowPlayingReduxHost.SplitFields(blob);
-        fields[0].Should().Be("1");
-        fields[1].Should().Be("YouTube Music");
-        fields[2].Should().Be("A|B");
-        fields[3].Should().Be("");
-        fields[4].Should().Be("album");
-        fields[5].Should().Be("http://x");
+        var smtc = new MediaSessionInfo(
+            "Brand New Track", "New Artist", "music.youtube.com-x!App", true,
+            ThumbnailPng: null, PositionSeconds: 1, DurationSeconds: 200);
+        var wnp = new WnpPlayerSnapshot
+        {
+            Title = "Old Track",
+            Artist = "Old Artist",
+            Name = "YouTube Music",
+            State = WnpState.Playing,
+            CoverPng = WebNowPlayingHostTests.TinyPng,
+        };
+
+        var merged = CompositeMediaSessionService.Merge(smtc, wnp)!;
+        merged.Title.Should().Be("Brand New Track");
+        merged.Artist.Should().Be("New Artist");
+        merged.ThumbnailPng.Should().BeSameAs(wnp.CoverPng);
+    }
+
+    [Fact]
+    public void Merge_still_overlays_wnp_title_when_smtc_and_wnp_agree()
+    {
+        var smtc = new MediaSessionInfo(
+            "Song | YouTube Music", null, "music.youtube.com-x!App", true,
+            ThumbnailPng: null, PositionSeconds: 10, DurationSeconds: 100);
+        var cover = WebNowPlayingHostTests.TinyPng;
+        var wnp = new WnpPlayerSnapshot
+        {
+            Title = "Song",
+            Artist = "Artist",
+            Name = "YouTube Music",
+            State = WnpState.Playing,
+            CoverPng = cover,
+        };
+
+        var merged = CompositeMediaSessionService.Merge(smtc, wnp)!;
+        merged.Title.Should().Be("Song");
+        merged.Artist.Should().Be("Artist");
     }
 }

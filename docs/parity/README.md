@@ -4,7 +4,7 @@ Living flags live in `host/MosaicShell.Core.Tests/HubParityBacklogTests.cs`.
 
 **Convention:** `*_skeleton` = wiring exists (arm/hotkey/stub UI). `*_mvp` = JaxCore-comparable user-visible slice (see bars below). Do not mark `_mvp` true without the bar met.
 
-**B5:** Rainmeter hub / skin trees are gone from the repo. Runtime is Host-only; `Tiles/{Id}` are native install stubs. Legacy promises: [`docs/legacy/`](../legacy/).
+**B5:** Rainmeter hub / skin trees are gone from the repo. Runtime is Host-only; `Tiles/{Id}` are native install stubs. Legacy promises: [`docs/legacy/`](./legacy/).
 
 ## Tessera
 
@@ -140,11 +140,11 @@ True flags map to named tests in `HubParityBacklogTests.CompanionProof` (e.g. `A
 
 ## Supersession waves
 
-See [native-rewrite.md](../native-rewrite.md). B5 (Host-only repo) is complete.
+See [native-rewrite.md](./native-rewrite.md). B5 (Host-only repo) is complete.
 
 ## Phase C layout fidelity flags
 
-Flip to **true** only when a module meets screenshot-level parity vs its [Jax-Core archive](../legacy/README.md). Tessera C1 is signed off; remaining module flags stay **false** until proofs land.
+Flip to **true** only when a module meets screenshot-level parity vs its [Jax-Core archive](./legacy/README.md). Tessera C1 is signed off; remaining module flags stay **false** until proofs land.
 
 | Flag | Module | Upstream archive |
 |------|--------|------------------|
@@ -159,7 +159,7 @@ Flip to **true** only when a module meets screenshot-level parity vs its [Jax-Co
 | `pulse_layout_fidelity` | Pulse | ModularVisualizer |
 | `canvas_layout_fidelity` | Canvas | Plainext |
 
-Tessera Phase C1 tiers live in `TesseraLayoutCoverage`: polished vs approximate (code), plus signed-off vs deviated (visual). `tessera_layout_fidelity` is **true** — every StyleCatalog id is signed off; proofs in `.github/res/Tessera/`.
+Tessera Phase C1 tiers live in `TesseraLayoutCoverage`: polished vs approximate (code), plus signed-off vs deviated (visual). `tessera_layout_fidelity` is **true**: every StyleCatalog id is signed off; proofs in `.github/res/Tessera/`.
 
-| `native_tile_overlay_runtime` | **false** — full StyleCatalog pixel skins as dedicated runtime; not a Rainmeter interpreter |
+| `native_tile_overlay_runtime` | **false**: full StyleCatalog pixel skins as dedicated runtime; not a Rainmeter interpreter |
 

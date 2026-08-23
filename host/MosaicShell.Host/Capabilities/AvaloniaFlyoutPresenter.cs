@@ -63,6 +63,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
 
     public void Update(FlyoutRequest request)
     {
+        Log($"Update queued kind={request.Kind} style={request.StyleId} thread={Environment.CurrentManagedThreadId}");
         if (IsImmediateStatusKind(request))
             Dispatcher.UIThread.Invoke(() => SafeShowOrUpdate(request, resetDismiss: true));
         else
@@ -76,7 +77,8 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
             {
                 lock (_gate)
                 {
-                    if (!_windows.TryGetValue(request.ModuleId, out var existing) || !existing.IsVisible)
+                    if (!_windows.TryGetValue(request.ModuleId, out var existing)
+                        || !existing.IsFlyoutSessionShowing)
                         return;
                     existing.ApplyLiveOnly(request, _services);
                 }
@@ -120,7 +122,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
     public bool IsVisible(string moduleId)
     {
         lock (_gate)
-            return _windows.TryGetValue(moduleId, out var w) && w.IsVisible;
+            return _windows.TryGetValue(moduleId, out var w) && w.IsFlyoutSessionShowing;
     }
 
     private void SafeShowOrUpdate(FlyoutRequest request, bool resetDismiss = true)
@@ -147,7 +149,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
                 && TesseraFlyoutLiveSyncPolicy.MustReuseRegisteredFlyoutHwnd)
             {
                 reuse = existing;
-                reuseWasVisible = existing.IsVisible;
+                reuseWasVisible = existing.IsFlyoutSessionShowing;
 
                 if (reuseWasVisible)
                 {
@@ -171,7 +173,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
                         if (TryPatchLive(existing, request, resetDismiss))
                             return;
 
-                        Log($"live-apply missed kind={request.Kind} style={request.StyleId} — rebuilding");
+                        Log($"live-apply missed kind={request.Kind} style={request.StyleId}, rebuilding");
                     }
                 }
             }
@@ -193,6 +195,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
             }
 
             reuse.ApplyRequest(request, reusedContent);
+            WireTesseraSession(reuse);
             if (!reuse.IsVisible)
                 reuse.Show();
             reuse.EnsureLivePump();
@@ -212,7 +215,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         {
             Log($"BuildContent failed, using fallback: {ex}");
             content = BuildFallbackContent(request, ex.Message);
-            Log("FALLBACK content — Tessera live session unsuccessful");
+            Log("FALLBACK content, Tessera live session unsuccessful");
         }
 
         if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
@@ -224,6 +227,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         }
 
         var window = new FlyoutWindow(request, content, _services);
+        WireTesseraSession(window);
         window.Closed += (_, _) =>
         {
             lock (_gate)
@@ -249,7 +253,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
 
         // Consolidation (60e883e) used unowned Show(). Show(owner) from 83a9e57 made the
         // flyout lose Z-order to unowned FocusDim and often paint as an empty Transparent HWND.
-        // SoftFrost: Show at Opacity 0, layout, then reveal — avoids black composition-clear flash.
+        // SoftFrost: Show at Opacity 0, layout, then reveal, avoids black composition-clear flash.
         window.Show();
 
         window.EnsureLivePump();
@@ -264,7 +268,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
             return false;
 
         // Patch path: no PresentFlyout / RestackAboveDim / ScheduleOutsideClickArm
-        // (PatchImpliesPresent|Win32Restack|OutsideClickRearm are false — Core tests).
+        // (PatchImpliesPresent|Win32Restack|OutsideClickRearm are false, Core tests).
         existing.EnsureLivePump();
         _outsideClick?.RefreshBounds(existing);
         return true;
@@ -326,7 +330,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
 
     private void ScheduleOutsideClickArm(FlyoutWindow window)
     {
-        // One arm timer only — PresentFlyout used to start a new one per volume tick.
+        // One arm timer only, PresentFlyout used to start a new one per volume tick.
         _outsideClickArm?.Stop();
         _outsideClickArm = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1500) };
         var captured = window;
@@ -363,7 +367,7 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         }
 
         Stack("immediate");
-        // Dim click-through / HWND often lands at Loaded — restack then and once more at Input.
+        // Dim click-through / HWND often lands at Loaded, restack then and once more at Input.
         Dispatcher.UIThread.Post(() => Stack("loaded"), DispatcherPriority.Loaded);
         Dispatcher.UIThread.Post(() => Stack("input"), DispatcherPriority.Input);
     }
@@ -425,8 +429,22 @@ public sealed class AvaloniaFlyoutPresenter : IFlyoutPresenter
         lock (_gate) _windows.TryGetValue("Tessera", out flyout);
         if (flyout is null) return;
 
-        // Keep the HWND registered — TransientDismiss Hides so the next Try now reuses it.
+        // Keep the HWND registered, TransientDismiss Hides so the next Try now reuses it.
+        // TransientDismissed closes FocusDim (same path as auto-dismiss timer).
         flyout.TransientDismiss();
+    }
+
+    private void WireTesseraSession(FlyoutWindow window)
+    {
+        window.TransientDismissed -= OnFlyoutTransientDismissed;
+        window.TransientDismissed += OnFlyoutTransientDismissed;
+    }
+
+    private void OnFlyoutTransientDismissed()
+    {
+        if (!TesseraFocusDimPolicy.ShouldCloseFocusDimOnTransientDismiss())
+            return;
+        Log("transient-dismiss, closing focusDim");
         StopOutsideClickWatcher();
         CloseFocusDim();
     }

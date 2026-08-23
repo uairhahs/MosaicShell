@@ -118,7 +118,7 @@ public class WebNowPlayingHostTests
     [Fact]
     public void MakePlayerData_field_layout_matches_extension()
     {
-        // Mirrors extension makePlayerData: id|name|title|artist|album|cover|state|pos|dur|vol|...
+        // Mirrors extension makePlayerData: id|name|title|artist|album|cover|state|pos|dur|vol|..
         var blob = "9|YouTube Music|Hello|World|Alb|https://cdn.example/cover.png|0|10|200|80|0|1|0|0|1|1|1|1|1|1|1|1|1|1|100|200|300|";
         var f = WebNowPlayingReduxHost.SplitFields(blob);
         f[0].Should().Be("9");
@@ -236,7 +236,7 @@ public class WebNowPlayingHostTests
         await session.WaitForChangeAsync();
 
         await session.Host.TrySetLikeAsync(wantLiked: false);
-        // No outbound event — must not send SET_RATING 0 (YTM thumbs-down).
+        // No outbound event, must not send SET_RATING 0 (YTM thumbs-down).
     }
 
     private static string BuildPlayerAdded(long id, string title, string coverSrc, int rating = 0)

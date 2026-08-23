@@ -56,9 +56,9 @@ public partial class MainViewModel : ViewModelBase
 
         HomeCards =
         [
-            HomeCard("Welcome", "First-run picks, batch install, startup.", "Welcome"),
+            HomeCard("Welcome", "First run: install tiles, then finish to open Home.", "Welcome"),
             HomeCard("Tiles", "Install widgets or set tiles (Tessera flyouts, launchers).", "Tiles"),
-            HomeCard("About", "MosaicShell is a native host re-write. The app adds desktop customisation and a tool suite to tailor your experience which rely solely on the background CapabilityDaemon for persistence.", "About"),
+            HomeCard("About", "What MosaicShell is, where it came from, and how to follow the project.", "About"),
         ];
 
         TesseraAccentSwatches = [];
@@ -1058,6 +1058,7 @@ public partial class LibraryItemViewModel : ObservableObject
     [ObservableProperty] private bool _isArmed;
     [ObservableProperty] private bool _isSelectedForBatch;
     [ObservableProperty] private string _statusText = "(Not Installed)";
+    [ObservableProperty] private IBrush _statusBrush = HubGlyphUi.StatusBrush(HubTileStatusKind.NotInstalled);
     [ObservableProperty] private MaterialIconKind _actionIcon = MaterialIconKind.Download;
     [ObservableProperty] private string _actionToolTip = "Install";
 
@@ -1067,6 +1068,7 @@ public partial class LibraryItemViewModel : ObservableObject
         IsRunning = false;
         IsArmed = false;
         StatusText = "(Not Installed)";
+        SyncStatusChrome();
         RefreshActionState();
     }
 
@@ -1079,6 +1081,7 @@ public partial class LibraryItemViewModel : ObservableObject
             StatusText = armed ? ModuleUsageGuide.ArmedStatus(Id) : "Ready to arm";
         else
             StatusText = "Ready";
+        SyncStatusChrome();
         RefreshActionState();
     }
 
@@ -1087,6 +1090,7 @@ public partial class LibraryItemViewModel : ObservableObject
         IsRunning = running;
         if (!IsInstalled || IsCapability) return;
         StatusText = running ? "Running" : "Ready";
+        SyncStatusChrome();
         RefreshActionState();
     }
 
@@ -1095,7 +1099,14 @@ public partial class LibraryItemViewModel : ObservableObject
         IsArmed = armed;
         if (!IsInstalled || !IsCapability) return;
         StatusText = armed ? ModuleUsageGuide.ArmedStatus(Id) : "Ready to arm";
+        SyncStatusChrome();
         RefreshActionState();
+    }
+
+    private void SyncStatusChrome()
+    {
+        var kind = HubTileStatusChromeSpec.Resolve(IsInstalled, IsCapability, IsArmed, IsRunning);
+        StatusBrush = HubGlyphUi.StatusBrush(kind);
     }
 
     private void RefreshActionState()
@@ -1145,6 +1156,7 @@ public partial class LibraryItemViewModel : ObservableObject
             IsArmed = armed && installed && isCap,
             StatusText = status,
         };
+        item.SyncStatusChrome();
         item.RefreshActionState();
         return item;
     }

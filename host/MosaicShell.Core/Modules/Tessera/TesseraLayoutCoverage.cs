@@ -69,7 +69,7 @@ public static class TesseraLayoutCoverage
         !StyleIds.Normalize(styleId).Equals(StyleIds.MaterialYou, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Meter’s volume chrome is a glass meter with no glyph — Host must register a live percent
+    /// Meter’s volume chrome is a glass meter with no glyph, Host must register a live percent
     /// so Patch/ApplyLive has readable feedback (otherwise the pill reads as a static block).
     /// </summary>
     public static bool RequiresLiveVolumePercentLabel(string styleId) =>

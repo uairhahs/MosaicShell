@@ -3,7 +3,7 @@ namespace MosaicShell.Core.Modules;
 /// <summary>
 /// Hub scrollbars use Avalonia <c>FluentTheme</c> chrome as-is (overlay auto-hide,
 /// size, line buttons, thumb). Host must not restyle template parts or replace
-/// <c>ScrollBarSize</c> — custom overlay chrome crashed Settings and tile config.
+/// <c>ScrollBarSize</c>, custom overlay chrome crashed Settings and tile config.
 /// </summary>
 public static class HostScrollbarChromeSpec
 {

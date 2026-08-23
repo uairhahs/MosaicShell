@@ -101,25 +101,28 @@ public sealed class TesseraCapability : IModuleCapability
     private void OnBrightness(object? s, EventArgs e) => ShowOrUpdate("bright");
     private void OnMedia(object? s, EventArgs e)
     {
-        // Prefer refreshing an already-visible volume/brightness strip (art/title) in place.
-        // Only open a dedicated media flyout when nothing is showing (or media flyouts enabled).
-        string? refreshKind = null;
-        lock (_gate)
-        {
-            if (_ui.Flyouts.IsVisible(ModuleId)
-                && (_lastKind.Equals("vol", StringComparison.OrdinalIgnoreCase)
-                    || _lastKind.Equals("bright", StringComparison.OrdinalIgnoreCase)
-                    || _lastKind.Equals("media", StringComparison.OrdinalIgnoreCase)))
-                refreshKind = _lastKind;
-        }
+        EnsureSettingsFresh();
+        string lastKind;
+        lock (_gate) lastKind = _lastKind;
+        var action = TesseraMediaFlyoutPolicy.Resolve(
+            _settings.EnableMediaFlyouts,
+            _ui.Flyouts.IsVisible(ModuleId),
+            lastKind);
 
-        if (refreshKind is not null)
+        switch (action)
         {
-            SoftUpdateVisible(refreshKind);
-            return;
+            case TesseraMediaChangeAction.SoftRefreshVisible:
+                // Vol/bright: patch strip in place. Media: always Present so dismiss resets.
+                if (TesseraMediaFlyoutPolicy.IsStripKind(lastKind)
+                    && !lastKind.Equals("media", StringComparison.OrdinalIgnoreCase))
+                    SoftUpdateVisible(lastKind);
+                else
+                    ShowOrUpdate("media");
+                break;
+            case TesseraMediaChangeAction.PresentMediaFlyout:
+                ShowOrUpdate("media");
+                break;
         }
-
-        if (_settings.EnableMediaFlyouts) ShowOrUpdate("media");
     }
 
     /// <summary>Timeline ticks: update scrubber/time on an already-open flyout only.</summary>
@@ -136,7 +139,13 @@ public sealed class TesseraCapability : IModuleCapability
     {
         try
         {
-            // Progress / art refresh - must not reset auto-dismiss
+            // Progress / art refresh - must not reset auto-dismiss for timeline ticks.
+            // Track-change SoftRefresh onto media should still Present so dismiss resets.
+            if (kind.Equals("media", StringComparison.OrdinalIgnoreCase))
+            {
+                ShowOrUpdate("media");
+                return;
+            }
             _ui.Flyouts.SoftRefresh(BuildRequest(kind, null));
         }
         catch (Exception ex)

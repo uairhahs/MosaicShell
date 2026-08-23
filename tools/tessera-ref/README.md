@@ -1,6 +1,6 @@
 # tessera-ref
 
-Pillow utilities for Tessera flyout reference analysis. **Use [uv](https://docs.astral.sh/uv/) for all Python commands** — no bare `python` / `pip`.
+Pillow utilities for Tessera flyout reference analysis. **Use [uv](https://docs.astral.sh/uv/) for all Python commands**: no bare `python` / `pip`.
 
 ## Setup
 
@@ -21,7 +21,7 @@ uv run analyze_deviated.py
 Custom paths:
 
 ```powershell
-uv run analyze_deviated.py --in-dir ../../.local/Tessera/deviated --out-dir ../../.local/Tessera/deviated/analysis
+uv run analyze_deviated.py --in-dir ././.local/Tessera/deviated --out-dir ././.local/Tessera/deviated/analysis
 ```
 
 ## Outputs

@@ -9,7 +9,7 @@ namespace MosaicShell.Host.Tiles.Tessera;
 /// Shared-backdrop ancestor for Tessera flyout trees (consolidation scaffold).
 /// Live GDI/screen sampling is dormant while
 /// <see cref="MosaicShell.Core.Modules.Tessera.TesseraFlyoutGlassPolicy.ForbidLiveBackdropPixelSampling"/>
-/// is true — SoftFrost paints Skia frost on Transparent HWND instead.
+/// is true, SoftFrost paints Skia frost on Transparent HWND instead.
 /// Keep this wrap so future glass can opt in without rewiring chrome.
 /// </summary>
 internal sealed class TesseraSharedBackdropHost : Decorator

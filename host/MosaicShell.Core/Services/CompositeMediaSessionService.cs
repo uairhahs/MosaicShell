@@ -77,6 +77,16 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
 
         if (prev is null && next is null) return;
 
+        if (raiseProgress
+            && prev is not null && next is not null
+            && MediaSessionChangePolicy.LooksLikeNewTrackPosition(
+                prev.PositionSeconds, next.PositionSeconds))
+        {
+            // Title may still be stale; position restart must present the media flyout.
+            Changed?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
         if (raiseProgress)
         {
             if (prev is not null && next is not null
@@ -123,9 +133,16 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
             && (LooksLikeBrowserSession(smtc.AppId)
                 || TitlesLooselyMatch(smtc.Title, wnp.Title)))
         {
-            title = wnp.Title;
-            if (!string.IsNullOrWhiteSpace(wnp.Artist))
-                artist = wnp.Artist;
+            // Use WNP title/artist when SMTC is empty or still agrees with WNP.
+            // Do not keep a stale WNP title when SMTC already advanced to a new track;
+            // that swallowed Media.Changed and blocked Tessera media flyouts.
+            if (string.IsNullOrWhiteSpace(smtc.Title) || TitlesLooselyMatch(smtc.Title, wnp.Title))
+            {
+                title = wnp.Title;
+                if (!string.IsNullOrWhiteSpace(wnp.Artist))
+                    artist = wnp.Artist;
+            }
+
             if (!IsUsableCover(thumb) && IsUsableCover(wnp.CoverPng))
                 thumb = wnp.CoverPng;
         }

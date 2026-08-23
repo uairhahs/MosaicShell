@@ -1,7 +1,7 @@
 namespace MosaicShell.Core.Capabilities;
 
 /// <summary>
-/// Host shell actions (overlays, module config, flyout preview) — implemented by Avalonia Host, mocked in tests.
+/// Host shell actions (overlays, module config, flyout preview), implemented by Avalonia Host, mocked in tests.
 /// Module-specific preview content is built by the caller into a <see cref="FlyoutRequest"/>.
 /// </summary>
 public interface IHostUiBridge

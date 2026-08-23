@@ -13,7 +13,7 @@ Local mirrors for manual layout work (not automated in CI):
 - Rainmeter sources: `.local/Tessera/original/{Style}.inc`, `Vars/{Style}.inc`
 
 Per-style sign-off is tracked in `TesseraLayoutCoverage` (`IsLayoutFidelitySignedOff` / `IsLayoutFidelityDeviated`).
-`tessera_layout_fidelity` in `HubParityBacklogTests` is **true** — every style is signed off.
+`tessera_layout_fidelity` in `HubParityBacklogTests` is **true**: every style is signed off.
 
 Statistical annotation of deviated refs (Pillow, via **uv**):
 

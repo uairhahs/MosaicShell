@@ -2,7 +2,7 @@ namespace MosaicShell.Core.Modules.Tessera;
 
 /// <summary>
 /// Flyout material policy. Soft frost = translucent crust + chrome edge blend.
-/// Never requests OS AcrylicBlur / Mica — those paint hard rectangular slabs behind rounded panels
+/// Never requests OS AcrylicBlur / Mica, those paint hard rectangular slabs behind rounded panels
 /// (consolidation alignment: SoftFrost stays Transparent + Skia frost; Acrylic shelved).
 /// </summary>
 public sealed record TesseraFlyoutMaterial(

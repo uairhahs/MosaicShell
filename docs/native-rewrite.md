@@ -8,7 +8,7 @@ Avalonia + Windows APIs only. No Rainmeter bridge, no `.ini` interpreter.
 
 Armed capability (not a Library overlay widget). Replaces OS volume/brightness HUD while armed **on a best-effort basis**.
 
-Runtime lives in `host/`; [`Tiles/Tessera`](../Tiles/Tessera) is an install stub (`module.native.json`) only. B0 removed Rainmeter Tessera; it is **not** full [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) parity.
+Runtime lives in `host/`; [`Tiles/Tessera`](./Tiles/Tessera) is an install stub (`module.native.json`) only. B0 removed Rainmeter Tessera; it is **not** full [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) parity.
 
 ### Status (honest)
 
@@ -50,16 +50,16 @@ Each module follows the Tessera pattern: thin `Tiles/{Id}` stub + real code in `
 | **B4** | Slate | MVP | Idle overlay |
 | **B5** | Hub / repo | **Done** | Host-only docs; Rainmeter trees removed |
 
-Further fidelity (StyleCatalog skins, YourFlyouts pixel parity) remains iterative — not blocked on Rainmeter trees. Upstream Rainmeter reference: [Jax-Core org](https://github.com/Jax-Core) (archives are reference, not runtime).
+Further fidelity (StyleCatalog skins, YourFlyouts pixel parity) remains iterative, not blocked on Rainmeter trees. Upstream Rainmeter reference: [Jax-Core org](https://github.com/Jax-Core) (archives are reference, not runtime).
 
 ## Phase C (post-B5 fidelity)
 
-Archives on GitHub replace in-repo Rainmeter trees. Phase C is **optional polish** gated by `*_layout_fidelity` flags — do not flip true without screenshot-level companion proofs.
+Archives on GitHub replace in-repo Rainmeter trees. Phase C is **optional polish** gated by `*_layout_fidelity` flags, do not flip true without screenshot-level companion proofs.
 
 | Phase | Focus | Reference archive | Exit signal |
 |-------|--------|-------------------|-------------|
 | **C0** | Archive cross-refs in `docs/legacy/` | [Jax-Core](https://github.com/Jax-Core) | Every legacy page links upstream repo |
-| **C1** | Tessera named styles beyond Fluent/Windows11/Square | [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) | **Done** — `tessera_layout_fidelity`; proofs in `.github/res/Tessera/` |
+| **C1** | Tessera named styles beyond Fluent/Windows11/Square | [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) | **Done**: `tessera_layout_fidelity`; proofs in `.github/res/Tessera/` |
 | **C2** | Widget StyleCatalog skins | ModularClocks / ModularPlayers / ModularVisualizer / Plainext | Per-widget `*_layout_fidelity` flags |
 | **C3** | Capability overlay polish | YourMixer / ValliStart / Keylaunch / MIUI-Shade / IdleStyle | Richer Mixdeck/Inlay UX; Chord motion; Substrate tiles; Slate idle |
 | **C4** | Installer / release | Local `Tiles/` stubs + Host zip | Mosaicist copies native stub only; no `.rmskin` |

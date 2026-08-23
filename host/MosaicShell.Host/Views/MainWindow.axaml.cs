@@ -13,7 +13,7 @@ namespace MosaicShell.Host.Views;
 /// between monitors (Avalonia Screens: WorkingArea=pixels, Width/Height=DIPs, Scaling=DPI).
 ///
 /// Important: only <see cref="WindowResizeReason.User"/> updates the stored fraction.
-/// DPI / layout / application resizes must not — that was poisoning frac≈0.97 and making
+/// DPI / layout / application resizes must not, that was poisoning frac≈0.97 and making
 /// the window fill the destination display (see host-size.log).
 /// </summary>
 public partial class MainWindow : Window
@@ -42,7 +42,7 @@ public partial class MainWindow : Window
     {
         base.OnOpened(e);
 
-        // Seed fraction from the designed startup size once — never from a DPI-bloated size.
+        // Seed fraction from the designed startup size once, never from a DPI-bloated size.
         CaptureFractionFromCurrentSize(userInitiated: false);
         SanitizeFraction();
         SyncLastSeenScreen(ResolveScreen());
@@ -167,7 +167,7 @@ public partial class MainWindow : Window
             Width = w;
             Height = h;
 
-            // Always restore design mins — never pin Min* to the applied size.
+            // Always restore design mins, never pin Min* to the applied size.
             MinWidth = MinW;
             MinHeight = MinH;
 

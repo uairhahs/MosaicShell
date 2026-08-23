@@ -196,6 +196,26 @@ public class TesseraParityTests : IDisposable
     }
 
     [Fact]
+    public async Task Armed_tessera_shows_media_flyout_on_track_change()
+    {
+        ModuleSettingsStore.Save("Tessera", new TesseraSettings { EnableMediaFlyouts = true });
+        var services = HostServicesFakes.Create();
+        var media = (FakeMediaSessionService)services.Media;
+        media.Current = new MediaSessionInfo("Track A", "Artist", "app", true, null, 0, 100);
+
+        var ui = new BridgeUi(new CaptureFlyouts(_shown));
+        var registry = new CapabilityRegistry();
+        BuiltInCapabilityFactories.RegisterAll(registry);
+        var daemon = new CapabilityDaemon(registry, services, ui);
+        (await daemon.ArmAsync("Tessera")).Should().BeTrue();
+        _shown.Clear();
+
+        media.Current = new MediaSessionInfo("Track B", "Artist", "app", true, null, 0, 100);
+
+        _shown.Should().Contain(r => r.Kind == "media" && r.ModuleId == "Tessera");
+    }
+
+    [Fact]
     public void StyleCatalog_still_has_eleven_tessera_layouts()
     {
         StyleCatalog.IdsFor("Tessera").Should().HaveCount(11);

@@ -16,7 +16,7 @@ public static class TesseraGlass
 {
     /// <summary>
     /// When true and <see cref="AllowGdiScreenCapture"/> is also true, sample/blur the live
-    /// desktop via GDI BitBlt. Default is false — prefer Avalonia AcrylicBlur / Transparent.
+    /// desktop via GDI BitBlt. Default is false, prefer Avalonia AcrylicBlur / Transparent.
     /// </summary>
     public static bool UseBackdropBlur { get; set; }
 
@@ -26,7 +26,7 @@ public static class TesseraGlass
     /// </summary>
     public static bool AllowGdiScreenCapture { get; set; }
 
-    /// <summary>Embedded previews (module config) — backdrop sampling is unstable; use fallback glass.</summary>
+    /// <summary>Embedded previews (module config), backdrop sampling is unstable; use fallback glass.</summary>
     public static bool PreviewMode { get; set; }
 
     /// <summary>While true, glass shells render as simple borders (config preview build).</summary>
@@ -49,12 +49,12 @@ public static class TesseraGlass
 /// <summary>Skia glass shell shared by Tessera chrome.</summary>
 public static class TesseraGlassPanel
 {
-    // Pre-consolidation (4fcc41a) values — consolidation crushed these and Soft frost vanished.
+    // Pre-consolidation (4fcc41a) values, consolidation crushed these and Soft frost vanished.
     public const double DefaultBlurRadius = 11;
     internal const byte BlurredTintAlphaMax = 48;
     internal const byte FallbackTintAlphaMax = 80;
 
-    /// <summary>Former SKFilterQuality.Medium — SkiaSharp 3 sampling for DrawImage.</summary>
+    /// <summary>Former SKFilterQuality.Medium, SkiaSharp 3 sampling for DrawImage.</summary>
     internal static readonly SKSamplingOptions MediumSampling =
         new(SKFilterMode.Linear, SKMipmapMode.Linear);
 
@@ -297,7 +297,7 @@ internal sealed class TesseraGlassBackground : Control
         if (Bounds.Width <= 0 || Bounds.Height <= 0)
             return;
 
-        // 4fcc41a: Custom Skia only — no Avalonia mocha underlay (that made Soft frost look matte/black).
+        // 4fcc41a: Custom Skia only, no Avalonia mocha underlay (that made Soft frost look matte/black).
         context.Custom(new TesseraGlassDrawOperation(
             this,
             Bounds,
@@ -387,7 +387,7 @@ internal sealed class TesseraGlassBackground : Control
         var round = new SKRoundRect(rect, (float)cornerRadius, (float)cornerRadius);
 
         // Always paint translucent frost chrome. Do NOT GDI/BitBlt or shared-capture into
-        // this layer — that self-captures the flyout as opaque black (Soft frost → black boxes).
+        // this layer, that self-captures the flyout as opaque black (Soft frost → black boxes).
         // Real wallpaper shows through Transparent HWND + alpha frost (4fcc41a fake-glass recipe).
         TesseraGlassDrawOperation.DrawFallbackGlass(lc, round, w, h, tint);
 
@@ -406,7 +406,7 @@ internal sealed class TesseraGlassBackground : Control
 
         if (maySample && !drewBackdrop)
         {
-            // 4fcc41a: blur Avalonia's Skia surface (not GDI). Still gated — can sample empty buffer.
+            // 4fcc41a: blur Avalonia's Skia surface (not GDI). Still gated, can sample empty buffer.
             drewBackdrop = TesseraGlassDrawOperation.TryDrawBackdropBlur(
                 lc, targetCanvas, sourceSurface, rect, round, blurRadius);
         }
@@ -545,7 +545,7 @@ internal sealed class TesseraGlassDrawOperation : ICustomDrawOperation
 
     internal static void DrawFallbackGlass(SKCanvas canvas, SKRoundRect round, int w, int h, Color tint)
     {
-        // Recipe from 4fcc41a (pre-consolidation) — dark slab + highlight so Soft frost reads.
+        // Recipe from 4fcc41a (pre-consolidation), dark slab + highlight so Soft frost reads.
         using var basePaint = new SKPaint
         {
             Color = new SKColor(17, 17, 27, 96),
@@ -591,7 +591,7 @@ internal sealed class TesseraGlassDrawOperation : ICustomDrawOperation
         if (sk.Alpha == 0)
             return;
 
-        // SoftLight (4fcc41a) — SrcOver over dark frost reads as a matte tint slab.
+        // SoftLight (4fcc41a), SrcOver over dark frost reads as a matte tint slab.
         using var tintPaint = new SKPaint
         {
             Color = sk,
@@ -603,7 +603,7 @@ internal sealed class TesseraGlassDrawOperation : ICustomDrawOperation
 
     internal static void DrawGlassChrome(SKCanvas canvas, SKRoundRect round, int w, int h)
     {
-        // Uniform edge only — no radial specular (reads as a spotlight on small panels).
+        // Uniform edge only, no radial specular (reads as a spotlight on small panels).
         var edgeAlpha = (byte)(TesseraPalette.UseEdgeBlend ? 48 : 64);
         using var edgePaint = new SKPaint
         {

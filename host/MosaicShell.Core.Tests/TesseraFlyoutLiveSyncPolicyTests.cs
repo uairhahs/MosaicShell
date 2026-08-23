@@ -8,7 +8,7 @@ public class TesseraFlyoutLiveSyncPolicyTests
     [Fact]
     public void Closed_must_only_unregister_the_same_window_instance()
     {
-        // Superseded HWND Closed must not clear the live session entry — that orphans
+        // Superseded HWND Closed must not clear the live session entry; that orphans
         // SoftFrost surfaces and stacks black/frost layers on rapid Try now.
         TesseraFlyoutLiveSyncPolicy.ClosedMustOnlyUnregisterSameInstance.Should().BeTrue();
     }
@@ -20,6 +20,14 @@ public class TesseraFlyoutLiveSyncPolicyTests
         // Host must Hide/revive the registered HWND instead of Close+new.
         TesseraFlyoutLiveSyncPolicy.MustReuseRegisteredFlyoutHwnd.Should().BeTrue();
         TesseraFlyoutLiveSyncPolicy.TransientDismissMustHideNotClose.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Soft_frost_opacity_zero_is_not_effectively_showing()
+    {
+        TesseraFlyoutLiveSyncPolicy.IsEffectivelyShowing(windowVisible: true, opacity: 0).Should().BeFalse();
+        TesseraFlyoutLiveSyncPolicy.IsEffectivelyShowing(windowVisible: true, opacity: 1).Should().BeTrue();
+        TesseraFlyoutLiveSyncPolicy.IsEffectivelyShowing(windowVisible: false, opacity: 1).Should().BeFalse();
     }
 
     [Fact]

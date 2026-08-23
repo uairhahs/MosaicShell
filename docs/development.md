@@ -1,6 +1,6 @@
 # Development guide (TDD, hierarchy, extensibility)
 
-This document is the **human-readable** source of truth for how MosaicShell should grow. Cursor agents also load the always-apply rules under [`.cursor/rules/`](../.cursor/rules/):
+This document is the **human-readable** source of truth for how MosaicShell should grow. Cursor agents also load the always-apply rules under [`.cursor/rules/`](./.cursor/rules/):
 
 | Rule | Concern |
 |------|---------|
@@ -23,8 +23,8 @@ MosaicShell.Core            catalogs, *Spec / *Policy, services, capabilities, s
         │  ProjectReference only this way
         │
 MosaicShell.Core.Tests      asserts Core; Hub parity honesty gates
-MosaicShell.Host            Avalonia hub, flyouts, tile surfaces — reads Core
-Mosaicist                   install CLI — Core, not Host UI
+MosaicShell.Host            Avalonia hub, flyouts, tile surfaces (reads Core)
+Mosaicist                   install CLI (Core, not Host UI)
 ```
 
 **Hard rules**
@@ -41,11 +41,11 @@ See also [`architecture-native.md`](architecture-native.md) and [`module-sdk.md`
 
 Every behavior change that affects chrome, policy, parity, or capability shape:
 
-1. **Contract** — add or extend a type in `host/MosaicShell.Core` (`*Spec`, `*Policy`, catalog entry, builder, pure helper).
-2. **Failing test** — `host/MosaicShell.Core.Tests` asserts the contract (FluentAssertions + xUnit).
-3. **Confirm red** — `dotnet test` on the new/changed tests.
-4. **Green** — minimal Core implementation, then Host wiring that *reads* the contract.
-5. **Refactor** — only while green; no drive-by cleanups in the same step.
+1. **Contract**: add or extend a type in `host/MosaicShell.Core` (`*Spec`, `*Policy`, catalog entry, builder, pure helper).
+2. **Failing test**: `host/MosaicShell.Core.Tests` asserts the contract (FluentAssertions + xUnit).
+3. **Confirm red**: `dotnet test` on the new/changed tests.
+4. **Green**: minimal Core implementation, then Host wiring that *reads* the contract.
+5. **Refactor**: only while green; no drive-by cleanups in the same step.
 
 ```powershell
 dotnet test host/MosaicShell.Core.Tests --filter "FullyQualifiedName~YourNewTests"
@@ -68,14 +68,14 @@ dotnet build host/MosaicShell.Host
 | Module list, icons/glyphs, style ids | `ModuleCatalog` / `HubGlyphCatalog` / `StyleCatalog` |
 | Armed background behavior | `IModuleCapability` + factory under `Capabilities/BuiltIn` |
 | Overlay / config / flyout from Core | `IHostUiBridge`, `IFlyoutPresenter`, `FlyoutRequest` |
-| Process-wide Win32 composition | `HostPlatform/Win32HostCompositionPolicy` — `Program` reads that, not Tessera SoftFrost types |
+| Process-wide Win32 composition | `HostPlatform/Win32HostCompositionPolicy`: `Program` reads that, not Tessera SoftFrost types |
 | Hub page layout / ViewModels | Host only *after* Core contract exists for any new magic values |
 
 ### Good pattern (scrollbar chrome)
 
 - Core: `HostScrollbarChromeSpec` with hex **and** `HostChromeArgb` for Host.
 - Tests: assert thickness, ARGB parse, required colors.
-- Host: build `IBrush` resources in `App.Initialize`, bind `DynamicResource` — never `x:Static` a hex **string** onto `Fill`/`Background`.
+- Host: build `IBrush` resources in `App.Initialize`, bind `DynamicResource`: never `x:Static` a hex **string** onto `Fill`/`Background`.
 
 ### Bad pattern (creates debt)
 
@@ -94,7 +94,7 @@ Before merging a feature, answer yes to as many as apply:
 - [ ] Capability/widget plugs into factory/registry seams (`docs/module-sdk.md` for third-party).
 - [ ] No parallel magic numbers in Host.
 - [ ] No skipped/deleted tests to force CI green.
-- [ ] Scope limited — no drive-by refactors while greening one contract.
+- [ ] Scope limited, no drive-by refactors while greening one contract.
 
 ---
 
@@ -107,4 +107,4 @@ When an agent (or contributor) implements UI polish, glass, or tile config:
 3. Cite the Core type in the PR description (“Host reads `HostScrollbarChromeSpec`”).
 4. Run `dotnet test host/MosaicShell.Core.Tests` before claiming done.
 
-If a change cannot be expressed as a Core contract, stop and redesign — that is usually a smell that Host is accumulating debt.
+If a change cannot be expressed as a Core contract, stop and redesign, that is usually a smell that Host is accumulating debt.

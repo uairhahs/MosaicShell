@@ -43,7 +43,7 @@ public sealed class TesseraLiveHost : ContentControl
 {
     public TesseraLiveBindings Bindings { get; } = new();
 
-    /// <summary>Module-config preview — must not sample live desktop backdrop.</summary>
+    /// <summary>Module-config preview, must not sample live desktop backdrop.</summary>
     public bool IsEmbeddedPreview { get; init; }
 
     /// <summary>Find live host when flyout root is wrapped (scale decorator, shared backdrop parent).</summary>

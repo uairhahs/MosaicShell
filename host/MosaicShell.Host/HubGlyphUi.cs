@@ -13,4 +13,7 @@ internal static class HubGlyphUi
 
     public static IBrush Brush(HubGlyph glyph) =>
         new SolidColorBrush(Color.Parse(glyph.TintHex));
+
+    public static IBrush StatusBrush(HubTileStatusKind kind) =>
+        new SolidColorBrush(Color.Parse(HubTileStatusChromeSpec.HexFor(kind)));
 }

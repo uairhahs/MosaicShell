@@ -17,9 +17,9 @@
 
 ## About
 
-MosaicShell is a configurable desktop shell built from composable surfaces. The **Avalonia Host** manages settings, module install, and armed capabilities; each tile is a native capability or widget.
+MosaicShell is a native Windows desktop shell built from composable tiles. The Avalonia **Host** installs modules, arms tray capabilities, and opens widget overlays, with no Rainmeter and no `.rmskin`.
 
-Forked from [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore), archived November 2024. Rainmeter-era sources live in the [Jax-Core archives](https://github.com/Jax-Core); promised behavior is documented under [docs/legacy/](docs/legacy/).
+It continues the JaxCore idea of a modular desktop (forked from [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore), archived November 2024). Historical Rainmeter sources live in the [Jax-Core archives](https://github.com/Jax-Core); promised behavior is documented under [docs/legacy/](docs/legacy/).
 
 ---
 
@@ -43,7 +43,7 @@ dotnet run --project MosaicShell.Host
 
 See [docs/architecture-native.md](docs/architecture-native.md), [docs/native-rewrite.md](docs/native-rewrite.md), and [docs/parity/README.md](docs/parity/README.md).
 
-**Honest MVP vs fidelity:** Catalog `tile_*_mvp` flags mean wiring, settings, and flagship behavior slices are in place — not full Jax-Core visual parity. Tessera C1 is signed off (`tessera_layout_fidelity`; proofs in `.github/res/Tessera/`). Other `*_layout_fidelity` flags stay false until screenshot proofs land (see [docs/parity/screenshots/](docs/parity/screenshots/)). Install modules from the bundled `Tiles/{Id}/` native stub via `Mosaicist install-module <id>` — no Rainmeter or `.rmskin` required.
+**Honest MVP vs fidelity:** Catalog `tile_*_mvp` flags mean wiring, settings, and flagship behavior slices are in place, not full Jax-Core visual parity. Tessera C1 is signed off (`tessera_layout_fidelity`; proofs in `.github/res/Tessera/`). Other `*_layout_fidelity` flags stay false until screenshot proofs land (see [docs/parity/screenshots/](docs/parity/screenshots/)). Install modules from the bundled `Tiles/{Id}/` native stub via `Mosaicist install-module <id>`, with no Rainmeter or `.rmskin` required.
 
 ---
 

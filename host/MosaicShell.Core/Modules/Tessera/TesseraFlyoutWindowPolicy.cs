@@ -27,7 +27,7 @@ public static class TesseraFlyoutWindowPolicy
 
     public const byte PresentableLayeredAlpha = 255;
 
-    /// <summary>Opaque-recovery shell floor — empty-HWND regression if SoftFrost is off.</summary>
+    /// <summary>Opaque-recovery shell floor, empty-HWND regression if SoftFrost is off.</summary>
     public const byte MinPresentableFallbackAlpha = 170;
 
     /// <summary>
@@ -65,7 +65,7 @@ public static class TesseraFlyoutWindowPolicy
         return alpha < MinPresentableFallbackAlpha ? MinPresentableFallbackAlpha : alpha;
     }
 
-    /// <summary>Avalonia TransparencyBackgroundFallback alpha — 0 when SoftFrost HWND is on.</summary>
+    /// <summary>Avalonia TransparencyBackgroundFallback alpha, 0 when SoftFrost HWND is on.</summary>
     public static byte ResolveCompositionFallbackAlpha(TesseraFlyoutMaterial material) =>
         SoftFrostHwndReady
             ? SoftFrostCompositionFallbackAlpha

@@ -5,7 +5,7 @@ namespace MosaicShell.Core.Tests;
 
 public class TesseraFlyoutWindowPolicyTests
 {
-    /// <summary>Single ship-gate fact — SoftFrost must not flip off silently.</summary>
+    /// <summary>Single ship-gate fact, SoftFrost must not flip off silently.</summary>
     [Fact]
     public void Ship_gate_soft_frost_hwnd_is_on()
     {

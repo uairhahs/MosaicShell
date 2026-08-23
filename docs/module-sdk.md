@@ -7,7 +7,7 @@ MosaicShell discovers modules from `%LocalAppData%\MosaicShell\Modules\{Id}\` (o
 ```text
 Modules/MyTile/
   module.manifest.json   # required
-  module.dll             # optional — ICapabilityFactory and/or ITileViewFactory
+  module.dll             # optional, ICapabilityFactory and/or ITileViewFactory
   capability.dll         # optional legacy alias for capability factory
   tile.dll               # optional legacy alias for tile view factory
   …assets…
@@ -42,7 +42,7 @@ Modules/MyTile/
 
 Built-in factories always win on id collision. External DLLs load best-effort when arming (`capability`/`module.dll`) or when showing an overlay (`module`/`tile.dll`).
 
-`IHostUiBridge.PreviewFlyout(FlyoutRequest)` is module-agnostic — build the request in your module (see Tessera’s `TesseraFlyoutRequestBuilder` under `MosaicShell.Core.Modules.Tessera` as a first-party example).
+`IHostUiBridge.PreviewFlyout(FlyoutRequest)` is module-agnostic, build the request in your module (see Tessera’s `TesseraFlyoutRequestBuilder` under `MosaicShell.Core.Modules.Tessera` as a first-party example).
 
 ## Install
 
@@ -57,7 +57,7 @@ Mosaicist install-package .\HelloTile.zip
 
 ## Sample
 
-See [`samples/ExternalSampleModule`](../samples/ExternalSampleModule) for a manifest-only widget. After `install-package`, it appears in Library; without a `module.dll` / `tile.dll` the Host shows `GenericTileView` placeholder chrome until you ship a view factory.
+See [`samples/ExternalSampleModule`](./samples/ExternalSampleModule) for a manifest-only widget. After `install-package`, it appears in Library; without a `module.dll` / `tile.dll` the Host shows `GenericTileView` placeholder chrome until you ship a view factory.
 
 ## Scale / DPI
 

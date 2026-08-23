@@ -4,7 +4,7 @@ using Avalonia.Threading;
 namespace MosaicShell.Host.Capabilities;
 
 /// <summary>
-/// WH_MOUSE_LL outside-click dismiss. The hook callback must NEVER touch Avalonia —
+/// WH_MOUSE_LL outside-click dismiss. The hook callback must NEVER touch Avalonia;
 /// reading Bounds/Screens from the hook thread deadlocks the UI (and freezes the app).
 /// Bounds are snapshotted on the UI thread when the watcher starts / is refreshed.
 /// </summary>
@@ -141,7 +141,7 @@ internal sealed class TesseraOutsideClickWatcher : IDisposable
         // Hook may fire many downs; only queue dismiss once.
         if (Interlocked.CompareExchange(ref _dismissPosted, 1, 0) != 0)
             return;
-        // Background — never Send/Invoke from the hook thread.
+        // Background, never Send/Invoke from the hook thread.
         Dispatcher.UIThread.Post(() =>
         {
             try { _dismiss(); }

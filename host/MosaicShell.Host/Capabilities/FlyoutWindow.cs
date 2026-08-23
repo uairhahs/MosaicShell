@@ -37,7 +37,7 @@ internal sealed class FlyoutWindow : Window
         _services = services;
         _material = TesseraFlyoutMaterialFactory.FromPayload(request.Payload);
         TesseraPalette.ApplyMaterial(_material);
-        // Win32 title is for HWND identity only — WindowDecorations.None; never a visible chrome strip.
+        // Win32 title is for HWND identity only, WindowDecorations.None; never a visible chrome strip.
         Title = $"MosaicShell - {request.ModuleId}";
 
         // docs: SizeToContent for content-sized tool windows
@@ -84,6 +84,15 @@ internal sealed class FlyoutWindow : Window
 
     public string Kind => _request.Kind;
     public string? StyleId => _request.StyleId;
+
+    /// <summary>
+    /// True only when the SoftFrost session is user-visible (not pre-reveal / transient-dismissed).
+    /// </summary>
+    public bool IsFlyoutSessionShowing =>
+        TesseraFlyoutLiveSyncPolicy.IsEffectivelyShowing(IsVisible, Opacity);
+
+    /// <summary>Raised after auto-dismiss / TransientDismiss so Host can close FocusDim.</summary>
+    public event Action? TransientDismissed;
 
     public void EnsureLivePump() => StartLivePump();
 
@@ -299,7 +308,7 @@ internal sealed class FlyoutWindow : Window
         try
         {
             Relayout();
-            // SoftFrost starts at Opacity 0 — RevealAfterLayout owns the reveal.
+            // SoftFrost starts at Opacity 0, RevealAfterLayout owns the reveal.
             if (!TesseraFlyoutWindowPolicy.HideUntilCompositionReady)
                 Opacity = 1;
             RenderTransform = null;
@@ -363,6 +372,9 @@ internal sealed class FlyoutWindow : Window
                 Close();
         }
         catch { /* ignore */ }
+
+        try { TransientDismissed?.Invoke(); }
+        catch { /* ignore */ }
     }
 
     private void OnWheel(object? sender, PointerWheelEventArgs e)
@@ -371,7 +383,7 @@ internal sealed class FlyoutWindow : Window
         ResetDismissTimer();
     }
 
-    // Avalonia 11: WindowTransparencyLevel is a struct, not an enum — Enum.TryParse throws
+    // Avalonia 11: WindowTransparencyLevel is a struct, not an enum, Enum.TryParse throws
     // "Type provided must be an Enum" and aborts flyout construction (see flyout.log).
     private static WindowTransparencyLevel[] ParseTransparencyHints(IReadOnlyList<string> hints)
     {

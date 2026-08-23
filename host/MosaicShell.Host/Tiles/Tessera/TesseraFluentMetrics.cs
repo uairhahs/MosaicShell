@@ -13,7 +13,7 @@ public static class TesseraFluentMetrics
     public const double MaxShellWidth = 420;
 }
 
-/// <summary>Host Win11 metrics — YourFlyouts Win11.inc at scale 1.</summary>
+/// <summary>Host Win11 metrics, YourFlyouts Win11.inc at scale 1.</summary>
 public static class TesseraWindows11Metrics
 {
     public const double Width = 320;

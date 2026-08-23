@@ -2,13 +2,13 @@ namespace MosaicShell.Core.Modules.Tessera;
 
 /// <summary>
 /// Live flyout glass stages vs config/export preview.
-/// Skia custom-draw on opaque HWND paints as black slabs — use presentable Border shells
+/// Skia custom-draw on opaque HWND paints as black slabs, use presentable Border shells
 /// until <see cref="TesseraFlyoutWindowPolicy.SoftFrostHwndReady"/>.
 /// </summary>
 public enum TesseraFlyoutGlassMode
 {
     /// <summary>
-    /// Solid Border shells — config/export preview, and live flyouts while SoftFrost HWND is not ready.
+    /// Solid Border shells, config/export preview, and live flyouts while SoftFrost HWND is not ready.
     /// </summary>
     EmbeddedSimple,
 
@@ -24,7 +24,7 @@ public static class TesseraFlyoutGlassPolicy
     public const bool PreviewMayUseEmbeddedSimple = true;
 
     /// <summary>
-    /// Live path must not force Skia glass while the window is still opaque — that regression
+    /// Live path must not force Skia glass while the window is still opaque, that regression
     /// paints black boxes. Presentable shells until SoftFrost HWND is proven.
     /// </summary>
     public const bool PreferPresentableShellUntilSoftFrostHwnd = true;
@@ -35,10 +35,10 @@ public static class TesseraFlyoutGlassPolicy
     /// <summary>
     /// GDI BitBlt / shared-surface sampling of "what's behind" self-captures the flyout
     /// (opaque black) and overwrites frost. Soft frost uses Transparent HWND + Skia fake glass
-    /// (tint/noise/edge) instead — same practical approach as most Avalonia glass UIs.
+    /// (tint/noise/edge) instead, same practical approach as most Avalonia glass UIs.
     /// Shared-backdrop Host wrap stays as a dormant scaffold for future extensibility;
     /// do not flip this without measured non-blanking pixel usability (size ≠ content).
-    /// OS Acrylic/Mica is out of scope — material contract stays Transparent-only.
+    /// OS Acrylic/Mica is out of scope, material contract stays Transparent-only.
     /// </summary>
     public const bool ForbidLiveBackdropPixelSampling = true;
 

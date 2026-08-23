@@ -32,7 +32,7 @@ public static class TesseraFlyoutLiveSyncPolicy
     public const bool ClosedMustOnlyUnregisterSameInstance = true;
 
     /// <summary>
-    /// While a flyout HWND is registered, Host must ApplyRequest/Show on that instance —
+    /// While a flyout HWND is registered, Host must ApplyRequest/Show on that instance,
     /// never Close()+new. SoftFrost composition surfaces overlap and stack when recreated.
     /// </summary>
     public static bool MustReuseRegisteredFlyoutHwnd => true;
@@ -43,10 +43,20 @@ public static class TesseraFlyoutLiveSyncPolicy
     /// </summary>
     public static bool TransientDismissMustHideNotClose => true;
 
+    /// <summary>
+    /// SoftFrost starts / dismisses at Opacity 0 while HWND.IsVisible can still be true.
+    /// Soft-refresh and capability IsVisible must use this so track-change presents a flyout
+    /// instead of patching an invisible surface.
+    /// </summary>
+    public const double MinVisibleOpacity = 0.05;
+
+    public static bool IsEffectivelyShowing(bool windowVisible, double opacity) =>
+        windowVisible && opacity > MinVisibleOpacity;
+
     /// <summary>Live pump may call Media.PumpTimeline while visible.</summary>
     public const bool PumpMayAdvanceMediaTimeline = true;
 
-    /// <summary>Volume bindings have a single owner: coalesced Patch — not the pump.</summary>
+    /// <summary>Volume bindings have a single owner: coalesced Patch, not the pump.</summary>
     public const bool PumpMayWriteVolumeBindings = false;
 
     public const bool LiveHostRequiredForTesseraSuccess = true;

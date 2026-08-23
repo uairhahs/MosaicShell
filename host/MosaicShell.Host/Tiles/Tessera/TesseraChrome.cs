@@ -33,7 +33,7 @@ internal static class TesseraChrome
     public static IBrush TileFaceHi => new SolidColorBrush(Color.FromArgb(
         (byte)Math.Clamp(TesseraPalette.ShellAlpha + 25, 120, 240), 0x18, 0x18, 0x25));
 
-    /// <summary>Unified shell entry — glass, tinted glass, solid pill, or inset-margin wrapper.</summary>
+    /// <summary>Unified shell entry, glass, tinted glass, solid pill, or inset-margin wrapper.</summary>
     internal static Control Shell(
         Control child,
         double radius,
@@ -105,7 +105,7 @@ internal static class TesseraChrome
     public static Control Glass(Control child, double radius, Thickness? pad = null, double? w = null, double? h = null) =>
         Shell(child, radius, TesseraShellOptions.None, pad: pad, w: w, h: h);
 
-    /// <summary>Opaque style pill (Pixel columns) — no frost wash.</summary>
+    /// <summary>Opaque style pill (Pixel columns), no frost wash.</summary>
     public static Border SolidPill(
         Control child,
         IBrush fill,
@@ -142,7 +142,7 @@ internal static class TesseraChrome
         bool lightTintOnly) =>
         GlassTinted(child, radius, background, pad, w, h, useSharedBackdrop, lightTintOnly);
 
-    /// <summary>CoreUI grid cell — glass tinted tile matching the style reference.</summary>
+    /// <summary>CoreUI grid cell, glass tinted tile matching the style reference.</summary>
     public static Control CoreUiTile(
         Control child,
         double? w = null,
@@ -267,7 +267,7 @@ internal static class TesseraChrome
         border.PointerExited += (_, _) => border.Background = normal;
     }
 
-    /// <summary>Transport glyph with hover — circular for icons, rounded rect for play/pause.</summary>
+    /// <summary>Transport glyph with hover, circular for icons, rounded rect for play/pause.</summary>
     public static Border IconButton(Control child, Action act, double size, bool circularHighlight = true, IBrush? hover = null)
     {
         var corner = circularHighlight ? size / 2 : Math.Min(10, size * 0.36);
@@ -307,7 +307,7 @@ public sealed class TesseraRingVolume : Panel
     public static readonly StyledProperty<IBrush?> PercentBrushOverrideProperty =
         AvaloniaProperty.Register<TesseraRingVolume, IBrush?>(nameof(PercentBrushOverride));
 
-    /// <summary>Hero ring: glass disc, glow bed, thick arc — Smouti centerpiece.</summary>
+    /// <summary>Hero ring: glass disc, glow bed, thick arc, Smouti centerpiece.</summary>
     public static readonly StyledProperty<bool> ShowcaseProperty =
         AvaloniaProperty.Register<TesseraRingVolume, bool>(nameof(Showcase));
 
@@ -506,7 +506,7 @@ public sealed class TesseraRingVolume : Panel
     {
         var cx = Bounds.Width / 2;
         var cy = Bounds.Height / 2;
-        var ang = Math.Atan2(p.Y - cy, p.X - cx); // -pi..pi, 0 = east
+        var ang = Math.Atan2(p.Y - cy, p.X - cx); // -pi.pi, 0 = east
         // Convert so -90° (north) = 0
         var deg = ang * 180 / Math.PI + 90;
         if (deg < 0) deg += 360;

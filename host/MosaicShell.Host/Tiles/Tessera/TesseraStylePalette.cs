@@ -92,7 +92,7 @@ internal static class TesseraStyleMetrics
     public const double MaterialYouTrackIconBottom = 10;
 
     public const double CoreUiWidth = 400;
-    /// <summary>Corner device tile — square, matches volume row height (ref proportions).</summary>
+    /// <summary>Corner device tile, square, matches volume row height (ref proportions).</summary>
     public const double CoreUiVolumeH = 58;
     public const double CoreUiMediaH = 150;
     public const double CoreUiPad = 15;
@@ -100,7 +100,7 @@ internal static class TesseraStyleMetrics
     public const double CoreUiDevice = 58;
     public const double CoreUiTransportW = 58;
 
-    /// <summary>Balanced flyout — between ref width and shell cap.</summary>
+    /// <summary>Balanced flyout, between ref width and shell cap.</summary>
     public const double RadialWidth = 480;
     public const double RadialMinHeight = 162;
     public const double RadialMaxHeight = 176;

@@ -157,7 +157,7 @@ public static class TesseraMediaPanel
 
     private static Control ModernCard(TesseraFlyoutViewModel vm)
     {
-        // Modern.inc: dark MediaC shell + square cover top-right (80×80) — not full-card art wash.
+        // Modern.inc: dark MediaC shell + square cover top-right (80×80), not full-card art wash.
         const double artSize = 80;
         var art = AlbumArt(vm, artSize);
         art.HorizontalAlignment = HorizontalAlignment.Right;

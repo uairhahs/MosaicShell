@@ -3,8 +3,8 @@ using MosaicShell.Core.Modules.Tessera;
 namespace MosaicShell.Core.HostPlatform;
 
 /// <summary>
-/// Process-wide Win32 Avalonia composition hints. App bootstrap (<c>Program</c>) reads only this —
-/// not Tessera SoftFrost types — so tiles/main window aren't conceptually owned by flyout SoftFrost.
+/// Process-wide Win32 Avalonia composition hints. App bootstrap (<c>Program</c>) reads only this,
+/// not Tessera SoftFrost types, so tiles/main window aren't conceptually owned by flyout SoftFrost.
 /// SoftFrost maps into <see cref="PreferWinUiComposition"/> via
 /// <see cref="TesseraFlyoutWindowPolicy.PreferWinUiCompositionForSoftFrost"/>.
 /// </summary>

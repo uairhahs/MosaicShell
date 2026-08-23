@@ -1,12 +1,12 @@
 namespace MosaicShell.Core.Modules.Tessera;
 
 /// <summary>
-/// Subtle desktop dim behind Tessera (Focus-plugin analogue). Extremely light — not a modal scrim.
+/// Subtle desktop dim behind Tessera (Focus-plugin analogue). Extremely light, not a modal scrim.
 /// Must never capture input (Win32 click-through); outside clicks dismiss Tessera instantly without swallowing the click.
 /// </summary>
 public static class TesseraFocusDimPolicy
 {
-    /// <summary>Mocha crust dim alpha — quiet but readable (~27% opacity).</summary>
+    /// <summary>Mocha crust dim alpha, quiet but readable (~27% opacity).</summary>
     public const byte OverlayAlpha = 68;
 
     public const byte CrustR = 0x11;
@@ -28,7 +28,16 @@ public static class TesseraFocusDimPolicy
     /// <summary>Contract: any outside click clears dim + flyout immediately (no fade).</summary>
     public const bool InstantDismissOnOutsideClick = true;
 
-    /// <summary>Host must use this for SetLayeredWindowAttributes — never a parallel magic number.</summary>
+    /// <summary>
+    /// Auto-dismiss / TransientDismiss must close FocusDim in the same turn as the flyout Hide.
+    /// Outside-click already does; timer dismiss must not leave the dim orphaned.
+    /// </summary>
+    public const bool InstantDismissMustCloseFocusDim = true;
+
+    /// <summary>Host gate, method so callers are not const-folded into unreachable code.</summary>
+    public static bool ShouldCloseFocusDimOnTransientDismiss() => InstantDismissMustCloseFocusDim;
+
+    /// <summary>Host must use this for SetLayeredWindowAttributes, never a parallel magic number.</summary>
     public static byte ResolveLayeredAlpha() => OverlayAlpha;
 
     /// <summary>Payload <c>focusDim</c>: "0" off; missing / other → on (default).</summary>

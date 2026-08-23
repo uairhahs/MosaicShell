@@ -218,7 +218,7 @@ internal static class Win32WindowChrome
         }
     }
 
-    /// <summary>Legacy wrapper — prefer <see cref="TryStackAbove"/>.</summary>
+    /// <summary>Legacy wrapper, prefer <see cref="TryStackAbove"/>.</summary>
     public static void StackAbove(Window above, Window? below) =>
         _ = TryStackAbove(above, below, out _);
 
@@ -230,7 +230,7 @@ internal static class Win32WindowChrome
         ApplyLayeredAlpha(window, TesseraFlyoutWindowPolicy.PresentableLayeredAlpha);
 
     /// <summary>
-    /// Constant LWA_ALPHA wash for FocusDim — per <see cref="TesseraFocusDimPolicy.UseConstantLayeredAlpha"/>.
+    /// Constant LWA_ALPHA wash for FocusDim, per <see cref="TesseraFocusDimPolicy.UseConstantLayeredAlpha"/>.
     /// </summary>
     public static string ApplySubtleDim(Window window, byte alpha) =>
         ApplyLayeredAlpha(window, alpha);

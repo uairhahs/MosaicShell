@@ -245,7 +245,7 @@ public sealed class WebNowPlayingReduxHost : IWebNowPlayingService
 
     private void OnText(string message)
     {
-        if (message.Length > 200) Trace($"text {message.Length}b: {message[..200]}…");
+        if (message.Length > 200) Trace($"text {message.Length}b: {message[..200]}...");
         else Trace($"text: {message}");
 
         var sp = message.IndexOf(' ');
@@ -480,7 +480,7 @@ public sealed class WebNowPlayingReduxHost : IWebNowPlayingService
         var p = ActivePlayer();
         if (p is null) return;
         // WNP YTM likeDislike: SET_RATING 0 on an unrated track triggers thumbs-down.
-        // UI heart state drives intent — never infer unlike from stale host Rating when liking.
+        // UI heart state drives intent, never infer unlike from stale host Rating when liking.
         if (wantLiked)
         {
             await SendEventAsync(p.PortId, eventType: 5 /* TRY_SET_RATING */, data: 5);

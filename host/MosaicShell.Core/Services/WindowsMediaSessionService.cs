@@ -157,6 +157,8 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
         if (!string.Equals(prev.Artist, next.Artist, StringComparison.Ordinal)) return true;
         if (!string.Equals(prev.AppId, next.AppId, StringComparison.Ordinal)) return true;
         if (prev.IsPlaying != next.IsPlaying) return true;
+        if (MediaSessionChangePolicy.LooksLikeNewTrackPosition(prev.PositionSeconds, next.PositionSeconds))
+            return true;
         var prevLen = prev.ThumbnailPng?.Length ?? 0;
         var nextLen = next.ThumbnailPng?.Length ?? 0;
         if (prevLen != nextLen) return true;
@@ -216,13 +218,17 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
 
             if (moved)
             {
+                var priorPos = prev.PositionSeconds;
                 Current = prev with
                 {
                     PositionSeconds = pos,
                     DurationSeconds = dur,
                     IsPlaying = playing
                 };
-                ProgressChanged?.Invoke(this, EventArgs.Empty);
+                if (MediaSessionChangePolicy.LooksLikeNewTrackPosition(priorPos, pos))
+                    Changed?.Invoke(this, EventArgs.Empty);
+                else
+                    ProgressChanged?.Invoke(this, EventArgs.Empty);
             }
 
             var cur = Current;

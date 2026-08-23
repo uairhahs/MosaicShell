@@ -1,4 +1,4 @@
-﻿using MosaicShell.Core;
+using MosaicShell.Core;
 using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Runtime;
@@ -7,7 +7,7 @@ using MosaicShell.Core.Shp;
 namespace Mosaicist;
 
 /// <summary>
-/// MosaicShell installer CLI — copies native Tiles/ stubs into the modules directory.
+/// MosaicShell installer CLI, copies native Tiles/ stubs into the modules directory.
 /// </summary>
 public static class Program
 {

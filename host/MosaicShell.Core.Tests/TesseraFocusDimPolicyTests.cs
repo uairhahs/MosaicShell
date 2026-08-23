@@ -30,6 +30,8 @@ public class TesseraFocusDimPolicyTests
     {
         TesseraFocusDimPolicy.MustPassThroughInput.Should().BeTrue();
         TesseraFocusDimPolicy.InstantDismissOnOutsideClick.Should().BeTrue();
+        TesseraFocusDimPolicy.InstantDismissMustCloseFocusDim.Should().BeTrue();
+        TesseraFocusDimPolicy.ShouldCloseFocusDimOnTransientDismiss().Should().BeTrue();
     }
 
     [Fact]

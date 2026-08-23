@@ -75,7 +75,7 @@ public class TesseraFlyoutGlassPolicyTests
     [Fact]
     public void Soft_frost_material_still_asks_for_transparent_not_os_acrylic()
     {
-        // R5: OS Acrylic/Mica stays shelved — material contract forces Transparent only.
+        // R5: OS Acrylic/Mica stays shelved, material contract forces Transparent only.
         var m = TesseraFlyoutMaterialFactory.Create(useAcrylic: true);
         m.TransparencyHints.Should().Equal("Transparent");
         m.TransparencyHints.Should().NotContain("AcrylicBlur");
