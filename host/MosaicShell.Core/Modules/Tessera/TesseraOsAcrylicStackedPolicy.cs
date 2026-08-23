@@ -66,7 +66,7 @@ public static class TesseraOsAcrylicStackedPolicy
     /// Stacked acrylic uses the same trial flag as single-shell. Frost remains alpha default.
     /// </summary>
     public static bool TrialRequested =>
-        TesseraOsAcrylicTrialPolicy.Available && HostLaunchOptions.TesseraOsAcrylicTrial;
+        TesseraOsAcrylicTrialPolicy.Available && TesseraOsAcrylicTrialPolicy.IsTrialRequested();
 
     public static bool IsVolumeMediaStripStacked(IReadOnlyDictionary<string, string>? payload) =>
         TesseraOsAcrylicTrialPolicy.IsStackedMultiPanel(payload);
@@ -86,7 +86,7 @@ public static class TesseraOsAcrylicStackedPolicy
         UseMultiWindow(
             payload,
             styleId,
-            trialRequested: HostLaunchOptions.TesseraOsAcrylicTrial,
+            trialRequested: TesseraOsAcrylicTrialPolicy.IsTrialRequested(),
             osSupportsWinUiAcrylic: TesseraOsAcrylicTrialPolicy.OsSupportsWinUiAcrylic,
             osAcrylicRenderingAvailable: !HostLaunchOptions.TesseraForceSoftwareRender);
 

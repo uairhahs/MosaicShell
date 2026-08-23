@@ -4,7 +4,8 @@ namespace MosaicShell.Core.Modules.Tessera;
 
 /// <summary>
 /// Default-off OS AcrylicBlur spike for single-shell Tessera flyouts (H1).
-/// Alpha ships Skia frost; enable with <see cref="HostLaunchOptions.TesseraOsAcrylicTrialFlag"/>.
+/// Alpha ships Skia frost; enable with hub <c>UseOsAcrylic</c> (when signed off) or
+/// <see cref="HostLaunchOptions.TesseraOsAcrylicTrialFlag"/>.
 /// Stacked volume+media uses N FlyoutWindows under H3; see TesseraOsAcrylicStackedPolicy.
 /// Windows 11 is the supported evaluation and ship target. Windows 10 may pass the
 /// technical gate below but is best-effort only; MosaicShell makes no Win10 acrylic promises.
@@ -56,12 +57,29 @@ public static class TesseraOsAcrylicTrialPolicy
         return TesseraFlyoutMaterialFactory.UseAcrylicFromPayload(payload);
     }
 
+    /// <summary>
+    /// After Win11 eval sign-off, persisted hub <c>UseOsAcrylic</c> is the sole opt-in.
+    /// Before sign-off, only the launch flag applies (H2 eval).
+    /// </summary>
+    public static bool ResolveTrialRequested(bool launchFlag, bool persistedUseOsAcrylic) =>
+        !Available
+            ? false
+            : TesseraOsAcrylicSignOffPolicy.Win11EvalComplete
+                ? persistedUseOsAcrylic
+                : launchFlag;
+
+    /// <summary>Effective trial opt-in for this process (CLI flag or saved Tessera setting).</summary>
+    public static bool IsTrialRequested() =>
+        ResolveTrialRequested(
+            HostLaunchOptions.TesseraOsAcrylicTrial,
+            TesseraFlyoutRequestBuilder.LoadSettings().UseOsAcrylic);
+
     public static bool IsEligibleFromPayload(
         IReadOnlyDictionary<string, string>? payload,
         string? styleId = null) =>
         IsEligible(
             payload,
-            HostLaunchOptions.TesseraOsAcrylicTrial,
+            IsTrialRequested(),
             OsSupportsWinUiAcrylic,
             osAcrylicRenderingAvailable: !HostLaunchOptions.TesseraForceSoftwareRender,
             styleId: styleId);

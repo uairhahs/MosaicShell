@@ -164,6 +164,8 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _tesseraFlightFlyouts = true;
     [ObservableProperty] private bool _tesseraMediaStrip = true;
     [ObservableProperty] private bool _tesseraAcrylicBackdrop = true;
+    [ObservableProperty] private bool _tesseraOsAcrylic;
+    public bool TesseraOsAcrylicHubAvailable => TesseraOsAcrylicSignOffPolicy.Win11EvalComplete;
     [ObservableProperty] private bool _tesseraFocusDim = true;
     [ObservableProperty] private bool _tesseraBackdropBlur = true;
     [ObservableProperty] private decimal _tesseraFlyoutScalePercent = 100;
@@ -337,6 +339,7 @@ public partial class MainViewModel : ViewModelBase
             TesseraFlightFlyouts = s.EnableFlightFlyouts;
             TesseraMediaStrip = s.ShowMediaStripOnVolume;
             TesseraAcrylicBackdrop = s.UseAcrylicBackdrop;
+            TesseraOsAcrylic = TesseraOsAcrylicSignOffPolicy.Win11EvalComplete && s.UseOsAcrylic;
             TesseraFocusDim = s.UseFocusDim;
             TesseraBackdropBlur = s.UseBackdropBlur;
             TesseraFlyoutScalePercent = Math.Clamp(s.FlyoutScalePercent, 50, 150);
@@ -502,6 +505,7 @@ public partial class MainViewModel : ViewModelBase
         s.EnableFlightFlyouts = TesseraFlightFlyouts;
         s.ShowMediaStripOnVolume = TesseraMediaStrip;
         s.UseAcrylicBackdrop = TesseraAcrylicBackdrop;
+        s.UseOsAcrylic = TesseraOsAcrylicSignOffPolicy.Win11EvalComplete && TesseraOsAcrylic;
         s.UseFocusDim = TesseraFocusDim;
         s.UseBackdropBlur = TesseraBackdropBlur;
         s.FlyoutScalePercent = (int)Math.Clamp(TesseraFlyoutScalePercent, 50, 150);
@@ -545,7 +549,10 @@ public partial class MainViewModel : ViewModelBase
             }
             case "tessera":
             {
+                var prior = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
+                var priorOsAcrylic = prior.UseOsAcrylic;
                 PersistTesseraFromUi();
+                var saved = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
                 if (_capabilityHost?.IsArmed("Tessera") == true)
                 {
                     var ok = await _capabilityHost.ReArmAsync("Tessera");
@@ -557,6 +564,9 @@ public partial class MainViewModel : ViewModelBase
                 {
                     StatusMessage = "Tessera settings saved. Arm from Tiles to apply flyout hooks.";
                 }
+
+                if (saved.UseOsAcrylic != priorOsAcrylic)
+                    StatusMessage += " Restart Host after changing OS acrylic (process-wide corner radius).";
                 break;
             }
             case "phono":

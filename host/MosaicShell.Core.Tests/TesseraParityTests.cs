@@ -56,6 +56,7 @@ public class TesseraParityTests : IDisposable
         s.UseBackdropBlur.Should().BeTrue();
         s.UseBakedFrost.Should().BeTrue();
         s.UseAcrylicBackdrop.Should().BeTrue();
+        s.UseOsAcrylic.Should().BeFalse();
         s.UseFocusDim.Should().BeTrue();
         Math.Clamp(s.FlyoutScalePercent, 50, 150).Should().Be(100);
     }
@@ -112,6 +113,7 @@ public class TesseraParityTests : IDisposable
             AniDir = "Bottom",
             EnableFlightFlyouts = false,
             ShowMediaStripOnVolume = false,
+            UseOsAcrylic = true,
             AccentColor = "#D8E2F8"
         };
         ModuleSettingsStore.Save("Tessera", s);
@@ -122,6 +124,7 @@ public class TesseraParityTests : IDisposable
         loaded.MonitorIndex.Should().Be(2);
         loaded.AniDir.Should().Be("Bottom");
         loaded.EnableFlightFlyouts.Should().BeFalse();
+        loaded.UseOsAcrylic.Should().BeTrue();
     }
 
     [Fact]

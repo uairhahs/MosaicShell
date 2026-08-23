@@ -1,5 +1,8 @@
 using FluentAssertions;
+using MosaicShell.Core;
 using MosaicShell.Core.Capabilities.Platform;
+using MosaicShell.Core.Runtime;
+using MosaicShell.Core.Settings;
 using MosaicShell.Core.Styles;
 using MosaicShell.Core.Modules.Tessera;
 
@@ -7,8 +10,14 @@ namespace MosaicShell.Core.Tests;
 
 public class TesseraOsAcrylicStackedPolicyTests : IDisposable
 {
+    private readonly string _root;
+
     public TesseraOsAcrylicStackedPolicyTests()
     {
+        _root = Path.Combine(Path.GetTempPath(), "MosaicOsAcrylicStacked_" + Guid.NewGuid().ToString("N"));
+        AppPaths.SetRootOverride(_root);
+        AppPaths.EnsureLayout();
+        ModuleSettingsStore.Save("Tessera", new TesseraSettings());
         HostLaunchOptions.ResetForTests();
         HostLaunchOptions.Apply(Array.Empty<string>());
     }
@@ -17,6 +26,8 @@ public class TesseraOsAcrylicStackedPolicyTests : IDisposable
     {
         HostLaunchOptions.ResetForTests();
         HostLaunchOptions.Apply(Array.Empty<string>());
+        AppPaths.ClearRootOverride();
+        try { Directory.Delete(_root, true); } catch { /* ignore */ }
     }
 
     [Fact]
@@ -24,6 +35,7 @@ public class TesseraOsAcrylicStackedPolicyTests : IDisposable
     {
         var stacked = new Dictionary<string, string> { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
         HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
+        TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
 
         TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Fluent).Should().BeFalse();
         TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(stacked, StyleIds.Fluent).Should().BeTrue();
@@ -41,6 +53,7 @@ public class TesseraOsAcrylicStackedPolicyTests : IDisposable
     {
         var stacked = new Dictionary<string, string> { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
         HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
+        TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
 
         TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Meter).Should().BeTrue();
         TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(stacked, StyleIds.Meter).Should().BeFalse();
@@ -51,6 +64,7 @@ public class TesseraOsAcrylicStackedPolicyTests : IDisposable
     {
         var stacked = new Dictionary<string, string> { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
         HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
+        TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
 
         TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(stacked, StyleIds.Meter).Should().BeFalse();
         TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Meter).Should().BeTrue();
@@ -61,19 +75,21 @@ public class TesseraOsAcrylicStackedPolicyTests : IDisposable
     {
         var single = new Dictionary<string, string> { ["showMediaStrip"] = "0", ["acrylic"] = "1" };
         HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
+        TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
 
         TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(single).Should().BeTrue();
         TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(single, StyleIds.Fluent).Should().BeFalse();
     }
 
     [Fact]
-    public void Stacked_acrylic_requires_trial_flag_and_acrylic_setting()
+    public void Stacked_acrylic_requires_trial_opt_in_and_acrylic_setting()
     {
         var stacked = new Dictionary<string, string> { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
 
         TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Meter).Should().BeFalse();
 
         HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
+        TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
         TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Meter).Should().BeTrue();
 
         var frost = new Dictionary<string, string> { ["showMediaStrip"] = "1", ["acrylic"] = "0" };
@@ -81,14 +97,20 @@ public class TesseraOsAcrylicStackedPolicyTests : IDisposable
     }
 
     [Fact]
+    public void Stacked_acrylic_can_be_enabled_from_persisted_hub_setting()
+    {
+        var stacked = new Dictionary<string, string> { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
+        ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseOsAcrylic = true });
+
+        TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Meter).Should().BeTrue();
+    }
+
+    [Fact]
     public void Force_software_render_keeps_stacked_on_frost()
     {
         var stacked = new Dictionary<string, string> { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
-        HostLaunchOptions.Apply(
-        [
-            HostLaunchOptions.TesseraOsAcrylicTrialFlag,
-            HostLaunchOptions.TesseraForceSoftwareRenderFlag
-        ]);
+        TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
+        HostLaunchOptions.Apply([HostLaunchOptions.TesseraForceSoftwareRenderFlag]);
 
         TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Fluent).Should().BeFalse();
     }
@@ -111,6 +133,7 @@ public class TesseraOsAcrylicStackedPolicyTests : IDisposable
         TesseraOsAcrylicStackedPolicy.IsCoreUiMultiTile(StyleIds.CoreUI).Should().BeFalse();
 
         HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
+        TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
         var payload = new Dictionary<string, string> { ["showMediaStrip"] = "0", ["acrylic"] = "1" };
         TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(payload, StyleIds.CoreUI).Should().BeFalse();
     }
@@ -144,6 +167,7 @@ public class TesseraOsAcrylicStackedPolicyTests : IDisposable
     public void Stacked_volume_media_requests_acrylic_blur_on_each_hwnd()
     {
         HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
+        TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
         var stacked = new Dictionary<string, string> { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
         TesseraFlyoutMaterialFactory.OsAcrylicEligibleFromPayload(stacked, StyleIds.Meter).Should().BeTrue();
         var m = TesseraFlyoutMaterialFactory.FromPayload(stacked, StyleIds.Meter);

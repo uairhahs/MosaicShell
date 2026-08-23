@@ -1,15 +1,24 @@
 using FluentAssertions;
+using MosaicShell.Core;
 using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.HostPlatform;
 using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.Runtime;
+using MosaicShell.Core.Settings;
 using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Core.Tests;
 
 public class TesseraOsAcrylicTrialPolicyTests : IDisposable
 {
+    private readonly string _root;
+
     public TesseraOsAcrylicTrialPolicyTests()
     {
+        _root = Path.Combine(Path.GetTempPath(), "MosaicOsAcrylicTrial_" + Guid.NewGuid().ToString("N"));
+        AppPaths.SetRootOverride(_root);
+        AppPaths.EnsureLayout();
+        ModuleSettingsStore.Save("Tessera", new TesseraSettings());
         HostLaunchOptions.ResetForTests();
         HostLaunchOptions.Apply(Array.Empty<string>());
     }
@@ -18,6 +27,8 @@ public class TesseraOsAcrylicTrialPolicyTests : IDisposable
     {
         HostLaunchOptions.ResetForTests();
         HostLaunchOptions.Apply(Array.Empty<string>());
+        AppPaths.ClearRootOverride();
+        try { Directory.Delete(_root, true); } catch { /* ignore */ }
     }
 
     [Fact]
@@ -26,19 +37,54 @@ public class TesseraOsAcrylicTrialPolicyTests : IDisposable
         TesseraOsAcrylicTrialPolicy.Available.Should().BeTrue(
             "compile kill-switch stays on so --tessera-os-acrylic works without a rebuild");
         HostLaunchOptions.TesseraOsAcrylicTrial.Should().BeFalse();
+        TesseraOsAcrylicTrialPolicy.IsTrialRequested().Should().BeFalse();
         Win32HostCompositionPolicy.OsAcrylicTrialRequested.Should().BeFalse();
         Win32HostCompositionPolicy.WinUiCompositionBackdropCornerRadius.Should().BeNull(
             "process-wide radius is unset while the trial is off so alpha keeps Skia frost");
     }
 
     [Fact]
-    public void Launch_flag_requests_trial_without_changing_ship_default()
+    public void Persisted_hub_setting_enables_trial_when_win11_eval_is_signed_off()
+    {
+        ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseOsAcrylic = true });
+        TesseraOsAcrylicTrialPolicy.IsTrialRequested().Should().BeTrue();
+        Win32HostCompositionPolicy.OsAcrylicTrialRequested.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Persisted_hub_setting_is_ignored_without_win11_eval_sign_off()
+    {
+        TesseraOsAcrylicTrialPolicy
+            .ResolveTrialRequested(launchFlag: false, persistedUseOsAcrylic: true)
+            .Should().Be(TesseraOsAcrylicSignOffPolicy.Win11EvalComplete);
+        TesseraOsAcrylicTrialPolicy
+            .ResolveTrialRequested(launchFlag: true, persistedUseOsAcrylic: false)
+            .Should().Be(!TesseraOsAcrylicSignOffPolicy.Win11EvalComplete);
+    }
+
+    [Fact]
+    public void Launch_flag_is_ignored_after_win11_sign_off_until_hub_setting_is_on()
     {
         HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
         HostLaunchOptions.TesseraOsAcrylicTrial.Should().BeTrue();
+        TesseraOsAcrylicTrialPolicy.IsTrialRequested().Should().BeFalse(
+            "post sign-off the hub setting is authoritative; CLI flag alone must not enable acrylic");
+        Win32HostCompositionPolicy.OsAcrylicTrialRequested.Should().BeFalse();
+
+        ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseOsAcrylic = true });
+        TesseraOsAcrylicTrialPolicy.IsTrialRequested().Should().BeTrue();
         Win32HostCompositionPolicy.OsAcrylicTrialRequested.Should().BeTrue();
         Win32HostCompositionPolicy.WinUiCompositionBackdropCornerRadius
             .Should().Be(TesseraOsAcrylicTrialPolicy.SpikeCornerRadius);
+    }
+
+    [Fact]
+    public void Hub_setting_off_disables_acrylic_even_when_launch_flag_is_on()
+    {
+        ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseOsAcrylic = false });
+        HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
+        TesseraOsAcrylicTrialPolicy.IsTrialRequested().Should().BeFalse();
+        Win32HostCompositionPolicy.OsAcrylicTrialRequested.Should().BeFalse();
     }
 
     [Fact]
@@ -87,11 +133,8 @@ public class TesseraOsAcrylicTrialPolicyTests : IDisposable
     public void Is_eligible_from_payload_respects_force_software_render()
     {
         var single = new Dictionary<string, string> { ["showMediaStrip"] = "0", ["acrylic"] = "1" };
-        HostLaunchOptions.Apply(
-        [
-            HostLaunchOptions.TesseraOsAcrylicTrialFlag,
-            HostLaunchOptions.TesseraForceSoftwareRenderFlag
-        ]);
+        TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
+        HostLaunchOptions.Apply([HostLaunchOptions.TesseraForceSoftwareRenderFlag]);
         TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(single, StyleIds.Fluent).Should().BeFalse();
     }
 

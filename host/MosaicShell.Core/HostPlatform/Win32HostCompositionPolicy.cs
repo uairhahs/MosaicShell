@@ -31,10 +31,10 @@ public static class Win32HostCompositionPolicy
     public static bool OsAcrylicRenderingAvailable =>
         !HostLaunchOptions.TesseraForceSoftwareRender;
 
-    /// <summary>Runtime opt-in from <see cref="HostLaunchOptions.TesseraOsAcrylicTrialFlag"/>.</summary>
+    /// <summary>Runtime opt-in from launch flag or persisted Tessera hub setting.</summary>
     public static bool OsAcrylicTrialRequested =>
         TesseraOsAcrylicTrialPolicy.Available
-        && HostLaunchOptions.TesseraOsAcrylicTrial
+        && TesseraOsAcrylicTrialPolicy.IsTrialRequested()
         && OsAcrylicRenderingAvailable;
 
     /// <summary>

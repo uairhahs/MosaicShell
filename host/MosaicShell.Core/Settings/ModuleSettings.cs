@@ -50,6 +50,10 @@ public sealed class TesseraSettings
     public bool ShowMediaStripOnVolume { get; set; } = true;
     /// <summary>Soft frost tint on flyout shell (not OS acrylic).</summary>
     public bool UseAcrylicBackdrop { get; set; } = true;
+    /// <summary>
+    /// Win11 OS AcrylicBlur on eligible Tessera flyouts. Honored only after Win11 eval sign-off; default off.
+    /// </summary>
+    public bool UseOsAcrylic { get; set; }
     /// <summary>Subtle click-through desktop dim behind flyout.</summary>
     public bool UseFocusDim { get; set; } = true;
     /// <summary>Flyout size multiplier percent (50-150). Default 100.</summary>

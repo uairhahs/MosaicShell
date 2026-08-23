@@ -595,9 +595,14 @@
                     </StackPanel>
                     <CheckBox Content="Soft frost tint" IsChecked="{Binding TesseraAcrylicBackdrop}"
                               ToolTip.Tip="Slightly translucent Mocha crust. Off = denser solid panel." />
+                    <CheckBox Content="Windows 11 OS acrylic"
+                              IsVisible="{Binding TesseraOsAcrylicHubAvailable}"
+                              IsChecked="{Binding TesseraOsAcrylic}"
+                              IsEnabled="{Binding TesseraAcrylicBackdrop}"
+                              ToolTip.Tip="Real Win11 AcrylicBlur on eligible Tessera flyouts (single-shell and stacked Meter/Gnome/Compact/Modern). Requires Soft frost tint. Save, then restart Host so process-wide corner radius applies. This hub toggle is authoritative (--tessera-os-acrylic is ignored after sign-off)." />
                     <CheckBox Content="Skia backdrop blur" IsChecked="{Binding TesseraBackdropBlur}"
                               IsEnabled="{Binding TesseraAcrylicBackdrop}"
-                              ToolTip.Tip="Lighter, more translucent Skia frost so the desktop shows through. Live pixel sampling is off (black-box safe); this adjusts fake-glass richness only. No effect on OS acrylic trial (--tessera-os-acrylic)." />
+                              ToolTip.Tip="Lighter, more translucent Skia frost so the desktop shows through. Live pixel sampling is off (black-box safe); this adjusts fake-glass richness only. No effect when OS acrylic is active." />
                     <CheckBox Content="Subtle desktop dim (Focus)" IsChecked="{Binding TesseraFocusDim}"
                               ToolTip.Tip="Very light dim behind the flyout. Never blocks input; outside click dismisses instantly." />
                     <StackPanel Spacing="4" Margin="0,4,0,0">

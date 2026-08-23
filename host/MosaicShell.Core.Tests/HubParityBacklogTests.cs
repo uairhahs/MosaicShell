@@ -38,6 +38,8 @@ public class HubParityBacklogTests
         { "tessera_live_update_multimonitor", true },
         // All 11 StyleCatalog styles signed off; proofs in .github/res/Tessera/
         { "tessera_layout_fidelity", true },
+        // Win11 OS acrylic trial eval (H2 single-shell + H3 stacked); frost remains alpha default
+        { "tessera_os_acrylic_win11_eval", true },
         // Fluent+Windows11 kit exists; Host-identity Fluent/Windows11/Square polish (not pixel YourFlyouts)
         { "tessera_fluent_win11_kit", true },
         { "tessera_fluent_yourflyouts", true },
@@ -106,6 +108,7 @@ public class HubParityBacklogTests
     private static readonly Dictionary<string, string> CompanionProof = new(StringComparer.OrdinalIgnoreCase)
     {
         ["tessera_layout_fidelity"] = nameof(StyleCatalogTests.Tessera_layout_fidelity_github_screenshots_cover_every_style),
+        ["tessera_os_acrylic_win11_eval"] = nameof(TesseraOsAcrylicSignOffPolicyTests.Win11_os_acrylic_eval_is_signed_off_in_core),
         ["tessera_osd_flyout"] = nameof(TesseraCapabilityTests.Armed_tessera_shows_flyout_on_volume_change),
         ["tessera_named_styles"] = nameof(StyleCatalogTests.Tessera_has_eleven_jaxcore_layouts),
         ["tessera_locks_flight"] = nameof(TesseraParityTests.Armed_tessera_emits_locks_and_flight),
@@ -163,7 +166,9 @@ public class HubParityBacklogTests
         map["tile_substrate_mvp"].Should().BeTrue();
         map["tile_slate_mvp"].Should().BeTrue();
         map["tessera_layout_fidelity"].Should().BeTrue();
+        map["tessera_os_acrylic_win11_eval"].Should().BeTrue();
         TesseraLayoutCoverage.AllLayoutFidelitySignedOff().Should().BeTrue();
+        TesseraOsAcrylicSignOffPolicy.Win11EvalComplete.Should().BeTrue();
         map["tessera_fluent_yourflyouts"].Should().BeTrue();
         map["tessera_media_wnp"].Should().BeTrue();
         map["tessera_media_smtc_only"].Should().BeFalse();
