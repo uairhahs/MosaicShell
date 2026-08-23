@@ -51,7 +51,7 @@ public class HotkeyOverlayCapabilityTests
         {
             IdleSeconds = 30,
             HideOnFullscreen = true,
-            Style = "Center"
+            Style = "Square"
         });
 
         var cap = new SlateCapability(services, ui);

@@ -66,11 +66,11 @@ public class TesseraFlyoutLiveSyncPolicyTests
     }
 
     [Theory]
-    [InlineData(false, "vol", "vol", "Amber", "Amber", TesseraFlyoutSyncAction.Present)]
-    [InlineData(true, "vol", "vol", "Amber", "Amber", TesseraFlyoutSyncAction.Patch)]
-    [InlineData(true, "vol", "bright", "Amber", "Amber", TesseraFlyoutSyncAction.Present)]
-    [InlineData(true, "vol", "vol", "Amber", "Fluent", TesseraFlyoutSyncAction.Present)]
-    [InlineData(true, "vol", "media", "Amber", "Amber", TesseraFlyoutSyncAction.Present)]
+    [InlineData(false, "vol", "vol", "Meter", "Meter", TesseraFlyoutSyncAction.Present)]
+    [InlineData(true, "vol", "vol", "Meter", "Meter", TesseraFlyoutSyncAction.Patch)]
+    [InlineData(true, "vol", "bright", "Meter", "Meter", TesseraFlyoutSyncAction.Present)]
+    [InlineData(true, "vol", "vol", "Meter", "Fluent", TesseraFlyoutSyncAction.Present)]
+    [InlineData(true, "vol", "media", "Meter", "Meter", TesseraFlyoutSyncAction.Present)]
     public void Visible_same_kind_and_style_patches_otherwise_presents(
         bool visible,
         string openKind,

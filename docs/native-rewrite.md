@@ -16,11 +16,11 @@ Runtime lives in `host/`; [`Tiles/Tessera`](../Tiles/Tessera) is an install stub
 |------|--------|
 | Flyout kinds | `vol`, `bright`, `media`, `locks`, `flight` |
 | Media backend | **SMTC + WebNowPlaying** (browser covers; CLI port **5468**) |
-| Layouts | Fluent + Win11 + Center **Host-polished**; other styles approximations |
+| Layouts | All 11 styles visually signed off (`tessera_layout_fidelity`); Radial + PlainText remain lighter Host layouts |
 | Placement | Default **TL**; 9-point Position; re-anchor after measure |
 | Settings | Host Tessera panel + flyout scale % + soft frost / baked frost / focus dim |
 | OSD | WinEvent ZBand hide + ShellHook + burst re-resolve; vendor OEM unsupported |
-| Pixel → Mixdeck | Opens **native Mixdeck overlay** (MVP) |
+| Material You → Mixdeck | Opens **native Mixdeck overlay** (MVP) |
 
 ### Known gaps vs YourFlyouts
 
@@ -29,7 +29,7 @@ Runtime lives in `host/`; [`Tiles/Tessera`](../Tiles/Tessera) is an install stub
 - Brightness / airplane limitations on some Win11 builds (upstream YourFlyouts caveat)
 - Vendor laptop OSDs (Dell/HP/…)
 - Rainmeter NowPlaying multi-player Auto (AIMP/CAD/…) - WNP + SMTC only
-- Non-kit StyleCatalog skins still approximate
+- Radial / PlainText remain lighter Host layouts (visually signed off)
 
 ### External references
 
@@ -59,7 +59,7 @@ Archives on GitHub replace in-repo Rainmeter trees. Phase C is **optional polish
 | Phase | Focus | Reference archive | Exit signal |
 |-------|--------|-------------------|-------------|
 | **C0** | Archive cross-refs in `docs/legacy/` | [Jax-Core](https://github.com/Jax-Core) | Every legacy page links upstream repo |
-| **C1** | Tessera named styles beyond Fluent/Win11/Center | [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) | `tessera_layout_fidelity` (still false until pixel proofs) |
+| **C1** | Tessera named styles beyond Fluent/Windows11/Square | [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) | **Done** — `tessera_layout_fidelity`; proofs in `.github/res/Tessera/` |
 | **C2** | Widget StyleCatalog skins | ModularClocks / ModularPlayers / ModularVisualizer / Plainext | Per-widget `*_layout_fidelity` flags |
 | **C3** | Capability overlay polish | YourMixer / ValliStart / Keylaunch / MIUI-Shade / IdleStyle | Richer Mixdeck/Inlay UX; Chord motion; Substrate tiles; Slate idle |
 | **C4** | Installer / release | Local `Tiles/` stubs + Host zip | Mosaicist copies native stub only; no `.rmskin` |

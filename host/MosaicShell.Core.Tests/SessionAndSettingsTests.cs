@@ -33,11 +33,37 @@ public class SessionAndSettingsTests : IDisposable
     [Fact]
     public void ModuleSettingsStore_roundtrips()
     {
-        var settings = new ChronoSettings { Style = "Center", ShowSeconds = false };
+        var settings = new ChronoSettings { Style = "Square", ShowSeconds = false };
         ModuleSettingsStore.Save("Chrono", settings);
         var loaded = ModuleSettingsStore.Load("Chrono", () => new ChronoSettings());
-        loaded.Style.Should().Be("Center");
+        loaded.Style.Should().Be("Square");
         loaded.ShowSeconds.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("Tessera", """{"Style":"Pixel"}""", "MaterialYou")]
+    [InlineData("Tessera", """{"Style":"Win11"}""", "Windows11")]
+    [InlineData("Chrono", """{"Style":"Center","ShowSeconds":true}""", "Square")]
+    [InlineData("Phono", """{"Style":"Simple","ShowArtist":true}""", "Compact")]
+    [InlineData("Inlay", """{"Style":"Win11"}""", "Windows11")]
+    public void ModuleSettingsStore_migrates_legacy_style_ids_on_load(
+        string moduleId, string json, string expectedStyle)
+    {
+        var path = ModuleSettingsStore.PathFor(moduleId);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, json);
+
+        var style = moduleId switch
+        {
+            "Tessera" => ModuleSettingsStore.Load(moduleId, () => new TesseraSettings()).Style,
+            "Chrono" => ModuleSettingsStore.Load(moduleId, () => new ChronoSettings()).Style,
+            "Phono" => ModuleSettingsStore.Load(moduleId, () => new PhonoSettings()).Style,
+            "Inlay" => ModuleSettingsStore.Load(moduleId, () => new InlaySettings()).Style,
+            _ => throw new ArgumentOutOfRangeException(nameof(moduleId))
+        };
+
+        style.Should().Be(expectedStyle);
+        File.ReadAllText(path).Should().Contain($"\"Style\": \"{expectedStyle}\"");
     }
 
     [Fact]

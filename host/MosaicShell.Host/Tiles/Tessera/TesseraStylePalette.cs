@@ -6,7 +6,7 @@ namespace MosaicShell.Host.Tiles.Tessera;
 /// <summary>Per-style shell/muted colors; accent comes from <see cref="TesseraPalette"/> (settings or system).</summary>
 internal static class TesseraStylePalette
 {
-    public static class Pixel
+    public static class MaterialYou
     {
         public static Color Shell => Color.FromRgb(27, 27, 30);
         public static Color Secondary => Color.FromRgb(164, 171, 192);
@@ -32,14 +32,14 @@ internal static class TesseraStylePalette
         public static IBrush ArtDimBrush => new SolidColorBrush(Color.FromArgb(150, 12, 12, 12));
     }
 
-    public static class Win11
+    public static class Windows11
     {
         public static Color Shell => Color.FromArgb(185, 34, 34, 34);
         public static IBrush ShellBrush => new SolidColorBrush(Shell);
         public static IBrush AccentBrush => TesseraPalette.AccentBrush;
     }
 
-    public static class Smouti
+    public static class Radial
     {
         public static Color Shell => Color.FromArgb(210, 24, 32, 48);
         public static Color AccentHi => TesseraPalette.LightenAccent(0.18);
@@ -52,44 +52,44 @@ internal static class TesseraStylePalette
 }
 
 /// <summary>M3 Expressive helpers for Pixel flyout.</summary>
-internal static class TesseraPixelM3
+internal static class TesseraMaterialYouM3
 {
     public static void ApplyVolumeGlyphTone(MaterialIcon glyph, double volume, bool muted, double trackHeight = 0)
     {
         if (muted || volume <= 0.001)
         {
-            glyph.Foreground = TesseraStylePalette.Pixel.SecondaryBrush;
+            glyph.Foreground = TesseraStylePalette.MaterialYou.SecondaryBrush;
             return;
         }
 
         var iconCenterFromBottom =
-            TesseraStyleMetrics.PixelTrackIconBottom + TesseraStyleMetrics.PixelTrackIconSize / 2.0;
+            TesseraStyleMetrics.MaterialYouTrackIconBottom + TesseraStyleMetrics.MaterialYouTrackIconSize / 2.0;
         var trackH = trackHeight > 1 ? trackHeight : 160.0;
         var fillH = trackH * volume;
         glyph.Foreground = fillH >= iconCenterFromBottom - 2
-            ? TesseraStylePalette.Pixel.OnAccentBrush
-            : TesseraStylePalette.Pixel.SecondaryBrush;
+            ? TesseraStylePalette.MaterialYou.OnAccentBrush
+            : TesseraStylePalette.MaterialYou.SecondaryBrush;
     }
 
     public static bool IsMutedIcon(MaterialIcon icon) =>
-        icon.Foreground is SolidColorBrush b && b.Color == TesseraStylePalette.Pixel.Secondary;
+        icon.Foreground is SolidColorBrush b && b.Color == TesseraStylePalette.MaterialYou.Secondary;
 }
 
 internal static class TesseraStyleMetrics
 {
-    public const double PixelColumnW = 60;
-    public const double PixelHeight = 384;
-    public const double PixelColH = 154;
-    public const double PixelGap = 10;
-    public const double PixelPad = 10;
+    public const double MaterialYouColumnW = 60;
+    public const double MaterialYouHeight = 384;
+    public const double MaterialYouColH = 154;
+    public const double MaterialYouGap = 10;
+    public const double MaterialYouPad = 10;
     /// <summary>M3 icon button: 24dp icon, 40dp touch target (compact column).</summary>
-    public const double PixelIconSize = 24;
-    public const double PixelHitTarget = 40;
-    public const double PixelPlayW = 40;
-    public const double PixelPlayH = 48;
+    public const double MaterialYouIconSize = 24;
+    public const double MaterialYouHitTarget = 40;
+    public const double MaterialYouPlayW = 40;
+    public const double MaterialYouPlayH = 48;
     /// <summary>M3 expressive inset track icon (m/l/xl scale).</summary>
-    public const double PixelTrackIconSize = 24;
-    public const double PixelTrackIconBottom = 10;
+    public const double MaterialYouTrackIconSize = 24;
+    public const double MaterialYouTrackIconBottom = 10;
 
     public const double CoreUiWidth = 400;
     /// <summary>Corner device tile — square, matches volume row height (ref proportions).</summary>
@@ -101,10 +101,10 @@ internal static class TesseraStyleMetrics
     public const double CoreUiTransportW = 58;
 
     /// <summary>Balanced flyout — between ref width and shell cap.</summary>
-    public const double SmoutiWidth = 480;
-    public const double SmoutiMinHeight = 162;
-    public const double SmoutiMaxHeight = 176;
-    public const double SmoutiPad = 14;
-    public const double SmoutiRing = 100;
-    public const double SmoutiColumnGap = 14;
+    public const double RadialWidth = 480;
+    public const double RadialMinHeight = 162;
+    public const double RadialMaxHeight = 176;
+    public const double RadialPad = 14;
+    public const double RadialRing = 100;
+    public const double RadialColumnGap = 14;
 }

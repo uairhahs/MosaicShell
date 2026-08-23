@@ -36,9 +36,9 @@ public class HubParityBacklogTests
         { "tessera_named_styles", true },
         { "tessera_locks_flight", true },
         { "tessera_live_update_multimonitor", true },
-        // 10/11 styles signed off; Smouti still in .local/Tessera/deviated/
-        { "tessera_layout_fidelity", false },
-        // Fluent+Win11 kit exists; Host-identity Fluent/Win11/Center polish (not pixel YourFlyouts)
+        // All 11 StyleCatalog styles signed off; proofs in .github/res/Tessera/
+        { "tessera_layout_fidelity", true },
+        // Fluent+Windows11 kit exists; Host-identity Fluent/Windows11/Square polish (not pixel YourFlyouts)
         { "tessera_fluent_win11_kit", true },
         { "tessera_fluent_yourflyouts", true },
         { "tessera_media_smtc_only", false },
@@ -105,6 +105,7 @@ public class HubParityBacklogTests
     /// <summary>Flags marked true must have a companion proof (test name or StyleCatalog fact).</summary>
     private static readonly Dictionary<string, string> CompanionProof = new(StringComparer.OrdinalIgnoreCase)
     {
+        ["tessera_layout_fidelity"] = nameof(StyleCatalogTests.Tessera_layout_fidelity_github_screenshots_cover_every_style),
         ["tessera_osd_flyout"] = nameof(TesseraCapabilityTests.Armed_tessera_shows_flyout_on_volume_change),
         ["tessera_named_styles"] = nameof(StyleCatalogTests.Tessera_has_eleven_jaxcore_layouts),
         ["tessera_locks_flight"] = nameof(TesseraParityTests.Armed_tessera_emits_locks_and_flight),
@@ -161,8 +162,8 @@ public class HubParityBacklogTests
         map["tile_chord_mvp"].Should().BeTrue();
         map["tile_substrate_mvp"].Should().BeTrue();
         map["tile_slate_mvp"].Should().BeTrue();
-        map["tessera_layout_fidelity"].Should().BeFalse();
-        TesseraLayoutCoverage.AllLayoutFidelitySignedOff().Should().BeFalse();
+        map["tessera_layout_fidelity"].Should().BeTrue();
+        TesseraLayoutCoverage.AllLayoutFidelitySignedOff().Should().BeTrue();
         map["tessera_fluent_yourflyouts"].Should().BeTrue();
         map["tessera_media_wnp"].Should().BeTrue();
         map["tessera_media_smtc_only"].Should().BeFalse();
@@ -207,7 +208,7 @@ public class HonestyGateTests
     [Fact]
     public void Inlay_mvp_bar_documented_and_catalog_behavior_proven()
     {
-        StyleCatalog.IdsFor("Inlay").Should().Contain("Win11");
+        StyleCatalog.IdsFor("Inlay").Should().Contain("Windows11");
         typeof(InlaySettings).GetProperty(nameof(InlaySettings.Pins)).Should().NotBeNull();
         LaunchTargetCatalog.Search("notepad").Should().NotBeEmpty();
         typeof(IHostUiBridge).GetMethod(nameof(IHostUiBridge.OpenOverlayAsync)).Should().NotBeNull();
@@ -216,7 +217,7 @@ public class HonestyGateTests
     [Fact]
     public void Chord_mvp_bar_documented_and_capability_opens_via_bridge()
     {
-        StyleCatalog.IdsFor("Chord").Should().Contain("Center");
+        StyleCatalog.IdsFor("Chord").Should().Contain("Square");
         typeof(ChordSettings).GetProperty(nameof(ChordSettings.Actions)).Should().NotBeNull();
         typeof(IHostUiBridge).GetMethod(nameof(IHostUiBridge.OpenOverlayAsync)).Should().NotBeNull();
     }
@@ -233,7 +234,7 @@ public class HonestyGateTests
     [Fact]
     public void Slate_mvp_bar_documented_and_idle_opens_via_bridge()
     {
-        StyleCatalog.IdsFor("Slate").Should().Contain("Center");
+        StyleCatalog.IdsFor("Slate").Should().Contain("Square");
         typeof(IIdleService).GetEvent(nameof(IIdleService.IdleThresholdReached)).Should().NotBeNull();
         typeof(IFullscreenProbe).GetProperty(nameof(IFullscreenProbe.IsForegroundFullscreen)).Should().NotBeNull();
         typeof(SlateSettings).GetProperty(nameof(SlateSettings.HideOnFullscreen)).Should().NotBeNull();
@@ -266,8 +267,8 @@ public class HonestyGateTests
         typeof(ISystemMetricsService).GetMethod(nameof(ISystemMetricsService.Sample)).Should().NotBeNull();
         typeof(IMediaSessionService).GetMethod(nameof(IMediaSessionService.PlayPauseAsync)).Should().NotBeNull();
         typeof(IAudioLevelService).GetProperty(nameof(IAudioLevelService.Bands)).Should().NotBeNull();
-        StyleCatalog.IdsFor("Chrono").Should().Contain("Center");
-        StyleCatalog.IdsFor("Phono").Should().Contain("Simple");
+        StyleCatalog.IdsFor("Chrono").Should().Contain("Square");
+        StyleCatalog.IdsFor("Phono").Should().Contain("Compact");
         StyleCatalog.IdsFor("Pulse").Should().Contain("Regular");
         StyleCatalog.IdsFor("Canvas").Should().Contain("DEFAULT");
         ModuleInstaller.IsNativeModuleStub(

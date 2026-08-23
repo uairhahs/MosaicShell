@@ -28,7 +28,7 @@ public static class ModuleCatalog
     public static IReadOnlyList<ModuleInfo> BuiltIns { get; } =
     [
         new("Tessera", "Tessera", "Volume / brightness / media flyouts. Arm, then use system keys (replaces OS OSD while Host runs).", ModuleKind.Capability),
-        new("Mixdeck", "Mixdeck", "Per-app audio mixer. Arm, then press Ctrl+Alt+M (default) or Tessera Pixel.", ModuleKind.Capability),
+        new("Mixdeck", "Mixdeck", "Per-app audio mixer. Arm, then press Ctrl+Alt+M (default) or Tessera Material You.", ModuleKind.Capability),
         new("Inlay", "Inlay", "Start-menu launcher. Arm, then press Ctrl+Alt+I (default) for pins + search.", ModuleKind.Capability),
         new("Slate", "Slate", "Idle clock overlay. Arm, then wait for the idle timeout (default 5 min).", ModuleKind.Capability),
         new("Chord", "Chord", "Macro app launcher. Arm, then press Ctrl+Alt+K (default) for named actions.", ModuleKind.Capability),

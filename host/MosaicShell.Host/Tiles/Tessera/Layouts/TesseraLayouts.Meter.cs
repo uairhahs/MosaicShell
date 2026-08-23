@@ -8,7 +8,7 @@ namespace MosaicShell.Host.Tiles.Tessera;
 
 internal static partial class TesseraLayouts
 {
-    public static Control Amber(TesseraFlyoutViewModel vm)
+    public static Control Meter(TesseraFlyoutViewModel vm)
     {
         if (IsStatus(vm)) return StatusChip(vm, 16);
 
@@ -49,7 +49,7 @@ internal static partial class TesseraLayouts
         };
         track.ValueChanged += (_, v) => vm.ApplyPrimary(v);
 
-        // Contract: TesseraLayoutCoverage.RequiresLiveVolumePercentLabel("Amber")
+        // Contract: TesseraLayoutCoverage.RequiresLiveVolumePercentLabel("Meter")
         TesseraLiveAmbient.RegisterVolume(track, percent, null);
 
         var overlay = new StackPanel
@@ -78,7 +78,7 @@ internal static partial class TesseraLayouts
             Spacing = 12,
             Children =
             {
-                TesseraMediaPanel.Create(vm, TesseraMediaMode.AmberCard),
+                TesseraMediaPanel.Create(vm, TesseraMediaMode.MeterCard),
                 volPill
             }
         };

@@ -66,7 +66,7 @@ public partial class MainViewModel : ViewModelBase
             TesseraAccentSwatches.Add(TesseraAccentSwatchVm.From(preset));
         SyncTesseraAccentSwatches();
 
-        ModuleStyleOptions = new ObservableCollection<string>();
+        ModuleStyleOptions = new ObservableCollection<StyleDescriptor>();
 
         RefreshLibrary();
         Navigate(Hub.WelcomeCompleted ? "Home" : "Welcome");
@@ -83,7 +83,7 @@ public partial class MainViewModel : ViewModelBase
     public ObservableCollection<TesseraAccentSwatchVm> TesseraAccentSwatches { get; }
     public ObservableCollection<LibraryItemViewModel> Modules { get; } = [];
     public ObservableCollection<LibraryItemViewModel> Widgets { get; } = [];
-    public ObservableCollection<string> ModuleStyleOptions { get; }
+    public ObservableCollection<StyleDescriptor> ModuleStyleOptions { get; }
     public ObservableCollection<TesseraNamedChoice> TesseraPositionChoices { get; } =
     [
         new("TL", "Top left"),
@@ -120,6 +120,7 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private string _configModuleId = "";
     [ObservableProperty] private string _configModuleTitle = "";
     [ObservableProperty] private string _moduleStyle = "DEFAULT";
+    [ObservableProperty] private StyleDescriptor? _selectedModuleStyle;
     [ObservableProperty] private bool _chronoSeconds = true;
     [ObservableProperty] private bool _showChronoExtras;
     [ObservableProperty] private bool _tesseraLegacyVol = true;
@@ -261,8 +262,8 @@ public partial class MainViewModel : ViewModelBase
             ConfigModuleId = info.Id;
             ConfigModuleTitle = info.DisplayName;
             ModuleStyleOptions.Clear();
-            foreach (var id in StyleCatalog.IdsFor(info.Id))
-                ModuleStyleOptions.Add(id);
+            foreach (var style in StyleCatalog.For(info.Id))
+                ModuleStyleOptions.Add(style);
 
             ShowChronoExtras = info.Id.Equals("Chrono", StringComparison.OrdinalIgnoreCase);
             ShowTesseraExtras = info.Id.Equals("Tessera", StringComparison.OrdinalIgnoreCase);
@@ -311,13 +312,13 @@ public partial class MainViewModel : ViewModelBase
         if (ShowChronoExtras)
         {
             var s = ModuleSettingsStore.Load("Chrono", () => new ChronoSettings());
-            ModuleStyle = s.Style;
+            ModuleStyle = StyleIds.Normalize(s.Style);
             ChronoSeconds = s.ShowSeconds;
         }
         else if (ShowTesseraExtras)
         {
             var s = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
-            ModuleStyle = s.Style;
+            ModuleStyle = StyleIds.Normalize(s.Style);
             TesseraLegacyVol = s.UseLegacyVolumeHooks;
             TesseraPosition = string.IsNullOrWhiteSpace(s.Position) ? "TL" : s.Position.ToUpperInvariant();
             SelectedTesseraPosition = TesseraPositionChoices.FirstOrDefault(c => c.Code == TesseraPosition)
@@ -348,7 +349,7 @@ public partial class MainViewModel : ViewModelBase
         else if (info.Id.Equals("Inlay", StringComparison.OrdinalIgnoreCase))
         {
             var s = ModuleSettingsStore.Load("Inlay", () => new InlaySettings());
-            ModuleStyle = s.Style;
+            ModuleStyle = StyleIds.Normalize(s.Style);
             ConfigHotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Inlay", s.HotkeyGesture);
             foreach (var pin in s.Pins)
                 ConfigPins.Add(pin);
@@ -356,7 +357,7 @@ public partial class MainViewModel : ViewModelBase
         else if (info.Id.Equals("Chord", StringComparison.OrdinalIgnoreCase))
         {
             var s = ModuleSettingsStore.Load("Chord", () => new ChordSettings());
-            ModuleStyle = s.Style;
+            ModuleStyle = StyleIds.Normalize(s.Style);
             ConfigHotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Chord", s.HotkeyGesture);
             foreach (var a in s.Actions)
                 ConfigChordActions.Add(new ChordActionRow(a.Name, a.Target));
@@ -364,37 +365,71 @@ public partial class MainViewModel : ViewModelBase
         else if (info.Id.Equals("Substrate", StringComparison.OrdinalIgnoreCase))
         {
             var s = ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings());
-            ModuleStyle = s.Style;
+            ModuleStyle = StyleIds.Normalize(s.Style);
             ConfigHotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Substrate", s.HotkeyGesture);
             ConfigShowMute = s.ShowMute;
         }
         else if (info.Id.Equals("Mixdeck", StringComparison.OrdinalIgnoreCase))
         {
             var s = ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings());
-            ModuleStyle = s.Style;
+            ModuleStyle = StyleIds.Normalize(s.Style);
             ConfigHotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Mixdeck", s.HotkeyGesture);
         }
         else if (ShowSlateExtras)
         {
             var s = ModuleSettingsStore.Load("Slate", () => new SlateSettings());
-            ModuleStyle = s.Style;
+            ModuleStyle = StyleIds.Normalize(s.Style);
             ConfigIdleSeconds = Math.Clamp(s.IdleSeconds, 30, 3600);
             ConfigHideOnFullscreen = s.HideOnFullscreen;
         }
         else
         {
-            ModuleStyle = LoadStylePreference(info.Id, ModuleStyleOptions.FirstOrDefault() ?? StyleCatalog.DefaultFor(info.Id));
+            ModuleStyle = StyleIds.Normalize(
+                LoadStylePreference(info.Id, ModuleStyleOptions.FirstOrDefault()?.StyleId ?? StyleCatalog.DefaultFor(info.Id)));
         }
 
-        if (ModuleStyleOptions.Count > 0 && !ModuleStyleOptions.Contains(ModuleStyle))
-            ModuleStyle = ModuleStyleOptions[0];
+        if (ModuleStyleOptions.Count > 0
+            && !ModuleStyleOptions.Any(d => d.StyleId.Equals(ModuleStyle, StringComparison.OrdinalIgnoreCase)))
+            ModuleStyle = ModuleStyleOptions[0].StyleId;
+        SyncSelectedModuleStyle();
+    }
+
+    private void SyncSelectedModuleStyle()
+    {
+        SelectedModuleStyle = ModuleStyleOptions.FirstOrDefault(d =>
+            d.StyleId.Equals(ModuleStyle, StringComparison.OrdinalIgnoreCase))
+            ?? ModuleStyleOptions.FirstOrDefault();
+        if (SelectedModuleStyle is not null)
+            ModuleStyle = SelectedModuleStyle.StyleId;
+    }
+
+    partial void OnSelectedModuleStyleChanged(StyleDescriptor? value)
+    {
+        if (_isLoadingModuleConfig || value is null) return;
+        if (!ModuleStyle.Equals(value.StyleId, StringComparison.OrdinalIgnoreCase))
+            ModuleStyle = value.StyleId;
+    }
+
+    partial void OnModuleStyleChanged(string value)
+    {
+        if (_isLoadingModuleConfig) return;
+        var normalized = StyleIds.Normalize(value);
+        if (!string.Equals(normalized, value, StringComparison.Ordinal))
+        {
+            ModuleStyle = normalized;
+            return;
+        }
+        var match = ModuleStyleOptions.FirstOrDefault(d =>
+            d.StyleId.Equals(normalized, StringComparison.OrdinalIgnoreCase));
+        if (match is not null && !ReferenceEquals(SelectedModuleStyle, match))
+            SelectedModuleStyle = match;
     }
 
     private static string LoadStylePreference(string moduleId, string fallback)
     {
         try
         {
-            return moduleId.ToLowerInvariant() switch
+            return StyleIds.Normalize(moduleId.ToLowerInvariant() switch
             {
                 "phono" => ModuleSettingsStore.Load("Phono", () => new PhonoSettings()).Style,
                 "pulse" => ModuleSettingsStore.Load("Pulse", () => new PulseSettings()).Style,
@@ -405,7 +440,7 @@ public partial class MainViewModel : ViewModelBase
                 "slate" => ModuleSettingsStore.Load("Slate", () => new SlateSettings()).Style,
                 "substrate" => ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings()).Style,
                 _ => fallback
-            };
+            });
         }
         catch { return fallback; }
     }
@@ -451,7 +486,7 @@ public partial class MainViewModel : ViewModelBase
     private void PersistTesseraFromUi()
     {
         var s = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
-        s.Style = ModuleStyle;
+        s.Style = StyleIds.Normalize(ModuleStyle);
         s.Position = SelectedTesseraPosition?.Code ?? TesseraPosition;
         s.MonitorIndex = Math.Clamp((int)TesseraMonitorIndex, 1, 8);
         s.XPad = Math.Clamp((int)TesseraXPad, 0, 200);
@@ -502,7 +537,7 @@ public partial class MainViewModel : ViewModelBase
             case "chrono":
             {
                 var s = ModuleSettingsStore.Load("Chrono", () => new ChronoSettings());
-                s.Style = ModuleStyle;
+                s.Style = StyleIds.Normalize(ModuleStyle);
                 s.ShowSeconds = ChronoSeconds;
                 ModuleSettingsStore.Save("Chrono", s);
                 StatusMessage = "Chrono settings saved! Relaunch widget to apply.";
@@ -517,7 +552,7 @@ public partial class MainViewModel : ViewModelBase
             case "phono":
             {
                 var s = ModuleSettingsStore.Load("Phono", () => new PhonoSettings());
-                s.Style = ModuleStyle;
+                s.Style = StyleIds.Normalize(ModuleStyle);
                 ModuleSettingsStore.Save("Phono", s);
                 StatusMessage = "Phono style saved.";
                 break;
@@ -525,7 +560,7 @@ public partial class MainViewModel : ViewModelBase
             case "pulse":
             {
                 var s = ModuleSettingsStore.Load("Pulse", () => new PulseSettings());
-                s.Style = ModuleStyle;
+                s.Style = StyleIds.Normalize(ModuleStyle);
                 ModuleSettingsStore.Save("Pulse", s);
                 StatusMessage = "Pulse style saved.";
                 break;
@@ -533,7 +568,7 @@ public partial class MainViewModel : ViewModelBase
             case "canvas":
             {
                 var s = ModuleSettingsStore.Load("Canvas", () => new CanvasSettings());
-                s.Style = ModuleStyle;
+                s.Style = StyleIds.Normalize(ModuleStyle);
                 ModuleSettingsStore.Save("Canvas", s);
                 StatusMessage = "Canvas style saved.";
                 break;
@@ -541,7 +576,7 @@ public partial class MainViewModel : ViewModelBase
             case "mixdeck":
             {
                 var s = ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings());
-                s.Style = ModuleStyle;
+                s.Style = StyleIds.Normalize(ModuleStyle);
                 s.HotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Mixdeck", ConfigHotkeyGesture);
                 ConfigHotkeyGesture = s.HotkeyGesture;
                 ModuleSettingsStore.Save("Mixdeck", s);
@@ -551,7 +586,7 @@ public partial class MainViewModel : ViewModelBase
             case "inlay":
             {
                 var s = ModuleSettingsStore.Load("Inlay", () => new InlaySettings());
-                s.Style = ModuleStyle;
+                s.Style = StyleIds.Normalize(ModuleStyle);
                 s.HotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Inlay", ConfigHotkeyGesture);
                 ConfigHotkeyGesture = s.HotkeyGesture;
                 s.Pins = ConfigPins.Where(p => !string.IsNullOrWhiteSpace(p)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
@@ -563,7 +598,7 @@ public partial class MainViewModel : ViewModelBase
             case "chord":
             {
                 var s = ModuleSettingsStore.Load("Chord", () => new ChordSettings());
-                s.Style = ModuleStyle;
+                s.Style = StyleIds.Normalize(ModuleStyle);
                 s.HotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Chord", ConfigHotkeyGesture);
                 ConfigHotkeyGesture = s.HotkeyGesture;
                 s.Actions = ConfigChordActions
@@ -581,7 +616,7 @@ public partial class MainViewModel : ViewModelBase
             case "slate":
             {
                 var s = ModuleSettingsStore.Load("Slate", () => new SlateSettings());
-                s.Style = ModuleStyle;
+                s.Style = StyleIds.Normalize(ModuleStyle);
                 s.IdleSeconds = Math.Clamp((int)ConfigIdleSeconds, 30, 3600);
                 s.HideOnFullscreen = ConfigHideOnFullscreen;
                 ModuleSettingsStore.Save("Slate", s);
@@ -593,7 +628,7 @@ public partial class MainViewModel : ViewModelBase
             case "substrate":
             {
                 var s = ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings());
-                s.Style = ModuleStyle;
+                s.Style = StyleIds.Normalize(ModuleStyle);
                 s.HotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Substrate", ConfigHotkeyGesture);
                 ConfigHotkeyGesture = s.HotkeyGesture;
                 s.ShowMute = ConfigShowMute;

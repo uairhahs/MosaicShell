@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Host.Tiles.Tessera;
 
@@ -16,18 +17,18 @@ public static class TesseraStyleFactory
             TesseraGlass.EmbeddedPreviewBuild = true;
         try
         {
-            host.Content = styleId.ToLowerInvariant() switch
+            host.Content = StyleIds.Normalize(styleId) switch
             {
-                "win11" => TesseraLayouts.Win11(vm),
-                "simple" => TesseraLayouts.Simple(vm),
-                "pixel" => TesseraLayouts.Pixel(vm),
-                "center" => TesseraLayouts.Center(vm),
-                "modern" => TesseraLayouts.Modern(vm),
-                "amber" => TesseraLayouts.Amber(vm),
-                "gnome" => TesseraLayouts.Gnome(vm),
-                "smouti" => TesseraLayouts.Smouti(vm),
-                "plainext" => TesseraLayouts.Plainext(vm),
-                "coreui" => TesseraLayouts.CoreUI(vm),
+                StyleIds.Windows11 => TesseraLayouts.Windows11(vm),
+                StyleIds.Compact => TesseraLayouts.Compact(vm),
+                StyleIds.MaterialYou => TesseraLayouts.MaterialYou(vm),
+                StyleIds.Square => TesseraLayouts.Square(vm),
+                StyleIds.ModernFlyouts => TesseraLayouts.ModernFlyouts(vm),
+                StyleIds.Meter => TesseraLayouts.Meter(vm),
+                StyleIds.Gnome => TesseraLayouts.Gnome(vm),
+                StyleIds.Radial => TesseraLayouts.Radial(vm),
+                StyleIds.PlainText => TesseraLayouts.PlainText(vm),
+                StyleIds.CoreUI => TesseraLayouts.CoreUI(vm),
                 _ => TesseraLayouts.Fluent(vm),
             };
         }

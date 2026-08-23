@@ -5,7 +5,7 @@ Tessera runs as an **Avalonia capability** inside `MosaicShell.Host`.
 | Path | Role |
 |------|------|
 | `host/MosaicShell.Core/Capabilities/BuiltIn/TesseraCapability.cs` | Arm / events / OSD burst |
-| `host/MosaicShell.Host/Tiles/Tessera/` | Flyout layouts (Fluent, Win11, …) |
+| `host/MosaicShell.Host/Tiles/Tessera/` | Flyout layouts (Fluent, Windows11, …) |
 | This folder | Install stub so `install-module Tessera` creates `Modules/Tessera` for `CapabilityDaemon` |
 
 ## Install / arm

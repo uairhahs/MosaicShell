@@ -4,6 +4,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using MosaicShell.Core.Settings;
+using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Host.Tiles.Surfaces;
 
@@ -16,12 +17,12 @@ internal static class PhonoStyleFactory
         Image art,
         StackPanel transport)
     {
-        var style = settings.Style;
-        if (style.Equals("Simple", StringComparison.OrdinalIgnoreCase)
+        var style = StyleIds.Normalize(settings.Style);
+        if (style.Equals(StyleIds.Compact, StringComparison.OrdinalIgnoreCase)
             || style.Equals("Side", StringComparison.OrdinalIgnoreCase))
             return CreateHorizontal(settings, title, artist, art, transport);
-        if (style.Equals("Center", StringComparison.OrdinalIgnoreCase)
-            || style.Equals("Win11", StringComparison.OrdinalIgnoreCase)
+        if (style.Equals(StyleIds.Square, StringComparison.OrdinalIgnoreCase)
+            || style.Equals(StyleIds.Windows11, StringComparison.OrdinalIgnoreCase)
             || style.Equals("Card", StringComparison.OrdinalIgnoreCase))
             return CreateCentered(settings, title, artist, art, transport, style);
         if (style.Equals("BigCirc", StringComparison.OrdinalIgnoreCase)
@@ -59,7 +60,7 @@ internal static class PhonoStyleFactory
         StackPanel transport,
         string style)
     {
-        art.Width = style.Equals("Win11", StringComparison.OrdinalIgnoreCase) ? 96 : 88;
+        art.Width = style.Equals(StyleIds.Windows11, StringComparison.OrdinalIgnoreCase) ? 96 : 88;
         art.Height = art.Width;
         title.HorizontalAlignment = HorizontalAlignment.Center;
         artist.HorizontalAlignment = HorizontalAlignment.Center;
@@ -73,7 +74,7 @@ internal static class PhonoStyleFactory
         if (settings.ShowArtist) stack.Children.Add(artist);
         stack.Children.Add(transport);
         var pad = style.Equals("Card", StringComparison.OrdinalIgnoreCase) ? 16 : 8;
-        var corner = style.Equals("Win11", StringComparison.OrdinalIgnoreCase) ? 14 : 10;
+        var corner = style.Equals(StyleIds.Windows11, StringComparison.OrdinalIgnoreCase) ? 14 : 10;
         return WidgetChrome.Wrap(new Border
         {
             Background = WidgetChrome.Brush("#181825"),

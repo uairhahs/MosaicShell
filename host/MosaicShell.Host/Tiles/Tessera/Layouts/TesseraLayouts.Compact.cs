@@ -13,7 +13,7 @@ namespace MosaicShell.Host.Tiles.Tessera;
 internal static partial class TesseraLayouts
 {
 
-    public static Control Simple(TesseraFlyoutViewModel vm)
+    public static Control Compact(TesseraFlyoutViewModel vm)
     {
         if (IsStatus(vm)) return StatusChip(vm, 12);
         var glyph = TesseraVolumeGlyph.Create(vm, 16);

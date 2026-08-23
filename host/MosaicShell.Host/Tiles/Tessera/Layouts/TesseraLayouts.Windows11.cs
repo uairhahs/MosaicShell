@@ -13,17 +13,17 @@ namespace MosaicShell.Host.Tiles.Tessera;
 internal static partial class TesseraLayouts
 {
 
-    public static Control Win11(TesseraFlyoutViewModel vm)
+    public static Control Windows11(TesseraFlyoutViewModel vm)
     {
-        if (IsStatus(vm)) return StatusChip(vm, TesseraWin11Metrics.CornerRadius, TesseraWin11Metrics.Width, TesseraWin11Metrics.VolumeHeight);
+        if (IsStatus(vm)) return StatusChip(vm, TesseraWindows11Metrics.CornerRadius, TesseraWindows11Metrics.Width, TesseraWindows11Metrics.VolumeHeight);
 
         if (vm.Kind.Equals("media", StringComparison.OrdinalIgnoreCase))
             return TesseraChrome.Glass(
-                TesseraMediaPanel.Create(vm, TesseraMediaMode.Win11Below),
-                TesseraWin11Metrics.CornerRadius,
-                w: TesseraWin11Metrics.Width);
+                TesseraMediaPanel.Create(vm, TesseraMediaMode.Windows11Below),
+                TesseraWindows11Metrics.CornerRadius,
+                w: TesseraWindows11Metrics.Width);
 
-        const double w = TesseraWin11Metrics.Width;
+        const double w = TesseraWindows11Metrics.Width;
         var glyph = TesseraVolumeGlyph.Create(vm, 16);
         glyph.Name = "TesseraGlyph";
         glyph.VerticalAlignment = VerticalAlignment.Center;
@@ -37,7 +37,7 @@ internal static partial class TesseraLayouts
             Value = vm.PrimaryValue,
             Name = "TesseraTrack",
             TrackThickness = 4,
-            AccentBrushOverride = TesseraStylePalette.Win11.AccentBrush
+            AccentBrushOverride = TesseraStylePalette.Windows11.AccentBrush
         };
         track.ValueChanged += (_, v) => vm.ApplyPrimary(v);
 
@@ -59,7 +59,7 @@ internal static partial class TesseraLayouts
         var row = new Grid
         {
             Width = w,
-            Height = TesseraWin11Metrics.VolumeHeight,
+            Height = TesseraWindows11Metrics.VolumeHeight,
             ColumnDefinitions = new ColumnDefinitions("60,*,60")
         };
         Grid.SetColumn(glyph, 0);
@@ -83,14 +83,14 @@ internal static partial class TesseraLayouts
                     {
                         Height = 1,
                         Background = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255)),
-                        Margin = new Thickness(TesseraWin11Metrics.Pad, 0)
+                        Margin = new Thickness(TesseraWindows11Metrics.Pad, 0)
                     },
-                    TesseraMediaPanel.Create(vm, TesseraMediaMode.Win11Below)
+                    TesseraMediaPanel.Create(vm, TesseraMediaMode.Windows11Below)
                 }
             };
         }
 
-        return TesseraChrome.GlassTinted(body, TesseraWin11Metrics.CornerRadius, TesseraStylePalette.Win11.ShellBrush, w: w);
+        return TesseraChrome.GlassTinted(body, TesseraWindows11Metrics.CornerRadius, TesseraStylePalette.Windows11.ShellBrush, w: w);
 
     }
 }

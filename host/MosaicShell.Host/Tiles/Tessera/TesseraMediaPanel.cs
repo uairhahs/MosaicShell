@@ -12,26 +12,26 @@ namespace MosaicShell.Host.Tiles.Tessera;
 public enum TesseraMediaMode
 {
     FluentSide,
-    Win11Below,
+    Windows11Below,
     ModernCard,
     SimpleRow,
     GnomePill,
-    AmberCard,
+    MeterCard,
     CoreUiBlock,
-    SmoutiSide
+    RadialSide
 }
 
 public static class TesseraMediaPanel
 {
     public static Control Create(TesseraFlyoutViewModel vm, TesseraMediaMode mode, double coreUiHeight = 72) => mode switch
     {
-        TesseraMediaMode.Win11Below => Win11(vm),
+        TesseraMediaMode.Windows11Below => Windows11(vm),
         TesseraMediaMode.ModernCard => ModernCard(vm),
         TesseraMediaMode.SimpleRow => SimpleRow(vm),
         TesseraMediaMode.GnomePill => GnomePill(vm),
-        TesseraMediaMode.AmberCard => AmberCard(vm),
+        TesseraMediaMode.MeterCard => MeterCard(vm),
         TesseraMediaMode.CoreUiBlock => CoreUiBlock(vm, coreUiHeight),
-        TesseraMediaMode.SmoutiSide => SmoutiSide(vm),
+        TesseraMediaMode.RadialSide => RadialSide(vm),
         _ => Fluent(vm),
     };
 
@@ -74,10 +74,10 @@ public static class TesseraMediaPanel
         };
     }
 
-    private static Control Win11(TesseraFlyoutViewModel vm)
+    private static Control Windows11(TesseraFlyoutViewModel vm)
     {
-        const double w = TesseraWin11Metrics.Width;
-        const double pad = TesseraWin11Metrics.Pad;
+        const double w = TesseraWindows11Metrics.Width;
+        const double pad = TesseraWindows11Metrics.Pad;
         var art = AlbumArt(vm, 80);
         art.HorizontalAlignment = HorizontalAlignment.Right;
         art.VerticalAlignment = VerticalAlignment.Top;
@@ -127,7 +127,7 @@ public static class TesseraMediaPanel
             Foreground = new SolidColorBrush(Color.FromArgb(180, 255, 255, 255))
         };
         var (scrubCol, scrub, pos, dur) = ScrubberStacked(vm, w - pad * 2);
-        scrub.AccentBrushOverride = TesseraStylePalette.Win11.AccentBrush;
+        scrub.AccentBrushOverride = TesseraStylePalette.Windows11.AccentBrush;
         scrubCol.Margin = new Thickness(pad, 6, pad, 0);
         var transport = new StackPanel
         {
@@ -149,7 +149,7 @@ public static class TesseraMediaPanel
         {
             Name = "TesseraMediaRoot",
             Width = w,
-            Height = TesseraWin11Metrics.MediaHeight,
+            Height = TesseraWindows11Metrics.MediaHeight,
             Background = Brushes.Transparent,
             Child = new StackPanel { Children = { top, scrubCol, transport } }
         };
@@ -265,7 +265,7 @@ public static class TesseraMediaPanel
         }, 28, new Thickness(10, 8), w: 340);
     }
 
-    private static Control AmberCard(TesseraFlyoutViewModel vm)
+    private static Control MeterCard(TesseraFlyoutViewModel vm)
     {
         var art = AlbumArt(vm, 120);
         art.HorizontalAlignment = HorizontalAlignment.Center;
@@ -323,18 +323,18 @@ public static class TesseraMediaPanel
         return TesseraChrome.CoreUiTile(row, h: height, pad: new Thickness(pad));
     }
 
-    private static Control SmoutiSide(TesseraFlyoutViewModel vm)
+    private static Control RadialSide(TesseraFlyoutViewModel vm)
     {
         var title = Text(vm.MediaTitle, 13, FontWeight.SemiBold, 220);
-        title.Foreground = TesseraStylePalette.Smouti.BrightBrush;
+        title.Foreground = TesseraStylePalette.Radial.BrightBrush;
         title.TextTrimming = TextTrimming.CharacterEllipsis;
         var artist = Text(vm.MediaArtist, 11, FontWeight.Normal, 220, muted: true);
-        artist.Foreground = TesseraStylePalette.Smouti.AccentHiBrush;
+        artist.Foreground = TesseraStylePalette.Radial.AccentHiBrush;
         artist.TextTrimming = TextTrimming.CharacterEllipsis;
         var pos = Text(FormatTime(vm.MediaPositionSeconds), 14, FontWeight.Bold, 48);
-        pos.Foreground = TesseraStylePalette.Smouti.BrightBrush;
+        pos.Foreground = TesseraStylePalette.Radial.BrightBrush;
         var dur = Text(FormatTime(vm.MediaDurationSeconds), 11, FontWeight.Normal, 44, muted: true);
-        dur.Foreground = TesseraStylePalette.Smouti.AccentHiBrush;
+        dur.Foreground = TesseraStylePalette.Radial.AccentHiBrush;
         var scrub = new TesseraTrack
         {
             IsVertical = false,
@@ -343,7 +343,7 @@ public static class TesseraMediaPanel
             Value = vm.MediaProgress,
             TrackThickness = 3,
             ShowThumb = false,
-            AccentBrushOverride = TesseraStylePalette.Smouti.AccentBrush,
+            AccentBrushOverride = TesseraStylePalette.Radial.AccentBrush,
             TrackBackBrushOverride = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255))
         };
         scrub.ValueChanged += (_, v) =>
@@ -352,27 +352,27 @@ public static class TesseraMediaPanel
             if (d > 0) _ = vm.SeekAsync(v * d);
         };
         var playIcon = PlayIcon(vm, 16);
-        playIcon.Foreground = TesseraStylePalette.Smouti.BrightBrush;
+        playIcon.Foreground = TesseraStylePalette.Radial.BrightBrush;
         var likeIcon = new MaterialIcon
         {
             Kind = MaterialIconKind.HeartOutline,
             Width = 14,
             Height = 14,
-            Foreground = TesseraStylePalette.Smouti.BrightBrush
+            Foreground = TesseraStylePalette.Radial.BrightBrush
         };
         var shuffleIcon = new MaterialIcon
         {
             Kind = MaterialIconKind.Shuffle,
             Width = 14,
             Height = 14,
-            Foreground = TesseraStylePalette.Smouti.AccentHiBrush
+            Foreground = TesseraStylePalette.Radial.AccentHiBrush
         };
         var repeatIcon = new MaterialIcon
         {
             Kind = MaterialIconKind.Repeat,
             Width = 14,
             Height = 14,
-            Foreground = TesseraStylePalette.Smouti.AccentHiBrush
+            Foreground = TesseraStylePalette.Radial.AccentHiBrush
         };
         TesseraLiveAmbient.RegisterMedia(new Border { Name = "TesseraMediaArt", Width = 1, Height = 1, IsVisible = false },
             title, artist, scrub, pos, dur, playIcon);

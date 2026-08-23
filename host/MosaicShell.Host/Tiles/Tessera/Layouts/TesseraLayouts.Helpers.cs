@@ -92,27 +92,27 @@ internal static partial class TesseraLayouts
         return pill;
     }
 
-    private static MaterialIcon PixelIcon(MaterialIconKind kind, bool muted = false) =>
+    private static MaterialIcon MaterialYouIcon(MaterialIconKind kind, bool muted = false) =>
         new()
         {
             Kind = kind,
-            Width = TesseraStyleMetrics.PixelIconSize,
-            Height = TesseraStyleMetrics.PixelIconSize,
+            Width = TesseraStyleMetrics.MaterialYouIconSize,
+            Height = TesseraStyleMetrics.MaterialYouIconSize,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             Foreground = muted
-                ? TesseraStylePalette.Pixel.SecondaryBrush
-                : TesseraStylePalette.Pixel.AccentBrush
+                ? TesseraStylePalette.MaterialYou.SecondaryBrush
+                : TesseraStylePalette.MaterialYou.AccentBrush
         };
 
-    private static Border PixelIconTile(MaterialIconKind kind, double iconSize, double tile)
+    private static Border MaterialYouIconTile(MaterialIconKind kind, double iconSize, double tile)
     {
         var tileBorder = new Border
         {
             Width = tile,
             Height = tile,
             CornerRadius = new CornerRadius(tile / 2),
-            Background = TesseraStylePalette.Pixel.ShellBrush,
+            Background = TesseraStylePalette.MaterialYou.ShellBrush,
             Child = new MaterialIcon
             {
                 Kind = kind,
@@ -120,39 +120,39 @@ internal static partial class TesseraLayouts
                 Height = iconSize,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
-                Foreground = TesseraStylePalette.Pixel.AccentBrush
+                Foreground = TesseraStylePalette.MaterialYou.AccentBrush
             }
         };
-        TesseraChrome.ApplyHoverHighlight(tileBorder, TesseraStylePalette.Pixel.ShellBrush,
+        TesseraChrome.ApplyHoverHighlight(tileBorder, TesseraStylePalette.MaterialYou.ShellBrush,
             new SolidColorBrush(Color.FromRgb(40, 40, 44)));
         return tileBorder;
     }
 
-    private static Control PixelIconBtn(MaterialIconKind kind, Action act) =>
-        TesseraChrome.IconButton(PixelIcon(kind), act, TesseraStyleMetrics.PixelHitTarget, circularHighlight: true);
+    private static Control MaterialYouIconBtn(MaterialIconKind kind, Action act) =>
+        TesseraChrome.IconButton(MaterialYouIcon(kind), act, TesseraStyleMetrics.MaterialYouHitTarget, circularHighlight: true);
 
-    private static Control PixelIconBtn(MaterialIcon icon, Action act) =>
-        TesseraChrome.IconButton(icon, act, TesseraStyleMetrics.PixelHitTarget, circularHighlight: true);
+    private static Control MaterialYouIconBtn(MaterialIcon icon, Action act) =>
+        TesseraChrome.IconButton(icon, act, TesseraStyleMetrics.MaterialYouHitTarget, circularHighlight: true);
 
-    private static Control PixelPlayPill(TesseraFlyoutViewModel vm)
+    private static Control MaterialYouPlayPill(TesseraFlyoutViewModel vm)
     {
         var icon = new MaterialIcon
         {
             Kind = vm.IsPlaying ? MaterialIconKind.Pause : MaterialIconKind.Play,
-            Width = TesseraStyleMetrics.PixelIconSize,
-            Height = TesseraStyleMetrics.PixelIconSize,
-            Foreground = TesseraStylePalette.Pixel.OnAccentBrush,
+            Width = TesseraStyleMetrics.MaterialYouIconSize,
+            Height = TesseraStyleMetrics.MaterialYouIconSize,
+            Foreground = TesseraStylePalette.MaterialYou.OnAccentBrush,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
         if (TesseraLiveAmbient.Current is { } live)
             live.PlayPauseIcon = icon;
-        var normal = TesseraStylePalette.Pixel.AccentBrush;
+        var normal = TesseraStylePalette.MaterialYou.AccentBrush;
         var hover = new SolidColorBrush(Color.FromRgb(240, 244, 255));
         var pill = new Border
         {
-            Width = TesseraStyleMetrics.PixelPlayW,
-            Height = TesseraStyleMetrics.PixelPlayH,
+            Width = TesseraStyleMetrics.MaterialYouPlayW,
+            Height = TesseraStyleMetrics.MaterialYouPlayH,
             CornerRadius = new CornerRadius(12),
             Background = normal,
             ClipToBounds = true,
@@ -163,44 +163,44 @@ internal static partial class TesseraLayouts
         return pill;
     }
 
-    private static async Task PixelToggleShuffleAsync(TesseraFlyoutViewModel vm, MaterialIcon icon)
+    private static async Task MaterialYouToggleShuffleAsync(TesseraFlyoutViewModel vm, MaterialIcon icon)
     {
         await vm.Services.Media.ToggleShuffleAsync();
         var on = icon.Kind != MaterialIconKind.ShuffleVariant;
         icon.Kind = on ? MaterialIconKind.ShuffleVariant : MaterialIconKind.Shuffle;
         icon.Foreground = on
-            ? TesseraStylePalette.Pixel.AccentBrush
-            : TesseraStylePalette.Pixel.SecondaryBrush;
+            ? TesseraStylePalette.MaterialYou.AccentBrush
+            : TesseraStylePalette.MaterialYou.SecondaryBrush;
     }
 
-    private static async Task PixelToggleRepeatAsync(TesseraFlyoutViewModel vm, MaterialIcon icon)
+    private static async Task MaterialYouToggleRepeatAsync(TesseraFlyoutViewModel vm, MaterialIcon icon)
     {
         await vm.Services.Media.ToggleRepeatAsync();
         if (icon.Kind == MaterialIconKind.RepeatOne)
         {
             icon.Kind = MaterialIconKind.Repeat;
-            icon.Foreground = TesseraStylePalette.Pixel.SecondaryBrush;
+            icon.Foreground = TesseraStylePalette.MaterialYou.SecondaryBrush;
         }
         else if (icon.Kind == MaterialIconKind.Repeat)
         {
             icon.Kind = MaterialIconKind.RepeatOne;
-            icon.Foreground = TesseraStylePalette.Pixel.AccentBrush;
+            icon.Foreground = TesseraStylePalette.MaterialYou.AccentBrush;
         }
         else
         {
             icon.Kind = MaterialIconKind.Repeat;
-            icon.Foreground = TesseraStylePalette.Pixel.AccentBrush;
+            icon.Foreground = TesseraStylePalette.MaterialYou.AccentBrush;
         }
     }
 
-    private static async Task PixelToggleLikeAsync(TesseraFlyoutViewModel vm, MaterialIcon icon)
+    private static async Task MaterialYouToggleLikeAsync(TesseraFlyoutViewModel vm, MaterialIcon icon)
     {
         var wantLiked = icon.Kind != MaterialIconKind.Heart;
         await vm.Services.Media.ToggleLikeAsync(wantLiked);
         icon.Kind = wantLiked ? MaterialIconKind.Heart : MaterialIconKind.HeartOutline;
         icon.Foreground = wantLiked
-            ? TesseraStylePalette.Pixel.AccentBrush
-            : TesseraStylePalette.Pixel.SecondaryBrush;
+            ? TesseraStylePalette.MaterialYou.AccentBrush
+            : TesseraStylePalette.MaterialYou.SecondaryBrush;
     }
 
     private static void BindWheel(Control c, TesseraFlyoutViewModel vm, double step = 0.02) =>

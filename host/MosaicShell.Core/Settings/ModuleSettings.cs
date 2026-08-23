@@ -2,7 +2,7 @@ namespace MosaicShell.Core.Settings;
 
 public sealed class ChronoSettings
 {
-    public string Style { get; set; } = "Center";
+    public string Style { get; set; } = "Square";
     public bool TwentyFourHour { get; set; } = true;
     public bool ShowSeconds { get; set; } = true;
 }
@@ -18,7 +18,7 @@ public sealed class CanvasSettings
 
 public sealed class PhonoSettings
 {
-    public string Style { get; set; } = "Simple";
+    public string Style { get; set; } = "Compact";
     public bool ShowArtist { get; set; } = true;
 }
 
@@ -78,7 +78,7 @@ public sealed class MixdeckSettings
 
 public sealed class InlaySettings
 {
-    public string Style { get; set; } = "Win11";
+    public string Style { get; set; } = "Windows11";
     public string HotkeyGesture { get; set; } = "Ctrl+Alt+I";
     public bool CloseOnEscape { get; set; } = true;
     public List<string> Pins { get; set; } = ["notepad", "calc"];
@@ -86,7 +86,7 @@ public sealed class InlaySettings
 
 public sealed class ChordSettings
 {
-    public string Style { get; set; } = "Center";
+    public string Style { get; set; } = "Square";
     public string HotkeyGesture { get; set; } = "Ctrl+Alt+K";
     public bool CloseOnEscape { get; set; } = true;
     public List<ChordAction> Actions { get; set; } =
@@ -113,7 +113,7 @@ public sealed class SubstrateSettings
 
 public sealed class SlateSettings
 {
-    public string Style { get; set; } = "Center";
+    public string Style { get; set; } = "Square";
     public bool HideOnFullscreen { get; set; } = true;
     public int IdleSeconds { get; set; } = 300;
 }

@@ -13,7 +13,7 @@ namespace MosaicShell.Host.Tiles.Tessera;
 internal static partial class TesseraLayouts
 {
 
-    public static Control Plainext(TesseraFlyoutViewModel vm)
+    public static Control PlainText(TesseraFlyoutViewModel vm)
     {
         if (IsStatus(vm)) return StatusChip(vm, 4);
         var pct = VolumePercent.ToPercent(vm.PrimaryValue);

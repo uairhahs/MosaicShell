@@ -2,6 +2,7 @@ using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
+using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Core.Modules.Tessera;
 
@@ -21,7 +22,7 @@ public sealed class TesseraFlyoutRequestBuilder
         return new FlyoutRequest(
             ModuleId,
             kind,
-            settings.Style,
+            StyleIds.Normalize(settings.Style),
             settings.Position,
             settings.AutoDismissMs,
             payload,

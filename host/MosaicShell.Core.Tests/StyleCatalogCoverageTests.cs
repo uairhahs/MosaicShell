@@ -33,15 +33,20 @@ public class StyleCatalogCoverageTests
     [Fact]
     public void Flagship_styles_are_documented_without_flipping_fidelity_flags()
     {
+        ChronoLayoutCoverage.IsFlagship("Square").Should().BeTrue();
         ChronoLayoutCoverage.IsFlagship("Center").Should().BeTrue();
+        PhonoLayoutCoverage.IsFlagship("Compact").Should().BeTrue();
         PhonoLayoutCoverage.IsFlagship("Simple").Should().BeTrue();
         PulseLayoutCoverage.IsFlagship("Regular").Should().BeTrue();
         CanvasLayoutCoverage.IsFlagship("DEFAULT").Should().BeTrue();
         MixdeckLayoutCoverage.IsFlagship("Fluent").Should().BeTrue();
+        InlayLayoutCoverage.IsFlagship("Windows11").Should().BeTrue();
         InlayLayoutCoverage.IsFlagship("Win11").Should().BeTrue();
+        TesseraLayoutCoverage.IsPolished("MaterialYou").Should().BeTrue();
         TesseraLayoutCoverage.IsPolished("Pixel").Should().BeTrue();
-        TesseraLayoutCoverage.UsesStackedMediaStrip("Pixel").Should().BeFalse();
-        TesseraLayoutCoverage.UsesStackedMediaStrip("Modern").Should().BeTrue();
+        TesseraLayoutCoverage.UsesStackedMediaStrip("MaterialYou").Should().BeFalse();
+        TesseraLayoutCoverage.UsesStackedMediaStrip("ModernFlyouts").Should().BeTrue();
+        TesseraLayoutCoverage.RequiresLiveVolumePercentLabel("Meter").Should().BeTrue();
         TesseraLayoutCoverage.RequiresLiveVolumePercentLabel("Amber").Should().BeTrue();
         TesseraLayoutCoverage.RequiresLiveVolumePercentLabel("Fluent").Should().BeFalse();
     }

@@ -13,10 +13,10 @@ namespace MosaicShell.Host.Tiles.Tessera;
 internal static partial class TesseraLayouts
 {
 
-    public static Control Smouti(TesseraFlyoutViewModel vm)
+    public static Control Radial(TesseraFlyoutViewModel vm)
     {
         if (IsStatus(vm)) return StatusChip(vm, 10);
-        const double ringSize = TesseraStyleMetrics.SmoutiRing;
+        const double ringSize = TesseraStyleMetrics.RadialRing;
         var ring = new TesseraRingVolume
         {
             Value = vm.PrimaryValue,
@@ -28,8 +28,8 @@ internal static partial class TesseraLayouts
             MaxHeight = ringSize,
             Showcase = true,
             ClipToBounds = true,
-            AccentBrushOverride = TesseraStylePalette.Smouti.AccentBrush,
-            PercentBrushOverride = TesseraStylePalette.Smouti.BrightBrush
+            AccentBrushOverride = TesseraStylePalette.Radial.AccentBrush,
+            PercentBrushOverride = TesseraStylePalette.Radial.BrightBrush
         };
         ring.ValueChanged += (_, v) => vm.ApplyPrimary(v);
         TesseraLiveAmbient.RegisterRing(ring);
@@ -58,7 +58,7 @@ internal static partial class TesseraLayouts
         Control body = left;
         if (vm.ShowMediaStrip)
         {
-            var media = TesseraMediaPanel.Create(vm, TesseraMediaMode.SmoutiSide);
+            var media = TesseraMediaPanel.Create(vm, TesseraMediaMode.RadialSide);
             media.HorizontalAlignment = HorizontalAlignment.Right;
             media.VerticalAlignment = VerticalAlignment.Center;
 
@@ -74,10 +74,10 @@ internal static partial class TesseraLayouts
         }
 
         var shell = TesseraChrome.WithArtWash(body, vm.ThumbnailPng, 10,
-            new Thickness(TesseraStyleMetrics.SmoutiPad, 14),
-            TesseraStyleMetrics.SmoutiWidth,
-            TesseraStyleMetrics.SmoutiMaxHeight);
-        shell.MinHeight = TesseraStyleMetrics.SmoutiMinHeight;
+            new Thickness(TesseraStyleMetrics.RadialPad, 14),
+            TesseraStyleMetrics.RadialWidth,
+            TesseraStyleMetrics.RadialMaxHeight);
+        shell.MinHeight = TesseraStyleMetrics.RadialMinHeight;
         shell.VerticalAlignment = VerticalAlignment.Top;
         return shell;
 

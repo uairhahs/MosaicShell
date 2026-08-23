@@ -554,7 +554,7 @@
 
                   <ComboBox MinWidth="220" HorizontalAlignment="Stretch"
                             ItemsSource="{Binding ModuleStyleOptions}"
-                            SelectedItem="{Binding ModuleStyle}" />
+                            SelectedItem="{Binding SelectedModuleStyle}" />
                   <TextBlock Text="Saves on Try now / Save"
                              Foreground="#6c7086" FontSize="12" />
 
@@ -734,7 +734,7 @@
                                Text="StyleCatalog id. Full visual skins are later." />
                     <ComboBox MinWidth="220" HorizontalAlignment="Left"
                               ItemsSource="{Binding ModuleStyleOptions}"
-                              SelectedItem="{Binding ModuleStyle}" />
+                              SelectedItem="{Binding SelectedModuleStyle}" />
                     <StackPanel Spacing="8" IsVisible="{Binding ShowChronoExtras}">
                       <Border Height="1" Background="#313244" Margin="0,4" />
                       <CheckBox Content="Show seconds" IsChecked="{Binding ChronoSeconds}" />
@@ -793,7 +793,7 @@
             </StackPanel>
           </StackPanel>
           <TextBlock TextWrapping="Wrap" Foreground="#a6adc8" FontSize="14" LineHeight="22"
-                     Text="Native Avalonia hub + CapabilityDaemon. Tessera best-effort replaces OS volume OSD while armed (not full YourFlyouts). Pixel Mixdeck opens the native mixer overlay." />
+                     Text="Native Avalonia hub + CapabilityDaemon. Tessera best-effort replaces OS volume OSD while armed (not full YourFlyouts). Material You Mixdeck opens the native mixer overlay." />
           <Button Classes="action" Content="View on GitHub" HorizontalAlignment="Left"
                   Command="{Binding OpenGitHubCommand}" />
         </StackPanel>

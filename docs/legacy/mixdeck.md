@@ -12,7 +12,7 @@ Rainmeter **Mixdeck** promised a fully customizable replacement for the Windows 
 
 - Per-application session list with mute and volume
 - Multiple color schemes and appearance customization
-- Hotkey / Tessera Pixel integration to open the mixer
+- Hotkey / Tessera Material You integration to open the mixer
 - Redraw hooks driven by volume-change events (`Plugin=Tessera` in the Rainmeter tree)
 
 ## Host today

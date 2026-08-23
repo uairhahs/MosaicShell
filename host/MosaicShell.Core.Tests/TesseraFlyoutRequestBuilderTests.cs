@@ -31,7 +31,7 @@ public class TesseraFlyoutRequestBuilderTests
     public void BuildLivePayload_honors_show_media_strip_override()
     {
         var services = HostServicesFakes.Create();
-        var settings = new TesseraSettings { Style = "Pixel", ShowMediaStripOnVolume = true };
+        var settings = new TesseraSettings { Style = "MaterialYou", ShowMediaStripOnVolume = true };
         var builder = new TesseraFlyoutRequestBuilder();
 
         builder.BuildLivePayload(services, settings, showMediaStripOverride: false)["showMediaStrip"]

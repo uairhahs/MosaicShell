@@ -16,9 +16,9 @@ Runtime is host-only; `Tiles/Tessera` is a native install stub. B0 is **not** fu
 | `tessera_named_styles` | Style catalog JaxCore ids |
 | `tessera_locks_flight` | Lock-key + airplane flyouts |
 | `tessera_live_update_multimonitor` | Reuse/update window; monitor + anchor math |
-| `tessera_fluent_win11_kit` | Fluent + Win11 transfer kit present |
-| `tessera_layout_fidelity` | **false** - 7/11 styles signed off; CoreUI, Pixel, Smouti, Win11 still deviate (`.local/Tessera/deviated/`) |
-| `tessera_fluent_yourflyouts` | **true** - Fluent / Win11 / Center tightened for Host identity (compact, soft frost, optional baked wash) |
+| `tessera_fluent_win11_kit` | Fluent + Windows11 transfer kit present |
+| `tessera_layout_fidelity` | **true** - all 11 StyleCatalog styles signed off; proofs in `.github/res/Tessera/` |
+| `tessera_fluent_yourflyouts` | **true** - Fluent / Windows11 / Square tightened for Host identity (compact, soft frost, optional baked wash) |
 | `tessera_media_smtc_only` | **false** - SMTC is not the only media path |
 | `tessera_media_wnp` | **true** - WebNowPlaying host on CLI port **5468** |
 | `tile_tessera_mvp` | Armed flyouts + named styles (Host path) |
@@ -32,14 +32,14 @@ References: [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [Mo
 - Brightness / airplane caveats on some Win11 builds (see YourFlyouts README)
 - Vendor laptop OEM HUDs unsupported
 - Multi-player Auto NowPlaying outside WNP + SMTC
-- CoreUI, Pixel, Smouti, Win11 still deviate from refs (`tessera_layout_fidelity` false until all signed off)
+- Radial remains a lighter Host layout (`IsApproximate`) but is visually signed off with the rest of the catalog
 
 ## Mixdeck MVP bar (must all hold for `tile_mixdeck_mvp`)
 
 - Overlay: per-app sessions from `IAppAudioService`
 - Mute toggle + volume slider per session
 - StyleCatalog style reflected in chrome
-- Hotkey / Pixel deep-link opens **overlay**, not placeholder flyout text
+- Hotkey / Material You deep-link opens **overlay**, not placeholder flyout text
 
 ## Widget MVP bars (B2)
 
@@ -144,7 +144,7 @@ See [native-rewrite.md](../native-rewrite.md). B5 (Host-only repo) is complete.
 
 ## Phase C layout fidelity flags
 
-Flip to **true** only when a module meets screenshot-level parity vs its [Jax-Core archive](../legacy/README.md). All default **false** in `HubParityBacklogTests`.
+Flip to **true** only when a module meets screenshot-level parity vs its [Jax-Core archive](../legacy/README.md). Tessera C1 is signed off; remaining module flags stay **false** until proofs land.
 
 | Flag | Module | Upstream archive |
 |------|--------|------------------|
@@ -159,7 +159,7 @@ Flip to **true** only when a module meets screenshot-level parity vs its [Jax-Co
 | `pulse_layout_fidelity` | Pulse | ModularVisualizer |
 | `canvas_layout_fidelity` | Canvas | Plainext |
 
-Tessera Phase C1 tiers live in `TesseraLayoutCoverage`: polished vs approximate (code), plus signed-off vs deviated (visual). `tessera_layout_fidelity` remains false until all StyleCatalog ids are signed off.
+Tessera Phase C1 tiers live in `TesseraLayoutCoverage`: polished vs approximate (code), plus signed-off vs deviated (visual). `tessera_layout_fidelity` is **true** — every StyleCatalog id is signed off; proofs in `.github/res/Tessera/`.
 
 | `native_tile_overlay_runtime` | **false** — full StyleCatalog pixel skins as dedicated runtime; not a Rainmeter interpreter |
 

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Modules;
+using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Core.Runtime;
 
@@ -54,13 +55,17 @@ public static class ModuleSettingsStore
         if (!File.Exists(path))
         {
             var created = factory();
+            StyleIds.TryMigratePersistedStyle(created);
             Save(moduleId, created);
             return created;
         }
 
         try
         {
-            return JsonSerializer.Deserialize<T>(File.ReadAllText(path), JsonOptions) ?? factory();
+            var loaded = JsonSerializer.Deserialize<T>(File.ReadAllText(path), JsonOptions) ?? factory();
+            if (StyleIds.TryMigratePersistedStyle(loaded))
+                Save(moduleId, loaded);
+            return loaded;
         }
         catch
         {

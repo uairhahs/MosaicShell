@@ -8,6 +8,7 @@ using MosaicShell.Core.Modules;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
+using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Host.Tiles.Surfaces;
 
@@ -281,7 +282,8 @@ public sealed class InlayTileView : UserControl
     public InlayTileView()
     {
         _settings = ModuleSettingsStore.Load("Inlay", () => new InlaySettings());
-        _win11 = _settings.Style.Equals("Win11", StringComparison.OrdinalIgnoreCase);
+        _win11 = StyleIds.Normalize(_settings.Style)
+            .Equals(StyleIds.Windows11, StringComparison.OrdinalIgnoreCase);
 
         _search.KeyUp += (_, e) =>
         {

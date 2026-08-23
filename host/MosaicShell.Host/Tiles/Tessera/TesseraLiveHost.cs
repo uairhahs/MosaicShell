@@ -23,7 +23,7 @@ public sealed class TesseraLiveBindings
     public TextBlock? SlashMeter { get; set; }
     public MaterialIcon? Glyph { get; set; }
     /// <summary>Pixel M3: two-tone inset volume icon (on-primary / on-secondary-container).</summary>
-    public bool PixelVolumeGlyph { get; set; }
+    public bool MaterialYouVolumeGlyph { get; set; }
     public TesseraTrack? MediaScrub { get; set; }
     public TextBlock? MediaPos { get; set; }
     public TextBlock? MediaDur { get; set; }
@@ -33,7 +33,7 @@ public sealed class TesseraLiveBindings
     public MaterialIcon? PlayPauseIcon { get; set; }
     public TextBlock? StatusLabel { get; set; }
     /// <summary>Plainext: title uses {@code Title > Playing &lt;} and progress uses slash meter.</summary>
-    public bool PlainextMedia { get; set; }
+    public bool PlainTextMedia { get; set; }
     /// <summary>Hide percent at rest; show while dragging or wheeling (M3-style value indicator).</summary>
     public bool PercentOnAdjustOnly { get; set; }
 }
@@ -121,10 +121,10 @@ public sealed class TesseraLiveHost : ContentControl
                     : shown < 0.20 ? MaterialIconKind.VolumeLow
                     : shown < 0.50 ? MaterialIconKind.VolumeMedium
                     : MaterialIconKind.VolumeHigh;
-                if (b.PixelVolumeGlyph)
+                if (b.MaterialYouVolumeGlyph)
                 {
                     var trackH = b.VolumeTrack?.Bounds.Height ?? 0;
-                    TesseraPixelM3.ApplyVolumeGlyphTone(b.Glyph, shown, muted, trackH);
+                    TesseraMaterialYouM3.ApplyVolumeGlyphTone(b.Glyph, shown, muted, trackH);
                 }
             }
         }
@@ -136,7 +136,7 @@ public sealed class TesseraLiveHost : ContentControl
             if (b.Percent is not null)
             {
                 var shown = b.VolumeTrack.IsUserAdjusting ? b.VolumeTrack.Value : br;
-                b.Percent.Text = TesseraVolumeLabel.Brightness(VolumePercent.ToPercent(shown), b.PlainextMedia);
+                b.Percent.Text = TesseraVolumeLabel.Brightness(VolumePercent.ToPercent(shown), b.PlainTextMedia);
             }
             if (b.SlashMeter is not null)
                 b.SlashMeter.Text = TesseraChrome.SlashFill(br);
@@ -144,7 +144,7 @@ public sealed class TesseraLiveHost : ContentControl
 
         if (b.MediaTitle is not null)
         {
-            if (b.PlainextMedia && media is not null)
+            if (b.PlainTextMedia && media is not null)
             {
                 var title = string.IsNullOrWhiteSpace(media.Title) ? " " : media.Title!;
                 var state = media.IsPlaying ? "Playing" : "Paused";
@@ -174,7 +174,7 @@ public sealed class TesseraLiveHost : ContentControl
             b.MediaScrub?.SetValueSilent(progress);
             if (b.MediaPos is not null)
             {
-                if (b.PlainextMedia)
+                if (b.PlainTextMedia)
                     b.MediaPos.Text =
                         $"{FormatTime(pos)} {TesseraChrome.SlashFill(progress, 16)} {FormatTime(dur)}";
                 else

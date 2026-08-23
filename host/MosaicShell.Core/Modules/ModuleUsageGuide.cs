@@ -20,7 +20,7 @@ public static class ModuleUsageGuide
             case "slate":
                 return "Idle / screensaver clock. Arm it; after the idle timeout the clock overlay appears (unless fullscreen hide is on).";
             case "mixdeck":
-                return "Per-app volume mixer. Arm it, then press the hotkey (or Tessera Pixel) to open the overlay.";
+                return "Per-app volume mixer. Arm it, then press the hotkey (or Tessera Material You) to open the overlay.";
             case "tessera":
                 return "System flyouts for volume, brightness, and media. Arm it to replace the OS OSD while Host runs in the tray.";
             default:

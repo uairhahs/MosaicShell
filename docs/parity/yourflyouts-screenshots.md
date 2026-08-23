@@ -2,15 +2,18 @@
 
 Canonical gallery: https://github.com/Jax-Core/YourFlyouts/blob/main/Screenshots.md
 
+In-repo Host proofs (CI companion for `tessera_layout_fidelity`):
+
+- Signed-off Host captures: `.github/res/Tessera/{StyleId}.png` (all 11 StyleCatalog ids)
+
 Local mirrors for manual layout work (not automated in CI):
 
-- Signed-off refs: `.local/Tessera/original/ref-{style}.png`
-- Still deviating: `.local/Tessera/deviated/ref-{style}.png` (CoreUI, Pixel, Smouti, Win11)
+- Upstream cropped refs: `.local/Tessera/original/ref-{style}.png`
 - Full-desktop context: `.local/Tessera/yourflyouts-official/{style}.png`
 - Rainmeter sources: `.local/Tessera/original/{Style}.inc`, `Vars/{Style}.inc`
 
 Per-style sign-off is tracked in `TesseraLayoutCoverage` (`IsLayoutFidelitySignedOff` / `IsLayoutFidelityDeviated`).
-Flip global `tessera_layout_fidelity` in `HubParityBacklogTests` only when every style is signed off.
+`tessera_layout_fidelity` in `HubParityBacklogTests` is **true** — every style is signed off.
 
 Statistical annotation of deviated refs (Pillow, via **uv**):
 

@@ -52,8 +52,8 @@ public sealed class TesseraTrack : Panel
         AvaloniaProperty.Register<TesseraTrack, IBrush?>(nameof(TrackBackBrushOverride));
 
     /// <summary>Pixel.inc vertical slider: thin spine + wide rounded fill, no thumb.</summary>
-    public static readonly StyledProperty<bool> PixelVerticalFillProperty =
-        AvaloniaProperty.Register<TesseraTrack, bool>(nameof(PixelVerticalFill));
+    public static readonly StyledProperty<bool> MaterialYouVerticalFillProperty =
+        AvaloniaProperty.Register<TesseraTrack, bool>(nameof(MaterialYouVerticalFill));
 
     /// <summary>M3 vertical slider: wide inactive/active track, handle bar at junction, top stop, inset icon.</summary>
     public static readonly StyledProperty<bool> ExpressiveVerticalProperty =
@@ -169,10 +169,10 @@ public sealed class TesseraTrack : Panel
         set => SetValue(TrackBackBrushOverrideProperty, value);
     }
 
-    public bool PixelVerticalFill
+    public bool MaterialYouVerticalFill
     {
-        get => GetValue(PixelVerticalFillProperty);
-        set => SetValue(PixelVerticalFillProperty, value);
+        get => GetValue(MaterialYouVerticalFillProperty);
+        set => SetValue(MaterialYouVerticalFillProperty, value);
     }
 
     public bool ExpressiveVertical
@@ -222,7 +222,7 @@ public sealed class TesseraTrack : Panel
             || change.Property == ShellEndRadiusProperty
             || change.Property == AccentBrushOverrideProperty
             || change.Property == TrackBackBrushOverrideProperty
-            || change.Property == PixelVerticalFillProperty
+            || change.Property == MaterialYouVerticalFillProperty
             || change.Property == ExpressiveVerticalProperty
             || change.Property == GlassFillProperty)
         {
@@ -355,7 +355,7 @@ public sealed class TesseraTrack : Panel
                 ArrangeM3VerticalHandle(w, insetY, fillTop, fillH, v, accent, bedW);
                 ArrangeM3Stop(w, insetY, v, accent);
             }
-            else if (PixelVerticalFill)
+            else if (MaterialYouVerticalFill)
             {
                 ClipToBounds = true;
                 _back.IsVisible = true;

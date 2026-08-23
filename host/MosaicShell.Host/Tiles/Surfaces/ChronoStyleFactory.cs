@@ -4,6 +4,7 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Layout;
 using Avalonia.Media;
 using MosaicShell.Core.Settings;
+using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Host.Tiles.Surfaces;
 
@@ -12,9 +13,9 @@ internal static class ChronoStyleFactory
     public static Control Create(ChronoSettings settings, TextBlock time, TextBlock date)
     {
         ApplyTypography(settings, time, date);
-        var style = settings.Style;
-        if (style.Equals("Center", StringComparison.OrdinalIgnoreCase))
-            return CreateCenter(time, date);
+        var style = StyleIds.Normalize(settings.Style);
+        if (style.Equals(StyleIds.Square, StringComparison.OrdinalIgnoreCase))
+            return CreateSquare(time, date);
         if (style.Equals("Text", StringComparison.OrdinalIgnoreCase)
             || style.Equals("Minimal", StringComparison.OrdinalIgnoreCase))
             return CreateText(time, date);
@@ -26,7 +27,7 @@ internal static class ChronoStyleFactory
         return CreateDefault(time, date);
     }
 
-    private static Control CreateCenter(TextBlock time, TextBlock date)
+    private static Control CreateSquare(TextBlock time, TextBlock date)
     {
         time.HorizontalAlignment = HorizontalAlignment.Center;
         date.HorizontalAlignment = HorizontalAlignment.Center;
@@ -87,7 +88,7 @@ internal static class ChronoStyleFactory
     {
         time.Foreground = WidgetChrome.Brush("#cdd6f4");
         date.Foreground = WidgetChrome.Brush("#a6adc8");
-        var style = settings.Style;
+        var style = StyleIds.Normalize(settings.Style);
         if (style.Equals("Text", StringComparison.OrdinalIgnoreCase)
             || style.Equals("Minimal", StringComparison.OrdinalIgnoreCase))
         {
@@ -103,7 +104,7 @@ internal static class ChronoStyleFactory
             date.FontSize = 13;
             date.FontFamily = time.FontFamily;
         }
-        else if (style.Equals("Center", StringComparison.OrdinalIgnoreCase))
+        else if (style.Equals(StyleIds.Square, StringComparison.OrdinalIgnoreCase))
         {
             time.FontSize = 52;
             time.FontWeight = FontWeight.Light;

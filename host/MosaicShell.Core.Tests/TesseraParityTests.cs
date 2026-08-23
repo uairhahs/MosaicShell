@@ -102,7 +102,7 @@ public class TesseraParityTests : IDisposable
     {
         var s = new TesseraSettings
         {
-            Style = "Win11",
+            Style = "Windows11",
             Position = "BC",
             MonitorIndex = 2,
             XPad = 12,
@@ -116,7 +116,7 @@ public class TesseraParityTests : IDisposable
         };
         ModuleSettingsStore.Save("Tessera", s);
         var loaded = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
-        loaded.Style.Should().Be("Win11");
+        loaded.Style.Should().Be("Windows11");
         loaded.AccentColor.Should().Be("#D8E2F8");
         loaded.Position.Should().Be("BC");
         loaded.MonitorIndex.Should().Be(2);
@@ -139,11 +139,11 @@ public class TesseraParityTests : IDisposable
         _shown.Should().ContainSingle();
         _shown[0].StyleId.Should().Be("Fluent");
 
-        ModuleSettingsStore.Save("Tessera", new TesseraSettings { Style = "Win11", FlyoutScalePercent = 120 });
+        ModuleSettingsStore.Save("Tessera", new TesseraSettings { Style = "Windows11", FlyoutScalePercent = 120 });
         _shown.Clear();
         services.Audio.MasterVolume = 0.6;
         _shown.Should().ContainSingle();
-        _shown[0].StyleId.Should().Be("Win11");
+        _shown[0].StyleId.Should().Be("Windows11");
         _shown[0].Payload!["flyoutScale"].Should().Be("120");
     }
 
