@@ -59,11 +59,44 @@ public class TesseraFlyoutRevealSpecTests
     }
 
     [Fact]
+    public void Hide_reveal_is_zero_only_when_fancy_phase2_will_run()
+    {
+        TesseraFlyoutRevealSpec.ResolveHideRevealProgress(willRunPhase2: true)
+            .Should().Be(TesseraFlyoutRevealSpec.FancyPhase2StartProgress);
+        TesseraFlyoutRevealSpec.ResolveHidePhase2Engaged(true).Should().BeFalse();
+        TesseraFlyoutRevealSpec.ResolveHideRevealProgress(willRunPhase2: false)
+            .Should().Be(TesseraFlyoutRevealSpec.RestRevealProgress);
+        TesseraFlyoutRevealSpec.ResolveHidePhase2Engaged(false).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Square_supports_phase2_without_media_strip()
+    {
+        TesseraFlyoutRevealSpec.StyleSupportsPhase2(TesseraFlyoutRevealSpec.StyleSquare).Should().BeTrue();
+        TesseraFlyoutRevealSpec.StylePhase2WithoutMediaStrip(TesseraFlyoutRevealSpec.StyleSquare).Should().BeTrue();
+        TesseraFlyoutRevealSpec.UsesDedicatedRevealBinder(TesseraFlyoutRevealSpec.StyleFluent).Should().BeTrue();
+        TesseraFlyoutRevealSpec.UsesDedicatedRevealBinder("unknown").Should().BeFalse();
+    }
+
+    [Fact]
     public void Rest_reveal_is_fully_open()
     {
         TesseraFlyoutRevealSpec.RestRevealProgress.Should().Be(1);
         TesseraFlyoutRevealSpec.PreviewMustUseRestReveal.Should().BeTrue();
         TesseraFlyoutRevealSpec.FancyPhase2StartProgress.Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData(0, "Fluent", true, 1)]
+    [InlineData(1, "Fluent", true, 1)]
+    [InlineData(2, "Fluent", true, 0)]
+    [InlineData(2, "Fluent", false, 1)]
+    [InlineData(0, "Square", false, 1)]
+    [InlineData(2, "Square", false, 0)]
+    public void Hide_pose_follows_ani_and_style(int ani, string style, bool media, double expected)
+    {
+        var fancy = TesseraFlyoutAnimationPolicy.Phase2RequiresAnimatedLayout(ani, style, media);
+        TesseraFlyoutRevealSpec.ResolveHideRevealProgress(fancy).Should().Be(expected);
     }
 
     [Theory]

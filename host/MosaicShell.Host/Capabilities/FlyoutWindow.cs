@@ -130,11 +130,46 @@ internal sealed class FlyoutWindow : Window
 
     private void ResetRevealProgress()
     {
+        var showMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(_request.Payload);
+        var willRunPhase2 = ShouldRunPhase2Reveal(showMedia);
+        var progress = TesseraFlyoutRevealSpec.ResolveHideRevealProgress(willRunPhase2);
+        var engaged = TesseraFlyoutRevealSpec.ResolveHidePhase2Engaged(willRunPhase2);
         foreach (var host in this.GetVisualDescendants().OfType<TesseraRevealHost>())
         {
-            host.Phase2Engaged = false;
-            host.RevealProgress = 0;
+            host.Phase2Engaged = engaged;
+            host.RevealProgress = progress;
         }
+    }
+
+    internal void SyncStrokeBRegion()
+    {
+        var showMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(_request.Payload);
+        if (!TesseraFlyoutHwndRegionSpec.StyleNeedsStrokeBRegion(_request.StyleId, showMedia))
+            return;
+
+        var host = this.GetVisualDescendants().OfType<TesseraRevealHost>().FirstOrDefault();
+        var progress = host?.RevealProgress ?? 0;
+        var engaged = host?.Phase2Engaged ?? false;
+        var heightDip = TesseraFlyoutHwndRegionSpec.ResolveRegionHeightDip(progress, engaged, showMedia);
+        var widthDip = Bounds.Width > 1
+            ? Bounds.Width
+            : TesseraStackedPlacementSpec.Win11WidthDip;
+        var radiusDip = TesseraStackedPlacementSpec.Win11CornerRadiusDip;
+        var scale = ResolveMonitorScale();
+        var phys = TesseraFlyoutHwndRegionSpec.ResolveRoundRectPhysical(
+            widthDip, heightDip, radiusDip, scale);
+        if (phys.HeightPx < 2 || phys.WidthPx < 2)
+            return;
+
+        Win32Properties.SetWindowCornerPreference(
+            this,
+            Win32Properties.WindowCornerPreference.DoNotRound);
+        Win32WindowChrome.ApplyRoundRectRegion(
+            this,
+            phys.WidthPx,
+            phys.HeightPx,
+            phys.CornerRadiusPx,
+            applySynchronously: true);
     }
 
     /// <summary>Raised after auto-dismiss / TransientDismiss so Host can close FocusDim.</summary>
@@ -249,6 +284,7 @@ internal sealed class FlyoutWindow : Window
         _motionGeneration++;
         if (TesseraFlyoutAnimationPolicy.MotionAnimatingMustClearOnSupersede)
             _motionAnimating = false;
+        Win32WindowChrome.ClearWindowRegion(this);
         RenderTransform = null;
         Opacity = 1;
         if (TesseraFlyoutWindowPolicy.HideUntilCompositionReady)
@@ -473,6 +509,7 @@ internal sealed class FlyoutWindow : Window
                     clusterY + (int)Math.Round(PanelOffsetYDip * scale));
                 CommitRestPosition(pt);
                 ApplyStackedBackdropClip(w, h, scale);
+                SyncStrokeBRegion();
                 _lastSize = Bounds.Size;
                 return;
             }
@@ -485,6 +522,7 @@ internal sealed class FlyoutWindow : Window
                 yPad);
             CommitRestPosition(new PixelPoint(x, y));
             ApplyStackedBackdropClip(w, h, scale);
+            SyncStrokeBRegion();
             _lastSize = Bounds.Size;
         }
         catch (Exception ex)
@@ -628,6 +666,8 @@ internal sealed class FlyoutWindow : Window
                 host.Phase2Engaged = true;
             host.RevealProgress = progress;
         }
+
+        SyncStrokeBRegion();
     }
 
     private void ResetDismissTimer()
@@ -739,6 +779,7 @@ internal sealed class FlyoutWindow : Window
         Opacity = 1;
         _motionSurface.Opacity = 0;
         ResetRevealProgress();
+        Win32WindowChrome.ClearWindowRegion(this);
         try
         {
             if (TesseraFlyoutLiveSyncPolicy.TransientDismissMustHideNotClose)

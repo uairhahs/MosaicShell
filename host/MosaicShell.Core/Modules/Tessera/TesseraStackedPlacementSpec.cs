@@ -79,6 +79,8 @@ public static class TesseraStackedPlacementSpec
     public const double Win11GapDip = 0;
     public const double Win11VolumeHeightDip = 50;
     public const double Win11MediaHeightDip = 175;
+    public const double Win11PadDip = 15;
+    public const double Win11CornerRadiusDip = 12;
 
     public const double RadialClusterWidthDip = 480;
     public const double RadialColumnGapDip = 14;

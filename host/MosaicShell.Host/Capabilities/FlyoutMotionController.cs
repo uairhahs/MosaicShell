@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Animation;
+using Avalonia.Animation.Easings;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
@@ -211,6 +212,7 @@ internal static class FlyoutMotionController
         {
             Duration = TimeSpan.FromMilliseconds(duration),
             FillMode = FillMode.Forward,
+            Easing = new LinearEasing(),
         };
 
         for (var i = 0; i <= sampleCount; i++)

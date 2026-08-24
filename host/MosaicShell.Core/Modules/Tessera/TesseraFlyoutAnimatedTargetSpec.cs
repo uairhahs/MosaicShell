@@ -25,6 +25,18 @@ public static class TesseraFlyoutAnimatedTargetSpec
     /// </summary>
     public const bool Win11VolumeControlsStayOpaque = true;
 
+    /// <summary>
+    /// YF MediaB XOR is frost-in-growing-shell, not a white sheet. Host must not paint a cover overlay.
+    /// Avalonia clip and Win32 region use StrokeB (<see cref="ResolveWin11BorderHeightDip"/>).
+    /// </summary>
+    public const bool Win11XorFrostMustNotPaintCoverOverlay = true;
+
+    /// <summary>YF MediaC grows as a container; Host clips in place (no leaf slide or fade).</summary>
+    public const bool CoreUiMediaMustClipOnly = true;
+
+    /// <summary>YF VolumeB fill alpha, not ScaleTransform. MediaB keeps scale.</summary>
+    public const bool GnomeVolumeMustNotUseContentScale = true;
+
     public static double ResolveFluentDividerHeightFactor(double progress, bool musicVisible) =>
         musicVisible ? ClampProgress(progress) : 0;
 
@@ -71,8 +83,15 @@ public static class TesseraFlyoutAnimatedTargetSpec
     public static double ResolveCoreUiLayoutTrackThicknessDip(double baseTrackThickness) =>
         baseTrackThickness;
 
-    public static double ResolveCoreUiMediaLayoutWidthDip(double fullPanelWidth, bool musicVisible) =>
-        fullPanelWidth;
+    public static double ResolveCoreUiMediaLayoutWidthDip(double fullPanelWidth, bool musicVisible)
+    {
+        _ = musicVisible;
+        return fullPanelWidth;
+    }
+
+    /// <summary>Wrapped media+transport row (inner width), never the art column alone.</summary>
+    public static double ResolveCoreUiWrappedRowLayoutWidthDip(bool musicVisible) =>
+        musicVisible ? TesseraCoreUiLayoutSpec.InnerRowWidthDip : 0;
 
     public static double ResolveCoreUiMediaClipWidthDip(
         double fullPanelWidth,
@@ -89,9 +108,8 @@ public static class TesseraFlyoutAnimatedTargetSpec
         double progress,
         bool musicVisible)
     {
-        if (!musicVisible)
-            return 0;
-        return -fullPanelWidth * (1 - ClampProgress(progress));
+        _ = (fullPanelWidth, progress, musicVisible);
+        return 0;
     }
 
     public static double ResolveWin11BorderHeightDip(
@@ -135,6 +153,12 @@ public static class TesseraFlyoutAnimatedTargetSpec
     public static double ResolveGnomeContentScale(double progress, bool musicVisible) =>
         musicVisible ? 0.5 + 0.5 * ClampProgress(progress) : 1;
 
+    public static double ResolveGnomeVolumeFillOpacity(double progress, bool musicVisible) =>
+        musicVisible ? ClampProgress(progress) : 1;
+
+    public static double ResolveSquareLabelScale(double progress) =>
+        ClampProgress(progress);
+
     public static double ResolveGnomeOverlayAlpha(double progress, bool musicVisible) =>
         ResolveMediaCoverOverlayAlpha(progress, musicVisible);
 
@@ -163,8 +187,11 @@ public static class TesseraFlyoutAnimatedTargetSpec
     public static double ResolveCoreUiMediaOverlayAlpha(double progress, bool musicVisible) =>
         ResolveMediaCoverOverlayAlpha(progress, musicVisible);
 
-    public static double ResolveCoreUiMediaContentOpacityFactor(double progress, bool musicVisible) =>
-        musicVisible ? ClampProgress(progress) : 1;
+    public static double ResolveCoreUiMediaContentOpacityFactor(double progress, bool musicVisible)
+    {
+        _ = (progress, musicVisible);
+        return 1;
+    }
 
     private static double ClampProgress(double progress) =>
         Math.Clamp(progress, 0, 1);

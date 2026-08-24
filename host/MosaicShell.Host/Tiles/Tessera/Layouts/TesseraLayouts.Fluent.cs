@@ -54,7 +54,7 @@ internal static partial class TesseraLayouts
                 Opacity = 0.55
             };
             var media = TesseraMediaPanel.Create(vm, TesseraMediaMode.FluentSide);
-            var mediaW = TesseraFluentMetrics.MaxShellWidth - TesseraFluentMetrics.VolumeWidth - 4;
+            var mediaW = TesseraFluentMetrics.MediaWidth;
             var reveal = TesseraRevealHost.WrapMedia(
                 vm,
                 media,

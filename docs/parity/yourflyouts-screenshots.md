@@ -19,7 +19,9 @@ Do **not** mark Tessera animation Hub parity until manual compare passes for:
 | Gnome | Same | Scale 0.5..1 + opacity on media pill | layout gallery |
 | PlainText | Same | Panel slide-in on media block | layout gallery |
 
-Core contracts: `TesseraFlyoutAnimationPolicy`, `TesseraFlyoutTweenEngine`, `TesseraFlyoutRevealSpec`. Smouti and other no-op styles degrade to phase-1 only (matches YourFlyouts Smouti).
+Core contracts: `TesseraFlyoutAnimationPolicy`, `TesseraFlyoutTweenEngine`, `TesseraFlyoutRevealSpec`, `TesseraFlyoutHwndRegionSpec`. Smouti and other no-op styles degrade to phase-1 only (matches YourFlyouts Smouti).
+
+Single-HWND Win11 Fancy applies a Win32 region whose height follows StrokeB (`ResolveWin11BorderHeightDip`) so the Transparent HWND hit-band matches the visible card. The client size stays rest-tall (`Phase2MustNotResizeHwnd`). Stacked OS acrylic (split HWNDs) is unchanged.
 
 ## Stacked OS acrylic (Fancy) known delta
 

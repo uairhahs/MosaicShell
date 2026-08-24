@@ -14,6 +14,7 @@ internal static class TesseraStackedPanelFactory
         bool embeddedPreview = false)
     {
         using var _ = TesseraStackedBuildContext.Begin(role, bindings);
+        using var revealCtx = TesseraRevealBuildContext.Begin(embeddedPreview, vm.Ani);
         TesseraPalette.ApplyAccentFromSettings(accentColor);
         TesseraLiveAmbient.Current = bindings;
         if (embeddedPreview)

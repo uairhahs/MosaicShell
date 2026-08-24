@@ -104,14 +104,33 @@ public class TesseraFlyoutAnimatedTargetSpecTests
             .Should().Be(expected);
     }
 
-    [Theory]
-    [InlineData(0, 0)]
-    [InlineData(0.5, 0.5)]
-    [InlineData(1, 1)]
-    public void CoreUi_media_content_opacity_tracks_progress(double p, double expected)
+    [Fact]
+    public void CoreUi_media_clip_only_no_leaf_slide_or_fade()
     {
-        TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaContentOpacityFactor(p, musicVisible: true)
-            .Should().Be(expected);
+        TesseraFlyoutAnimatedTargetSpec.CoreUiMediaMustClipOnly.Should().BeTrue();
+        TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaSlideOffsetDip(388, 0, true)
+            .Should().Be(0);
+        TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaSlideOffsetDip(388, 0.5, true)
+            .Should().Be(0);
+        TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaContentOpacityFactor(0, true)
+            .Should().Be(1);
+        TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaContentOpacityFactor(0.5, true)
+            .Should().Be(1);
+    }
+
+    [Fact]
+    public void CoreUi_rest_clip_host_width_is_wrapped_row_not_art_column()
+    {
+        TesseraCoreUiLayoutSpec.MediaLayoutMustUseWrappedRowWidth.Should().BeTrue();
+        var row = TesseraCoreUiLayoutSpec.InnerRowWidthDip;
+        var art = TesseraCoreUiLayoutSpec.ArtColumnWidthDip;
+        row.Should().Be(388);
+        art.Should().Be(324);
+        row.Should().BeGreaterThan(art);
+        TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiWrappedRowLayoutWidthDip(true)
+            .Should().Be(row);
+        TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaLayoutWidthDip(row, true)
+            .Should().Be(row);
     }
 
     [Fact]
@@ -120,6 +139,8 @@ public class TesseraFlyoutAnimatedTargetSpecTests
         TesseraFlyoutAnimatedTargetSpec.MediaOverlayIsContainerMaskNotCover.Should().BeTrue();
         TesseraFlyoutAnimatedTargetSpec.MediaCoverOverlayMaxAlpha.Should().Be(0);
         TesseraFlyoutAnimatedTargetSpec.Win11VolumeControlsStayOpaque.Should().BeTrue();
+        TesseraFlyoutAnimatedTargetSpec.Win11XorFrostMustNotPaintCoverOverlay.Should().BeTrue();
+        TesseraFlyoutAnimatedTargetSpec.GnomeVolumeMustNotUseContentScale.Should().BeTrue();
         TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaOverlayAlpha(1, musicVisible: true)
             .Should().Be(0);
         TesseraFlyoutAnimatedTargetSpec.ResolveWin11MediaOverlayAlpha(1, musicVisible: true)
@@ -135,12 +156,27 @@ public class TesseraFlyoutAnimatedTargetSpecTests
     [Fact]
     public void PlainText_slide_offset_matches_plainext_inc()
     {
-        const double w = 320;
+        var w = TesseraStackedPlacementSpec.PlainTextWidthDip;
         const double scale = 1;
         TesseraFlyoutAnimatedTargetSpec.ResolvePlainTextSlideOffsetDip(w, scale, 0, true)
-            .Should().BeApproximately(-295, 0.01);
+            .Should().BeApproximately(-(w - 25), 0.01);
         TesseraFlyoutAnimatedTargetSpec.ResolvePlainTextSlideOffsetDip(w, scale, 1, true)
             .Should().BeApproximately(0, 0.01);
+    }
+
+    [Fact]
+    public void Gnome_volume_fill_is_opacity_not_scale()
+    {
+        TesseraFlyoutAnimatedTargetSpec.ResolveGnomeVolumeFillOpacity(0, true).Should().Be(0);
+        TesseraFlyoutAnimatedTargetSpec.ResolveGnomeVolumeFillOpacity(1, true).Should().Be(1);
+        TesseraFlyoutAnimatedTargetSpec.ResolveGnomeContentScale(0, true).Should().Be(0.5);
+    }
+
+    [Fact]
+    public void Square_label_scale_tracks_tweenNode1()
+    {
+        TesseraFlyoutAnimatedTargetSpec.ResolveSquareLabelScale(0).Should().Be(0);
+        TesseraFlyoutAnimatedTargetSpec.ResolveSquareLabelScale(1).Should().Be(1);
     }
 
     [Fact]
@@ -157,14 +193,15 @@ public class TesseraFlyoutAnimatedTargetSpecTests
     [Fact]
     public void Fluent_layout_width_stays_rest_while_clip_tracks_progress()
     {
+        var mediaW = TesseraFluentLayoutSpec.MediaWidthDip;
         var layout = TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaLayoutWidthDip(
-            FluentMediaW, musicVisible: true);
-        layout.Should().Be(FluentMediaW + TesseraFlyoutAnimatedTargetSpec.MediaClipWidthEpsilonDip);
-        TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaClipWidthDip(FluentMediaW, 0, true)
+            mediaW, musicVisible: true);
+        layout.Should().Be(mediaW + TesseraFlyoutAnimatedTargetSpec.MediaClipWidthEpsilonDip);
+        TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaClipWidthDip(mediaW, 0, true)
             .Should().Be(1);
         layout.Should().BeGreaterThan(
-            TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaClipWidthDip(FluentMediaW, 0, true));
-        TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaLayoutWidthDip(FluentMediaW, false)
+            TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaClipWidthDip(mediaW, 0, true));
+        TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaLayoutWidthDip(mediaW, false)
             .Should().Be(0);
     }
 
@@ -198,5 +235,7 @@ public class TesseraFlyoutAnimatedTargetSpecTests
             .Should().Be(0);
         TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaLayoutWidthDip(panelW, false)
             .Should().Be(panelW);
+        TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiWrappedRowLayoutWidthDip(true)
+            .Should().Be(TesseraCoreUiLayoutSpec.InnerRowWidthDip);
     }
 }

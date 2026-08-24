@@ -417,9 +417,19 @@ public static class TesseraFlyoutAnimationPolicy
         return seq;
     }
 
-    public static bool Phase2RequiresAnimatedLayout(int ani, string? styleId, bool showMediaStrip) =>
-        RequiresPhase2(ani, showMediaStrip)
-        && TesseraFlyoutRevealSpec.StyleSupportsPhase2(styleId);
+    /// <summary>Keyframe values are already eased; Avalonia must lerp linearly between them.</summary>
+    public const bool SteppedKeyframesMustUseLinearInterpolation = true;
+
+    public static bool Phase2RequiresAnimatedLayout(int ani, string? styleId, bool showMediaStrip)
+    {
+        if (ani < 2)
+            return false;
+        if (!TesseraFlyoutRevealSpec.StyleSupportsPhase2(styleId))
+            return false;
+        if (TesseraFlyoutRevealSpec.StylePhase2WithoutMediaStrip(styleId))
+            return true;
+        return showMediaStrip;
+    }
 
     public static bool ExitMustMirrorEntrance => true;
 }

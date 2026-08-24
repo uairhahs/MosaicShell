@@ -9,13 +9,20 @@ namespace MosaicShell.Host.Tiles.Tessera;
 
 public sealed class TesseraFlyoutViewModel
 {
-    private TesseraFlyoutViewModel(HostServices services, string kind, string styleId, IReadOnlyDictionary<string, string> payload, IHostUiBridge? hostUi)
+    private TesseraFlyoutViewModel(
+        HostServices services,
+        string kind,
+        string styleId,
+        IReadOnlyDictionary<string, string> payload,
+        IHostUiBridge? hostUi,
+        int ani)
     {
         Services = services;
         HostUi = hostUi;
         Kind = kind;
         StyleId = styleId;
         Payload = payload;
+        Ani = ani;
         Volume = Parse(payload, "volume", services.Audio.MasterVolume);
         IsMuted = payload.GetValueOrDefault("muted") == "1" || services.Audio.IsMuted;
         Brightness = Parse(payload, "brightness", services.Brightness.IsSupported ? services.Brightness.Brightness : 0.5);
@@ -39,11 +46,12 @@ public sealed class TesseraFlyoutViewModel
     public static TesseraFlyoutViewModel FromRequest(
         HostServices services, FlyoutRequest request, IHostUiBridge? hostUi = null) =>
         new(services, request.Kind, request.StyleId ?? "Fluent",
-            request.Payload ?? new Dictionary<string, string>(), hostUi);
+            request.Payload ?? new Dictionary<string, string>(), hostUi, request.Ani);
 
     public HostServices Services { get; }
     public IHostUiBridge? HostUi { get; }
     public TesseraSettings Settings { get; }
+    public int Ani { get; }
     public string Kind { get; }
     public string StyleId { get; }
     public IReadOnlyDictionary<string, string> Payload { get; }

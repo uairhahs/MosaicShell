@@ -15,6 +15,7 @@ public static class TesseraStyleFactory
         TesseraLiveAmbient.Current = host.Bindings;
         if (embeddedPreview)
             TesseraGlass.EmbeddedPreviewBuild = true;
+        using var revealCtx = TesseraRevealBuildContext.Begin(embeddedPreview, vm.Ani);
         try
         {
             host.Content = CreateLayoutPanel(styleId, vm);

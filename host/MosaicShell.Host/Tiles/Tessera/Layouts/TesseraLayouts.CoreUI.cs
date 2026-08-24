@@ -6,6 +6,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Material.Icons;
 using Material.Icons.Avalonia;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 
 namespace MosaicShell.Host.Tiles.Tessera;
@@ -143,8 +144,8 @@ internal static partial class TesseraLayouts
             Grid.SetColumn(transport, 2);
             bottom.Children.Add(media);
             bottom.Children.Add(transport);
-            var mediaPanelW = w - gap * 2 - gap - TesseraStyleMetrics.CoreUiTransportW;
-            var reveal = TesseraRevealHost.WrapCoreUi(vm, bottom, track, mediaPanelW, baseTrackThickness: 8);
+            var rowW = TesseraCoreUiLayoutSpec.InnerRowWidthDip;
+            var reveal = TesseraRevealHost.WrapCoreUi(vm, bottom, track, rowW, baseTrackThickness: 8);
             body = new StackPanel { Spacing = gap, Width = w - gap * 2, Children = { top, reveal } };
         }
 

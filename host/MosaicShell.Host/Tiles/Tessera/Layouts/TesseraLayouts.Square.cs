@@ -54,12 +54,13 @@ internal static partial class TesseraLayouts
             IsHitTestVisible = false,
             Children = { glyph, percent }
         };
+        var overlayHost = TesseraRevealHost.WrapMedia(vm, overlay);
         var inner = new Grid
         {
             Width = size,
             Height = size,
             ClipToBounds = true,
-            Children = { track, overlay }
+            Children = { track, overlayHost }
         };
         BindWheel(inner, vm);
         TesseraLiveAmbient.RegisterVolume(track, percent, glyph as MaterialIcon);

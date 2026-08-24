@@ -1,5 +1,6 @@
 using Avalonia.Media;
 using Material.Icons.Avalonia;
+using MosaicShell.Core.Modules.Tessera;
 
 namespace MosaicShell.Host.Tiles.Tessera;
 
@@ -91,14 +92,14 @@ internal static class TesseraStyleMetrics
     public const double MaterialYouTrackIconSize = 24;
     public const double MaterialYouTrackIconBottom = 10;
 
-    public const double CoreUiWidth = 400;
+    public const double CoreUiWidth = TesseraCoreUiLayoutSpec.WidthDip;
     /// <summary>Corner device tile, square, matches volume row height (ref proportions).</summary>
-    public const double CoreUiVolumeH = 58;
-    public const double CoreUiMediaH = 150;
+    public const double CoreUiVolumeH = TesseraCoreUiLayoutSpec.VolumeHeightDip;
+    public const double CoreUiMediaH = TesseraCoreUiLayoutSpec.MediaHeightDip;
     public const double CoreUiPad = 15;
-    public const double CoreUiGap = 6;
-    public const double CoreUiDevice = 58;
-    public const double CoreUiTransportW = 58;
+    public const double CoreUiGap = TesseraCoreUiLayoutSpec.GapDip;
+    public const double CoreUiDevice = TesseraCoreUiLayoutSpec.DeviceDip;
+    public const double CoreUiTransportW = TesseraCoreUiLayoutSpec.TransportWidthDip;
 
     /// <summary>Balanced flyout, between ref width and shell cap.</summary>
     public const double RadialWidth = 480;

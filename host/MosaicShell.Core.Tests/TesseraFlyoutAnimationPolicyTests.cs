@@ -245,5 +245,17 @@ public class TesseraFlyoutAnimationPolicyTests
     {
         TesseraFlyoutAnimationPolicy.CancelledEntranceMustSnapToRest.Should().BeTrue();
         TesseraFlyoutAnimationPolicy.MotionAnimatingMustClearOnSupersede.Should().BeTrue();
+        TesseraFlyoutAnimationPolicy.SteppedKeyframesMustUseLinearInterpolation.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Square_phase2_runs_without_media_strip()
+    {
+        TesseraFlyoutAnimationPolicy.Phase2RequiresAnimatedLayout(2, "Square", showMediaStrip: false)
+            .Should().BeTrue();
+        TesseraFlyoutAnimationPolicy.Phase2RequiresAnimatedLayout(2, "Fluent", showMediaStrip: false)
+            .Should().BeFalse();
+        TesseraFlyoutAnimationPolicy.Phase2RequiresAnimatedLayout(1, "Square", showMediaStrip: false)
+            .Should().BeFalse();
     }
 }

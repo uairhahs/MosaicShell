@@ -10,6 +10,7 @@ public static class TesseraFlyoutRevealSpec
     public const string StyleGnome = "gnome";
     public const string StylePlainText = "plaintext";
     public const string StyleCoreUi = "coreui";
+    public const string StyleSquare = "square";
     public const string StyleSmouti = "smouti";
 
     /// <summary>
@@ -45,11 +46,33 @@ public static class TesseraFlyoutRevealSpec
     public static bool ResolveInitialPhase2Engaged(bool isPreview, bool willRunPhase2) =>
         ResolveInitialRevealProgress(isPreview, willRunPhase2) >= RestRevealProgress;
 
+    /// <summary>
+    /// Hide/revive pose. Fancy must start TweenNode1 at 0. Fast and fade keep rest so
+    /// the next Show does not flash a collapsed media strip.
+    /// </summary>
+    public static double ResolveHideRevealProgress(bool willRunPhase2) =>
+        willRunPhase2 ? FancyPhase2StartProgress : RestRevealProgress;
+
+    public static bool ResolveHidePhase2Engaged(bool willRunPhase2) =>
+        ResolveHideRevealProgress(willRunPhase2) >= RestRevealProgress;
+
     public static bool StyleSupportsPhase2(string? styleId)
     {
         var id = (styleId ?? string.Empty).ToLowerInvariant();
-        return id is StyleFluent or StyleWindows11 or StyleGnome or StylePlainText or StyleCoreUi;
+        return id is StyleFluent or StyleWindows11 or StyleGnome or StylePlainText
+            or StyleCoreUi or StyleSquare;
     }
+
+    /// <summary>YF Center.inc Animated fonts run on the volume card without a media strip.</summary>
+    public static bool StylePhase2WithoutMediaStrip(string? styleId)
+    {
+        var id = (styleId ?? string.Empty).ToLowerInvariant();
+        return id is StyleSquare;
+    }
+
+    /// <summary>Known binders; Host must not take the legacy MaxWidth/MaxHeight path.</summary>
+    public static bool UsesDedicatedRevealBinder(string? styleId) =>
+        StyleSupportsPhase2(styleId);
 
     public static bool StyleIsPhase2NoOp(string? styleId) =>
         (styleId ?? string.Empty).Equals(StyleSmouti, StringComparison.OrdinalIgnoreCase);
