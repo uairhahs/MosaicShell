@@ -28,7 +28,10 @@ public static class CapabilityIpcCodec
             request.XPad,
             request.YPad,
             request.Ani,
-            request.AniDir);
+            request.AniDir,
+            request.AniEase,
+            request.AniSteps,
+            request.AnimationDisplacement);
 
     public static FlyoutRequest FromDto(FlyoutRequestDto dto) =>
         new(
@@ -42,7 +45,10 @@ public static class CapabilityIpcCodec
             dto.XPad,
             dto.YPad,
             dto.Ani,
-            dto.AniDir);
+            dto.AniDir,
+            dto.AniEase,
+            dto.AniSteps,
+            dto.AnimationDisplacement);
 
     public static byte[] Serialize(CapabilityIpcMessage message)
     {

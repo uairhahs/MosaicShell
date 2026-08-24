@@ -30,6 +30,9 @@ internal static class TesseraStackedPanelFactory
                 };
             }
 
+            if (vm.ShowMediaStrip && TesseraFlyoutRevealSpec.StyleSupportsPhase2(styleId))
+                panel = TesseraRevealHost.WrapMedia(vm, panel);
+
             return panel;
         }
         finally

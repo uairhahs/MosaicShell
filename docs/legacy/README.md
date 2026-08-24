@@ -14,7 +14,7 @@ Install stubs remain at `Tiles/{Id}/` (`module.native.json` + README) so Mosaici
 |--------|--------|
 | [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore) | Upstream hub (archived November 2024) |
 | Git history of this repo | Pre-Avalonia Rainmeter trees lived here before B5; recover via `git log` / `git show <rev>:path` |
-| Archived remotes / mirrors | *(placeholder — add concrete URLs when published)* |
+| Archived remotes / mirrors | *(placeholder for now, add concrete URLs when published)* |
 
 ## Per-module promised functionality
 

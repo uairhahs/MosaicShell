@@ -15,7 +15,7 @@ internal static partial class TesseraLayouts
 
     public static Control Windows11(TesseraFlyoutViewModel vm)
     {
-        if (IsStatus(vm)) return StatusChip(vm, TesseraWindows11Metrics.CornerRadius, TesseraWindows11Metrics.Width, TesseraWindows11Metrics.VolumeHeight);
+        if (IsStatus(vm)) return StatusChip(vm, TesseraWindows11Metrics.CornerRadius);
 
         if (vm.Kind.Equals("media", StringComparison.OrdinalIgnoreCase)
             && !TesseraStackedBuildContext.IsActive)
@@ -37,21 +37,24 @@ internal static partial class TesseraLayouts
         Control body = row;
         if (vm.ShowMediaStrip)
         {
-            body = new StackPanel
+            var divider = new Border
             {
-                Spacing = 0,
-                Children =
-                {
-                    row,
-                    new Border
-                    {
-                        Height = 1,
-                        Background = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255)),
-                        Margin = new Thickness(TesseraWindows11Metrics.Pad, 0)
-                    },
-                    TesseraMediaPanel.Create(vm, TesseraMediaMode.Windows11Below)
-                }
+                Height = 1,
+                Background = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255)),
+                Margin = new Thickness(TesseraWindows11Metrics.Pad, 0)
             };
+            var media = TesseraMediaPanel.Create(vm, TesseraMediaMode.Windows11Below);
+            body = TesseraRevealHost.WrapWin11Fancy(
+                vm,
+                row,
+                media,
+                divider,
+                TesseraWindows11Metrics.VolumeHeight,
+                TesseraWindows11Metrics.MediaHeight,
+                TesseraWindows11Metrics.Width,
+                TesseraWindows11Metrics.CornerRadius,
+                TesseraStylePalette.Windows11.ShellBrush);
+            return body;
         }
 
         return TesseraChrome.GlassTinted(body, TesseraWindows11Metrics.CornerRadius, TesseraStylePalette.Windows11.ShellBrush, w: TesseraWindows11Metrics.Width);

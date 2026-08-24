@@ -1,11 +1,11 @@
 using Avalonia;
-using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
@@ -31,6 +31,14 @@ internal sealed class FlyoutWindow : Window
     private Size _lastSize;
     private bool _clientSizeLocked;
     private bool _relayouting;
+    private PixelPoint _restPosition;
+    private bool _motionAnimating;
+    private bool _phase2Animating;
+    private int _motionGeneration;
+    private readonly Panel _motionSurface = new();
+
+    /// <summary>Fades with flyout content; acrylic HWND stays opaque until Hide.</summary>
+    internal Panel MotionSurface => _motionSurface;
 
     /// <summary>H3 stacked acrylic: cluster anchor in physical pixels; panel offset in DIP.</summary>
     public int? ClusterOriginX { get; set; }
@@ -41,6 +49,20 @@ internal sealed class FlyoutWindow : Window
     /// <summary>H3 stacked acrylic: Win32 region clip radius in DIP (pill/card geometry).</summary>
     public double? BackdropCornerRadiusDip { get; set; }
 
+    /// <summary>Stacked acrylic panel role (phase-2 reveal runs on media only).</summary>
+    public TesseraStackedPanelRole? StackedRole { get; set; }
+
+    /// <summary>When true, stacked presenter runs entrance/exit via parallel motion tasks.</summary>
+    internal bool PresenterDrivesMotion { get; set; }
+
+    internal bool Phase2Animating
+    {
+        get => _phase2Animating;
+        set => _phase2Animating = value;
+    }
+
+    internal FlyoutRequest FlyoutRequest => _request;
+
     /// <summary>H3 stacked acrylic: lock HWND client area to signed placement DIP sizes.</summary>
     public double? StackedPanelWidthDip { get; set; }
     public double? StackedPanelHeightDip { get; set; }
@@ -49,7 +71,7 @@ internal sealed class FlyoutWindow : Window
     {
         _request = request;
         _services = services;
-        ApplyFlyoutMaterial(TesseraFlyoutMaterialFactory.FromPayload(request.Payload, request.StyleId));
+        ApplyFlyoutMaterial(TesseraFlyoutMaterialFactory.FromPayload(request.Payload, request.StyleId, request.Kind));
         // Win32 title is for HWND identity only, WindowDecorations.None; never a visible chrome strip.
         Title = $"MosaicShell - {request.ModuleId}";
 
@@ -63,9 +85,11 @@ internal sealed class FlyoutWindow : Window
         Focusable = true;
         IsHitTestVisible = true;
 
-        Content = content;
-        // SoftFrost Transparent HWND clears black for 1+ frames until composition settles.
-        Opacity = TesseraFlyoutWindowPolicy.HideUntilCompositionReady ? 0 : 1;
+        Content = _motionSurface;
+        SetFlyoutContent(content);
+        // Keep HWND composited; fade the motion surface (glass + controls) instead of Window.Opacity alone.
+        Opacity = 1;
+        _motionSurface.Opacity = TesseraFlyoutWindowPolicy.HideUntilCompositionReady ? 0 : 1;
         PointerEntered += (_, _) =>
         {
             _hover = true;
@@ -90,12 +114,28 @@ internal sealed class FlyoutWindow : Window
 
     public string Kind => _request.Kind;
     public string? StyleId => _request.StyleId;
+    internal int MotionGeneration => _motionGeneration;
 
     /// <summary>
     /// True only when the SoftFrost session is user-visible (not pre-reveal / transient-dismissed).
     /// </summary>
     public bool IsFlyoutSessionShowing =>
-        TesseraFlyoutLiveSyncPolicy.IsEffectivelyShowing(IsVisible, Opacity);
+        TesseraFlyoutLiveSyncPolicy.IsEffectivelyShowing(IsVisible, _motionSurface.Opacity);
+
+    private void SetFlyoutContent(Control content)
+    {
+        _motionSurface.Children.Clear();
+        _motionSurface.Children.Add(content);
+    }
+
+    private void ResetRevealProgress()
+    {
+        foreach (var host in this.GetVisualDescendants().OfType<TesseraRevealHost>())
+        {
+            host.Phase2Engaged = false;
+            host.RevealProgress = 0;
+        }
+    }
 
     /// <summary>Raised after auto-dismiss / TransientDismiss so Host can close FocusDim.</summary>
     public event Action<string>? TransientDismissed;
@@ -203,14 +243,23 @@ internal sealed class FlyoutWindow : Window
     public void ApplyRequest(FlyoutRequest request, Control content)
     {
         _request = request;
-        ApplyFlyoutMaterial(TesseraFlyoutMaterialFactory.FromPayload(request.Payload, request.StyleId));
+        ApplyFlyoutMaterial(TesseraFlyoutMaterialFactory.FromPayload(request.Payload, request.StyleId, request.Kind));
         // Invalidate any posted SoftFrost reveal from the previous surface.
         _revealGeneration++;
+        _motionGeneration++;
+        if (TesseraFlyoutAnimationPolicy.MotionAnimatingMustClearOnSupersede)
+            _motionAnimating = false;
         RenderTransform = null;
+        Opacity = 1;
         if (TesseraFlyoutWindowPolicy.HideUntilCompositionReady)
-            Opacity = 0;
-        Content = content;
+            _motionSurface.Opacity = 0;
+        SetFlyoutContent(content);
         _lastSize = default;
+        // Media/stacked → CapsLock: drop cluster placement and stale Win32 region.
+        ClusterOriginX = null;
+        ClusterOriginY = null;
+        PanelOffsetXDip = 0;
+        PanelOffsetYDip = 0;
         StackedPanelWidthDip = null;
         StackedPanelHeightDip = null;
         _clientSizeLocked = false;
@@ -219,6 +268,14 @@ internal sealed class FlyoutWindow : Window
         Height = double.NaN;
         MaxWidth = double.PositiveInfinity;
         MaxHeight = double.PositiveInfinity;
+        if (TesseraStatusFlyoutPolicy.IsStatusKind(request.Kind))
+        {
+            BackdropCornerRadiusDip =
+                TesseraStatusFlyoutPolicy.ResolveChipCornerRadiusDip(request.StyleId);
+            MaxWidth = TesseraStatusFlyoutPolicy.ChipMaxWidthDip;
+            MaxHeight = TesseraStatusFlyoutPolicy.ChipMaxHeightDip;
+        }
+
         ResetDismissTimer();
         Relayout();
         EnsureLivePump();
@@ -227,33 +284,84 @@ internal sealed class FlyoutWindow : Window
     /// <summary>Allow stacked relayout to remeasure when placement floors change.</summary>
     public void UnlockStackedClientSize() => _clientSizeLocked = false;
 
+    private bool _exitAnimating;
+
     /// <summary>
-    /// SoftFrost: reveal after layout so the black composition-clear frame is never visible.
-    /// Generation-gated so rapid Try now / ApplyRequest does not apply a stale Opacity=1.
+    /// SoftFrost: reveal after layout with optional slide + eased opacity (settings Motion page).
+    /// Generation-gated so rapid ApplyRequest does not apply a stale entrance.
     /// </summary>
     public void RevealAfterLayout()
     {
+        void Run()
+        {
+            if (!IsVisible) return;
+            RunEntranceAnimation();
+        }
+
         if (!TesseraFlyoutWindowPolicy.HideUntilCompositionReady)
         {
-            Opacity = 1;
+            Run();
             return;
         }
 
         var generation = _revealGeneration;
-        // Post past the first layout/paint so WinUI composition has a settled Transparent surface.
+        // One Loaded + one Render frame so SoftFrost composition settles before motion starts.
         Dispatcher.UIThread.Post(() =>
         {
-            if (!IsVisible) return;
-            if (TesseraFlyoutWindowPolicy.RevealMustBeGenerationGated
-                && generation != _revealGeneration)
-                return;
-            Opacity = 1;
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (!IsVisible) return;
+                if (TesseraFlyoutWindowPolicy.RevealMustBeGenerationGated
+                    && generation != _revealGeneration)
+                    return;
+                RunEntranceAnimation();
+            }, DispatcherPriority.Render);
         }, DispatcherPriority.Loaded);
+    }
+
+    /// <summary>Sync layout then reveal (stacked + single Present paths).</summary>
+    public void PlayShowAnimation()
+    {
+        try
+        {
+            FinishLayout();
+            RevealAfterLayout();
+        }
+        catch
+        {
+            _motionSurface.Opacity = 1;
+            RenderTransform = null;
+            Position = _restPosition;
+        }
+    }
+
+    private void EnsureStatusRoundClipBeforeReveal()
+    {
+        if (!TesseraStatusFlyoutPolicy.IsStatusKind(_request.Kind)
+            || !TesseraStatusFlyoutPolicy.MustRoundClipHwndBeforeReveal)
+            return;
+
+        if (BackdropCornerRadiusDip is not { } radiusDip || radiusDip <= 0)
+            BackdropCornerRadiusDip = TesseraStatusFlyoutPolicy.ResolveChipCornerRadiusDip(_request.StyleId);
+
+        var (dipW, dipH) = TesseraStatusFlyoutPolicy.ResolveStatusClientSizeDip(
+            Bounds.Width, Bounds.Height, DesiredSize.Width, DesiredSize.Height);
+        if (!TesseraFlyoutWindowPolicy.MeetsRelayoutSizeGate(dipW, dipH, stackedClusterPanel: false))
+            return;
+
+        var scale = Screens?.ScreenFromWindow(this)?.Scaling
+                    ?? Screens?.Primary?.Scaling
+                    ?? 1.0;
+        if (scale < 0.1) scale = 1.0;
+        var w = Math.Max(1, (int)Math.Ceiling(dipW * scale));
+        var h = Math.Max(1, (int)Math.Ceiling(dipH * scale));
+        ApplyStackedBackdropClip(w, h, scale);
     }
 
     private void OnLayoutUpdated(object? sender, EventArgs e)
     {
-        if (_relayouting) return;
+        if (_relayouting || TesseraFlyoutAnimationPolicy.ShouldDeferRelayoutDuringMotion(_motionAnimating, _phase2Animating))
+            return;
         var s = Bounds.Size;
         if (s.Width < 2 || s.Height < 2) return;
         if (ClusterOriginX is not null
@@ -277,6 +385,8 @@ internal sealed class FlyoutWindow : Window
     private void RelayoutImmediate()
     {
         if (_relayouting) return;
+        if (TesseraFlyoutAnimationPolicy.ShouldDeferRelayoutDuringMotion(_motionAnimating, _phase2Animating))
+            return;
         _relayouting = true;
         try
         {
@@ -286,6 +396,14 @@ internal sealed class FlyoutWindow : Window
             var dipW = Math.Max(Bounds.Width, DesiredSize.Width);
             var dipH = Math.Max(Bounds.Height, DesiredSize.Height);
             var stackedCluster = ClusterOriginX is not null && ClusterOriginY is not null;
+            var statusChip = TesseraStatusFlyoutPolicy.IsStatusKind(_request.Kind)
+                && TesseraStatusFlyoutPolicy.ForbidFixedVolumeShellSize;
+            if (statusChip)
+            {
+                (dipW, dipH) = TesseraStatusFlyoutPolicy.ResolveStatusClientSizeDip(
+                    Bounds.Width, Bounds.Height, DesiredSize.Width, DesiredSize.Height);
+            }
+
             if (!TesseraFlyoutWindowPolicy.MeetsRelayoutSizeGate(dipW, dipH, stackedCluster))
                 return;
 
@@ -350,9 +468,10 @@ internal sealed class FlyoutWindow : Window
 
             if (ClusterOriginX is int clusterX && ClusterOriginY is int clusterY)
             {
-                Position = new PixelPoint(
+                var pt = new PixelPoint(
                     clusterX + (int)Math.Round(PanelOffsetXDip * scale),
                     clusterY + (int)Math.Round(PanelOffsetYDip * scale));
+                CommitRestPosition(pt);
                 ApplyStackedBackdropClip(w, h, scale);
                 _lastSize = Bounds.Size;
                 return;
@@ -364,7 +483,7 @@ internal sealed class FlyoutWindow : Window
                 _request.Anchor ?? "TL",
                 xPad,
                 yPad);
-            Position = new PixelPoint(x, y);
+            CommitRestPosition(new PixelPoint(x, y));
             ApplyStackedBackdropClip(w, h, scale);
             _lastSize = Bounds.Size;
         }
@@ -380,14 +499,21 @@ internal sealed class FlyoutWindow : Window
 
     private void ApplyStackedBackdropClip(int widthPx, int heightPx, double scale)
     {
-        if (!UsesOsAcrylicBackdrop() || BackdropCornerRadiusDip is not { } radiusDip || radiusDip <= 0)
+        if (BackdropCornerRadiusDip is not { } radiusDip || radiusDip <= 0)
+            return;
+
+        var status = TesseraStatusFlyoutPolicy.IsStatusKind(_request.Kind);
+        var acrylic = UsesOsAcrylicBackdrop();
+        if (!acrylic
+            && !(status && TesseraStatusFlyoutPolicy.SoftFrostMustRoundClipHwnd))
             return;
 
         Win32Properties.SetWindowCornerPreference(
             this,
             Win32Properties.WindowCornerPreference.DoNotRound);
         var radiusPx = Math.Max(1, (int)Math.Round(radiusDip * scale));
-        Win32WindowChrome.ApplyRoundRectRegion(this, widthPx, heightPx, radiusPx);
+        var sync = status && TesseraStatusFlyoutPolicy.RoundClipMustApplySynchronouslyWhenHandleReady;
+        Win32WindowChrome.ApplyRoundRectRegion(this, widthPx, heightPx, radiusPx, applySynchronously: sync);
     }
 
     private bool UsesOsAcrylicBackdrop() =>
@@ -404,40 +530,103 @@ internal sealed class FlyoutWindow : Window
         return screens[idx];
     }
 
-    public void PlayShowAnimation()
+    private void CommitRestPosition(PixelPoint rest)
     {
+        _restPosition = rest;
+        if (!_motionAnimating)
+            Position = rest;
+    }
+
+    private async void RunEntranceAnimation()
+    {
+        if (PresenterDrivesMotion)
+            return;
+
+        await RunEntranceMotionAsync().ConfigureAwait(true);
+    }
+
+    internal async Task RunEntranceMotionAsync()
+    {
+        var generation = ++_motionGeneration;
         try
         {
-            Relayout();
-            // SoftFrost starts at Opacity 0, RevealAfterLayout owns the reveal.
-            if (!TesseraFlyoutWindowPolicy.HideUntilCompositionReady)
-                Opacity = 1;
-            RenderTransform = null;
+            EnsureStatusRoundClipBeforeReveal();
+            Position = _restPosition;
 
-            if (_request.Ani <= 0)
-                return;
-
-            var dir = (_request.AniDir ?? "Left").ToLowerInvariant();
-            var dist = _request.Ani >= 2 ? 28.0 : 14.0;
-            double dx = 0, dy = 0;
-            switch (dir)
+            if (!TesseraFlyoutAnimationPolicy.ShouldAnimateOpacity(_request.Ani))
             {
-                case "right": dx = dist; break;
-                case "top": dy = -dist; break;
-                case "bottom": dy = dist; break;
-                default: dx = -dist; break;
+                _motionSurface.Opacity = 1;
+                RenderTransform = null;
+                ApplyPhase2Reveal(1);
+                return;
             }
 
-            var tt = new TranslateTransform(dx, dy);
-            RenderTransform = tt;
-            AnimateDouble(tt, TranslateTransform.XProperty, dx, 0, 200);
-            AnimateDouble(tt, TranslateTransform.YProperty, dy, 0, 200);
+            _motionAnimating = true;
+            var scale = ResolveMonitorScale();
+            var showMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(_request.Payload);
+            var runPhase2 = ShouldRunPhase2Reveal(showMedia);
+
+            await FlyoutMotionController.RunEntranceAsync(CreateMotionContext(
+                    showMedia, runPhase2, scale, () => generation != _motionGeneration))
+                .ConfigureAwait(true);
         }
         catch
         {
-            if (!TesseraFlyoutWindowPolicy.HideUntilCompositionReady)
+            if (generation == _motionGeneration)
+            {
                 Opacity = 1;
-            RenderTransform = null;
+                _motionSurface.Opacity = 1;
+                RenderTransform = null;
+                Position = _restPosition;
+                ApplyPhase2Reveal(1);
+            }
+        }
+        finally
+        {
+            if (generation == _motionGeneration)
+            {
+                _motionAnimating = false;
+                Opacity = 1;
+                _motionSurface.Opacity = 1;
+                RenderTransform = null;
+                Position = _restPosition;
+                if (TesseraFlyoutAnimationPolicy.CancelledEntranceMustSnapToRest)
+                    ApplyPhase2Reveal(TesseraFlyoutRevealSpec.RestRevealProgress);
+            }
+        }
+    }
+
+    internal double ResolveMonitorScale() =>
+        Screens?.ScreenFromWindow(this)?.Scaling
+        ?? Screens?.Primary?.Scaling
+        ?? 1.0;
+
+    internal bool ShouldRunPhase2Reveal(bool showMediaStrip) =>
+        StackedRole is null or TesseraStackedPanelRole.Media
+        && TesseraFlyoutAnimationPolicy.Phase2RequiresAnimatedLayout(
+            _request.Ani, _request.StyleId, showMediaStrip);
+
+    internal FlyoutMotionController.MotionContext CreateMotionContext(
+        bool showMediaStrip,
+        bool runPhase2,
+        double scale,
+        Func<bool> isCancelled) =>
+        new()
+        {
+            Window = this,
+            MonitorScale = scale,
+            ShowMediaStrip = showMediaStrip,
+            RunPhase2 = runPhase2,
+            IsCancelled = isCancelled,
+        };
+
+    internal void ApplyPhase2Reveal(double progress)
+    {
+        foreach (var host in this.GetVisualDescendants().OfType<TesseraRevealHost>())
+        {
+            if (progress >= 0.999)
+                host.Phase2Engaged = true;
+            host.RevealProgress = progress;
         }
     }
 
@@ -461,21 +650,95 @@ internal sealed class FlyoutWindow : Window
     /// </summary>
     public void TransientDismiss()
     {
-        TransientDismissCore();
-        try { TransientDismissed?.Invoke(_request.ModuleId); }
-        catch { /* ignore */ }
+        TransientDismissCore(notify: true);
     }
 
     /// <summary>Hide without raising <see cref="TransientDismissed"/> (stacked sibling cascade).</summary>
-    public void TransientDismissWithoutNotify() => TransientDismissCore();
+    public void TransientDismissWithoutNotify() => TransientDismissCore(notify: false);
 
-    private void TransientDismissCore()
+    private void TransientDismissCore(bool notify)
     {
         _dismiss?.Stop();
         _hover = false;
         _revealGeneration++;
+        _motionGeneration++;
+
+        if (_exitAnimating)
+        {
+            FinishTransientHide(notify);
+            return;
+        }
+
+        if (TesseraFlyoutAnimationPolicy.ShouldAnimateOpacity(_request.Ani)
+            && TesseraFlyoutAnimationPolicy.ExitMustMirrorEntrance
+            && !PresenterDrivesMotion)
+        {
+            _exitAnimating = true;
+            _ = RunExitAnimationAsync(() => FinishTransientHide(notify));
+            return;
+        }
+
+        FinishTransientHide(notify);
+    }
+
+    internal void PrepareExitMotion() => _motionGeneration++;
+
+    internal async Task RunExitMotionAsync()
+    {
+        var generation = _motionGeneration;
+        try
+        {
+            if (!TesseraFlyoutAnimationPolicy.ShouldAnimateOpacity(_request.Ani))
+                return;
+
+            _motionAnimating = true;
+            var scale = ResolveMonitorScale();
+            var showMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(_request.Payload);
+            await FlyoutMotionController.RunExitAsync(CreateMotionContext(
+                    showMedia,
+                    ShouldRunPhase2Reveal(showMedia),
+                    scale,
+                    () => generation != _motionGeneration))
+                .ConfigureAwait(true);
+        }
+        catch
+        {
+            /* fall through */
+        }
+        finally
+        {
+            if (generation == _motionGeneration)
+            {
+                _motionAnimating = false;
+                _motionSurface.Opacity = 0;
+                RenderTransform = null;
+            }
+        }
+    }
+
+    private async Task RunExitAnimationAsync(Action onComplete)
+    {
+        try
+        {
+            await RunExitMotionAsync().ConfigureAwait(true);
+        }
+        catch
+        {
+            /* fall through to hide */
+        }
+        finally
+        {
+            _exitAnimating = false;
+            onComplete();
+        }
+    }
+
+    private void FinishTransientHide(bool notify)
+    {
         RenderTransform = null;
-        Opacity = 0;
+        Opacity = 1;
+        _motionSurface.Opacity = 0;
+        ResetRevealProgress();
         try
         {
             if (TesseraFlyoutLiveSyncPolicy.TransientDismissMustHideNotClose)
@@ -484,6 +747,17 @@ internal sealed class FlyoutWindow : Window
                 Close();
         }
         catch { /* ignore */ }
+
+        if (notify)
+        {
+            try
+            {
+                TransientDismissed?.Invoke(
+                    TesseraOsAcrylicStackedPolicy.ResolveTransientDismissNotifyKey(
+                        _request.ModuleId, StackedRole));
+            }
+            catch { /* ignore */ }
+        }
     }
 
     private void ApplyFlyoutMaterial(TesseraFlyoutMaterial material)
@@ -556,20 +830,5 @@ internal sealed class FlyoutWindow : Window
             default:
                 return false;
         }
-    }
-
-    private static void AnimateDouble(Animatable target, AvaloniaProperty property, double from, double to, int ms)
-    {
-        var animation = new Animation
-        {
-            Duration = TimeSpan.FromMilliseconds(ms),
-            FillMode = FillMode.Forward,
-            Children =
-            {
-                new KeyFrame { Cue = new Cue(0.0), Setters = { new Setter(property, from) } },
-                new KeyFrame { Cue = new Cue(1.0), Setters = { new Setter(property, to) } }
-            }
-        };
-        _ = animation.RunAsync(target);
     }
 }

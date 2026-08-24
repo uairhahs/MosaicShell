@@ -50,4 +50,4 @@ Each module follows the Tessera pattern: thin `Tiles/{Id}` stub + real code in `
 | **B4** | Slate | MVP | Idle overlay |
 | **B5** | Hub / repo | **Done** | Host-only docs; Rainmeter trees removed |
 
-Further fidelity (StyleCatalog skins, YourFlyouts pixel parity) remains iterative — not blocked on Rainmeter trees.
+Further fidelity (StyleCatalog skins, YourFlyouts pixel parity) remains iterative and not blocked on Rainmeter trees.

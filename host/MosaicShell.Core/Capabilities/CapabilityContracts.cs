@@ -1,4 +1,5 @@
 using MosaicShell.Core.Capabilities.Platform;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 
@@ -43,7 +44,10 @@ public sealed record FlyoutRequest(
     int XPad = 20,
     int YPad = 20,
     int Ani = 2,
-    string AniDir = "Left");
+    string AniDir = "Left",
+    string AniEase = TesseraFlyoutAnimationPolicy.DefaultEase,
+    int AniSteps = TesseraFlyoutAnimationPolicy.DefaultAniSteps,
+    int AnimationDisplacement = TesseraFlyoutAnimationPolicy.DefaultDisplacementPx);
 
 public interface IFlyoutPresenter
 {

@@ -15,7 +15,7 @@ internal static partial class TesseraLayouts
 
     public static Control Square(TesseraFlyoutViewModel vm)
     {
-        if (IsStatus(vm)) return StatusChip(vm, TesseraSquareMetrics.CornerRadius, TesseraSquareMetrics.Size, TesseraSquareMetrics.Size);
+        if (IsStatus(vm)) return StatusChip(vm, TesseraSquareMetrics.CornerRadius);
         const double size = TesseraSquareMetrics.Size;
         const double r = TesseraSquareMetrics.CornerRadius;
         var glyph = TesseraVolumeGlyph.Create(vm, TesseraSquareMetrics.GlyphSize);

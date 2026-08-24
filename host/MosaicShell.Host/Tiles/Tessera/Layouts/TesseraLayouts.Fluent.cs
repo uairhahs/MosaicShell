@@ -6,6 +6,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Material.Icons;
 using Material.Icons.Avalonia;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 
 namespace MosaicShell.Host.Tiles.Tessera;
@@ -14,7 +15,7 @@ internal static partial class TesseraLayouts
 {
     public static Control Fluent(TesseraFlyoutViewModel vm)
     {
-        if (IsStatus(vm)) return StatusChip(vm, 0);
+        if (IsStatus(vm)) return StatusChip(vm, TesseraStatusFlyoutPolicy.ResolveChipCornerRadiusDip("Fluent"));
 
         if (vm.Kind.Equals("media", StringComparison.OrdinalIgnoreCase)
             && !TesseraStackedBuildContext.IsActive)
@@ -42,21 +43,29 @@ internal static partial class TesseraLayouts
         {
             const double h = TesseraFluentMetrics.Height;
             const double pad = TesseraFluentMetrics.Pad;
-            var divider = new Border
+            var divider = new Line
             {
-                Width = 1,
-                Height = h - pad * 2,
-                Background = TesseraPalette.StrokeBrush,
-                VerticalAlignment = VerticalAlignment.Center,
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, h - pad * 2),
+                Stroke = TesseraPalette.StrokeBrush,
+                StrokeThickness = 1,
+                VerticalAlignment = VerticalAlignment.Top,
                 Margin = new Thickness(0, pad, 0, pad),
                 Opacity = 0.55
             };
             var media = TesseraMediaPanel.Create(vm, TesseraMediaMode.FluentSide);
+            var mediaW = TesseraFluentMetrics.MaxShellWidth - TesseraFluentMetrics.VolumeWidth - 4;
+            var reveal = TesseraRevealHost.WrapMedia(
+                vm,
+                media,
+                divider,
+                fullMediaWidth: mediaW,
+                fullDividerHeight: h - pad * 2);
             body = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
                 Spacing = 2,
-                Children = { volCol, divider, media }
+                Children = { volCol, reveal }
             };
         }
 

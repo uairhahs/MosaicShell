@@ -82,13 +82,15 @@ public static class TesseraOsAcrylicStackedPolicy
     /// </summary>
     public static bool UseMultiWindowFromPayload(
         IReadOnlyDictionary<string, string>? payload,
-        string? styleId = null) =>
+        string? styleId = null,
+        string? kind = null) =>
         UseMultiWindow(
             payload,
             styleId,
             trialRequested: TesseraOsAcrylicTrialPolicy.IsTrialRequested(),
             osSupportsWinUiAcrylic: TesseraOsAcrylicTrialPolicy.OsSupportsWinUiAcrylic,
-            osAcrylicRenderingAvailable: !HostLaunchOptions.TesseraForceSoftwareRender);
+            osAcrylicRenderingAvailable: !HostLaunchOptions.TesseraForceSoftwareRender,
+            kind: kind);
 
     public static bool UseMultiWindow(
         IReadOnlyDictionary<string, string>? payload,
@@ -96,8 +98,12 @@ public static class TesseraOsAcrylicStackedPolicy
         bool trialRequested,
         bool osSupportsWinUiAcrylic,
         bool osAcrylicRenderingAvailable = true,
-        bool compileAvailable = Available)
+        bool compileAvailable = Available,
+        string? kind = null)
     {
+        if (TesseraStatusFlyoutPolicy.MustUseDedicatedSingleWindow(kind))
+            return false;
+
         if (!compileAvailable || !trialRequested || !osSupportsWinUiAcrylic || !osAcrylicRenderingAvailable)
             return false;
 
@@ -150,6 +156,35 @@ public static class TesseraOsAcrylicStackedPolicy
     }
 
     /// <summary>
+    /// Per-HWND <c>TransientDismissed</c> key. Stacked slots must notify with the dictionary
+    /// slot key so cascade matches live keys; CapsLock still notifies as <c>Tessera</c>.
+    /// </summary>
+    public static string ResolveTransientDismissNotifyKey(
+        string moduleId,
+        TesseraStackedPanelRole? role) =>
+        role is { } r ? WindowSlotKey(moduleId, r) : moduleId;
+
+    /// <summary>
+    /// Presenter consumers (capability sessions) subscribe by canonical module id.
+    /// Strip a stacked slot suffix so <c>Tessera:vol</c> still notifies Tessera.
+    /// </summary>
+    public static string ResolveTransientDismissConsumerKey(string notifyKey)
+    {
+        if (string.IsNullOrWhiteSpace(notifyKey))
+            return notifyKey;
+
+        ReadOnlySpan<string> suffixes = [VolumeSlotSuffix, MediaSlotSuffix, DeviceSlotSuffix];
+        for (var i = 0; i < suffixes.Length; i++)
+        {
+            var tail = ":" + suffixes[i];
+            if (notifyKey.EndsWith(tail, StringComparison.OrdinalIgnoreCase))
+                return notifyKey[..^tail.Length];
+        }
+
+        return notifyKey;
+    }
+
+    /// <summary>
     /// Win32 Z-order rank (higher = closer to user). FocusDim is below all flyout slots.
     /// Volume is topmost so the slider thumb wins overlapping edge cases.
     /// </summary>
@@ -172,6 +207,36 @@ public static class TesseraOsAcrylicStackedPolicy
 
     /// <summary>Transient dismiss / Hide must affect every slot in the session.</summary>
     public const bool TransientDismissMustHideAllSlots = true;
+
+    /// <summary>
+    /// Caps/airplane use module key <c>Tessera</c>. When Host swaps that HWND for stacked
+    /// <c>Tessera:vol</c>/<c>Tessera:media</c>, it must cancel the status auto-dismiss and
+    /// detach <c>TransientDismissed</c> before Close. A late Tick otherwise cascades into
+    /// the live volume session via <see cref="ShouldCascadeTransientDismissToStackedSession"/>.
+    /// </summary>
+    public const bool SupersededSingleHwndMustCancelDismissBeforeClose = true;
+
+    /// <summary>
+    /// Cascade only when the notifying key is a live stacked slot. A superseded single-shell
+    /// status dismiss (<c>Tessera</c>) must not hide volume/media.
+    /// </summary>
+    public static bool ShouldCascadeTransientDismissToStackedSession(
+        string? dismissedKey,
+        IReadOnlyList<string> liveSlotKeys)
+    {
+        if (!TransientDismissMustHideAllSlots
+            || string.IsNullOrWhiteSpace(dismissedKey)
+            || liveSlotKeys.Count == 0)
+            return false;
+
+        for (var i = 0; i < liveSlotKeys.Count; i++)
+        {
+            if (string.Equals(liveSlotKeys[i], dismissedKey, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
 
     /// <summary>Each slot reuses its own registered HWND (SoftFrost overlap rule).</summary>
     public const bool MustReuseRegisteredFlyoutHwndPerSlot = true;

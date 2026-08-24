@@ -30,7 +30,10 @@ public sealed class TesseraFlyoutRequestBuilder
             settings.XPad,
             settings.YPad,
             settings.Ani,
-            settings.AniDir);
+            settings.AniDir,
+            TesseraFlyoutAnimationPolicy.NormalizeEase(settings.AniEase),
+            TesseraFlyoutAnimationPolicy.NormalizeAniSteps(settings.AniSteps),
+            TesseraFlyoutAnimationPolicy.NormalizeDisplacementPx(settings.AnimationDisplacement));
     }
 
     public FlyoutRequest BuildPreview(HostServices services, TesseraSettings? settings = null) =>
@@ -55,7 +58,8 @@ public sealed class TesseraFlyoutRequestBuilder
         p["mediaTitle"] = services.Media.Current?.Title ?? "";
         p["mediaArtist"] = services.Media.Current?.Artist ?? "";
         p["mediaPlaying"] = services.Media.Current?.IsPlaying == true ? "1" : "0";
-        p["showMediaStrip"] = settings.ShowMediaStripOnVolume
+        p["showMediaStrip"] = !TesseraStatusFlyoutPolicy.IsStatusKind(kind)
+                              && settings.ShowMediaStripOnVolume
                               && TesseraLayoutCoverage.UsesStackedMediaStrip(settings.Style)
             ? "1"
             : "0";
@@ -127,6 +131,10 @@ public sealed class TesseraFlyoutRequestBuilder
 
     public static TesseraSettings LoadSettings() =>
         ModuleSettingsStore.Load(ModuleId, () => new TesseraSettings());
+
+    /// <summary>Whether volume flyout should include media strip (YourFlyouts MusicVisible).</summary>
+    public static bool ShowMediaStripFromPayload(IReadOnlyDictionary<string, string>? payload) =>
+        payload?.GetValueOrDefault("showMediaStrip") is "1";
 
     /// <summary>Read backdrop blur toggle from flyout payload (supports legacy bakedFrost key).</summary>
     public static bool BackdropBlurFromPayload(IReadOnlyDictionary<string, string>? payload)

@@ -99,12 +99,21 @@ public partial class MainViewModel : ViewModelBase
     ];
     public ObservableCollection<TesseraAniChoice> TesseraAniChoices { get; } =
     [
-        new(0, "None (fade only)"),
-        new(1, "Fast slide"),
-        new(2, "Fancy slide"),
+        new(0, "None: fade only"),
+        new(1, "Fast: slide and fade"),
+        new(2, "Fancy: slide, then reveal media"),
     ];
-    public ObservableCollection<string> TesseraAniDirOptions { get; } =
-        ["Left", "Right", "Top", "Bottom"];
+    public ObservableCollection<TesseraNamedChoice> TesseraAniDirOptions { get; } =
+    [
+        new("Left", "From the left"),
+        new("Right", "From the right"),
+        new("Top", "From the top"),
+        new("Bottom", "From the bottom"),
+    ];
+    public ObservableCollection<string> TesseraEaseFamilies { get; } =
+        new(TesseraFlyoutAnimationPolicy.EaseFamilies);
+    public ObservableCollection<string> TesseraEaseVariants { get; } =
+        new(TesseraFlyoutAnimationPolicy.EaseVariants);
     public HubSettings Hub { get; }
 
     [ObservableProperty] private string _selectedPage = "Home";
@@ -159,7 +168,20 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private TesseraAniChoice? _selectedTesseraAni;
     [ObservableProperty] private int _tesseraAni = 2;
     [ObservableProperty] private string _tesseraAniDir = "Left";
+    [ObservableProperty] private TesseraNamedChoice? _selectedTesseraAniDir;
+    [ObservableProperty] private string _tesseraAniEase = TesseraFlyoutAnimationPolicy.DefaultEase;
+    [ObservableProperty] private string _tesseraEaseFamily = TesseraFlyoutAnimationPolicy.DefaultEaseFamily;
+    [ObservableProperty] private string _tesseraEaseVariant = TesseraFlyoutAnimationPolicy.DefaultEaseVariant;
+    [ObservableProperty] private bool _tesseraEaseVariantEnabled = true;
+    [ObservableProperty] private int _tesseraAniSteps = TesseraFlyoutAnimationPolicy.DefaultAniSteps;
+    [ObservableProperty] private int _tesseraAnimationDisplacement = TesseraFlyoutAnimationPolicy.DefaultDisplacementPx;
     [ObservableProperty] private bool _tesseraAniDirEnabled = true;
+    [ObservableProperty] private bool _tesseraMotionFancyEnabled = true;
+    [ObservableProperty] private string _tesseraAniStyleDescription =
+        "Slide and fade first, then reveal the media strip after a short pause.";
+    [ObservableProperty] private string _tesseraAniPhaseDurationLabel = "~40 ms per phase";
+    [ObservableProperty] private string _tesseraAniFancyDurationLabel = string.Empty;
+    private bool _syncingEaseParts;
     [ObservableProperty] private bool _tesseraMediaFlyouts = true;
     [ObservableProperty] private bool _tesseraLockFlyouts = true;
     [ObservableProperty] private bool _tesseraFlightFlyouts = true;
@@ -335,7 +357,14 @@ public partial class MainViewModel : ViewModelBase
             SelectedTesseraAni = TesseraAniChoices.FirstOrDefault(c => c.Value == TesseraAni)
                                  ?? TesseraAniChoices[^1];
             TesseraAniDir = s.AniDir;
-            TesseraAniDirEnabled = TesseraAni > 0;
+            SelectedTesseraAniDir = TesseraAniDirOptions.FirstOrDefault(c => c.Code == TesseraAniDir)
+                                    ?? TesseraAniDirOptions[0];
+            TesseraAniEase = TesseraFlyoutAnimationPolicy.NormalizeEase(s.AniEase);
+            ApplyEasePartsFromStored(TesseraAniEase);
+            TesseraAniSteps = TesseraFlyoutAnimationPolicy.NormalizeAniSteps(s.AniSteps);
+            TesseraAnimationDisplacement =
+                TesseraFlyoutAnimationPolicy.NormalizeDisplacementPx(s.AnimationDisplacement);
+            UpdateTesseraMotionLabels();
             TesseraMediaFlyouts = s.EnableMediaFlyouts;
             TesseraLockFlyouts = s.EnableLockFlyouts;
             TesseraFlightFlyouts = s.EnableFlightFlyouts;
@@ -501,7 +530,11 @@ public partial class MainViewModel : ViewModelBase
         TesseraYPad = s.YPad;
         s.AutoDismissMs = (int)Math.Round(Math.Clamp((double)TesseraAutoDismissSeconds, 0.5, 20) * 1000);
         s.Ani = SelectedTesseraAni?.Value ?? TesseraAni;
-        s.AniDir = TesseraAniDir;
+        s.AniDir = SelectedTesseraAniDir?.Code ?? TesseraAniDir;
+        s.AniEase = TesseraFlyoutAnimationPolicy.NormalizeEase(TesseraAniEase);
+        s.AniSteps = TesseraFlyoutAnimationPolicy.NormalizeAniSteps(TesseraAniSteps);
+        s.AnimationDisplacement =
+            TesseraFlyoutAnimationPolicy.NormalizeDisplacementPx(TesseraAnimationDisplacement);
         s.EnableMediaFlyouts = TesseraMediaFlyouts;
         s.EnableLockFlyouts = TesseraLockFlyouts;
         s.EnableFlightFlyouts = TesseraFlightFlyouts;
@@ -530,6 +563,66 @@ public partial class MainViewModel : ViewModelBase
         if (value is null) return;
         TesseraAni = value.Value;
         TesseraAniDirEnabled = value.Value > 0;
+        TesseraMotionFancyEnabled = value.Value >= 2;
+        UpdateTesseraMotionLabels();
+    }
+
+    partial void OnSelectedTesseraAniDirChanged(TesseraNamedChoice? value)
+    {
+        if (value is not null)
+            TesseraAniDir = value.Code;
+    }
+
+    partial void OnTesseraAniStepsChanged(int value) => UpdateTesseraMotionLabels();
+
+    partial void OnTesseraEaseFamilyChanged(string value)
+    {
+        if (_syncingEaseParts) return;
+        TesseraEaseVariantEnabled = !value.Equals("Linear", StringComparison.OrdinalIgnoreCase);
+        SyncAniEaseFromParts();
+    }
+
+    partial void OnTesseraEaseVariantChanged(string value)
+    {
+        if (_syncingEaseParts) return;
+        SyncAniEaseFromParts();
+    }
+
+    private void ApplyEasePartsFromStored(string ease)
+    {
+        var (family, variant) = TesseraFlyoutAnimationPolicy.SplitEase(ease);
+        _syncingEaseParts = true;
+        try
+        {
+            TesseraEaseFamily = family;
+            TesseraEaseVariant = variant;
+            TesseraEaseVariantEnabled = !family.Equals("Linear", StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            _syncingEaseParts = false;
+        }
+    }
+
+    private void SyncAniEaseFromParts() =>
+        TesseraAniEase = TesseraFlyoutAnimationPolicy.ComposeEase(TesseraEaseFamily, TesseraEaseVariant);
+
+    private void UpdateTesseraMotionLabels()
+    {
+        TesseraAniDirEnabled = TesseraAni > 0;
+        TesseraMotionFancyEnabled = TesseraAni >= 2;
+        TesseraAniStyleDescription = TesseraAni switch
+        {
+            0 => "Fade in and out with no slide. Closest to YourFlyouts \"None\".",
+            1 => "The whole flyout slides and fades in one quick step.",
+            _ => "Slide and fade first, then reveal the media strip after a short pause.",
+        };
+
+        var phaseMs = TesseraFlyoutAnimationPolicy.ResolvePhaseDurationMs(TesseraAniSteps);
+        TesseraAniPhaseDurationLabel = $"~{phaseMs} ms per phase (steps x 2 ms)";
+        TesseraAniFancyDurationLabel = TesseraAni >= 2
+            ? $"Fancy show total: ~{TesseraFlyoutAnimationPolicy.ResolveFancyEntranceDurationMs(TesseraAniSteps)} ms when media strip is visible"
+            : string.Empty;
     }
 
     [RelayCommand]

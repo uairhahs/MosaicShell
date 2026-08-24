@@ -60,10 +60,30 @@ public static class TesseraFlyoutLiveSyncPolicy
     public const bool PumpMayWriteVolumeBindings = false;
 
     /// <summary>
+    /// ApplyRequest zeros MotionSurface opacity when SoftFrost hide-until-ready is on.
+    /// Rebuild must replay entrance even if the HWND was already session-showing.
+    /// Patch must not call this (no ApplyRequest).
+    /// </summary>
+    public static bool ShouldPlayShowAnimationAfterApplyRequest(
+        bool reuseWasVisible,
+        bool hideUntilCompositionReady)
+    {
+        if (hideUntilCompositionReady)
+            return true;
+        return !reuseWasVisible;
+    }
+
+    /// <summary>
     /// Host must merge high-frequency Update calls before Post/Invoke; coalesce inside ShowOrUpdateCore alone
     /// still floods the dispatcher (see flyout.log volume-drag bursts).
     /// </summary>
     public const bool MustCoalesceBeforeUiPost = true;
+
+    /// <summary>
+    /// SoftRefresh shares the patch coalescer; rejected flushes must defer last-value retry.
+    /// </summary>
+    public static bool SoftRefreshMustScheduleDeferredLastValue =>
+        TesseraFlyoutPresentHandoffPolicy.SoftRefreshMustScheduleDeferredLastValue;
 
     public const bool LiveHostRequiredForTesseraSuccess = true;
 

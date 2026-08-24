@@ -32,14 +32,13 @@ internal static partial class TesseraLayouts
         if (!vm.ShowMediaStrip)
             return volPill;
 
+        var mediaHost = TesseraRevealHost.WrapMedia(vm, TesseraMediaPanel.Create(vm, TesseraMediaMode.GnomePill));
+        var volHost = TesseraRevealHost.WrapMedia(vm, volPill);
+
         return new StackPanel
         {
             Spacing = 10,
-            Children =
-            {
-                TesseraMediaPanel.Create(vm, TesseraMediaMode.GnomePill),
-                volPill
-            }
+            Children = { mediaHost, volHost }
         };
     }
 

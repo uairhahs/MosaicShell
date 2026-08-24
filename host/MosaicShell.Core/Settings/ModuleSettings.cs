@@ -1,3 +1,5 @@
+using MosaicShell.Core.Modules.Tessera;
+
 namespace MosaicShell.Core.Settings;
 
 public sealed class ChronoSettings
@@ -41,6 +43,12 @@ public sealed class TesseraSettings
     public int Ani { get; set; } = 2;
     /// <summary>Left/Right/Top/Bottom</summary>
     public string AniDir { get; set; } = "Left";
+    /// <summary>Linear, InCubic, OutCubic, InOutCubic, InQuart, OutQuart, InOutQuart (YourFlyouts Easetype).</summary>
+    public string AniEase { get; set; } = TesseraFlyoutAnimationPolicy.DefaultEase;
+    /// <summary>YourFlyouts AniSteps (10..40).</summary>
+    public int AniSteps { get; set; } = TesseraFlyoutAnimationPolicy.DefaultAniSteps;
+    /// <summary>YourFlyouts AnimationDisplacement in physical pixels (10..200).</summary>
+    public int AnimationDisplacement { get; set; } = TesseraFlyoutAnimationPolicy.DefaultDisplacementPx;
     /// <summary>Default on - Win11 volume notifications are often unreliable (JaxCore guidance).</summary>
     public bool UseLegacyVolumeHooks { get; set; } = true;
     public double LegacyVolumeStep { get; set; } = 0.02;

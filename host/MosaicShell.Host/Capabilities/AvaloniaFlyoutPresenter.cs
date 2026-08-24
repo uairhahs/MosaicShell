@@ -41,7 +41,9 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
     private DispatcherTimer? _deferredPatch;
     private FlyoutRequest? _pendingPatch;
     private FlyoutRequest? _pendingUpdate;
+    private FlyoutRequest? _pendingSoftRefresh;
     private bool _pendingResetDismiss;
+    private DispatcherTimer? _deferredSoftRefresh;
 
     public AvaloniaFlyoutPresenter(HostServices services, IHostUiBridge? hostUi = null)
     {
@@ -120,8 +122,15 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
                             || !volumeWin.IsFlyoutSessionShowing)
                             return;
 
-                        if (!_patchCoalesce.TryBeginFlush(MonoNow(), out _))
+                        if (!_patchCoalesce.TryBeginFlush(MonoNow(), out var retryAfter))
+                        {
+                            if (TesseraFlyoutLiveSyncPolicy.SoftRefreshMustScheduleDeferredLastValue)
+                            {
+                                _pendingSoftRefresh = request;
+                                ScheduleDeferredSoftRefresh(retryAfter);
+                            }
                             return;
+                        }
 
                         volumeWin.ApplyLiveOnly(request, _services);
                         return;
@@ -131,8 +140,15 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
                         || !existing.IsFlyoutSessionShowing)
                         return;
 
-                    if (!_patchCoalesce.TryBeginFlush(MonoNow(), out _))
+                    if (!_patchCoalesce.TryBeginFlush(MonoNow(), out var retryAfterSingle))
+                    {
+                        if (TesseraFlyoutLiveSyncPolicy.SoftRefreshMustScheduleDeferredLastValue)
+                        {
+                            _pendingSoftRefresh = request;
+                            ScheduleDeferredSoftRefresh(retryAfterSingle);
+                        }
                         return;
+                    }
 
                     existing.ApplyLiveOnly(request, _services);
                 }
@@ -142,45 +158,61 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
 
     public void Hide(string moduleId)
     {
-        Dispatcher.UIThread.Post(() =>
+        if (TesseraFlyoutPresentHandoffPolicy.ShouldPostHideToUiThread(Dispatcher.UIThread.CheckAccess()))
         {
-            if (moduleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
-            {
-                CloseStackedSession();
-                FlyoutWindow? single;
-                lock (_gate)
-                {
-                    _windows.Remove(moduleId, out single);
-                }
-                try { single?.Close(); } catch { /* ignore */ }
-                StopOutsideClickWatcher();
-                CloseFocusDim();
-                CancelDeferredPatch();
-                return;
-            }
+            Dispatcher.UIThread.Post(() => HideCore(moduleId));
+            return;
+        }
 
-            FlyoutWindow? w;
-            lock (_gate)
-            {
-                if (!_windows.Remove(moduleId, out w)) return;
-            }
-            try { w.Close(); } catch { /* ignore */ }
-        });
+        HideCore(moduleId);
     }
 
     public void HideAll()
     {
-        Dispatcher.UIThread.Post(() =>
+        if (TesseraFlyoutPresentHandoffPolicy.ShouldPostHideToUiThread(Dispatcher.UIThread.CheckAccess()))
+        {
+            Dispatcher.UIThread.Post(HideAllCore);
+            return;
+        }
+
+        HideAllCore();
+    }
+
+    private void HideCore(string moduleId)
+    {
+        if (moduleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
         {
             CloseStackedSession();
-            List<string> ids;
-            lock (_gate) ids = _windows.Keys.ToList();
-            foreach (var id in ids)
-                Hide(id);
+            FlyoutWindow? single;
+            lock (_gate)
+            {
+                _windows.Remove(moduleId, out single);
+            }
+            try { single?.Close(); } catch { /* ignore */ }
             StopOutsideClickWatcher();
             CloseFocusDim();
             CancelDeferredPatch();
-        });
+            return;
+        }
+
+        FlyoutWindow? w;
+        lock (_gate)
+        {
+            if (!_windows.Remove(moduleId, out w)) return;
+        }
+        try { w.Close(); } catch { /* ignore */ }
+    }
+
+    private void HideAllCore()
+    {
+        CloseStackedSession();
+        List<string> ids;
+        lock (_gate) ids = _windows.Keys.ToList();
+        foreach (var id in ids)
+            HideCore(id);
+        StopOutsideClickWatcher();
+        CloseFocusDim();
+        CancelDeferredPatch();
     }
 
     public bool IsVisible(string moduleId)
@@ -206,6 +238,8 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
 
     private void ShowOrUpdateCore(FlyoutRequest request, bool resetDismiss = true)
     {
+        InvalidateTesseraQueuesOnHandoff(request);
+
         if (ShouldUseStackedOsAcrylic(request))
         {
             ShowOrUpdateStacked(request, resetDismiss);
@@ -216,6 +250,45 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
             CloseStackedSession();
 
         ShowOrUpdateCoreSinglePath(request, resetDismiss);
+    }
+
+    private void InvalidateTesseraQueuesOnHandoff(FlyoutRequest request)
+    {
+        if (!request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        var nextStacked = ShouldUseStackedOsAcrylic(request);
+        string? openKind = null;
+        string? openStyle = null;
+        var openStacked = _stackedSession is not null;
+        var hasOpen = openStacked;
+
+        if (openStacked)
+        {
+            openKind = _stackedSession!.Kind;
+            openStyle = _stackedSession.StyleId;
+        }
+        else
+        {
+            lock (_gate)
+            {
+                if (_windows.TryGetValue("Tessera", out var single))
+                {
+                    hasOpen = true;
+                    openKind = single.Kind;
+                    openStyle = single.StyleId;
+                }
+            }
+        }
+
+        if (!TesseraFlyoutPresentHandoffPolicy.MustInvalidatePendingWork(
+                hasOpen, openStacked, nextStacked, openKind, request.Kind, openStyle, request.StyleId))
+            return;
+
+        Log($"handoff invalidate open={openKind}/{openStyle} stacked={openStacked} → {request.Kind}/{request.StyleId} stacked={nextStacked}");
+        CancelDeferredPatch();
+        if (TesseraFlyoutPresentHandoffPolicy.PresentMustStopOutsideClickBeforeRearm)
+            StopOutsideClickWatcher();
     }
 
     private void ShowOrUpdateCoreSinglePath(FlyoutRequest request, bool resetDismiss = true)
@@ -267,6 +340,19 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
 
         if (reuse is not null)
         {
+            if (TesseraStatusFlyoutPolicy.MustRecreateHwndAfterMediaShellKind(reuse.Kind, request.Kind))
+            {
+                Log($"status after media shell: recreate HWND open={reuse.Kind} next={request.Kind}");
+                reuse.TransientDismissed -= OnFlyoutTransientDismissed;
+                reuse.SuppressAutoDismiss();
+                try { reuse.Close(); } catch { /* ignore */ }
+                lock (_gate) _windows.Remove(request.ModuleId);
+                reuse = null;
+            }
+        }
+
+        if (reuse is not null)
+        {
             if (!reuseWasVisible
                 && string.Equals(reuse.Kind, request.Kind, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(reuse.StyleId ?? "", request.StyleId ?? "", StringComparison.OrdinalIgnoreCase))
@@ -276,7 +362,7 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
                     if (!reuse.IsVisible)
                         reuse.Show();
                     Log($"revive kind={request.Kind} style={request.StyleId}");
-                    reuse.RevealAfterLayout();
+                    reuse.PlayShowAnimation();
                     return;
                 }
             }
@@ -295,9 +381,9 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
                 reuse.Show();
             reuse.EnsureLivePump();
             PresentFlyout(reuse, request);
-            if (!reuseWasVisible)
+            if (TesseraFlyoutLiveSyncPolicy.ShouldPlayShowAnimationAfterApplyRequest(
+                    reuseWasVisible, TesseraFlyoutWindowPolicy.HideUntilCompositionReady))
                 reuse.PlayShowAnimation();
-            reuse.RevealAfterLayout();
             return;
         }
 
@@ -354,7 +440,6 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
         window.EnsureLivePump();
         PresentFlyout(window, request);
         window.PlayShowAnimation();
-        window.RevealAfterLayout();
     }
 
     private bool TryPatchLive(FlyoutWindow existing, FlyoutRequest request, bool resetDismiss)
@@ -365,7 +450,8 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
         Log($"patch kind={request.Kind} style={request.StyleId}");
         // (PatchImpliesPresent|Win32Restack|OutsideClickRearm are false, Core tests).
         existing.EnsureLivePump();
-        _outsideClick?.RefreshBounds(existing);
+        if (TesseraFlyoutOutsideClickPolicy.PatchMustRefreshBoundsWithoutRearm)
+            _outsideClick?.RefreshBounds(existing);
         return true;
     }
 
@@ -395,11 +481,47 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
         _deferredPatch = null;
         _pendingPatch = null;
         _pendingUpdate = null;
+        _pendingSoftRefresh = null;
+        _deferredSoftRefresh?.Stop();
+        _deferredSoftRefresh = null;
         _updateDispatch.CompleteDispatch();
+    }
+
+    private void ScheduleDeferredSoftRefresh(TimeSpan delay)
+    {
+        if (!TesseraFlyoutLiveSyncPolicy.SoftRefreshMustScheduleDeferredLastValue)
+            return;
+
+        if (delay <= TimeSpan.Zero)
+            delay = TesseraFlyoutLiveSyncPolicy.MinFlushInterval;
+
+        _deferredSoftRefresh?.Stop();
+        _deferredSoftRefresh = new DispatcherTimer { Interval = delay };
+        _deferredSoftRefresh.Tick += (_, _) =>
+        {
+            _deferredSoftRefresh?.Stop();
+            _deferredSoftRefresh = null;
+            if (_pendingSoftRefresh is not { } pending)
+                return;
+            _pendingSoftRefresh = null;
+            SoftRefresh(pending);
+        };
+        _deferredSoftRefresh.Start();
     }
 
     private void PresentFlyout(FlyoutWindow window, FlyoutRequest request)
     {
+        if (TesseraStatusFlyoutPolicy.IsStatusKind(request.Kind))
+        {
+            window.BackdropCornerRadiusDip =
+                TesseraStatusFlyoutPolicy.ResolveChipCornerRadiusDip(request.StyleId);
+        }
+        else if (window.ClusterOriginX is null)
+        {
+            // Single-shell volume/media acrylic: process-wide radius; clear per-window override.
+            window.BackdropCornerRadiusDip = TesseraOsAcrylicTrialPolicy.SpikeCornerRadius;
+        }
+
         window.FinishLayout();
         // Keep dim in sync on live updates; first Show already called SyncFocusDim.
         SyncFocusDim(request);
@@ -427,8 +549,12 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
 
     private void ScheduleOutsideClickArm(FlyoutWindow window)
     {
-        // One arm timer only, PresentFlyout used to start a new one per volume tick.
-        _outsideClickArm?.Stop();
+        // Present owns the hook: dispose prior watcher before the arm delay (stale bounds otherwise).
+        if (TesseraFlyoutOutsideClickPolicy.PresentMustStopPriorWatcherBeforeRearm)
+            StopOutsideClickWatcher();
+        else
+            _outsideClickArm?.Stop();
+
         _outsideClickArm = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1500) };
         var captured = window;
         _outsideClickArm.Tick += (_, _) =>
@@ -540,7 +666,8 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
     private void OnFlyoutTransientDismissed(string moduleId)
     {
         if (_stackedSession is not null
-            && TesseraOsAcrylicStackedPolicy.TransientDismissMustHideAllSlots)
+            && TesseraOsAcrylicStackedPolicy.ShouldCascadeTransientDismissToStackedSession(
+                moduleId, _stackedSession.SlotKeys))
         {
             lock (_gate)
             {
@@ -554,8 +681,19 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
 
             StopStackedAutoDismiss();
         }
+        else if (_stackedSession is not null
+                 && TesseraOsAcrylicStackedPolicy.TransientDismissMustHideAllSlots)
+        {
+            // Superseded single-shell CapsLock Tick: ignore; do not touch live volume/media.
+            Log($"ignore superseded transient-dismiss key={moduleId}");
+            return;
+        }
 
-        try { TransientDismissed?.Invoke(moduleId); }
+        try
+        {
+            TransientDismissed?.Invoke(
+                TesseraOsAcrylicStackedPolicy.ResolveTransientDismissConsumerKey(moduleId));
+        }
         catch { /* ignore */ }
 
         if (!TesseraFocusDimPolicy.ShouldCloseFocusDimOnTransientDismiss())
@@ -569,11 +707,12 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
     {
         if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
         {
-            var material = TesseraFlyoutMaterialFactory.FromPayload(request.Payload);
+            var material = TesseraFlyoutMaterialFactory.FromPayload(
+                request.Payload, request.StyleId, request.Kind);
             TesseraPalette.ApplyMaterial(material);
 
-            var osAcrylicEligible = TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(
-                request.Payload, request.StyleId);
+            var osAcrylicEligible = TesseraFlyoutMaterialFactory.OsAcrylicEligibleFromPayload(
+                request.Payload, request.StyleId, request.Kind);
             var settingsWantBlur = TesseraFlyoutRequestBuilder.BackdropBlurFromPayload(request.Payload);
             var glass = TesseraFlyoutGlassBinder.ApplyForLiveFlyout(settingsWantBlur, osAcrylicEligible);
             Log(

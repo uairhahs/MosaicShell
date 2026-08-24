@@ -156,4 +156,19 @@ public class TesseraFlyoutLiveSyncPolicyTests
         gate.CompleteDispatch();
         gate.TryEnqueue().Should().Be(TesseraFlyoutUpdateDispatchKind.PostNow);
     }
+
+    [Theory]
+    [InlineData(false, true, true)]
+    [InlineData(true, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(false, false, true)]
+    public void ApplyRequest_replays_show_when_hide_until_ready(
+        bool reuseWasVisible,
+        bool hideUntilReady,
+        bool playShow)
+    {
+        TesseraFlyoutLiveSyncPolicy
+            .ShouldPlayShowAnimationAfterApplyRequest(reuseWasVisible, hideUntilReady)
+            .Should().Be(playShow);
+    }
 }

@@ -161,6 +161,64 @@ public class TesseraOsAcrylicStackedPolicyTests : IDisposable
     {
         TesseraOsAcrylicStackedPolicy.TransientDismissMustHideAllSlots.Should().BeTrue();
         TesseraOsAcrylicStackedPolicy.OutsideClickUsesUnionBounds.Should().BeTrue();
+        TesseraOsAcrylicStackedPolicy.SupersededSingleHwndMustCancelDismissBeforeClose.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Superseded_status_dismiss_must_not_cascade_into_stacked_volume()
+    {
+        var vol = TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Volume);
+        var media = TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Media);
+        var live = new[] { vol, media };
+
+        TesseraOsAcrylicStackedPolicy
+            .ShouldCascadeTransientDismissToStackedSession("Tessera", live)
+            .Should().BeFalse("CapsLock HWND key must not dismiss volume/media after handoff");
+        TesseraOsAcrylicStackedPolicy
+            .ShouldCascadeTransientDismissToStackedSession(vol, live)
+            .Should().BeTrue();
+        TesseraOsAcrylicStackedPolicy
+            .ShouldCascadeTransientDismissToStackedSession(media, live)
+            .Should().BeTrue();
+        TesseraOsAcrylicStackedPolicy
+            .ShouldCascadeTransientDismissToStackedSession(null, live)
+            .Should().BeFalse();
+        TesseraStatusFlyoutPolicy.SupersededStatusMustCancelDismissBeforeClose.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Stacked_hwnd_transient_dismiss_notifies_slot_key_consumers_get_module_id()
+    {
+        TesseraOsAcrylicStackedPolicy
+            .ResolveTransientDismissNotifyKey("Tessera", TesseraStackedPanelRole.Volume)
+            .Should().Be("Tessera:vol");
+        TesseraOsAcrylicStackedPolicy
+            .ResolveTransientDismissNotifyKey("Tessera", TesseraStackedPanelRole.Media)
+            .Should().Be("Tessera:media");
+        TesseraOsAcrylicStackedPolicy
+            .ResolveTransientDismissNotifyKey("Tessera", role: null)
+            .Should().Be("Tessera");
+
+        TesseraOsAcrylicStackedPolicy.ResolveTransientDismissConsumerKey("Tessera:vol")
+            .Should().Be("Tessera");
+        TesseraOsAcrylicStackedPolicy.ResolveTransientDismissConsumerKey("Tessera:media")
+            .Should().Be("Tessera");
+        TesseraOsAcrylicStackedPolicy.ResolveTransientDismissConsumerKey("Tessera")
+            .Should().Be("Tessera");
+
+        var live = new[]
+        {
+            TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Volume),
+            TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Media),
+        };
+        var volumeNotify = TesseraOsAcrylicStackedPolicy.ResolveTransientDismissNotifyKey(
+            "Tessera", TesseraStackedPanelRole.Volume);
+        TesseraOsAcrylicStackedPolicy
+            .ShouldCascadeTransientDismissToStackedSession(volumeNotify, live)
+            .Should().BeTrue();
+        TesseraOsAcrylicStackedPolicy
+            .ShouldCascadeTransientDismissToStackedSession("Tessera", live)
+            .Should().BeFalse();
     }
 
     [Fact]

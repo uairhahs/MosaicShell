@@ -27,19 +27,28 @@ public sealed partial class AvaloniaFlyoutPresenter
 
     private bool ShouldUseStackedOsAcrylic(FlyoutRequest request) =>
         request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase)
-        && TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(request.Payload, request.StyleId);
+        && TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(
+            request.Payload, request.StyleId, request.Kind);
 
     private void ShowOrUpdateStacked(FlyoutRequest request, bool resetDismiss)
     {
         Log($"ShowOrUpdateStacked enter kind={request.Kind} style={request.StyleId}");
         CloseSingleTesseraWindowIfAny();
-        EnsureStackedSession(request);
+        _stackedSession ??= new TesseraStackedSession();
 
         if (TryPatchStacked(request, resetDismiss))
+        {
+            _stackedSession.Kind = request.Kind;
+            _stackedSession.StyleId = request.StyleId;
             return;
+        }
 
         if (TryReviveStacked(request, resetDismiss))
+        {
+            _stackedSession.Kind = request.Kind;
+            _stackedSession.StyleId = request.StyleId;
             return;
+        }
 
         var panels = TesseraOsAcrylicStackedPolicy.ResolvePanels(request.Payload, request.StyleId);
         if (panels.Count == 0)
@@ -49,14 +58,9 @@ public sealed partial class AvaloniaFlyoutPresenter
             return;
         }
 
-        RebuildStackedSlots(request, panels, resetDismiss);
-    }
-
-    private void EnsureStackedSession(FlyoutRequest request)
-    {
-        _stackedSession ??= new TesseraStackedSession();
         _stackedSession.Kind = request.Kind;
         _stackedSession.StyleId = request.StyleId;
+        RebuildStackedSlots(request, panels, resetDismiss);
     }
 
     private bool TryPatchStacked(FlyoutRequest request, bool resetDismiss)
@@ -83,8 +87,18 @@ public sealed partial class AvaloniaFlyoutPresenter
             ApplyStackedPlacement(request);
             if (resetDismiss)
                 BumpStackedAutoDismiss();
-            return true;
         }
+
+        RefreshStackedOutsideClickBoundsAfterPatch();
+        return true;
+    }
+
+    private void RefreshStackedOutsideClickBoundsAfterPatch()
+    {
+        if (_outsideClick is not { IsActive: true })
+            return;
+
+        _outsideClick.RefreshBounds(GetStackedWindowsFromSession());
     }
 
     private bool TryReviveStacked(FlyoutRequest request, bool resetDismiss)
@@ -126,11 +140,7 @@ public sealed partial class AvaloniaFlyoutPresenter
         }
 
         PresentStackedFlyout(request, windows);
-        foreach (var window in windows)
-        {
-            window.PlayShowAnimation();
-            window.RevealAfterLayout();
-        }
+        PlayStackedShowAnimation(request, windows);
 
         ScheduleStackedPlacementRefresh(request);
         WireStackedDismissCoordinator(request, windows);
@@ -169,6 +179,7 @@ public sealed partial class AvaloniaFlyoutPresenter
                     && TesseraOsAcrylicStackedPolicy.MustReuseRegisteredFlyoutHwndPerSlot)
                 {
                     window = existing;
+                    window.StackedRole = role;
                     window.ApplyRequest(request, content);
                 }
                 else
@@ -180,6 +191,7 @@ public sealed partial class AvaloniaFlyoutPresenter
                     }
 
                     window = new FlyoutWindow(request, content, _services);
+                    window.StackedRole = role;
                     window.Closed += (_, _) => OnStackedSlotClosed(slotKey, window);
                     _windows[slotKey] = window;
                 }
@@ -218,11 +230,7 @@ public sealed partial class AvaloniaFlyoutPresenter
         }
 
         PresentStackedFlyout(request, newWindows);
-        foreach (var window in newWindows)
-        {
-            window.PlayShowAnimation();
-            window.RevealAfterLayout();
-        }
+        PlayStackedShowAnimation(request, newWindows);
 
         ScheduleStackedPlacementRefresh(request);
     }
@@ -323,24 +331,93 @@ public sealed partial class AvaloniaFlyoutPresenter
         _stackedAutoDismiss = null;
     }
 
+    private void PlayStackedShowAnimation(FlyoutRequest request, IReadOnlyList<FlyoutWindow> windows)
+    {
+        if (windows.Count == 0)
+            return;
+
+        foreach (var window in windows)
+        {
+            window.FinishLayout();
+            window.PresenterDrivesMotion = true;
+        }
+
+        _ = RunStackedShowAnimationAsync(windows);
+    }
+
+    private static async Task RunStackedShowAnimationAsync(IReadOnlyList<FlyoutWindow> windows)
+    {
+        try
+        {
+            await Task.WhenAll(windows.Select(w => w.RunEntranceMotionAsync())).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            TesseraFlyoutDiagnostics.Log($"stacked show animation failed: {ex.Message}");
+        }
+    }
+
+    private async Task RunStackedExitAnimationAsync(FlyoutRequest request, IReadOnlyList<FlyoutWindow> windows)
+    {
+        if (windows.Count == 0)
+            return;
+
+        try
+        {
+            foreach (var window in windows)
+                window.PrepareExitMotion();
+
+            await Task.WhenAll(windows.Select(w => w.RunExitMotionAsync())).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            Log($"stacked exit animation failed: {ex.Message}");
+        }
+    }
+
     private void TransientDismissAllStackedSlots(bool notify)
     {
         if (_stackedSession is null)
             return;
 
-        var anyVisible = false;
-        lock (_gate)
+        var windows = GetStackedWindowsFromSession()
+            .Where(w => w.IsFlyoutSessionShowing)
+            .ToList();
+        if (windows.Count == 0)
         {
-            foreach (var slotKey in _stackedSession.SlotKeys)
-            {
-                if (!_windows.TryGetValue(slotKey, out var window))
-                    continue;
-                if (!window.IsFlyoutSessionShowing)
-                    continue;
+            StopStackedAutoDismiss();
+            return;
+        }
 
-                anyVisible = true;
-                window.TransientDismissWithoutNotify();
-            }
+        if (_stackedDismissRequest is not null
+            && TesseraFlyoutAnimationPolicy.ShouldAnimateOpacity(_stackedDismissRequest.Ani)
+            && TesseraFlyoutAnimationPolicy.ExitMustMirrorEntrance)
+        {
+            _ = DismissStackedAnimatedAsync(notify, windows, _stackedDismissRequest);
+            return;
+        }
+
+        DismissStackedImmediate(notify, windows);
+    }
+
+    private async Task DismissStackedAnimatedAsync(
+        bool notify,
+        IReadOnlyList<FlyoutWindow> windows,
+        FlyoutRequest request)
+    {
+        await RunStackedExitAnimationAsync(request, windows).ConfigureAwait(true);
+        DismissStackedImmediate(notify, windows);
+    }
+
+    private void DismissStackedImmediate(bool notify, IReadOnlyList<FlyoutWindow> windows)
+    {
+        var anyVisible = false;
+        foreach (var window in windows)
+        {
+            if (!window.IsFlyoutSessionShowing)
+                continue;
+            anyVisible = true;
+            window.TransientDismissWithoutNotify();
         }
 
         StopStackedAutoDismiss();
@@ -519,7 +596,8 @@ public sealed partial class AvaloniaFlyoutPresenter
         TesseraStackedPanelRole role,
         TesseraLiveBindings bindings)
     {
-        var material = TesseraFlyoutMaterialFactory.FromPayload(request.Payload, request.StyleId);
+        var material = TesseraFlyoutMaterialFactory.FromPayload(
+            request.Payload, request.StyleId, request.Kind);
         TesseraPalette.ApplyMaterial(material);
 
         var osAcrylicEligible = true;
@@ -575,7 +653,11 @@ public sealed partial class AvaloniaFlyoutPresenter
 
     private void ScheduleStackedOutsideClickArm(IReadOnlyList<FlyoutWindow> windows)
     {
-        _outsideClickArm?.Stop();
+        if (TesseraFlyoutOutsideClickPolicy.PresentMustStopPriorWatcherBeforeRearm)
+            StopOutsideClickWatcher();
+        else
+            _outsideClickArm?.Stop();
+
         _outsideClickArm = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1500) };
         var captured = windows.ToList();
         _outsideClickArm.Tick += (_, _) =>
@@ -631,14 +713,23 @@ public sealed partial class AvaloniaFlyoutPresenter
         var keys = _stackedSession.SlotKeys.ToList();
         _stackedSession = null;
         _stackedWindows = null;
+        var hideFirst = TesseraStatusFlyoutPolicy.StackedToStatusMustHideSlotsBeforeStatusReveal;
         foreach (var key in keys)
         {
             lock (_gate)
             {
-                if (_windows.Remove(key, out var w))
+                if (!_windows.Remove(key, out var w))
+                    continue;
+
+                w.TransientDismissed -= OnFlyoutTransientDismissed;
+                w.SuppressAutoDismiss();
+                if (hideFirst)
                 {
-                    try { w.Close(); } catch { /* ignore */ }
+                    try { w.TransientDismissWithoutNotify(); }
+                    catch { /* ignore */ }
                 }
+
+                try { w.Close(); } catch { /* ignore */ }
             }
         }
     }
@@ -647,10 +738,17 @@ public sealed partial class AvaloniaFlyoutPresenter
     {
         lock (_gate)
         {
-            if (_windows.Remove("Tessera", out var single))
-            {
-                try { single.Close(); } catch { /* ignore */ }
-            }
+            if (!_windows.Remove("Tessera", out var single))
+                return;
+
+            // CapsLock→volume: cancel timer + detach before Close so a late Tick cannot
+            // cascade into the stacked session via OnFlyoutTransientDismissed.
+            single.TransientDismissed -= OnFlyoutTransientDismissed;
+            if (TesseraOsAcrylicStackedPolicy.SupersededSingleHwndMustCancelDismissBeforeClose
+                || TesseraStatusFlyoutPolicy.SupersededStatusMustCancelDismissBeforeClose)
+                single.SuppressAutoDismiss();
+
+            try { single.Close(); } catch { /* ignore */ }
         }
     }
 

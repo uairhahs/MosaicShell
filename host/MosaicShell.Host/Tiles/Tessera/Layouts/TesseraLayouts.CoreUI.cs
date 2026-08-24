@@ -143,7 +143,9 @@ internal static partial class TesseraLayouts
             Grid.SetColumn(transport, 2);
             bottom.Children.Add(media);
             bottom.Children.Add(transport);
-            body = new StackPanel { Spacing = gap, Width = w - gap * 2, Children = { top, bottom } };
+            var mediaPanelW = w - gap * 2 - gap - TesseraStyleMetrics.CoreUiTransportW;
+            var reveal = TesseraRevealHost.WrapCoreUi(vm, bottom, track, mediaPanelW, baseTrackThickness: 8);
+            body = new StackPanel { Spacing = gap, Width = w - gap * 2, Children = { top, reveal } };
         }
 
         return TesseraChrome.GlassTinted(body, 8, TesseraStylePalette.CoreUi.ShellBrush,

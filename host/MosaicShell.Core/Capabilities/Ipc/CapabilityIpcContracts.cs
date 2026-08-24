@@ -1,5 +1,7 @@
 namespace MosaicShell.Core.Capabilities.Ipc;
 
+using MosaicShell.Core.Modules.Tessera;
+
 /// <summary>Named pipe and protocol constants for Worker to Host flyout IPC.</summary>
 public static class CapabilityIpcPolicy
 {
@@ -29,7 +31,10 @@ public sealed record FlyoutRequestDto(
     int XPad = 20,
     int YPad = 20,
     int Ani = 2,
-    string AniDir = "Left");
+    string AniDir = "Left",
+    string AniEase = TesseraFlyoutAnimationPolicy.DefaultEase,
+    int AniSteps = TesseraFlyoutAnimationPolicy.DefaultAniSteps,
+    int AnimationDisplacement = TesseraFlyoutAnimationPolicy.DefaultDisplacementPx);
 
 public sealed record CapabilityIpcMessage(
     CapabilityIpcMessageType Type,

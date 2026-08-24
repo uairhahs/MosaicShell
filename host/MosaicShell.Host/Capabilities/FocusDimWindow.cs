@@ -277,16 +277,41 @@ internal static class Win32WindowChrome
     private static extern bool SetWindowPos(
         IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint uFlags);
 
-    /// <summary>
-    /// Clip stacked OS acrylic flyouts to pill/card geometry. HWND backdrop is rectangular;
-    /// without a region, acrylic leaks outside inner rounded content.
-    /// </summary>
-    public static void ApplyRoundRectRegion(Window window, int widthPx, int heightPx, int cornerRadiusPx)
+    public static void ClearWindowRegion(Window window)
     {
         if (!OperatingSystem.IsWindows())
             return;
 
-        Dispatcher.UIThread.Post(() =>
+        try
+        {
+            var handle = window.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+            if (handle == IntPtr.Zero)
+                return;
+            _ = SetWindowRgn(handle, IntPtr.Zero, true);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Win32 region clear] {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Clip stacked OS acrylic flyouts to pill/card geometry. HWND backdrop is rectangular;
+    /// without a region, acrylic leaks outside inner rounded content.
+    /// When <paramref name="applySynchronously"/> is true (status CapsLock), do not Post at
+    /// Loaded: that races SoftFrost Opacity reveal and flashes a black rectangle.
+    /// </summary>
+    public static void ApplyRoundRectRegion(
+        Window window,
+        int widthPx,
+        int heightPx,
+        int cornerRadiusPx,
+        bool applySynchronously = false)
+    {
+        if (!OperatingSystem.IsWindows())
+            return;
+
+        void Apply()
         {
             try
             {
@@ -305,7 +330,22 @@ internal static class Win32WindowChrome
             {
                 System.Diagnostics.Debug.WriteLine($"[Win32 region] {ex.Message}");
             }
-        }, DispatcherPriority.Loaded);
+        }
+
+        if (applySynchronously && Dispatcher.UIThread.CheckAccess())
+        {
+            var handle = window.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+            if (handle != IntPtr.Zero)
+            {
+                Apply();
+                return;
+            }
+
+            Dispatcher.UIThread.Post(Apply, DispatcherPriority.Loaded);
+            return;
+        }
+
+        Dispatcher.UIThread.Post(Apply, DispatcherPriority.Loaded);
     }
 
     [DllImport("gdi32.dll", SetLastError = true)]

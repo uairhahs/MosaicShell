@@ -29,7 +29,13 @@ internal static partial class TesseraLayouts
 
         var kids = PlainTextVolumeChildren(vm);
         if (vm.ShowMediaStrip)
-            kids.AddRange(PlainTextMediaChildren(vm));
+        {
+            var mediaKids = PlainTextMediaChildren(vm);
+            var mediaPanel = new StackPanel { Spacing = 4 };
+            foreach (var c in mediaKids)
+                mediaPanel.Children.Add(c);
+            kids.Add(TesseraRevealHost.WrapMedia(vm, mediaPanel));
+        }
 
         var panel = new StackPanel { Spacing = 4 };
         foreach (var c in kids) panel.Children.Add(c);

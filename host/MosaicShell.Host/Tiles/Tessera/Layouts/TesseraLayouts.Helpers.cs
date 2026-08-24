@@ -6,6 +6,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Material.Icons;
 using Material.Icons.Avalonia;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 
 namespace MosaicShell.Host.Tiles.Tessera;
@@ -15,10 +16,17 @@ internal static partial class TesseraLayouts
 
     private static Control StatusChip(TesseraFlyoutViewModel vm, double radius, double? w = null, double? h = null)
     {
+        // Never pin status to volume Width×Height (black square AcrylicBlur HWND around the pill).
+        if (TesseraStatusFlyoutPolicy.ForbidFixedVolumeShellSize)
+        {
+            w = null;
+            h = TesseraStatusFlyoutPolicy.ChipHeightDip;
+        }
+
         var label = TesseraChrome.Label(vm.KindLabel, 14);
         label.Name = "TesseraStatusLabel";
         TesseraLiveAmbient.RegisterStatus(label);
-        return TesseraChrome.Glass(new StackPanel
+        var body = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 12,
@@ -30,7 +38,23 @@ internal static partial class TesseraLayouts
                 TesseraVolumeGlyph.Create(vm, 16),
                 label
             }
-        }, radius, new Thickness(12, 10), w, h ?? 50);
+        };
+
+        // OS acrylic: HWND is the material; nested Skia Glass left a square black plate on first paint.
+        if (TesseraStatusFlyoutPolicy.PreferOsAcrylicEdgeOnlyChrome && TesseraGlass.UseOsAcrylicChrome)
+        {
+            return new Border
+            {
+                Background = Brushes.Transparent,
+                CornerRadius = new CornerRadius(radius),
+                Padding = new Thickness(12, 10),
+                Height = h ?? TesseraStatusFlyoutPolicy.ChipHeightDip,
+                ClipToBounds = true,
+                Child = body
+            };
+        }
+
+        return TesseraChrome.Glass(body, radius, new Thickness(12, 10), w, h ?? TesseraStatusFlyoutPolicy.ChipHeightDip);
     }
 
     private static Control CoreUiIconBtn(MaterialIconKind kind, Action act, double size)

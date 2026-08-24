@@ -53,18 +53,22 @@ public static class TesseraFlyoutMaterialFactory
 
     public static TesseraFlyoutMaterial FromPayload(
         IReadOnlyDictionary<string, string>? payload,
-        string? styleId = null) =>
+        string? styleId = null,
+        string? kind = null) =>
         Create(
             UseAcrylicFromPayload(payload),
-            osAcrylicEligible: OsAcrylicEligibleFromPayload(payload, styleId));
+            osAcrylicEligible: OsAcrylicEligibleFromPayload(payload, styleId, kind));
 
     /// <summary>
     /// Single-shell (<see cref="TesseraOsAcrylicTrialPolicy"/>) or stacked N-window
     /// (<see cref="TesseraOsAcrylicStackedPolicy"/>) OS acrylic trial.
+    /// Status kinds never take stacked acrylic eligibility.
     /// </summary>
     public static bool OsAcrylicEligibleFromPayload(
         IReadOnlyDictionary<string, string>? payload,
-        string? styleId = null) =>
+        string? styleId = null,
+        string? kind = null) =>
         TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(payload, styleId)
-        || TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(payload, styleId);
+        || (!TesseraStatusFlyoutPolicy.MustUseDedicatedSingleWindow(kind)
+            && TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(payload, styleId, kind));
 }
