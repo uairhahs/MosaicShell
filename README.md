@@ -25,11 +25,11 @@ It continues the JaxCore idea of a modular desktop (forked from [Jax-Core/JaxCor
 
 ## Prerequisites
 
-| Requirement | Minimum |
-|-------------|---------|
-| OS | Windows 10 x64 or later |
-| .NET | Not required for the release Setup (self-contained Host). Desktop Runtime 10.0 only if you build framework-dependent from source. |
-| RAM | 6 GB |
+| Requirement | Minimum                                                                                                                           |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| OS          | Windows 10 x64 or later                                                                                                           |
+| .NET        | Not required for the release Setup (self-contained Host). Desktop Runtime 10.0 only if you build framework-dependent from source. |
+| RAM         | 6 GB                                                                                                                              |
 
 ## Install
 
@@ -69,18 +69,18 @@ See [host/README.md](host/README.md) and [`.github/docs/parity.md`](.github/docs
 
 Every catalog module ships as a thin `Tiles/{Id}` install stub (`module.native.json` + README). Runtime code lives under `host/`.
 
-| Tile | Description | License |
-|------|-------------|---------|
-| Tessera | Volume / brightness / media flyouts (armed capability) | MPL-2.0 |
-| Mixdeck | Per-app audio mixer overlay | MPL-2.0 |
-| Inlay | Start-menu launcher (pins + search) | MPL-2.0 |
-| Slate | Idle clock overlay | MPL-2.0 |
-| Chord | Macro app launcher | MPL-2.0 |
-| Substrate | Quick-settings shade | MPL-2.0 |
-| Pulse | Audio visualizer widget | MIT |
-| Chrono | Clock widget | MIT |
-| Phono | SMTC media widget | MIT |
-| Canvas | System-metrics text widget | MIT |
+| Tile      | Description                                            | License |
+| --------- | ------------------------------------------------------ | ------- |
+| Tessera   | Volume / brightness / media flyouts (armed capability) | MPL-2.0 |
+| Mixdeck   | Per-app audio mixer overlay                            | MPL-2.0 |
+| Inlay     | Start-menu launcher (pins + search)                    | MPL-2.0 |
+| Slate     | Idle clock overlay                                     | MPL-2.0 |
+| Chord     | Macro app launcher                                     | MPL-2.0 |
+| Substrate | Quick-settings shade                                   | MPL-2.0 |
+| Pulse     | Audio visualizer widget                                | MIT     |
+| Chrono    | Clock widget                                           | MIT     |
+| Phono     | SMTC media widget                                      | MIT     |
+| Canvas    | System-metrics text widget                             | MIT     |
 
 ---
 

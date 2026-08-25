@@ -55,9 +55,21 @@ public sealed class TesseraFlyoutRequestBuilder
         p["brightness"] = services.Brightness.IsSupported
             ? services.Brightness.Brightness.ToString("0.###")
             : "0.5";
-        p["mediaTitle"] = services.Media.Current?.Title ?? "";
-        p["mediaArtist"] = services.Media.Current?.Artist ?? "";
-        p["mediaPlaying"] = services.Media.Current?.IsPlaying == true ? "1" : "0";
+        
+        // Only populate media fields for non-status kinds
+        if (!TesseraStatusFlyoutPolicy.IsStatusKind(kind))
+        {
+            p["mediaTitle"] = services.Media.Current?.Title ?? "";
+            p["mediaArtist"] = services.Media.Current?.Artist ?? "";
+            p["mediaPlaying"] = services.Media.Current?.IsPlaying == true ? "1" : "0";
+        }
+        else
+        {
+            p["mediaTitle"] = "";
+            p["mediaArtist"] = "";
+            p["mediaPlaying"] = "0";
+        }
+        
         p["showMediaStrip"] = !TesseraStatusFlyoutPolicy.IsStatusKind(kind)
                               && settings.ShowMediaStripOnVolume
                               && TesseraFlyoutTweenTargetCatalog.StyleRequestsVolumeMediaChrome(settings.Style)
