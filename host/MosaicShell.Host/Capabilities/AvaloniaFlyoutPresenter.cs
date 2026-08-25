@@ -38,12 +38,10 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
     private DispatcherTimer? _outsideClickArm;
     private readonly TesseraFlyoutLiveSyncCoalescer _patchCoalesce = new();
     private readonly TesseraFlyoutUpdateDispatchGate _updateDispatch = new();
-    private DispatcherTimer? _deferredPatch;
-    private FlyoutRequest? _pendingPatch;
-    private FlyoutRequest? _pendingUpdate;
-    private FlyoutRequest? _pendingSoftRefresh;
-    private bool _pendingResetDismiss;
-    private DispatcherTimer? _deferredSoftRefresh;
+    private readonly TesseraFlyoutSessionState _session = new();
+    private readonly TesseraFlyoutIngressQueue _ingress = new();
+    private DispatcherTimer? _deferredIngress;
+    private bool _ingressFlushDeferred;
 
     public AvaloniaFlyoutPresenter(HostServices services, IHostUiBridge? hostUi = null)
     {
@@ -57,7 +55,7 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
     public void Show(FlyoutRequest request)
     {
         Log($"Show queued kind={request.Kind} style={request.StyleId} thread={Environment.CurrentManagedThreadId}");
-        EnqueueShowOrUpdate(request, resetDismiss: true, immediate: IsImmediateStatusKind(request));
+        EnqueueIngress(TesseraFlyoutIngressKind.Present, request, resetDismiss: true, immediate: IsImmediateStatusKind(request));
     }
 
     private static bool IsImmediateStatusKind(FlyoutRequest request) =>
@@ -67,96 +65,130 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
     public void Update(FlyoutRequest request)
     {
         Log($"Update queued kind={request.Kind} style={request.StyleId} thread={Environment.CurrentManagedThreadId}");
-        EnqueueShowOrUpdate(request, resetDismiss: true, immediate: IsImmediateStatusKind(request));
+        EnqueueIngress(TesseraFlyoutIngressKind.Patch, request, resetDismiss: true, immediate: IsImmediateStatusKind(request));
     }
 
-    private void EnqueueShowOrUpdate(FlyoutRequest request, bool resetDismiss, bool immediate)
+    private void EnqueueIngress(
+        TesseraFlyoutIngressKind kind,
+        FlyoutRequest request,
+        bool resetDismiss,
+        bool immediate)
     {
+        var work = new TesseraFlyoutIngressWork(kind, _session.Generation, request, resetDismiss);
         if (immediate)
         {
-            Dispatcher.UIThread.Invoke(() => SafeShowOrUpdate(request, resetDismiss));
+            Dispatcher.UIThread.Invoke(() => ExecuteIngressWork(work));
             return;
         }
 
-        _pendingUpdate = request;
-        _pendingResetDismiss = resetDismiss;
+        _ingress.Enqueue(work);
+        if (_ingressFlushDeferred)
+            return;
         if (_updateDispatch.TryEnqueue() != TesseraFlyoutUpdateDispatchKind.PostNow)
             return;
 
-        Dispatcher.UIThread.Post(FlushPendingUpdate);
+        Dispatcher.UIThread.Post(FlushIngress);
     }
 
-    private void FlushPendingUpdate()
+    private void FlushIngress()
     {
-        if (_pendingUpdate is not { } pending)
-        {
-            _updateDispatch.CompleteDispatch();
-            return;
-        }
-
-        var reset = _pendingResetDismiss;
-        _pendingUpdate = null;
         try
         {
-            SafeShowOrUpdate(pending, reset);
+            if (_ingressFlushDeferred)
+                return;
+
+            var work = _ingress.Take(_session.Generation);
+            if (work is null)
+                return;
+
+            ExecuteIngressWork(work.Value);
         }
         finally
         {
             _updateDispatch.CompleteDispatch();
         }
 
-        if (_pendingUpdate is not null
+        if (!_ingressFlushDeferred
+            && _ingress.HasPending
             && _updateDispatch.TryEnqueue() == TesseraFlyoutUpdateDispatchKind.PostNow)
-            Dispatcher.UIThread.Post(FlushPendingUpdate);
+            Dispatcher.UIThread.Post(FlushIngress);
     }
 
-    public void SoftRefresh(FlyoutRequest request) =>
-        Dispatcher.UIThread.Post(() =>
+    private void ExecuteIngressWork(TesseraFlyoutIngressWork work)
+    {
+        if (TesseraFlyoutIngressPolicy.IsStale(work.Generation, _session.Generation, work.Kind))
+            return;
+
+        switch (work.Kind)
         {
-            try
+            case TesseraFlyoutIngressKind.SoftRefresh:
+                ApplySoftRefreshCore(work.Request);
+                break;
+            case TesseraFlyoutIngressKind.Patch:
+                SafeShowOrUpdate(work.Request, work.ResetDismiss, allowLivePatch: true);
+                break;
+            default:
+                SafeShowOrUpdate(work.Request, work.ResetDismiss, allowLivePatch: false);
+                break;
+        }
+    }
+
+    public void SoftRefresh(FlyoutRequest request)
+    {
+        Log($"SoftRefresh queued kind={request.Kind} style={request.StyleId} gen={_session.Generation}");
+        EnqueueIngress(TesseraFlyoutIngressKind.SoftRefresh, request, resetDismiss: false, immediate: false);
+    }
+
+    private void ApplySoftRefreshCore(FlyoutRequest request)
+    {
+        try
+        {
+            lock (_gate)
             {
-                lock (_gate)
+                if (ShouldUseStackedOsAcrylic(request))
                 {
-                    if (ShouldUseStackedOsAcrylic(request))
+                    var volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Volume);
+                    if (!_windows.TryGetValue(volumeKey, out var volumeWin)
+                        || !volumeWin.IsFlyoutSessionShowing)
+                        return;
+
+                    if (!_patchCoalesce.TryBeginFlush(MonoNow(), out var retryAfter))
                     {
-                        var volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Volume);
-                        if (!_windows.TryGetValue(volumeKey, out var volumeWin)
-                            || !volumeWin.IsFlyoutSessionShowing)
-                            return;
-
-                        if (!_patchCoalesce.TryBeginFlush(MonoNow(), out var retryAfter))
-                        {
-                            if (TesseraFlyoutLiveSyncPolicy.SoftRefreshMustScheduleDeferredLastValue)
-                            {
-                                _pendingSoftRefresh = request;
-                                ScheduleDeferredSoftRefresh(retryAfter);
-                            }
-                            return;
-                        }
-
-                        volumeWin.ApplyLiveOnly(request, _services);
+                        DeferIngress(
+                            new TesseraFlyoutIngressWork(
+                                TesseraFlyoutIngressKind.SoftRefresh,
+                                _session.Generation,
+                                request,
+                                ResetDismiss: false),
+                            retryAfter);
                         return;
                     }
 
-                    if (!_windows.TryGetValue(request.ModuleId, out var existing)
-                        || !existing.IsFlyoutSessionShowing)
-                        return;
-
-                    if (!_patchCoalesce.TryBeginFlush(MonoNow(), out var retryAfterSingle))
-                    {
-                        if (TesseraFlyoutLiveSyncPolicy.SoftRefreshMustScheduleDeferredLastValue)
-                        {
-                            _pendingSoftRefresh = request;
-                            ScheduleDeferredSoftRefresh(retryAfterSingle);
-                        }
-                        return;
-                    }
-
-                    existing.ApplyLiveOnly(request, _services);
+                    volumeWin.ApplyLiveOnly(request, _services);
+                    return;
                 }
+
+                if (!_windows.TryGetValue(request.ModuleId, out var existing)
+                    || !existing.IsFlyoutSessionShowing)
+                    return;
+
+                if (!_patchCoalesce.TryBeginFlush(MonoNow(), out var retryAfterSingle))
+                {
+                    DeferIngress(
+                        new TesseraFlyoutIngressWork(
+                            TesseraFlyoutIngressKind.SoftRefresh,
+                            _session.Generation,
+                            request,
+                            ResetDismiss: false),
+                        retryAfterSingle);
+                    return;
+                }
+
+                existing.ApplyLiveOnly(request, _services);
             }
-            catch (Exception ex) { Log($"soft refresh {ex}"); }
-        });
+        }
+        catch (Exception ex) { Log($"soft refresh {ex}"); }
+    }
 
     public void Hide(string moduleId)
     {
@@ -194,6 +226,7 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
             StopOutsideClickWatcher();
             CloseFocusDim();
             CancelDeferredPatch();
+            _session.Clear();
             return;
         }
 
@@ -215,6 +248,7 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
         StopOutsideClickWatcher();
         CloseFocusDim();
         CancelDeferredPatch();
+        _session.Clear();
     }
 
     public bool IsVisible(string moduleId)
@@ -226,9 +260,18 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
             return _windows.TryGetValue(moduleId, out var w) && w.IsFlyoutSessionShowing;
     }
 
-    private void SafeShowOrUpdate(FlyoutRequest request, bool resetDismiss = true)
+    public TesseraFlyoutSessionSnapshot GetSessionSnapshot(string moduleId)
     {
-        try { ShowOrUpdateCore(request, resetDismiss); }
+        var showing = IsVisible(moduleId);
+        if (!moduleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            return new(showing, 0, TesseraFlyoutSessionMode.None, "", null);
+
+        return _session.Snapshot(showing);
+    }
+
+    private void SafeShowOrUpdate(FlyoutRequest request, bool resetDismiss = true, bool allowLivePatch = true)
+    {
+        try { ShowOrUpdateCore(request, resetDismiss, allowLivePatch); }
         catch (Exception ex)
         {
             Log($"EXCEPTION {ex}");
@@ -238,20 +281,20 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
 
     private static TimeSpan MonoNow() => TimeSpan.FromMilliseconds(Environment.TickCount64);
 
-    private void ShowOrUpdateCore(FlyoutRequest request, bool resetDismiss = true)
+    private void ShowOrUpdateCore(FlyoutRequest request, bool resetDismiss = true, bool allowLivePatch = true)
     {
         InvalidateTesseraQueuesOnHandoff(request);
 
         if (ShouldUseStackedOsAcrylic(request))
         {
-            ShowOrUpdateStacked(request, resetDismiss);
+            ShowOrUpdateStacked(request, resetDismiss, allowLivePatch);
             return;
         }
 
         if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
             CloseStackedSession();
 
-        ShowOrUpdateCoreSinglePath(request, resetDismiss);
+        ShowOrUpdateCoreSinglePath(request, resetDismiss, allowLivePatch);
     }
 
     private void InvalidateTesseraQueuesOnHandoff(FlyoutRequest request)
@@ -293,7 +336,7 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
             StopOutsideClickWatcher();
     }
 
-    private void ShowOrUpdateCoreSinglePath(FlyoutRequest request, bool resetDismiss = true)
+    private void ShowOrUpdateCoreSinglePath(FlyoutRequest request, bool resetDismiss = true, bool allowLivePatch = true)
     {
         Log($"ShowOrUpdateCore enter kind={request.Kind}");
         FlyoutWindow? reuse = null;
@@ -307,30 +350,27 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
                 reuse = existing;
                 reuseWasVisible = existing.IsFlyoutSessionShowing;
 
-                if (reuseWasVisible)
+                if (reuseWasVisible
+                    && allowLivePatch
+                    && string.Equals(existing.Kind, request.Kind, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(existing.StyleId ?? "", request.StyleId ?? "", StringComparison.OrdinalIgnoreCase))
                 {
-                    var action = TesseraFlyoutLiveSyncPolicy.ResolveAction(
-                        isVisible: true,
-                        openKind: existing.Kind,
-                        nextKind: request.Kind,
-                        openStyle: existing.StyleId,
-                        nextStyle: request.StyleId);
-
-                    if (action == TesseraFlyoutSyncAction.Patch)
+                    if (!_patchCoalesce.TryBeginFlush(MonoNow(), out var retryAfter))
                     {
-                        if (!_patchCoalesce.TryBeginFlush(MonoNow(), out var retryAfter))
-                        {
-                            _pendingPatch = request;
-                            _pendingResetDismiss = resetDismiss;
-                            ScheduleDeferredPatch(retryAfter);
-                            return;
-                        }
-
-                        if (TryPatchLive(existing, request, resetDismiss))
-                            return;
-
-                        Log($"live-apply missed kind={request.Kind} style={request.StyleId}, rebuilding");
+                        DeferIngress(
+                            new TesseraFlyoutIngressWork(
+                                TesseraFlyoutIngressKind.Patch,
+                                _session.Generation,
+                                request,
+                                resetDismiss),
+                            retryAfter);
+                        return;
                     }
+
+                    if (TryPatchLive(existing, request, resetDismiss))
+                        return;
+
+                    Log($"live-apply missed kind={request.Kind} style={request.StyleId}, rebuilding");
                 }
             }
             else if (_windows.TryGetValue(request.ModuleId, out var old))
@@ -379,6 +419,7 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
 
             reuse.ApplyRequest(request, reusedContent);
             WireTesseraSession(reuse);
+            EnsureTesseraSession(request, TesseraFlyoutSessionMode.Single);
             if (!reuse.IsVisible)
                 reuse.Show();
             reuse.EnsureLivePump();
@@ -429,6 +470,7 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
             }
         };
         lock (_gate) _windows[request.ModuleId] = window;
+        EnsureTesseraSession(request, TesseraFlyoutSessionMode.Single);
 
         // Two unowned Topmost windows: the one shown LAST usually wins Z-order on Win32.
         // Show FocusDim first (if enabled), then the flyout, then HWND-stack as belt-and-suspenders.
@@ -457,58 +499,49 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
         return true;
     }
 
-    private void ScheduleDeferredPatch(TimeSpan delay)
+    private void EnsureTesseraSession(FlyoutRequest request, TesseraFlyoutSessionMode mode)
     {
+        if (!request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            return;
+        if (_session.Mode == mode
+            && string.Equals(_session.Kind, request.Kind, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(_session.StyleId ?? "", request.StyleId ?? "", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        _session.Begin(mode, request.Kind, request.StyleId);
+    }
+
+    private void DeferIngress(TesseraFlyoutIngressWork work, TimeSpan delay)
+    {
+        if (work.Kind == TesseraFlyoutIngressKind.SoftRefresh
+            && !TesseraFlyoutLiveSyncPolicy.SoftRefreshMustScheduleDeferredLastValue)
+            return;
+
+        _ingress.Enqueue(work);
         if (delay <= TimeSpan.Zero)
             delay = TesseraFlyoutLiveSyncPolicy.MinFlushInterval;
 
-        _deferredPatch?.Stop();
-        _deferredPatch = new DispatcherTimer { Interval = delay };
-        _deferredPatch.Tick += (_, _) =>
+        _ingressFlushDeferred = true;
+        _deferredIngress?.Stop();
+        _deferredIngress = new DispatcherTimer { Interval = delay };
+        _deferredIngress.Tick += (_, _) =>
         {
-            _deferredPatch?.Stop();
-            _deferredPatch = null;
-            if (_pendingPatch is not { } pending)
-                return;
-            var reset = _pendingResetDismiss;
-            _pendingPatch = null;
-            SafeShowOrUpdate(pending, reset);
+            _deferredIngress?.Stop();
+            _deferredIngress = null;
+            _ingressFlushDeferred = false;
+            if (_updateDispatch.TryEnqueue() == TesseraFlyoutUpdateDispatchKind.PostNow)
+                Dispatcher.UIThread.Post(FlushIngress);
         };
-        _deferredPatch.Start();
+        _deferredIngress.Start();
     }
 
     private void CancelDeferredPatch()
     {
-        _deferredPatch?.Stop();
-        _deferredPatch = null;
-        _pendingPatch = null;
-        _pendingUpdate = null;
-        _pendingSoftRefresh = null;
-        _deferredSoftRefresh?.Stop();
-        _deferredSoftRefresh = null;
+        _deferredIngress?.Stop();
+        _deferredIngress = null;
+        _ingressFlushDeferred = false;
+        _ingress.CancelAll();
         _updateDispatch.CompleteDispatch();
-    }
-
-    private void ScheduleDeferredSoftRefresh(TimeSpan delay)
-    {
-        if (!TesseraFlyoutLiveSyncPolicy.SoftRefreshMustScheduleDeferredLastValue)
-            return;
-
-        if (delay <= TimeSpan.Zero)
-            delay = TesseraFlyoutLiveSyncPolicy.MinFlushInterval;
-
-        _deferredSoftRefresh?.Stop();
-        _deferredSoftRefresh = new DispatcherTimer { Interval = delay };
-        _deferredSoftRefresh.Tick += (_, _) =>
-        {
-            _deferredSoftRefresh?.Stop();
-            _deferredSoftRefresh = null;
-            if (_pendingSoftRefresh is not { } pending)
-                return;
-            _pendingSoftRefresh = null;
-            SoftRefresh(pending);
-        };
-        _deferredSoftRefresh.Start();
     }
 
     private void PresentFlyout(FlyoutWindow window, FlyoutRequest request)

@@ -40,6 +40,17 @@ public sealed class TesseraFlyoutMotionPlan
     /// </summary>
     public const bool MotionPlanMustClusterStackedSlots = true;
 
+    /// <summary>
+    /// Clustered phase 2 must apply one progress per dispatcher tick to every slot.
+    /// WhenAll of independent 16 ms pumps lets divider and media drift.
+    /// </summary>
+    public const bool HostMustPumpSharedPhase2Progress = true;
+
+    public static bool ShouldPumpSharedPhase2Progress(int slotCount) =>
+        HostMustPumpSharedPhase2Progress
+        && TesseraFlyoutAnimationPolicy.Phase2MustShareOneVsyncProgressAcrossStackedSlots
+        && slotCount > 1;
+
     public required bool Entrance { get; init; }
 
     public required bool Clustered { get; init; }
@@ -136,7 +147,7 @@ public sealed class TesseraFlyoutMotionPlan
                     TesseraFlyoutMotionStepKind.Wait,
                     true,
                     TesseraFlyoutMotionSlotFilter.All,
-                    TesseraFlyoutAnimationPolicy.FancyPauseMs));
+                    TesseraFlyoutAnimationPolicy.ResolveInterPhaseWaitMs(entrance: true)));
                 steps.Add(new(TesseraFlyoutMotionStepKind.Phase2, true, phase2Filter));
             }
         }
@@ -149,7 +160,7 @@ public sealed class TesseraFlyoutMotionPlan
                     TesseraFlyoutMotionStepKind.Wait,
                     false,
                     TesseraFlyoutMotionSlotFilter.All,
-                    TesseraFlyoutAnimationPolicy.FancyPauseMs));
+                    TesseraFlyoutAnimationPolicy.ResolveInterPhaseWaitMs(entrance: false)));
             }
 
             steps.Add(new(TesseraFlyoutMotionStepKind.Phase1, false, phase1Filter));

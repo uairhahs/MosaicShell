@@ -31,18 +31,15 @@ internal static partial class TesseraLayouts
 
         var vol = CompactVolumeWrap(CompactVolumeCore(vm));
         if (!vm.ShowMediaStrip) return vol;
-        TesseraFlyoutTweenTargetCatalog.TryResolveMediaRestSizeDip(StyleIds.Compact, out var mediaW, out var mediaH);
         return new StackPanel
         {
             Spacing = 10,
             Children =
             {
                 vol,
-                TesseraRevealHost.WrapMedia(
+                TesseraRevealHostFactory.WrapMediaFromCatalog(
                     vm,
-                    TesseraMediaPanel.Create(vm, TesseraMediaMode.SimpleRow),
-                    fullMediaWidth: mediaW,
-                    fullMediaHeight: mediaH)
+                    TesseraMediaPanel.Create(vm, TesseraMediaMode.SimpleRow))
             }
         };
     }

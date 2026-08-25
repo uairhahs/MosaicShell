@@ -26,18 +26,15 @@ internal static partial class TesseraLayouts
         if (!vm.ShowMediaStrip)
             return volPill;
 
-        TesseraFlyoutTweenTargetCatalog.TryResolveMediaRestSizeDip(StyleIds.Meter, out var mediaW, out var mediaH);
         return new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 12,
             Children =
             {
-                TesseraRevealHost.WrapMedia(
+                TesseraRevealHostFactory.WrapMediaFromCatalog(
                     vm,
-                    TesseraMediaPanel.Create(vm, TesseraMediaMode.MeterCard),
-                    fullMediaWidth: mediaW,
-                    fullMediaHeight: mediaH),
+                    TesseraMediaPanel.Create(vm, TesseraMediaMode.MeterCard)),
                 volPill
             }
         };

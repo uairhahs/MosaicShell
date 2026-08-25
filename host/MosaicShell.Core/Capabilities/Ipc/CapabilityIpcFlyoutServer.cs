@@ -2,6 +2,7 @@ namespace MosaicShell.Core.Capabilities.Ipc;
 
 using System.IO.Pipes;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Modules.Tessera;
 
 /// <summary>
 /// Host-side named pipe server: applies Worker flyout IPC to a local <see cref="IFlyoutPresenter"/>.
@@ -63,24 +64,62 @@ public sealed class CapabilityIpcFlyoutServer : IDisposable
         {
             case CapabilityIpcMessageType.FlyoutShow:
                 if (message.Request is not null)
+                {
                     _presenter.Show(CapabilityIpcCodec.FromDto(message.Request));
+                    EchoSessionSnapshot(message.Request.ModuleId);
+                }
                 break;
             case CapabilityIpcMessageType.FlyoutUpdate:
                 if (message.Request is not null)
+                {
                     _presenter.Update(CapabilityIpcCodec.FromDto(message.Request));
+                    EchoSessionSnapshot(message.Request.ModuleId);
+                }
                 break;
             case CapabilityIpcMessageType.FlyoutSoftRefresh:
                 if (message.Request is not null)
+                {
                     _presenter.SoftRefresh(CapabilityIpcCodec.FromDto(message.Request));
+                    EchoSessionSnapshot(message.Request.ModuleId);
+                }
                 break;
             case CapabilityIpcMessageType.FlyoutHide:
                 if (!string.IsNullOrWhiteSpace(message.ModuleId))
+                {
                     _presenter.Hide(message.ModuleId);
+                    EchoSessionSnapshot(message.ModuleId);
+                }
                 break;
             case CapabilityIpcMessageType.FlyoutHideAll:
                 _presenter.HideAll();
+                EchoSessionSnapshot("Tessera");
                 break;
         }
+    }
+
+    private void EchoSessionSnapshot(string moduleId)
+    {
+        // Presenter Show/Update Post flush on the UI queue. Echo after that work so
+        // EffectivelyShowing matches the applied session, not the pre-flush snapshot.
+        var ctx = SynchronizationContext.Current;
+        if (ctx is not null)
+        {
+            ctx.Post(_ => SendSessionSnapshot(moduleId), null);
+            return;
+        }
+
+        SendSessionSnapshot(moduleId);
+    }
+
+    private void SendSessionSnapshot(string moduleId)
+    {
+        ServerConnection? client;
+        lock (_gate) client = _client;
+        var snap = _presenter.GetSessionSnapshot(moduleId);
+        client?.TrySend(new CapabilityIpcMessage(
+            CapabilityIpcMessageType.FlyoutSessionSnapshot,
+            ModuleId: moduleId,
+            SessionSnapshot: TesseraFlyoutIpcSnapshotDto.From(moduleId, snap)));
     }
 
     private void OnPresenterTransientDismissed(string moduleId)
@@ -90,6 +129,7 @@ public sealed class CapabilityIpcFlyoutServer : IDisposable
         client?.TrySend(new CapabilityIpcMessage(
             CapabilityIpcMessageType.TransientDismissed,
             ModuleId: moduleId));
+        SendSessionSnapshot(moduleId);
     }
 
     public void Dispose()

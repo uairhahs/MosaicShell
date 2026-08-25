@@ -306,7 +306,8 @@ internal static class Win32WindowChrome
         int widthPx,
         int heightPx,
         int cornerRadiusPx,
-        bool applySynchronously = false)
+        bool applySynchronously = false,
+        bool redrawClient = true)
     {
         if (!OperatingSystem.IsWindows())
             return;
@@ -316,15 +317,18 @@ internal static class Win32WindowChrome
             try
             {
                 var handle = window.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
-                if (handle == IntPtr.Zero || widthPx < 2 || heightPx < 2)
+                if (handle == IntPtr.Zero)
                     return;
+
+                widthPx = Math.Max(widthPx, TesseraFlyoutHwndRegionSpec.MinRenderableRegionPx);
+                heightPx = Math.Max(heightPx, TesseraFlyoutHwndRegionSpec.MinRenderableRegionPx);
 
                 var radius = Math.Clamp(cornerRadiusPx, 1, Math.Min(widthPx, heightPx) / 2);
                 var rgn = CreateRoundRectRgn(0, 0, widthPx + 1, heightPx + 1, radius * 2, radius * 2);
                 if (rgn == IntPtr.Zero)
                     return;
 
-                _ = SetWindowRgn(handle, rgn, true);
+                _ = SetWindowRgn(handle, rgn, redrawClient);
             }
             catch (Exception ex)
             {

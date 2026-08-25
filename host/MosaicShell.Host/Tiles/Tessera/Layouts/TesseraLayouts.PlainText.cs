@@ -34,10 +34,7 @@ internal static partial class TesseraLayouts
             var mediaPanel = new StackPanel { Spacing = 4 };
             foreach (var c in mediaKids)
                 mediaPanel.Children.Add(c);
-            kids.Add(TesseraRevealHost.WrapMedia(
-                vm,
-                mediaPanel,
-                fullMediaWidth: TesseraStackedPlacementSpec.PlainTextWidthDip));
+            kids.Add(TesseraRevealHostFactory.WrapMediaFromCatalog(vm, mediaPanel));
         }
 
         var panel = new StackPanel { Spacing = 4 };

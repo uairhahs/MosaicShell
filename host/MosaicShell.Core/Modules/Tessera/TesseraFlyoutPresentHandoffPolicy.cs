@@ -25,6 +25,12 @@ public static class TesseraFlyoutPresentHandoffPolicy
     public const bool SoftRefreshMustScheduleDeferredLastValue = true;
 
     /// <summary>
+    /// SoftRefresh posted before a kind/stack Present must drop when session generation
+    /// no longer matches the envelope stamped at enqueue.
+    /// </summary>
+    public const bool SoftRefreshMustHonorSessionGeneration = true;
+
+    /// <summary>
     /// HideAll already posted to the UI thread must run Hide inline. Nested Hide Posts let a
     /// later Show land between CloseStackedSession and the delayed Hide callbacks.
     /// </summary>

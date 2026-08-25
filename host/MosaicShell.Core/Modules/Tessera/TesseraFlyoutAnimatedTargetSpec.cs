@@ -62,6 +62,13 @@ public static class TesseraFlyoutAnimatedTargetSpec
     public static double ResolveMediaCoverOverlayAlpha(double progress, bool musicVisible) =>
         MediaCoverOverlayMaxAlpha * (musicVisible ? ClampProgress(progress) : 0);
 
+    /// <summary>
+    /// Clip and HWND region are the MediaC container mask. Fading the leaf on show
+    /// leaves the growing strip empty, then the card pops when TweenNode1 is high.
+    /// Hide already reads as a clip dissolve; leaf alpha stays rest under the clip.
+    /// </summary>
+    public const bool ClippedMediaLeafMustStayOpaque = true;
+
     public static double ResolveMediaMaskOpacity(double progress, bool musicVisible) =>
         musicVisible ? ClampProgress(progress) : 0;
 
@@ -84,8 +91,16 @@ public static class TesseraFlyoutAnimatedTargetSpec
     /// </summary>
     public const bool FluentDividerOpacityMustStayRestWhileMusicVisible = true;
 
+    public static double ResolveClippedMediaLeafOpacity(double progress, bool musicVisible)
+    {
+        _ = progress;
+        if (!musicVisible)
+            return 0;
+        return ClippedMediaLeafMustStayOpaque ? 1 : ClampProgress(progress);
+    }
+
     public static double ResolveFluentMediaContentOpacity(double progress, bool musicVisible) =>
-        ResolveMediaMaskOpacity(progress, musicVisible);
+        ResolveClippedMediaLeafOpacity(progress, musicVisible);
 
     public static double ResolveFluentDividerOpacity(double progress, bool musicVisible)
     {
@@ -274,7 +289,7 @@ public static class TesseraFlyoutAnimatedTargetSpec
         ResolveMediaCoverOverlayAlpha(progress, musicVisible);
 
     public static double ResolveCoreUiMediaContentOpacityFactor(double progress, bool musicVisible) =>
-        ResolveMediaMaskOpacity(progress, musicVisible);
+        ResolveClippedMediaLeafOpacity(progress, musicVisible);
 
     public static double ResolveMeterMediaSlideOffsetDip(double progress, bool musicVisible)
     {

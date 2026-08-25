@@ -41,10 +41,7 @@ internal static partial class TesseraLayouts
         if (vm.ShowMediaStrip)
         {
             var media = TesseraMediaPanel.Create(vm, TesseraMediaMode.FluentSide);
-            var reveal = TesseraRevealHost.WrapMedia(
-                vm,
-                media,
-                fullMediaWidth: TesseraFluentMetrics.MediaWidth);
+            var reveal = TesseraRevealHostFactory.WrapMediaFromCatalog(vm, media);
             body = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
@@ -129,10 +126,7 @@ internal static partial class TesseraLayouts
 
     private static Control FluentMediaReveal(TesseraFlyoutViewModel vm, Control media)
     {
-        return TesseraRevealHost.WrapMedia(
-            vm,
-            FluentMediaWrap(media),
-            fullMediaWidth: TesseraFluentMetrics.MediaWidth);
+        return TesseraRevealHostFactory.WrapMediaFromCatalog(vm, FluentMediaWrap(media));
     }
 
     private static Control FluentMediaWrap(Control media)

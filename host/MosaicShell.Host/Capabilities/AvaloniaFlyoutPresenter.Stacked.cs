@@ -30,13 +30,13 @@ public sealed partial class AvaloniaFlyoutPresenter
         && TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(
             request.Payload, request.StyleId, request.Kind);
 
-    private void ShowOrUpdateStacked(FlyoutRequest request, bool resetDismiss)
+    private void ShowOrUpdateStacked(FlyoutRequest request, bool resetDismiss, bool allowLivePatch = true)
     {
         Log($"ShowOrUpdateStacked enter kind={request.Kind} style={request.StyleId}");
         CloseSingleTesseraWindowIfAny();
         _stackedSession ??= new TesseraStackedSession();
 
-        if (TryPatchStacked(request, resetDismiss))
+        if (allowLivePatch && TryPatchStacked(request, resetDismiss))
         {
             _stackedSession.Kind = request.Kind;
             _stackedSession.StyleId = request.StyleId;
@@ -47,6 +47,7 @@ public sealed partial class AvaloniaFlyoutPresenter
         {
             _stackedSession.Kind = request.Kind;
             _stackedSession.StyleId = request.StyleId;
+            EnsureTesseraSession(request, TesseraFlyoutSessionMode.Stacked);
             return;
         }
 
@@ -54,12 +55,13 @@ public sealed partial class AvaloniaFlyoutPresenter
         if (panels.Count == 0)
         {
             Log("stacked panels empty, falling back to single HWND");
-            ShowOrUpdateSingleTessera(request, resetDismiss);
+            ShowOrUpdateSingleTessera(request, resetDismiss, allowLivePatch);
             return;
         }
 
         _stackedSession.Kind = request.Kind;
         _stackedSession.StyleId = request.StyleId;
+        EnsureTesseraSession(request, TesseraFlyoutSessionMode.Stacked);
         RebuildStackedSlots(request, panels, resetDismiss);
     }
 
@@ -280,7 +282,9 @@ public sealed partial class AvaloniaFlyoutPresenter
 
         foreach (var window in windows)
         {
-            window.SuppressAutoDismiss();
+            if (TesseraFlyoutDismissCoordinator.WindowMustSuppressAutoDismiss(
+                    TesseraFlyoutDismissCoordinator.SessionOwnsAutoDismissClock))
+                window.SuppressAutoDismiss();
             window.FlyoutUserActivity -= OnStackedFlyoutUserActivity;
             window.FlyoutUserActivity += OnStackedFlyoutUserActivity;
             window.PointerHoverChanged -= OnStackedPointerHoverChanged;
@@ -304,7 +308,7 @@ public sealed partial class AvaloniaFlyoutPresenter
     {
         StopStackedAutoDismiss();
         var ms = _stackedDismissRequest?.AutoDismissMs ?? 0;
-        if (ms <= 0 || _stackedSession is null)
+        if (!TesseraFlyoutDismissCoordinator.ShouldArmSessionAutoDismiss(ms, _stackedSession is not null))
             return;
 
         _stackedAutoDismiss = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(ms) };
@@ -702,6 +706,7 @@ public sealed partial class AvaloniaFlyoutPresenter
             StopOutsideClickWatcher();
             CloseFocusDim();
             CancelDeferredPatch();
+            _session.Clear();
         }
     }
 
@@ -755,10 +760,10 @@ public sealed partial class AvaloniaFlyoutPresenter
         }
     }
 
-    private void ShowOrUpdateSingleTessera(FlyoutRequest request, bool resetDismiss)
+    private void ShowOrUpdateSingleTessera(FlyoutRequest request, bool resetDismiss, bool allowLivePatch = true)
     {
         CloseStackedSession();
-        ShowOrUpdateCoreSinglePath(request, resetDismiss);
+        ShowOrUpdateCoreSinglePath(request, resetDismiss, allowLivePatch);
     }
 
     private void DismissStackedTesseraImmediate(bool notify = true)

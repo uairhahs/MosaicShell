@@ -1,5 +1,6 @@
 using FluentAssertions;
 using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Core.Tests;
 
@@ -79,6 +80,32 @@ public class TesseraFlyoutHwndRegionSpecTests
         TesseraFlyoutHwndRegionSpec.StyleNeedsRevealRegion(
                 "Fluent", musicVisible: true, TesseraStackedPanelRole.Volume)
             .Should().BeFalse();
+        TesseraFlyoutHwndRegionSpec.CollapsedShowRegionMustKeepWindowVisible.Should().BeTrue();
+        TesseraFlyoutHwndRegionSpec.ShouldZeroWindowOpacityForCollapsedRegion(
+                stackedMedia: true, hideChrome: true, showMotionActive: true)
+            .Should().BeFalse();
+        TesseraFlyoutHwndRegionSpec.ShouldZeroWindowOpacityForCollapsedRegion(
+                stackedMedia: true, hideChrome: true, showMotionActive: false)
+            .Should().BeTrue();
+        TesseraFlyoutHwndRegionSpec.ShouldZeroWindowOpacityForCollapsedRegion(
+                stackedMedia: false, hideChrome: true, showMotionActive: false)
+            .Should().BeFalse();
+        TesseraFlyoutHwndRegionSpec.ShowStackedMediaMustWipeRegionOverRestLayout.Should().BeFalse();
+        TesseraFlyoutHwndRegionSpec.ShowLayoutMustFollowRevealProgress.Should().BeTrue();
+        TesseraFlyoutHwndRegionSpec.ShowRegionWipeMustNotRedrawClient.Should().BeTrue();
+        TesseraFlyoutHwndRegionSpec.ShouldWipeShowRegionOverRestLayout(
+                entrance: true, TesseraStackedPanelRole.Media, willRunPhase2: true)
+            .Should().BeFalse();
+        TesseraFlyoutHwndRegionSpec.ShouldWipeShowRegionOverRestLayout(
+                entrance: false, TesseraStackedPanelRole.Media, willRunPhase2: true)
+            .Should().BeFalse();
+        TesseraFlyoutHwndRegionSpec.ShouldWipeShowRegionOverRestLayout(
+                entrance: true, TesseraStackedPanelRole.Volume, willRunPhase2: true)
+            .Should().BeFalse();
+        TesseraFlyoutHwndRegionSpec.ResolveShowLayoutRevealProgress(wipeRegionOverRest: true)
+            .Should().Be(TesseraFlyoutRevealSpec.RestRevealProgress);
+        TesseraFlyoutHwndRegionSpec.ResolveShowLayoutRevealProgress(wipeRegionOverRest: false)
+            .Should().Be(TesseraFlyoutRevealSpec.FancyPhase2StartProgress);
     }
 
     [Fact]
@@ -104,8 +131,14 @@ public class TesseraFlyoutHwndRegionSpecTests
             musicVisible: true,
             restWidthDip: 340,
             restHeightDip: 176);
-        mediaCollapsed.HideChrome.Should().BeTrue();
-        mediaCollapsed.WidthDip.Should().Be(0);
+        mediaCollapsed.HideChrome.Should().BeFalse();
+        mediaCollapsed.WidthDip.Should().Be(TesseraFlyoutHwndRegionSpec.MinRenderableRegionDip);
+        mediaCollapsed.HeightDip.Should().Be(176);
+        TesseraFlyoutHwndRegionSpec.CollapsedMediaRegionMustStayRenderable.Should().BeTrue();
+        var phys = TesseraFlyoutHwndRegionSpec.ResolveRenderableRoundRectPhysical(
+            mediaCollapsed.WidthDip, mediaCollapsed.HeightDip, 10, 1);
+        phys.WidthPx.Should().BeGreaterThanOrEqualTo(TesseraFlyoutHwndRegionSpec.MinRenderableRegionPx);
+        phys.HeightPx.Should().Be(176);
 
         var open = TesseraFlyoutHwndRegionSpec.ResolveRevealRegionDip(
             "Fluent",
@@ -290,5 +323,98 @@ public class TesseraFlyoutHwndRegionSpecTests
             restHeightDip: 176);
         rest.HideChrome.Should().BeFalse();
         rest.WidthDip.Should().Be(340);
+    }
+
+    [Fact]
+    public void Fallback_rest_sizes_read_style_profile()
+    {
+        var meterVol = TesseraFlyoutHwndRegionSpec.ResolveRevealRegionDip(
+            StyleIds.Meter,
+            TesseraStackedPanelRole.Volume,
+            progress: 1,
+            phase2Engaged: true,
+            musicVisible: true,
+            restWidthDip: 0,
+            restHeightDip: 0);
+        var profile = TesseraFlyoutTweenTargetCatalog.ResolveProfile(StyleIds.Meter);
+        meterVol.WidthDip.Should().Be(profile.VolumeWidthDip);
+        meterVol.HeightDip.Should().Be(profile.VolumeHeightDip);
+    }
+
+    [Fact]
+    public void CoreUi_single_hwnd_keeps_rest_region_while_media_clip_animates()
+    {
+        TesseraFlyoutHwndRegionSpec.CoreUiSingleHwndMustKeepRestRegion.Should().BeTrue();
+        const double restW = TesseraCoreUiLayoutSpec.WidthDip;
+        const double restH = 226;
+        foreach (var p in new[] { 0.0, 0.35, 1.0 })
+        {
+            var region = TesseraFlyoutHwndRegionSpec.ResolveRevealRegionDip(
+                StyleIds.CoreUI,
+                stackedRole: null,
+                progress: p,
+                phase2Engaged: true,
+                musicVisible: true,
+                restWidthDip: restW,
+                restHeightDip: restH);
+            region.HideChrome.Should().BeFalse($"p={p}");
+            region.WidthDip.Should().Be(restW, $"p={p}");
+            region.HeightDip.Should().Be(restH, $"p={p}");
+            TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaClipWidthDip(
+                    TesseraCoreUiLayoutSpec.InnerRowWidthDip, p, true)
+                .Should().BeApproximately(TesseraCoreUiLayoutSpec.InnerRowWidthDip * p, 0.01);
+        }
+    }
+
+    [Fact]
+    public void CoreUi_media_slot_still_clips_hwnd_width()
+    {
+        var collapsed = TesseraFlyoutHwndRegionSpec.ResolveRevealRegionDip(
+            StyleIds.CoreUI,
+            TesseraStackedPanelRole.Media,
+            progress: 0,
+            phase2Engaged: true,
+            musicVisible: true,
+            restWidthDip: TesseraCoreUiLayoutSpec.InnerRowWidthDip,
+            restHeightDip: TesseraCoreUiLayoutSpec.MediaHeightDip);
+        collapsed.HideChrome.Should().BeFalse();
+        collapsed.WidthDip.Should().Be(TesseraFlyoutHwndRegionSpec.MinRenderableRegionDip);
+        collapsed.HeightDip.Should().Be(TesseraCoreUiLayoutSpec.MediaHeightDip);
+
+        var open = TesseraFlyoutHwndRegionSpec.ResolveRevealRegionDip(
+            StyleIds.CoreUI,
+            TesseraStackedPanelRole.Media,
+            progress: 1,
+            phase2Engaged: true,
+            musicVisible: true,
+            restWidthDip: TesseraCoreUiLayoutSpec.InnerRowWidthDip,
+            restHeightDip: TesseraCoreUiLayoutSpec.MediaHeightDip);
+        open.HideChrome.Should().BeFalse();
+        open.WidthDip.Should().Be(TesseraCoreUiLayoutSpec.InnerRowWidthDip);
+    }
+
+    [Fact]
+    public void CoreUi_phase2_clip_and_scale_follow_the_same_progress()
+    {
+        const int steps = 20;
+        var showEase = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(
+            TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: true);
+        var hideEase = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(
+            TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: false);
+        var row = TesseraCoreUiLayoutSpec.InnerRowWidthDip;
+        var showMid = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(
+            entrance: true, 10, steps, showEase);
+        var hideEarly = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(
+            entrance: false, 5, steps, hideEase);
+        var showClip = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaClipWidthDip(row, showMid, true);
+        var hideClip = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaClipWidthDip(row, hideEarly, true);
+        var showScale = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiVolumeBarScaleFactor(showMid, true);
+        showEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseInOutQuart);
+        hideEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseOutQuart);
+        showMid.Should().BeApproximately(0.5, 0.05);
+        showClip.Should().BeApproximately(row * showMid, 0.5);
+        showScale.Should().BeApproximately(showMid, 0.02);
+        hideClip.Should().BeGreaterThan(row * 0.9);
+        hideEarly.Should().BeGreaterThan(0.9);
     }
 }

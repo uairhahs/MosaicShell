@@ -4,6 +4,7 @@ using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Capabilities.Ipc;
 using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 
@@ -134,6 +135,30 @@ public class CapabilityIpcCodecTests
         var back = CapabilityIpcCodec.Deserialize(payload);
         back.Type.Should().Be(CapabilityIpcMessageType.FlyoutShow);
         back.Request!.Kind.Should().Be("vol");
+    }
+
+    [Fact]
+    public void Session_snapshot_round_trips_through_message_frame()
+    {
+        TesseraFlyoutDismissCoordinator.IpcMustEchoSessionSnapshot.Should().BeTrue();
+        var session = new TesseraFlyoutSessionState();
+        session.Begin(TesseraFlyoutSessionMode.Stacked, "vol", "Fluent");
+        var snap = session.Snapshot(effectivelyShowing: false);
+        var message = new CapabilityIpcMessage(
+            CapabilityIpcMessageType.FlyoutSessionSnapshot,
+            ModuleId: "Tessera",
+            SessionSnapshot: TesseraFlyoutIpcSnapshotDto.From("Tessera", snap));
+
+        var frame = CapabilityIpcCodec.Serialize(message);
+        var back = CapabilityIpcCodec.Deserialize(frame.AsSpan(4));
+        back.Type.Should().Be(CapabilityIpcMessageType.FlyoutSessionSnapshot);
+        back.ModuleId.Should().Be("Tessera");
+        back.SessionSnapshot.Should().NotBeNull();
+        back.SessionSnapshot!.EffectivelyShowing.Should().BeFalse();
+        back.SessionSnapshot.Generation.Should().Be(1);
+        back.SessionSnapshot.Mode.Should().Be(nameof(TesseraFlyoutSessionMode.Stacked));
+        back.SessionSnapshot.Kind.Should().Be("vol");
+        back.SessionSnapshot.StyleId.Should().Be("Fluent");
     }
 }
 

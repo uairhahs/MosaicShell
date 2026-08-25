@@ -2,6 +2,7 @@ namespace MosaicShell.Core.Capabilities.Ipc;
 
 using System.IO.Pipes;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Modules.Tessera;
 
 /// <summary>
 /// Worker-side <see cref="IFlyoutPresenter"/> that forwards flyout commands to MosaicShell Host over a named pipe.
@@ -11,6 +12,7 @@ public sealed class IpcFlyoutPresenter : IFlyoutPresenter, IDisposable
     private readonly object _gate = new();
     private ClientConnection? _connection;
     private readonly Dictionary<string, bool> _visible = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, TesseraFlyoutSessionSnapshot> _snapshots = new(StringComparer.OrdinalIgnoreCase);
     private bool _disposed;
 
     public event Action<string>? TransientDismissed;
@@ -78,8 +80,25 @@ public sealed class IpcFlyoutPresenter : IFlyoutPresenter, IDisposable
     public bool IsVisible(string moduleId)
     {
         lock (_gate)
+        {
+            if (_snapshots.TryGetValue(moduleId, out var snap))
+                return snap.EffectivelyShowing;
             return _visible.TryGetValue(moduleId, out var v) && v;
+        }
     }
+
+    public TesseraFlyoutSessionSnapshot GetSessionSnapshot(string moduleId)
+    {
+        lock (_gate)
+        {
+            if (_snapshots.TryGetValue(moduleId, out var snap))
+                return snap;
+            return new(IsVisibleUnlocked(moduleId), 0, TesseraFlyoutSessionMode.None, "", null);
+        }
+    }
+
+    private bool IsVisibleUnlocked(string moduleId) =>
+        _visible.TryGetValue(moduleId, out var v) && v;
 
     private void SetVisible(string moduleId, bool visible)
     {
@@ -95,11 +114,37 @@ public sealed class IpcFlyoutPresenter : IFlyoutPresenter, IDisposable
 
     private void OnServerMessage(CapabilityIpcMessage message)
     {
+        if (message.Type == CapabilityIpcMessageType.FlyoutSessionSnapshot
+            && message.SessionSnapshot is { } dto)
+        {
+            var snap = new TesseraFlyoutSessionSnapshot(
+                dto.EffectivelyShowing,
+                dto.Generation,
+                Enum.TryParse<TesseraFlyoutSessionMode>(dto.Mode, out var mode)
+                    ? mode
+                    : TesseraFlyoutSessionMode.None,
+                dto.Kind,
+                dto.StyleId);
+            lock (_gate)
+            {
+                _snapshots[dto.ModuleId] = snap;
+                _visible[dto.ModuleId] = dto.EffectivelyShowing;
+            }
+
+            return;
+        }
+
         if (message.Type != CapabilityIpcMessageType.TransientDismissed
             || string.IsNullOrWhiteSpace(message.ModuleId))
             return;
 
         SetVisible(message.ModuleId, false);
+        lock (_gate)
+        {
+            if (_snapshots.TryGetValue(message.ModuleId, out var prev))
+                _snapshots[message.ModuleId] = prev with { EffectivelyShowing = false };
+        }
+
         try { TransientDismissed?.Invoke(message.ModuleId); }
         catch { /* ignore */ }
     }

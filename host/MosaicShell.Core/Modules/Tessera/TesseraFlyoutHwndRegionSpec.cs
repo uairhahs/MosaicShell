@@ -24,6 +24,76 @@ public static class TesseraFlyoutHwndRegionSpec
     public const bool CollapsedRevealRegionMustHideRestChrome = true;
 
     /// <summary>
+    /// Hide can zero stacked-media Opacity at a 1x1 region. Show must not: Avalonia
+    /// will not tick TweenNode1 on an Opacity-0 HWND, so CompleteMotion is the first
+    /// visible frame (divider and media pop). Hide starts visible, so it can dissolve.
+    /// </summary>
+    public const bool CollapsedShowRegionMustKeepWindowVisible = true;
+
+    /// <summary>
+    /// Win32 CreateRoundRectRgn / Host ApplyRoundRectRegion no-op below 2px. A 1x1
+    /// HideChrome call leaves the rest-sized Relayout region in place, so show unhides
+    /// a finished acrylic card. Collapsed media must be a renderable strip that can grow.
+    /// </summary>
+    public const int MinRenderableRegionPx = 2;
+
+    public const double MinRenderableRegionDip = 2;
+
+    public const bool CollapsedMediaRegionMustStayRenderable = true;
+
+    /// <summary>
+    /// Hide shrinks HRGN over a client that was already painted at rest. Growing HRGN
+    /// as the only interpolator (layout frozen at rest) is a second clock from the
+    /// volume divider. Clip and region both follow reveal progress instead.
+    /// </summary>
+    public const bool ShowStackedMediaMustWipeRegionOverRestLayout = false;
+
+    /// <summary>
+    /// Stacked media layout TweenNode1 must track the same p as HWND region and the
+    /// volume divider. Do not freeze layout at rest while only HRGN wipes.
+    /// </summary>
+    public const bool ShowLayoutMustFollowRevealProgress = true;
+
+    /// <summary>
+    /// SetWindowRgn bRedraw on a growing wipe discards the rest-sized backing store.
+    /// Hide may redraw; show wipe must not.
+    /// </summary>
+    public const bool ShowRegionWipeMustNotRedrawClient = true;
+
+    public static bool ShouldWipeShowRegionOverRestLayout(
+        bool entrance,
+        TesseraStackedPanelRole? stackedRole,
+        bool willRunPhase2) =>
+        ShowStackedMediaMustWipeRegionOverRestLayout
+        && !ShowLayoutMustFollowRevealProgress
+        && entrance
+        && willRunPhase2
+        && stackedRole == TesseraStackedPanelRole.Media;
+
+    public static double ResolveShowLayoutRevealProgress(bool wipeRegionOverRest) =>
+        wipeRegionOverRest
+            ? TesseraFlyoutRevealSpec.RestRevealProgress
+            : TesseraFlyoutRevealSpec.FancyPhase2StartProgress;
+
+    public static bool ShouldZeroWindowOpacityForCollapsedRegion(
+        bool stackedMedia,
+        bool hideChrome,
+        bool showMotionActive)
+    {
+        if (!stackedMedia || !hideChrome)
+            return false;
+        if (CollapsedShowRegionMustKeepWindowVisible && showMotionActive)
+            return false;
+        return true;
+    }
+
+    /// <summary>
+    /// CoreUI MediaC clip is an inner Avalonia wipe. Single-HWND SetWindowRgn must stay
+    /// on the rest shell so volume/device tiles are not cropped from the origin.
+    /// </summary>
+    public const bool CoreUiSingleHwndMustKeepRestRegion = true;
+
+    /// <summary>
     /// Rest pose must use the signed placement client, never a live Bounds sampled under
     /// an active clip. Feeding the current region back as rest freezes a partial card.
     /// </summary>
@@ -168,10 +238,13 @@ public static class TesseraFlyoutHwndRegionSpec
 
         if (id.Equals(StyleIds.CoreUI, StringComparison.OrdinalIgnoreCase))
         {
-            var clipW = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaClipWidthDip(
-                TesseraCoreUiLayoutSpec.InnerRowWidthDip, p, musicVisible);
-            if (stackedRole == TesseraStackedPanelRole.Media || stackedRole is null)
-                return new RevealRegionDip(clipW, restH, clipW < 2);
+            if (stackedRole == TesseraStackedPanelRole.Media)
+            {
+                var clipW = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaClipWidthDip(
+                    TesseraCoreUiLayoutSpec.InnerRowWidthDip, p, musicVisible);
+                return HorizontalMediaRegion(clipW, restH);
+            }
+
             return new RevealRegionDip(restW, restH, HideChrome: false);
         }
 
@@ -199,6 +272,35 @@ public static class TesseraFlyoutHwndRegionSpec
         return (widthPx, heightPx, radiusPx);
     }
 
+    /// <summary>Never return a region Win32 will ignore. Grow from this floor, do not skip SetWindowRgn.</summary>
+    public static (int WidthPx, int HeightPx, int CornerRadiusPx) ResolveRenderableRoundRectPhysical(
+        double widthDip,
+        double heightDip,
+        double cornerRadiusDip,
+        double monitorScale)
+    {
+        var phys = ResolveRoundRectPhysical(widthDip, heightDip, cornerRadiusDip, monitorScale);
+        var w = Math.Max(phys.WidthPx, MinRenderableRegionPx);
+        var h = Math.Max(phys.HeightPx, MinRenderableRegionPx);
+        var cap = Math.Max(1, Math.Min(w, h) / 2);
+        var r = Math.Clamp(phys.CornerRadiusPx, 1, cap);
+        return (w, h, r);
+    }
+
+    private static RevealRegionDip HorizontalMediaRegion(double widthDip, double restHeightDip)
+    {
+        var h = restHeightDip > 1 ? restHeightDip : MinRenderableRegionDip;
+        var w = widthDip < MinRenderableRegionDip ? MinRenderableRegionDip : widthDip;
+        return new RevealRegionDip(w, h, HideChrome: false);
+    }
+
+    private static RevealRegionDip VerticalMediaRegion(double restWidthDip, double heightDip)
+    {
+        var w = restWidthDip > 1 ? restWidthDip : MinRenderableRegionDip;
+        var h = heightDip < MinRenderableRegionDip ? MinRenderableRegionDip : heightDip;
+        return new RevealRegionDip(w, h, HideChrome: false);
+    }
+
     private static RevealRegionDip ResolveWin11Region(
         TesseraStackedPanelRole? role,
         double progress,
@@ -214,7 +316,7 @@ public static class TesseraFlyoutHwndRegionSpec
         {
             var h = TesseraFlyoutAnimatedTargetSpec.ResolveWin11MediaClipHeightDip(
                 media, progress, musicVisible);
-            return new RevealRegionDip(restWidthDip, h, h < 2);
+            return VerticalMediaRegion(restWidthDip, h);
         }
 
         var shellH = ResolveRegionHeightDip(progress, phase2Engaged, musicVisible);
@@ -238,7 +340,7 @@ public static class TesseraFlyoutHwndRegionSpec
         {
             var mediaRest = restWidthDip > 1 ? restWidthDip : TesseraFluentLayoutSpec.MediaWidthDip;
             var w = mediaRest * progress;
-            return new RevealRegionDip(w, h, w < 2);
+            return HorizontalMediaRegion(w, h);
         }
 
         var collapsed = TesseraFlyoutAnimatedTargetSpec.ResolveFluentVisibleShellWidthDip(0, musicVisible);
@@ -259,7 +361,7 @@ public static class TesseraFlyoutHwndRegionSpec
         if (role == TesseraStackedPanelRole.Volume)
             return new RevealRegionDip(restWidthDip, volumeHeightDip, HideChrome: false);
         if (role == TesseraStackedPanelRole.Media)
-            return new RevealRegionDip(restWidthDip, mediaClipHeightDip, mediaClipHeightDip < 2);
+            return VerticalMediaRegion(restWidthDip, mediaClipHeightDip);
         var h = volumeHeightDip + mediaClipHeightDip;
         return new RevealRegionDip(restWidthDip, h, HideChrome: false);
     }
@@ -270,32 +372,26 @@ public static class TesseraFlyoutHwndRegionSpec
         double restWidthDip,
         double restHeightDip)
     {
-        if (!musicVisible || progress <= 0)
-            return new RevealRegionDip(0, 0, HideChrome: true);
-        return new RevealRegionDip(
-            restWidthDip * progress,
-            restHeightDip * progress,
-            HideChrome: progress < 0.02);
+        if (!musicVisible)
+            return HorizontalMediaRegion(0, restHeightDip);
+        return HorizontalMediaRegion(restWidthDip * progress, restHeightDip);
     }
 
     private static double FallbackRestWidth(string styleId, TesseraStackedPanelRole? role)
     {
+        var profile = TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId);
         if (role == TesseraStackedPanelRole.Volume)
-        {
-            return styleId.Equals(StyleIds.Fluent, StringComparison.OrdinalIgnoreCase)
-                ? TesseraFluentLayoutSpec.VolumeWidthDip
-                : 72;
-        }
+            return profile.VolumeWidthDip > 1 ? profile.VolumeWidthDip : TesseraFluentLayoutSpec.VolumeWidthDip;
 
-        TesseraFlyoutTweenTargetCatalog.TryResolveMediaRestSizeDip(styleId, out var w, out _);
-        return w > 1 ? w : TesseraFluentLayoutSpec.MediaWidthDip;
+        return profile.MediaWidthDip > 1 ? profile.MediaWidthDip : TesseraFluentLayoutSpec.MediaWidthDip;
     }
 
     private static double FallbackRestHeight(string styleId, TesseraStackedPanelRole? role)
     {
+        var profile = TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId);
         if (role == TesseraStackedPanelRole.Volume)
-            return TesseraFluentLayoutSpec.HeightDip;
-        TesseraFlyoutTweenTargetCatalog.TryResolveMediaRestSizeDip(styleId, out _, out var h);
-        return h > 1 ? h : TesseraFluentLayoutSpec.HeightDip;
+            return profile.VolumeHeightDip > 1 ? profile.VolumeHeightDip : TesseraFluentLayoutSpec.HeightDip;
+
+        return profile.MediaHeightDip > 1 ? profile.MediaHeightDip : TesseraFluentLayoutSpec.HeightDip;
     }
 }

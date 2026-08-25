@@ -74,7 +74,7 @@ public class TesseraFlyoutTweenTargetCatalogTests
         TesseraFlyoutTweenTargetCatalog.HasChannel(StyleIds.Fluent, TesseraTweenChannel.VolumeFillOpacity)
             .Should().BeFalse();
         TesseraFlyoutTweenTargetCatalog.VolumeStaysOpaqueDuringPhase2(StyleIds.Fluent).Should().BeTrue();
-        TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaContentOpacity(0, true).Should().Be(0);
+        TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaContentOpacity(0, true).Should().Be(1);
         TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaContentOpacity(1, true).Should().Be(1);
         TesseraFlyoutAnimatedTargetSpec.ResolveFluentDividerHeightDip(148, 0, true).Should().Be(0);
         TesseraFlyoutAnimatedTargetSpec.ResolveFluentDividerHeightDip(148, 1, true).Should().Be(148);
@@ -117,7 +117,7 @@ public class TesseraFlyoutTweenTargetCatalogTests
             TesseraTweenChannel.ContentOpacity);
         TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiVolumeBarScaleFactor(0, true).Should().Be(0);
         TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaClipWidthDip(280, 0, true).Should().Be(0);
-        TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaContentOpacityFactor(0, true).Should().Be(0);
+        TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaContentOpacityFactor(0, true).Should().Be(1);
         TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaContentOpacityFactor(1, true).Should().Be(1);
         TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaSlideOffsetDip(388, 0.5, true).Should().Be(0);
     }
@@ -244,6 +244,26 @@ public class TesseraFlyoutTweenTargetCatalogTests
 
         TesseraFlyoutRevealSpec.ResolveMediaOpacity(StyleIds.Square, 0, true).Should().Be(1);
         TesseraFlyoutRevealSpec.ResolveMediaOpacity(StyleIds.Radial, 0, true).Should().Be(1);
+    }
+
+    [Fact]
+    public void Style_profile_rest_sizes_match_layout_specs()
+    {
+        TesseraFlyoutRevealSpec.HostMustDispatchRevealFromCatalogKind.Should().BeTrue();
+        var fluent = TesseraFlyoutTweenTargetCatalog.ResolveProfile(StyleIds.Fluent);
+        fluent.RevealKind.Should().Be(TesseraFlyoutRevealKind.Fluent);
+        fluent.MediaWidthDip.Should().Be(TesseraFluentLayoutSpec.MediaWidthDip);
+        fluent.MediaHeightDip.Should().Be(TesseraFluentLayoutSpec.HeightDip);
+        var coreUi = TesseraFlyoutTweenTargetCatalog.ResolveProfile(StyleIds.CoreUI);
+        coreUi.VolumeWidthDip.Should().Be(TesseraCoreUiLayoutSpec.WidthDip);
+        coreUi.VolumeHeightDip.Should().Be(TesseraCoreUiLayoutSpec.VolumeHeightDip);
+        coreUi.MediaWidthDip.Should().Be(TesseraCoreUiLayoutSpec.InnerRowWidthDip);
+        coreUi.MediaHeightDip.Should().Be(TesseraCoreUiLayoutSpec.MediaHeightDip);
+        TesseraFlyoutRevealSpec.ResolveHostKind(StyleIds.Radial).Should().Be(TesseraFlyoutRevealKind.None);
+        TesseraFlyoutTweenTargetCatalog.TryResolveMediaRestSizeDip(StyleIds.Fluent, out var w, out var h)
+            .Should().BeTrue();
+        w.Should().Be(TesseraFluentLayoutSpec.MediaWidthDip);
+        h.Should().Be(TesseraFluentLayoutSpec.HeightDip);
     }
 
     private static void AssertChannels(string styleId, params TesseraTweenChannel[] expected)

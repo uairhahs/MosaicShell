@@ -74,6 +74,12 @@ public class TesseraFlyoutRevealSpecTests
             .Should().Be(TesseraFlyoutRevealSpec.FancyPhase2StartProgress);
         TesseraFlyoutRevealSpec.ResolveShowRevealProgress(willRunPhase2: false)
             .Should().Be(TesseraFlyoutRevealSpec.RestRevealProgress);
+        TesseraFlyoutRevealSpec.ResolveMotionPhase2Engaged(0, willRunPhase2: true, entrance: true)
+            .Should().BeTrue();
+        TesseraFlyoutRevealSpec.ResolveMotionPhase2Engaged(0, willRunPhase2: true, entrance: false)
+            .Should().BeFalse();
+        TesseraFlyoutRevealSpec.ResolveMotionPhase2Engaged(1, willRunPhase2: true, entrance: false)
+            .Should().BeTrue();
     }
 
     [Fact]

@@ -20,6 +20,30 @@ public enum TesseraTweenChannel
 /// <summary>One Animated-group meter/channel pair from a YourFlyouts layout inc.</summary>
 public readonly record struct TesseraTweenTarget(string MeterId, TesseraTweenChannel Channel);
 
+public enum TesseraFlyoutRevealKind
+{
+    None,
+    Fluent,
+    Windows11,
+    Gnome,
+    Square,
+    CoreUi,
+    PlainText,
+    Meter,
+    Compact,
+    ModernFlyouts,
+    MaterialYou,
+}
+
+/// <summary>Animated targets plus rest DIP for clip, HWND region, and stacked placement.</summary>
+public readonly record struct TesseraFlyoutStyleProfile(
+    IReadOnlyList<TesseraTweenTarget> Targets,
+    TesseraFlyoutRevealKind RevealKind,
+    double VolumeWidthDip,
+    double VolumeHeightDip,
+    double MediaWidthDip,
+    double MediaHeightDip);
+
 /// <summary>
 /// Fancy phase-2 addressable components per Tessera style. Source of truth is YourFlyouts
 /// <c>Group=Animated</c> meters. Nested MediaC children stay Standard and inherit the mask.
@@ -33,64 +57,121 @@ public static class TesseraFlyoutTweenTargetCatalog
     public const bool IndependentMediaChildrenMustInheritContainer = true;
 
     public static IReadOnlyList<TesseraTweenTarget> ResolveAnimated(string? styleId) =>
-        StyleIds.Normalize(styleId) switch
+        ResolveProfile(styleId).Targets;
+
+    /// <summary>Host reveal appliers and rest sizes share this profile; do not fork literals.</summary>
+    public static TesseraFlyoutStyleProfile ResolveProfile(string? styleId)
+    {
+        var id = StyleIds.Normalize(styleId);
+        return id switch
         {
-            StyleIds.Fluent =>
-            [
-                new("MediaC", TesseraTweenChannel.ClipWidth),
-                new("MediaC", TesseraTweenChannel.ContentOpacity),
-                new("MediaB", TesseraTweenChannel.DividerHeight)
-            ],
-            StyleIds.Windows11 =>
-            [
-                new("StrokeB", TesseraTweenChannel.ShellHeight),
-                new("MediaC", TesseraTweenChannel.ClipHeight),
-                new("MediaC", TesseraTweenChannel.ContentOpacity)
-            ],
-            StyleIds.Gnome =>
-            [
-                new("MediaB", TesseraTweenChannel.ContentScale),
-                new("MediaC", TesseraTweenChannel.ContentOpacity),
-                new("VolumeC", TesseraTweenChannel.VolumeFillOpacity)
-            ],
-            StyleIds.Square =>
-            [
-                new("VolumeIcon", TesseraTweenChannel.LabelScale),
-                new("VolumeString", TesseraTweenChannel.LabelScale)
-            ],
-            StyleIds.CoreUI =>
-            [
-                new("VolumeBar", TesseraTweenChannel.VolumeBarScale),
-                new("MediaC", TesseraTweenChannel.ClipWidth),
-                new("MediaC", TesseraTweenChannel.ContentOpacity)
-            ],
-            StyleIds.PlainText =>
-            [
-                new("MediaB", TesseraTweenChannel.SlideOffset),
-                new("MediaB", TesseraTweenChannel.ContentOpacity)
-            ],
-            StyleIds.Meter =>
-            [
-                new("MediaB", TesseraTweenChannel.SlideOffset),
-                new("MediaC", TesseraTweenChannel.ContentOpacity)
-            ],
-            StyleIds.Compact =>
-            [
-                new("MediaB", TesseraTweenChannel.SlideOffset),
-                new("MediaC", TesseraTweenChannel.ContentOpacity)
-            ],
-            StyleIds.ModernFlyouts =>
-            [
-                new("MediaC", TesseraTweenChannel.ClipHeight),
-                new("MediaC", TesseraTweenChannel.ContentOpacity)
-            ],
-            StyleIds.MaterialYou =>
-            [
-                new("MediaB", TesseraTweenChannel.SlideOffset),
-                new("MediaC", TesseraTweenChannel.ContentOpacity)
-            ],
-            _ => []
+            StyleIds.Fluent => new(
+                [
+                    new("MediaC", TesseraTweenChannel.ClipWidth),
+                    new("MediaC", TesseraTweenChannel.ContentOpacity),
+                    new("MediaB", TesseraTweenChannel.DividerHeight)
+                ],
+                TesseraFlyoutRevealKind.Fluent,
+                TesseraFluentLayoutSpec.VolumeWidthDip,
+                TesseraFluentLayoutSpec.HeightDip,
+                TesseraFluentLayoutSpec.MediaWidthDip,
+                TesseraFluentLayoutSpec.HeightDip),
+            StyleIds.Windows11 => new(
+                [
+                    new("StrokeB", TesseraTweenChannel.ShellHeight),
+                    new("MediaC", TesseraTweenChannel.ClipHeight),
+                    new("MediaC", TesseraTweenChannel.ContentOpacity)
+                ],
+                TesseraFlyoutRevealKind.Windows11,
+                TesseraStackedPlacementSpec.Win11WidthDip,
+                TesseraStackedPlacementSpec.Win11VolumeHeightDip,
+                TesseraStackedPlacementSpec.Win11WidthDip,
+                TesseraStackedPlacementSpec.Win11MediaHeightDip),
+            StyleIds.Gnome => new(
+                [
+                    new("MediaB", TesseraTweenChannel.ContentScale),
+                    new("MediaC", TesseraTweenChannel.ContentOpacity),
+                    new("VolumeC", TesseraTweenChannel.VolumeFillOpacity)
+                ],
+                TesseraFlyoutRevealKind.Gnome,
+                TesseraStackedPlacementSpec.GnomeVolumeWidthDip,
+                TesseraStackedPlacementSpec.GnomeVolumeHeightDip,
+                TesseraStackedPlacementSpec.GnomeMediaWidthDip,
+                TesseraStackedPlacementSpec.GnomeMediaHeightDip),
+            StyleIds.Square => new(
+                [
+                    new("VolumeIcon", TesseraTweenChannel.LabelScale),
+                    new("VolumeString", TesseraTweenChannel.LabelScale)
+                ],
+                TesseraFlyoutRevealKind.Square,
+                72,
+                TesseraFluentLayoutSpec.HeightDip,
+                double.NaN,
+                double.NaN),
+            StyleIds.CoreUI => new(
+                [
+                    new("VolumeBar", TesseraTweenChannel.VolumeBarScale),
+                    new("MediaC", TesseraTweenChannel.ClipWidth),
+                    new("MediaC", TesseraTweenChannel.ContentOpacity)
+                ],
+                TesseraFlyoutRevealKind.CoreUi,
+                TesseraCoreUiLayoutSpec.WidthDip,
+                TesseraCoreUiLayoutSpec.VolumeHeightDip,
+                TesseraCoreUiLayoutSpec.InnerRowWidthDip,
+                TesseraCoreUiLayoutSpec.MediaHeightDip),
+            StyleIds.PlainText => new(
+                [
+                    new("MediaB", TesseraTweenChannel.SlideOffset),
+                    new("MediaB", TesseraTweenChannel.ContentOpacity)
+                ],
+                TesseraFlyoutRevealKind.PlainText,
+                TesseraStackedPlacementSpec.PlainTextWidthDip,
+                TesseraStackedPlacementSpec.PlainTextVolumeHeightDip,
+                TesseraStackedPlacementSpec.PlainTextWidthDip,
+                TesseraStackedPlacementSpec.PlainTextMediaHeightDip),
+            StyleIds.Meter => new(
+                [
+                    new("MediaB", TesseraTweenChannel.SlideOffset),
+                    new("MediaC", TesseraTweenChannel.ContentOpacity)
+                ],
+                TesseraFlyoutRevealKind.Meter,
+                TesseraStackedPlacementSpec.MeterVolumeWidthDip,
+                TesseraStackedPlacementSpec.MeterVolumeHeightDip,
+                TesseraStackedPlacementSpec.MeterMediaWidthDip,
+                TesseraStackedPlacementSpec.MeterMediaHeightDip),
+            StyleIds.Compact => new(
+                [
+                    new("MediaB", TesseraTweenChannel.SlideOffset),
+                    new("MediaC", TesseraTweenChannel.ContentOpacity)
+                ],
+                TesseraFlyoutRevealKind.Compact,
+                TesseraStackedPlacementSpec.CompactVolumeWidthDip,
+                TesseraStackedPlacementSpec.CompactVolumeHeightDip,
+                TesseraStackedPlacementSpec.CompactMediaWidthDip,
+                TesseraStackedPlacementSpec.CompactMediaHeightDip),
+            StyleIds.ModernFlyouts => new(
+                [
+                    new("MediaC", TesseraTweenChannel.ClipHeight),
+                    new("MediaC", TesseraTweenChannel.ContentOpacity)
+                ],
+                TesseraFlyoutRevealKind.ModernFlyouts,
+                TesseraStackedPlacementSpec.ModernFlyoutsVolumeWidthDip,
+                TesseraStackedPlacementSpec.ModernFlyoutsVolumeHeightDip,
+                TesseraStackedPlacementSpec.ModernFlyoutsMediaWidthDip,
+                TesseraStackedPlacementSpec.ModernFlyoutsMediaHeightDip),
+            StyleIds.MaterialYou => new(
+                [
+                    new("MediaB", TesseraTweenChannel.SlideOffset),
+                    new("MediaC", TesseraTweenChannel.ContentOpacity)
+                ],
+                TesseraFlyoutRevealKind.MaterialYou,
+                TesseraFlyoutAnimatedTargetSpec.MaterialYouColumnWidthDip,
+                double.NaN,
+                TesseraFlyoutAnimatedTargetSpec.MaterialYouColumnWidthDip,
+                double.NaN),
+            _ => new([], TesseraFlyoutRevealKind.None, 72, TesseraFluentLayoutSpec.HeightDip, double.NaN, double.NaN),
         };
+    }
 
     public static bool HasChannel(string? styleId, TesseraTweenChannel channel)
     {
@@ -130,48 +211,9 @@ public static class TesseraFlyoutTweenTargetCatalog
     /// <summary>Rest media panel size for stacked HWND clip/slide binders. NaN when unused.</summary>
     public static bool TryResolveMediaRestSizeDip(string? styleId, out double widthDip, out double heightDip)
     {
-        switch (StyleIds.Normalize(styleId))
-        {
-            case StyleIds.Fluent:
-                widthDip = TesseraFluentLayoutSpec.MediaWidthDip;
-                heightDip = TesseraFluentLayoutSpec.HeightDip;
-                return true;
-            case StyleIds.Meter:
-                widthDip = TesseraStackedPlacementSpec.MeterMediaWidthDip;
-                heightDip = TesseraStackedPlacementSpec.MeterMediaHeightDip;
-                return true;
-            case StyleIds.Windows11:
-                widthDip = TesseraStackedPlacementSpec.Win11WidthDip;
-                heightDip = TesseraStackedPlacementSpec.Win11MediaHeightDip;
-                return true;
-            case StyleIds.Gnome:
-                widthDip = TesseraStackedPlacementSpec.GnomeMediaWidthDip;
-                heightDip = TesseraStackedPlacementSpec.GnomeMediaHeightDip;
-                return true;
-            case StyleIds.PlainText:
-                widthDip = TesseraStackedPlacementSpec.PlainTextWidthDip;
-                heightDip = TesseraStackedPlacementSpec.PlainTextMediaHeightDip;
-                return true;
-            case StyleIds.Compact:
-                widthDip = TesseraStackedPlacementSpec.CompactMediaWidthDip;
-                heightDip = TesseraStackedPlacementSpec.CompactMediaHeightDip;
-                return true;
-            case StyleIds.ModernFlyouts:
-                widthDip = TesseraStackedPlacementSpec.ModernFlyoutsMediaWidthDip;
-                heightDip = TesseraStackedPlacementSpec.ModernFlyoutsMediaHeightDip;
-                return true;
-            case StyleIds.CoreUI:
-                widthDip = TesseraCoreUiLayoutSpec.InnerRowWidthDip;
-                heightDip = TesseraCoreUiLayoutSpec.MediaHeightDip;
-                return true;
-            case StyleIds.MaterialYou:
-                widthDip = TesseraFlyoutAnimatedTargetSpec.MaterialYouColumnWidthDip;
-                heightDip = double.NaN;
-                return true;
-            default:
-                widthDip = double.NaN;
-                heightDip = double.NaN;
-                return false;
-        }
+        var profile = ResolveProfile(styleId);
+        widthDip = profile.MediaWidthDip;
+        heightDip = profile.MediaHeightDip;
+        return profile.MediaWidthDip > 1 || profile.MediaHeightDip > 1;
     }
 }

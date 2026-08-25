@@ -32,7 +32,7 @@ internal static partial class TesseraLayouts
         if (!vm.ShowMediaStrip)
             return volPill;
 
-        var mediaHost = TesseraRevealHost.WrapMedia(vm, TesseraMediaPanel.Create(vm, TesseraMediaMode.GnomePill));
+        var mediaHost = TesseraRevealHostFactory.WrapMediaFromCatalog(vm, TesseraMediaPanel.Create(vm, TesseraMediaMode.GnomePill));
         var volHost = TesseraRevealHost.WrapGnomeVolumeFill(vm, volPill);
 
         return new StackPanel

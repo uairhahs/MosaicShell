@@ -638,9 +638,9 @@ public static class TesseraStackedPlacementPolicy
 
         var volW = TesseraFlyoutAnimatedTargetSpec.ResolveFluentCollapsedShellWidthDip(true);
 
-        const double h = 176;
+        var h = TesseraFluentLayoutSpec.HeightDip;
 
-        const double mediaW = 324;
+        var mediaW = TesseraFlyoutTweenTargetCatalog.ResolveProfile(StyleIds.Fluent).MediaWidthDip;
 
         var mediaX = TesseraFlyoutAnimatedTargetSpec.ResolveFluentStackedMediaOffsetXDip(true);
 

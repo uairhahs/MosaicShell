@@ -54,7 +54,7 @@ internal static partial class TesseraLayouts
             IsHitTestVisible = false,
             Children = { glyph, percent }
         };
-        var overlayHost = TesseraRevealHost.WrapMedia(vm, overlay);
+        var overlayHost = TesseraRevealHostFactory.WrapMediaFromCatalog(vm, overlay);
         var inner = new Grid
         {
             Width = size,

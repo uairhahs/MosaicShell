@@ -18,6 +18,7 @@ public enum CapabilityIpcMessageType
     FlyoutHide,
     FlyoutHideAll,
     TransientDismissed,
+    FlyoutSessionSnapshot,
 }
 
 public sealed record FlyoutRequestDto(
@@ -36,7 +37,26 @@ public sealed record FlyoutRequestDto(
     int AniSteps = TesseraFlyoutAnimationPolicy.DefaultAniSteps,
     int AnimationDisplacement = TesseraFlyoutAnimationPolicy.DefaultDisplacementPx);
 
+public sealed record TesseraFlyoutIpcSnapshotDto(
+    string ModuleId,
+    bool EffectivelyShowing,
+    int Generation,
+    string Mode,
+    string Kind,
+    string? StyleId)
+{
+    public static TesseraFlyoutIpcSnapshotDto From(string moduleId, TesseraFlyoutSessionSnapshot snapshot) =>
+        new(
+            moduleId,
+            snapshot.EffectivelyShowing,
+            snapshot.Generation,
+            snapshot.Mode.ToString(),
+            snapshot.Kind,
+            snapshot.StyleId);
+}
+
 public sealed record CapabilityIpcMessage(
     CapabilityIpcMessageType Type,
     FlyoutRequestDto? Request = null,
-    string? ModuleId = null);
+    string? ModuleId = null,
+    TesseraFlyoutIpcSnapshotDto? SessionSnapshot = null);

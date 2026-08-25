@@ -13,6 +13,7 @@ public class TesseraFlyoutPresentHandoffPolicyTests
         TesseraFlyoutPresentHandoffPolicy.SoftRefreshMustScheduleDeferredLastValue.Should().BeTrue();
         TesseraFlyoutOutsideClickPolicy.PresentMustStopPriorWatcherBeforeRearm.Should().BeTrue();
         TesseraFlyoutLiveSyncPolicy.SoftRefreshMustScheduleDeferredLastValue.Should().BeTrue();
+        TesseraFlyoutPresentHandoffPolicy.SoftRefreshMustHonorSessionGeneration.Should().BeTrue();
         TesseraFlyoutPresentHandoffPolicy.HideAllMustRunHideSynchronouslyOnUiThread.Should().BeTrue();
         TesseraFlyoutPresentHandoffPolicy.ShouldPostHideToUiThread(alreadyOnUiThread: true)
             .Should().BeFalse();

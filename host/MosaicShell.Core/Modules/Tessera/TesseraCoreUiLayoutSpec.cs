@@ -17,6 +17,11 @@ public static class TesseraCoreUiLayoutSpec
     /// <summary>Host must pass this into WrapCoreUi, not the art column alone.</summary>
     public const bool MediaLayoutMustUseWrappedRowWidth = true;
 
+    /// <summary>Signed CoreUI pause control is a circle, not a rounded square.</summary>
+    public const double PlayButtonDip = 24;
+
+    public static double PlayButtonCornerRadiusDip => PlayButtonDip / 2;
+
     public static double InnerRowWidthDip => WidthDip - 2 * GapDip;
 
     public static double ArtColumnWidthDip =>

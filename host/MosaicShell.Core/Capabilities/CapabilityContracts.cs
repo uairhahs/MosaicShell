@@ -61,6 +61,13 @@ public interface IFlyoutPresenter
     void Hide(string moduleId);
     void HideAll();
     bool IsVisible(string moduleId);
+
+    /// <summary>
+    /// IPC and capability routing. Default is <see cref="IsVisible"/> with an empty session.
+    /// Host echoes the live Tessera snapshot after each apply.
+    /// </summary>
+    TesseraFlyoutSessionSnapshot GetSessionSnapshot(string moduleId) =>
+        new(IsVisible(moduleId), 0, TesseraFlyoutSessionMode.None, "", null);
 }
 
 public interface ICapabilityFactory

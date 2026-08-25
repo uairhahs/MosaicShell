@@ -77,6 +77,19 @@ public static class TesseraFlyoutRevealSpec
     public static double ResolveShowRevealProgress(bool willRunPhase2) =>
         ResolveHideRevealProgress(willRunPhase2);
 
+    /// <summary>
+    /// Show collapsed pose still uses clip binders. Engaged=false until rest made
+    /// Win11/Fluent treat phase 1 as a finished card, then phase 2 had nothing to wipe.
+    /// </summary>
+    public static bool ResolveMotionPhase2Engaged(double progress, bool willRunPhase2, bool entrance)
+    {
+        if (!willRunPhase2)
+            return true;
+        if (entrance)
+            return true;
+        return progress >= RestRevealProgress - 0.001;
+    }
+
     public static bool ResolveHidePhase2Engaged(bool willRunPhase2) =>
         ResolveHideRevealProgress(willRunPhase2) >= RestRevealProgress;
 
@@ -93,6 +106,12 @@ public static class TesseraFlyoutRevealSpec
 
     public static bool StyleIsPhase2NoOp(string? styleId) =>
         TesseraFlyoutTweenTargetCatalog.StyleIsPhase2NoOp(styleId);
+
+    /// <summary>Host ApplyReveal / wrap factory must switch on catalog kind, not a parallel style string table.</summary>
+    public const bool HostMustDispatchRevealFromCatalogKind = true;
+
+    public static TesseraFlyoutRevealKind ResolveHostKind(string? styleId) =>
+        TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).RevealKind;
 
     /// <summary>Fluent.inc: media width, divider height, overlay alpha scale with TweenNode1.</summary>
     public static double ResolveMediaWidthFactor(string? styleId, double revealProgress, bool musicVisible) =>

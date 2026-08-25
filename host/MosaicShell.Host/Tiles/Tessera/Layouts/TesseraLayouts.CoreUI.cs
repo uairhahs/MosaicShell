@@ -84,11 +84,12 @@ internal static partial class TesseraLayouts
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
+        var playSize = TesseraCoreUiLayoutSpec.PlayButtonDip;
         var playBtn = new Border
         {
-            Width = 26,
-            Height = 26,
-            CornerRadius = new CornerRadius(8),
+            Width = playSize,
+            Height = playSize,
+            CornerRadius = new CornerRadius(TesseraCoreUiLayoutSpec.PlayButtonCornerRadiusDip),
             ClipToBounds = true,
             Background = Brushes.White,
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -116,8 +117,6 @@ internal static partial class TesseraLayouts
             w: TesseraStyleMetrics.CoreUiTransportW,
             h: mediaH,
             pad: new Thickness(4));
-        playBtn.Width = 24;
-        playBtn.Height = 24;
 
         var top = new Grid
         {

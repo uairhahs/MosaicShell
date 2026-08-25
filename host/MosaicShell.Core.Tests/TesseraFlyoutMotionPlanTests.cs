@@ -10,6 +10,10 @@ public class TesseraFlyoutMotionPlanTests
     {
         TesseraFlyoutMotionPlan.HostMustExecuteMotionPlanBothTopologies.Should().BeTrue();
         TesseraFlyoutMotionPlan.MotionPlanMustClusterStackedSlots.Should().BeTrue();
+        TesseraFlyoutMotionPlan.HostMustPumpSharedPhase2Progress.Should().BeTrue();
+        TesseraFlyoutAnimationPolicy.Phase2MustShareOneVsyncProgressAcrossStackedSlots.Should().BeTrue();
+        TesseraFlyoutMotionPlan.ShouldPumpSharedPhase2Progress(slotCount: 2).Should().BeTrue();
+        TesseraFlyoutMotionPlan.ShouldPumpSharedPhase2Progress(slotCount: 1).Should().BeFalse();
     }
 
     [Fact]
@@ -29,7 +33,10 @@ public class TesseraFlyoutMotionPlanTests
         ]);
         plan.Steps[1].SlotFilter.Should().Be(TesseraFlyoutMotionSlotFilter.Phase1Slots);
         plan.Steps[1].Entrance.Should().BeTrue();
-        plan.Steps[2].WaitMs.Should().Be(TesseraFlyoutAnimationPolicy.FancyPauseMs);
+        plan.Steps[2].WaitMs.Should().Be(0);
+        TesseraFlyoutMotionPlan.ResolveHide(2, "Fluent", true, stacked: true)
+            .Steps.Single(s => s.Kind == TesseraFlyoutMotionStepKind.Wait)
+            .WaitMs.Should().Be(TesseraFlyoutAnimationPolicy.FancyPauseMs);
         plan.Steps[3].SlotFilter.Should().Be(TesseraFlyoutMotionSlotFilter.Phase2Slots);
         plan.Steps[3].Entrance.Should().BeTrue();
 

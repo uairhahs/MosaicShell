@@ -216,6 +216,9 @@ public class TesseraStackedPlacementPolicyTests
 
         placements[1].OffsetXDip.Should().BeGreaterThan(placements[0].OffsetXDip);
 
+        var media = placements[1];
+        media.WidthDip.Should().Be(TesseraFluentLayoutSpec.MediaWidthDip);
+        media.WidthDip.Should().Be(TesseraFlyoutTweenTargetCatalog.ResolveProfile(StyleIds.Fluent).MediaWidthDip);
     }
 
 

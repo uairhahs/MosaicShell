@@ -131,10 +131,7 @@ internal static partial class TesseraLayouts
         Control left = new StackPanel { Spacing = gap, Children = { transport, extras } };
         if (vm.HasMediaSession)
         {
-            left = TesseraRevealHost.WrapMedia(
-                vm,
-                left,
-                fullMediaWidth: TesseraFlyoutAnimatedTargetSpec.MaterialYouColumnWidthDip);
+            left = TesseraRevealHostFactory.WrapMediaFromCatalog(vm, left);
         }
         var right = new StackPanel { Spacing = gap, Children = { volPill, eq } };
         var row = new StackPanel

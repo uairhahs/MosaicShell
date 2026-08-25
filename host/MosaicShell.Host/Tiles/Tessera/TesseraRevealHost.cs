@@ -182,44 +182,44 @@ internal sealed class TesseraRevealHost : ContentControl
 
     private void ApplyReveal()
     {
-        var style = (StyleId ?? string.Empty).ToLowerInvariant();
         var p = RevealProgress;
         var music = MusicVisible;
+        var kind = TesseraFlyoutRevealSpec.ResolveHostKind(StyleId);
 
-        switch (style)
+        switch (kind)
         {
-            case TesseraFlyoutRevealSpec.StyleFluent:
+            case TesseraFlyoutRevealKind.Fluent:
                 ApplyFluentReveal(p, music);
                 break;
-            case TesseraFlyoutRevealSpec.StyleWindows11:
+            case TesseraFlyoutRevealKind.Windows11:
                 ApplyWin11Reveal(p, music);
                 break;
-            case TesseraFlyoutRevealSpec.StyleGnome:
+            case TesseraFlyoutRevealKind.Gnome:
                 ApplyGnomeReveal(p, music);
                 break;
-            case TesseraFlyoutRevealSpec.StylePlainText:
+            case TesseraFlyoutRevealKind.PlainText:
                 ApplyPlainTextReveal(p, music);
                 break;
-            case TesseraFlyoutRevealSpec.StyleCoreUi:
+            case TesseraFlyoutRevealKind.CoreUi:
                 ApplyCoreUiReveal(p, music);
                 break;
-            case TesseraFlyoutRevealSpec.StyleSquare:
+            case TesseraFlyoutRevealKind.Square:
                 ApplySquareReveal(p);
                 break;
-            case TesseraFlyoutRevealSpec.StyleMeter:
+            case TesseraFlyoutRevealKind.Meter:
                 ApplyMeterReveal(p, music);
                 break;
-            case TesseraFlyoutRevealSpec.StyleCompact:
+            case TesseraFlyoutRevealKind.Compact:
                 ApplyCompactReveal(p, music);
                 break;
-            case TesseraFlyoutRevealSpec.StyleModernFlyouts:
+            case TesseraFlyoutRevealKind.ModernFlyouts:
                 ApplyModernReveal(p, music);
                 break;
-            case TesseraFlyoutRevealSpec.StyleMaterialYou:
+            case TesseraFlyoutRevealKind.MaterialYou:
                 ApplyMaterialYouReveal(p, music);
                 break;
             default:
-                ApplyLegacyReveal(style, p, music);
+                ApplyLegacyReveal((StyleId ?? string.Empty).ToLowerInvariant(), p, music);
                 break;
         }
 
@@ -347,7 +347,7 @@ internal sealed class TesseraRevealHost : ContentControl
 
         if (_mediaLeaf is not null)
         {
-            _mediaLeaf.Opacity = TesseraFlyoutAnimatedTargetSpec.ResolveMediaMaskOpacity(p, music);
+            _mediaLeaf.Opacity = TesseraFlyoutAnimatedTargetSpec.ResolveClippedMediaLeafOpacity(p, music);
             _mediaLeaf.RenderTransform = null;
             _mediaLeaf.MaxHeight = double.IsNaN(FullMediaHeight) ? double.PositiveInfinity : FullMediaHeight;
         }
