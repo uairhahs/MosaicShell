@@ -140,7 +140,7 @@ public sealed partial class AvaloniaFlyoutPresenter
         }
 
         PresentStackedFlyout(request, windows);
-        PlayStackedShowAnimation(request, windows);
+        PlayStackedShowAnimation(request, windows, play: true);
 
         ScheduleStackedPlacementRefresh(request);
         WireStackedDismissCoordinator(request, windows);
@@ -152,6 +152,7 @@ public sealed partial class AvaloniaFlyoutPresenter
         IReadOnlyList<TesseraStackedPanelRole> panels,
         bool resetDismiss)
     {
+        var reuseWasVisible = GetStackedWindowsFromSession().Any(w => w.IsFlyoutSessionShowing);
         var bindings = _stackedSession!.Bindings;
         var newKeys = new List<string>();
         var newWindows = new List<FlyoutWindow>();
@@ -164,7 +165,7 @@ public sealed partial class AvaloniaFlyoutPresenter
             Control content;
             try
             {
-                content = BuildStackedPanelContent(request, role, bindings);
+                content = BuildStackedPanelContent(request, role, bindings, reuseWasVisible);
             }
             catch (Exception ex)
             {
@@ -230,7 +231,9 @@ public sealed partial class AvaloniaFlyoutPresenter
         }
 
         PresentStackedFlyout(request, newWindows);
-        PlayStackedShowAnimation(request, newWindows);
+        var play = TesseraFlyoutLiveSyncPolicy.ShouldPlayShowAnimationAfterApplyRequest(
+            reuseWasVisible, TesseraFlyoutWindowPolicy.HideUntilCompositionReady);
+        PlayStackedShowAnimation(request, newWindows, play);
 
         ScheduleStackedPlacementRefresh(request);
     }
@@ -331,18 +334,35 @@ public sealed partial class AvaloniaFlyoutPresenter
         _stackedAutoDismiss = null;
     }
 
-    private void PlayStackedShowAnimation(FlyoutRequest request, IReadOnlyList<FlyoutWindow> windows)
+    private void PlayStackedShowAnimation(FlyoutRequest request, IReadOnlyList<FlyoutWindow> windows, bool play)
     {
+        _ = request;
         if (windows.Count == 0)
             return;
 
         foreach (var window in windows)
-        {
             window.FinishLayout();
+
+        if (!play)
+            return;
+
+        foreach (var window in windows)
             window.PresenterDrivesMotion = true;
+
+        if (!TesseraFlyoutWindowPolicy.HideUntilCompositionReady)
+        {
+            _ = RunStackedShowAnimationAsync(windows);
+            return;
         }
 
-        _ = RunStackedShowAnimationAsync(windows);
+        var captured = windows.ToList();
+        Dispatcher.UIThread.Post(() =>
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                _ = RunStackedShowAnimationAsync(captured);
+            }, DispatcherPriority.Render);
+        }, DispatcherPriority.Loaded);
     }
 
     private static async Task RunStackedShowAnimationAsync(IReadOnlyList<FlyoutWindow> windows)
@@ -594,7 +614,8 @@ public sealed partial class AvaloniaFlyoutPresenter
     private Control BuildStackedPanelContent(
         FlyoutRequest request,
         TesseraStackedPanelRole role,
-        TesseraLiveBindings bindings)
+        TesseraLiveBindings bindings,
+        bool sessionAlreadyShowing = false)
     {
         var material = TesseraFlyoutMaterialFactory.FromPayload(
             request.Payload, request.StyleId, request.Kind);
@@ -614,7 +635,8 @@ public sealed partial class AvaloniaFlyoutPresenter
             role,
             bindings,
             accent,
-            glass.UseEmbeddedPreview);
+            glass.UseEmbeddedPreview,
+            sessionAlreadyShowing);
         var scale = FlyoutScaleFromPayload(request.Payload);
         if (Math.Abs(scale - 1.0) > 0.01)
         {

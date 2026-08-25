@@ -54,11 +54,18 @@ public static class TesseraFlyoutAnimationPolicy
     /// <summary>YourFlyouts <c>AniSteps=20</c>.</summary>
     public const int DefaultAniSteps = 20;
 
-    /// <summary>ActionTimer repeat interval in Ani1/Ani2.inc.</summary>
-    public const int StepIntervalMs = 2;
+    /// <summary>ActionTimer Repeat delay in Ani1/Ani2.inc (below a 60 Hz frame).</summary>
+    public const int EncodedActionTimerIntervalMs = 2;
 
-    /// <summary>Ani0 ShowFade/HideFade approximate duration divisor.</summary>
-    public const int FadeStepIntervalMs = 5;
+    /// <summary>
+    /// Wall-clock per tween tick. One 60 Hz frame so 20 steps present 20 distinct
+    /// eased samples. Encoding steps * EncodedActionTimerIntervalMs is 40 ms and
+    /// every easing family looks like a pop.
+    /// </summary>
+    public const int StepPresentationIntervalMs = 16;
+
+    /// <summary>Below this, In vs Out and Bounce vs Linear are not readable on a 60 Hz display.</summary>
+    public const int MinPerceptiblePhaseDurationMs = 200;
 
     /// <summary>Ani2 Fancy pause between phase 1 and phase 2 (Ani2.inc Wait 100).</summary>
     public const int FancyPauseMs = 100;
@@ -73,6 +80,20 @@ public static class TesseraFlyoutAnimationPolicy
 
     /// <summary>Ani0 uses built-in fade instead of slide tween.</summary>
     public const bool AniNoneUsesBuiltInFade = true;
+
+    /// <summary>
+    /// YourFlyouts Ani0.inc Showfade ignores AniSteps. Rainmeter default FadeDuration is 250 ms.
+    /// </summary>
+    public const bool AniNoneIgnoresAniSteps = true;
+
+    /// <summary>Rainmeter default <c>FadeDuration</c> (Main.ini does not override).</summary>
+    public const int FadeDurationMs = 250;
+
+    /// <summary>
+    /// YourFlyouts TweenNode1 is skin-wide (Ani2 In2). Stacked Host must not restrict
+    /// phase 2 to the Media HWND.
+    /// </summary>
+    public const bool StackedPhase2MustNotBeMediaSlotOnly = true;
 
     /// <summary>
     /// Rainmeter YourFlyouts moves the skin HWND. Avalonia SoftFrost/OS acrylic repaints every
@@ -108,6 +129,12 @@ public static class TesseraFlyoutAnimationPolicy
 
     /// <summary>ApplyRequest supersedes in-flight motion and must clear the Host motion flag.</summary>
     public const bool MotionAnimatingMustClearOnSupersede = true;
+
+    /// <summary>
+    /// Hide tweens must be cancelled when a show supersedes. Leaving them running
+    /// writes TweenNode1 back to 0 after fade-in (empty media bay, jumping scrubber).
+    /// </summary>
+    public const bool SupersededMotionMustCancelInFlightTweens = true;
 
     public static bool ShouldDeferRelayoutDuringMotion(bool motionAnimating, bool phase2Animating)
     {
@@ -157,9 +184,10 @@ public static class TesseraFlyoutAnimationPolicy
 
     public static int ResolveDurationMs(int ani, int aniSteps)
     {
-        var steps = NormalizeAniSteps(aniSteps);
-        var interval = ani <= 0 ? FadeStepIntervalMs : StepIntervalMs;
-        return steps * interval;
+        if (ani <= 0)
+            return FadeDurationMs;
+
+        return NormalizeAniSteps(aniSteps) * StepPresentationIntervalMs;
     }
 
     public static int ResolveSlideDistancePx(int displacementPx) =>
@@ -227,7 +255,7 @@ public static class TesseraFlyoutAnimationPolicy
 
     /// <summary>Human-readable phase duration from step count.</summary>
     public static int ResolvePhaseDurationMs(int aniSteps) =>
-        NormalizeAniSteps(aniSteps) * StepIntervalMs;
+        NormalizeAniSteps(aniSteps) * StepPresentationIntervalMs;
 
     /// <summary>Fancy entrance total (phase1 + pause + phase2) when media strip is shown.</summary>
     public static int ResolveFancyEntranceDurationMs(int aniSteps) =>
@@ -236,6 +264,16 @@ public static class TesseraFlyoutAnimationPolicy
     /// <summary>Normalized 0..1 TweenNode progress for stepped motion keyframes.</summary>
     public static double ResolveNormalizedTweenProgress(int step, int aniSteps, string? ease, bool entrance) =>
         ResolveTweenNode(step, aniSteps, ease, entrance) / 100.0;
+
+    /// <summary>
+    /// Forward clock only. Fade in is fade out with endpoints swapped
+    /// (<see cref="FadeInMustInverseFadeOut"/>).
+    /// </summary>
+    public static double InterpolateForward(double from, double to, int step, int aniSteps, string? ease)
+    {
+        var tn = ResolveNormalizedTweenProgress(step, aniSteps, ease, entrance: true);
+        return from + (to - from) * tn;
+    }
 
     /// <summary>Interpolate between <paramref name="from"/> and <paramref name="to"/> using stepped TweenNode progress.</summary>
     public static double InterpolateStepped(double from, double to, int step, int aniSteps, string? ease, bool entrance)
@@ -265,7 +303,7 @@ public static class TesseraFlyoutAnimationPolicy
     /// <summary>Resolve eased TweenNode after <paramref name="step"/> ticks (0..steps).</summary>
     public static double ResolveTweenNode(int step, int aniSteps, string? ease, bool entrance)
     {
-        var steps = NormalizeAniSteps(aniSteps);
+        var steps = Math.Max(1, aniSteps);
         step = Math.Clamp(step, 0, steps);
         var tween = new TesseraFlyoutStepTween(steps, 0, 100, ease);
         if (!entrance)
@@ -420,6 +458,22 @@ public static class TesseraFlyoutAnimationPolicy
     /// <summary>Keyframe values are already eased; Avalonia must lerp linearly between them.</summary>
     public const bool SteppedKeyframesMustUseLinearInterpolation = true;
 
+    /// <summary>
+    /// Fade in is fade out with endpoints swapped on a forward Linear clock.
+    /// Selected Easetype stays on the slide. Reverse-clock OutQuart on opacity
+    /// made hide look smooth and show look like a pop.
+    /// </summary>
+    public const bool FadeInMustInverseFadeOut = true;
+
+    public const bool EntranceOpacityMustStayVisibleDuringInEase = true;
+
+    public static string ResolvePhase1OpacityEase(string? ease, bool entrance)
+    {
+        _ = ease;
+        _ = entrance;
+        return EaseLinear;
+    }
+
     public static bool Phase2RequiresAnimatedLayout(int ani, string? styleId, bool showMediaStrip)
     {
         if (ani < 2)
@@ -429,6 +483,20 @@ public static class TesseraFlyoutAnimationPolicy
         if (TesseraFlyoutRevealSpec.StylePhase2WithoutMediaStrip(styleId))
             return true;
         return showMediaStrip;
+    }
+
+    /// <summary>
+    /// Fancy phase 2 for a Host slot. YourFlyouts runs In2 on the whole skin;
+    /// stacked Volume/Device panels must still animate Animated meters.
+    /// </summary>
+    public static bool ShouldRunPhase2Reveal(
+        int ani,
+        string? styleId,
+        bool showMediaStrip,
+        TesseraStackedPanelRole? stackedRole)
+    {
+        _ = stackedRole;
+        return Phase2RequiresAnimatedLayout(ani, styleId, showMediaStrip);
     }
 
     public static bool ExitMustMirrorEntrance => true;

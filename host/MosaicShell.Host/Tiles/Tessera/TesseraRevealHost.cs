@@ -631,8 +631,10 @@ internal sealed class TesseraRevealHost : ContentControl
         {
             StyleId = styleId,
             MusicVisible = vm.ShowMediaStrip,
-            RevealProgress = TesseraFlyoutRevealSpec.ResolveInitialRevealProgress(isPreview, willRunPhase2),
-            Phase2Engaged = TesseraFlyoutRevealSpec.ResolveInitialPhase2Engaged(isPreview, willRunPhase2),
+            RevealProgress = TesseraFlyoutRevealSpec.ResolveInitialRevealProgress(
+                isPreview, willRunPhase2, TesseraRevealBuildContext.SessionAlreadyShowing),
+            Phase2Engaged = TesseraFlyoutRevealSpec.ResolveInitialPhase2Engaged(
+                isPreview, willRunPhase2, TesseraRevealBuildContext.SessionAlreadyShowing),
             GnomeVolumeFillOnly = gnomeVolumeFillOnly,
             FullMediaWidth = fullMediaWidth,
             FullMediaHeight = fullMediaHeight,

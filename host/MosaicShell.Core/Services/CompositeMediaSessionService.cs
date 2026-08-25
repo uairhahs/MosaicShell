@@ -184,7 +184,11 @@ public sealed class CompositeMediaSessionService : IMediaSessionService
             if (!MediaSessionChangePolicy.LooksLikeNewTrackPosition(
                     wnp.PositionSeconds, smtc.PositionSeconds))
             {
-                pos = wnp.PositionSeconds;
+                pos = MediaSessionChangePolicy.ResolvePlayingPosition(
+                    smtc.PositionSeconds,
+                    wnp.PositionSeconds,
+                    smtc.IsPlaying,
+                    incomingReportedChange: true);
                 dur = wnp.DurationSeconds;
             }
         }

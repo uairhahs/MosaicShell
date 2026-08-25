@@ -35,6 +35,7 @@ internal sealed class FlyoutWindow : Window
     private bool _motionAnimating;
     private bool _phase2Animating;
     private int _motionGeneration;
+    private CancellationTokenSource _motionCts = new();
     private readonly Panel _motionSurface = new();
 
     /// <summary>Fades with flyout content; acrylic HWND stays opaque until Hide.</summary>
@@ -277,19 +278,26 @@ internal sealed class FlyoutWindow : Window
 
     public void ApplyRequest(FlyoutRequest request, Control content)
     {
+        var wasShowing = IsFlyoutSessionShowing;
         _request = request;
         ApplyFlyoutMaterial(TesseraFlyoutMaterialFactory.FromPayload(request.Payload, request.StyleId, request.Kind));
         // Invalidate any posted SoftFrost reveal from the previous surface.
         _revealGeneration++;
-        _motionGeneration++;
+        SupersedeMotion();
         if (TesseraFlyoutAnimationPolicy.MotionAnimatingMustClearOnSupersede)
             _motionAnimating = false;
         Win32WindowChrome.ClearWindowRegion(this);
+        PresenterDrivesMotion = false;
         RenderTransform = null;
         Opacity = 1;
-        if (TesseraFlyoutWindowPolicy.HideUntilCompositionReady)
+        var hideUntilReady = TesseraFlyoutWindowPolicy.HideUntilCompositionReady;
+        if (TesseraFlyoutLiveSyncPolicy.ShouldZeroMotionSurfaceOnApplyRequest(wasShowing, hideUntilReady))
             _motionSurface.Opacity = 0;
+        else if (wasShowing)
+            _motionSurface.Opacity = 1;
         SetFlyoutContent(content);
+        if (TesseraFlyoutLiveSyncPolicy.ShouldSnapRevealToRestAfterApplyRequest(wasShowing))
+            ApplyPhase2Reveal(TesseraFlyoutRevealSpec.RestRevealProgress);
         _lastSize = default;
         // Media/stacked → CapsLock: drop cluster placement and stale Win32 region.
         ClusterOriginX = null;
@@ -585,7 +593,7 @@ internal sealed class FlyoutWindow : Window
 
     internal async Task RunEntranceMotionAsync()
     {
-        var generation = ++_motionGeneration;
+        var (generation, token) = BeginMotionRun();
         try
         {
             EnsureStatusRoundClipBeforeReveal();
@@ -605,7 +613,7 @@ internal sealed class FlyoutWindow : Window
             var runPhase2 = ShouldRunPhase2Reveal(showMedia);
 
             await FlyoutMotionController.RunEntranceAsync(CreateMotionContext(
-                    showMedia, runPhase2, scale, () => generation != _motionGeneration))
+                    showMedia, runPhase2, scale, () => generation != _motionGeneration, token))
                 .ConfigureAwait(true);
         }
         catch
@@ -640,15 +648,15 @@ internal sealed class FlyoutWindow : Window
         ?? 1.0;
 
     internal bool ShouldRunPhase2Reveal(bool showMediaStrip) =>
-        StackedRole is null or TesseraStackedPanelRole.Media
-        && TesseraFlyoutAnimationPolicy.Phase2RequiresAnimatedLayout(
-            _request.Ani, _request.StyleId, showMediaStrip);
+        TesseraFlyoutAnimationPolicy.ShouldRunPhase2Reveal(
+            _request.Ani, _request.StyleId, showMediaStrip, StackedRole);
 
     internal FlyoutMotionController.MotionContext CreateMotionContext(
         bool showMediaStrip,
         bool runPhase2,
         double scale,
-        Func<bool> isCancelled) =>
+        Func<bool> isCancelled,
+        CancellationToken motionToken = default) =>
         new()
         {
             Window = this,
@@ -656,7 +664,23 @@ internal sealed class FlyoutWindow : Window
             ShowMediaStrip = showMediaStrip,
             RunPhase2 = runPhase2,
             IsCancelled = isCancelled,
+            MotionToken = motionToken,
         };
+
+    private (int Generation, CancellationToken Token) BeginMotionRun()
+    {
+        SupersedeMotion();
+        return (_motionGeneration, _motionCts.Token);
+    }
+
+    private void SupersedeMotion()
+    {
+        _motionGeneration++;
+        try { _motionCts.Cancel(); }
+        catch { /* ignore */ }
+        _motionCts.Dispose();
+        _motionCts = new CancellationTokenSource();
+    }
 
     internal void ApplyPhase2Reveal(double progress)
     {
@@ -701,7 +725,7 @@ internal sealed class FlyoutWindow : Window
         _dismiss?.Stop();
         _hover = false;
         _revealGeneration++;
-        _motionGeneration++;
+        SupersedeMotion();
 
         if (_exitAnimating)
         {
@@ -721,11 +745,12 @@ internal sealed class FlyoutWindow : Window
         FinishTransientHide(notify);
     }
 
-    internal void PrepareExitMotion() => _motionGeneration++;
+    internal void PrepareExitMotion() => SupersedeMotion();
 
     internal async Task RunExitMotionAsync()
     {
         var generation = _motionGeneration;
+        var token = _motionCts.Token;
         try
         {
             if (!TesseraFlyoutAnimationPolicy.ShouldAnimateOpacity(_request.Ani))
@@ -738,7 +763,8 @@ internal sealed class FlyoutWindow : Window
                     showMedia,
                     ShouldRunPhase2Reveal(showMedia),
                     scale,
-                    () => generation != _motionGeneration))
+                    () => generation != _motionGeneration,
+                    token))
                 .ConfigureAwait(true);
         }
         catch

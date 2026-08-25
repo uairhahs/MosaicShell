@@ -57,10 +57,7 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
     public void Show(FlyoutRequest request)
     {
         Log($"Show queued kind={request.Kind} style={request.StyleId} thread={Environment.CurrentManagedThreadId}");
-        if (IsImmediateStatusKind(request))
-            Dispatcher.UIThread.Invoke(() => SafeShowOrUpdate(request, resetDismiss: true));
-        else
-            Dispatcher.UIThread.Post(() => SafeShowOrUpdate(request, resetDismiss: true));
+        EnqueueShowOrUpdate(request, resetDismiss: true, immediate: IsImmediateStatusKind(request));
     }
 
     private static bool IsImmediateStatusKind(FlyoutRequest request) =>
@@ -70,14 +67,19 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
     public void Update(FlyoutRequest request)
     {
         Log($"Update queued kind={request.Kind} style={request.StyleId} thread={Environment.CurrentManagedThreadId}");
-        if (IsImmediateStatusKind(request))
+        EnqueueShowOrUpdate(request, resetDismiss: true, immediate: IsImmediateStatusKind(request));
+    }
+
+    private void EnqueueShowOrUpdate(FlyoutRequest request, bool resetDismiss, bool immediate)
+    {
+        if (immediate)
         {
-            Dispatcher.UIThread.Invoke(() => SafeShowOrUpdate(request, resetDismiss: true));
+            Dispatcher.UIThread.Invoke(() => SafeShowOrUpdate(request, resetDismiss));
             return;
         }
 
         _pendingUpdate = request;
-        _pendingResetDismiss = true;
+        _pendingResetDismiss = resetDismiss;
         if (_updateDispatch.TryEnqueue() != TesseraFlyoutUpdateDispatchKind.PostNow)
             return;
 
@@ -368,7 +370,7 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
             }
 
             Control reusedContent;
-            try { reusedContent = BuildContent(request); }
+            try { reusedContent = BuildContent(request, reuseWasVisible); }
             catch (Exception ex)
             {
                 Log($"BuildContent failed on reuse, using fallback: {ex}");
@@ -703,7 +705,7 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
         CloseFocusDim();
     }
 
-    private Control BuildContent(FlyoutRequest request)
+    private Control BuildContent(FlyoutRequest request, bool sessionAlreadyShowing = false)
     {
         if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
         {
@@ -725,7 +727,8 @@ public sealed partial class AvaloniaFlyoutPresenter : IFlyoutPresenter
                 request.StyleId ?? "Fluent",
                 vm,
                 accentColor: TesseraFlyoutRequestBuilder.AccentFromPayload(request.Payload),
-                embeddedPreview: glass.UseEmbeddedPreview);
+                embeddedPreview: glass.UseEmbeddedPreview,
+                sessionAlreadyShowing: sessionAlreadyShowing);
             var scale = FlyoutScaleFromPayload(request.Payload);
             if (Math.Abs(scale - 1.0) > 0.01)
             {

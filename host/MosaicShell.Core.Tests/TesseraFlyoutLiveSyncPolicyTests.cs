@@ -138,6 +138,7 @@ public class TesseraFlyoutLiveSyncPolicyTests
     public void Update_dispatch_gate_must_coalesce_before_ui_post()
     {
         TesseraFlyoutLiveSyncPolicy.MustCoalesceBeforeUiPost.Should().BeTrue();
+        TesseraFlyoutLiveSyncPolicy.NonStatusShowMustCoalesceThroughUpdateGate.Should().BeTrue();
     }
 
     [Fact]
@@ -159,10 +160,10 @@ public class TesseraFlyoutLiveSyncPolicyTests
 
     [Theory]
     [InlineData(false, true, true)]
-    [InlineData(true, true, true)]
+    [InlineData(true, true, false)]
     [InlineData(true, false, false)]
     [InlineData(false, false, true)]
-    public void ApplyRequest_replays_show_when_hide_until_ready(
+    public void ApplyRequest_replays_show_only_when_session_was_not_showing(
         bool reuseWasVisible,
         bool hideUntilReady,
         bool playShow)
@@ -170,5 +171,30 @@ public class TesseraFlyoutLiveSyncPolicyTests
         TesseraFlyoutLiveSyncPolicy
             .ShouldPlayShowAnimationAfterApplyRequest(reuseWasVisible, hideUntilReady)
             .Should().Be(playShow);
+    }
+
+    [Theory]
+    [InlineData(false, true, true)]
+    [InlineData(true, true, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, false, false)]
+    public void ApplyRequest_zeros_motion_surface_only_on_hidden_revive(
+        bool reuseWasVisible,
+        bool hideUntilReady,
+        bool zero)
+    {
+        TesseraFlyoutLiveSyncPolicy
+            .ShouldZeroMotionSurfaceOnApplyRequest(reuseWasVisible, hideUntilReady)
+            .Should().Be(zero);
+    }
+
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public void Visible_rebuild_snaps_reveal_to_rest(bool reuseWasVisible, bool snapRest)
+    {
+        TesseraFlyoutLiveSyncPolicy
+            .ShouldSnapRevealToRestAfterApplyRequest(reuseWasVisible)
+            .Should().Be(snapRest);
     }
 }

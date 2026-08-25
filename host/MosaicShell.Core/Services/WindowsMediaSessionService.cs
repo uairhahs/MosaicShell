@@ -129,20 +129,33 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
             else
                 thumb = _lastThumb;
 
-            var pos = timeline.Position.TotalSeconds;
+            var apiPos = timeline.Position.TotalSeconds;
             var dur = timeline.EndTime.TotalSeconds;
             if (dur <= 0) dur = timeline.MaxSeekTime.TotalSeconds;
+            var playing = playback.PlaybackStatus ==
+                          GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
+            var prev = Current;
+            var pos = apiPos;
+            if (playing && prev is not null && MediaSessionChangePolicy.MustNotRewindPlayingScrubber)
+            {
+                var apiMoved = !_hasLastApi
+                    || Math.Abs(apiPos - _lastApiPos) >= MediaSessionChangePolicy.PlayingPositionJitterSeconds;
+                pos = MediaSessionChangePolicy.ResolvePlayingPosition(
+                    prev.PositionSeconds, apiPos, playing: true, incomingReportedChange: apiMoved);
+            }
+
+            _lastApiPos = apiPos;
+            _hasLastApi = true;
 
             var next = new MediaSessionInfo(
                 title,
                 props?.Artist,
                 appId,
-                playback.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing,
+                playing,
                 thumb,
                 pos,
                 dur);
 
-            var prev = Current;
             Current = next;
 
             if (IsMeaningfulSessionChange(prev, next))
@@ -178,6 +191,8 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
     private DateTimeOffset _timelineSampleUtc = DateTimeOffset.MinValue;
     private double _timelineSamplePos;
     private bool _timelinePlaying;
+    private double _lastApiPos;
+    private bool _hasLastApi;
 
     /// <summary>
     /// Poll timeline + retry thumbnail. YouTube Music / Chrome often never fire TimelinePropertiesChanged
@@ -197,25 +212,36 @@ public sealed class WindowsMediaSessionService : IMediaSessionService
                           GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
 
             var now = DateTimeOffset.UtcNow;
-            // Detect API movement (seek / sparse SMTC tick)
-            if (Math.Abs(apiPos - _timelineSamplePos) >= 0.4
+            var apiMoved = !_hasLastApi
+                || Math.Abs(apiPos - _lastApiPos) >= MediaSessionChangePolicy.PlayingPositionJitterSeconds
                 || playing != _timelinePlaying
-                || _timelineSampleUtc == DateTimeOffset.MinValue)
-            {
-                _timelineSamplePos = apiPos;
-                _timelineSampleUtc = now;
-                _timelinePlaying = playing;
-            }
+                || _timelineSampleUtc == DateTimeOffset.MinValue;
+            _lastApiPos = apiPos;
+            _hasLastApi = true;
 
             var pos = apiPos;
             if (playing && _timelineSampleUtc != DateTimeOffset.MinValue)
             {
                 var extrapolated = _timelineSamplePos + (now - _timelineSampleUtc).TotalSeconds;
                 if (dur > 0.5) extrapolated = Math.Clamp(extrapolated, 0, dur);
-                // Prefer extrapolation when API is sticky (common for YT Music)
-                if (Math.Abs(extrapolated - apiPos) >= 0.15)
-                    pos = extrapolated;
+                pos = MediaSessionChangePolicy.ResolvePlayingPosition(
+                    extrapolated, apiPos, playing: true, incomingReportedChange: apiMoved);
             }
+
+            if (apiMoved && Math.Abs(pos - apiPos) < MediaSessionChangePolicy.PlayingPositionJitterSeconds)
+            {
+                _timelineSamplePos = apiPos;
+                _timelineSampleUtc = now;
+                _timelinePlaying = playing;
+            }
+            else if (_timelineSampleUtc == DateTimeOffset.MinValue)
+            {
+                _timelineSamplePos = apiPos;
+                _timelineSampleUtc = now;
+                _timelinePlaying = playing;
+            }
+            else
+                _timelinePlaying = playing;
 
             var prev = Current;
             if (prev is null) return;

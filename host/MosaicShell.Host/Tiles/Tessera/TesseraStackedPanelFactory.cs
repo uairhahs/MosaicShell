@@ -11,10 +11,11 @@ internal static class TesseraStackedPanelFactory
         TesseraStackedPanelRole role,
         TesseraLiveBindings bindings,
         string? accentColor,
-        bool embeddedPreview = false)
+        bool embeddedPreview = false,
+        bool sessionAlreadyShowing = false)
     {
         using var _ = TesseraStackedBuildContext.Begin(role, bindings);
-        using var revealCtx = TesseraRevealBuildContext.Begin(embeddedPreview, vm.Ani);
+        using var revealCtx = TesseraRevealBuildContext.Begin(embeddedPreview, vm.Ani, sessionAlreadyShowing);
         TesseraPalette.ApplyAccentFromSettings(accentColor);
         TesseraLiveAmbient.Current = bindings;
         if (embeddedPreview)

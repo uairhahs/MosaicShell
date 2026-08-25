@@ -6,11 +6,25 @@ namespace MosaicShell.Core.Tests;
 public class TesseraFlyoutAnimationPolicyTests
 {
     [Theory]
-    [InlineData(0, 20, 100)]
-    [InlineData(1, 20, 40)]
-    [InlineData(2, 20, 40)]
+    [InlineData(0, 10, 250)]
+    [InlineData(0, 20, 250)]
+    [InlineData(0, 40, 250)]
+    [InlineData(1, 10, 160)]
+    [InlineData(1, 20, 320)]
+    [InlineData(2, 20, 320)]
+    [InlineData(2, 40, 640)]
     public void Duration_matches_yourflyouts_step_timing(int ani, int steps, int ms) =>
         TesseraFlyoutAnimationPolicy.ResolveDurationMs(ani, steps).Should().Be(ms);
+
+    [Fact]
+    public void Ani0_uses_rainmeter_fade_duration_and_ignores_ani_steps()
+    {
+        TesseraFlyoutAnimationPolicy.AniNoneUsesBuiltInFade.Should().BeTrue();
+        TesseraFlyoutAnimationPolicy.AniNoneIgnoresAniSteps.Should().BeTrue();
+        TesseraFlyoutAnimationPolicy.FadeDurationMs.Should().Be(250);
+        TesseraFlyoutAnimationPolicy.ResolveDurationMs(0, 10)
+            .Should().Be(TesseraFlyoutAnimationPolicy.ResolveDurationMs(0, 40));
+    }
 
     [Theory]
     [InlineData(0, false)]
@@ -136,9 +150,23 @@ public class TesseraFlyoutAnimationPolicyTests
     }
 
     [Fact]
-    public void Fancy_entrance_duration_matches_yourflyouts_timing()
+    public void Fancy_entrance_duration_uses_presentation_interval()
     {
-        TesseraFlyoutAnimationPolicy.ResolveFancyEntranceDurationMs(20).Should().Be(180);
+        TesseraFlyoutAnimationPolicy.EncodedActionTimerIntervalMs.Should().Be(2);
+        TesseraFlyoutAnimationPolicy.StepPresentationIntervalMs.Should().Be(16);
+        TesseraFlyoutAnimationPolicy.ResolveFancyEntranceDurationMs(20).Should().Be(740);
+    }
+
+    [Fact]
+    public void Default_phase_is_long_enough_to_tell_easing_families_apart()
+    {
+        var encoded = TesseraFlyoutAnimationPolicy.DefaultAniSteps
+                      * TesseraFlyoutAnimationPolicy.EncodedActionTimerIntervalMs;
+        encoded.Should().Be(40);
+        encoded.Should().BeLessThan(TesseraFlyoutAnimationPolicy.MinPerceptiblePhaseDurationMs);
+        TesseraFlyoutAnimationPolicy.ResolvePhaseDurationMs(TesseraFlyoutAnimationPolicy.DefaultAniSteps)
+            .Should().BeGreaterThanOrEqualTo(TesseraFlyoutAnimationPolicy.MinPerceptiblePhaseDurationMs);
+        TesseraFlyoutAnimationPolicy.ResolvePhaseDurationMs(20).Should().Be(320);
     }
 
     [Fact]
@@ -151,6 +179,45 @@ public class TesseraFlyoutAnimationPolicyTests
         mid.Should().BeApproximately(6.25, 0.01);
         outMid.Should().BeApproximately(93.75, 0.01);
         mid.Should().BeLessThan(outMid);
+    }
+
+    [Theory]
+    [InlineData("InQuart")]
+    [InlineData("OutQuart")]
+    [InlineData("InOutCubic")]
+    [InlineData("Linear")]
+    public void Phase1_opacity_is_linear_so_fade_in_inverts_fade_out(string ease)
+    {
+        TesseraFlyoutAnimationPolicy.FadeInMustInverseFadeOut.Should().BeTrue();
+        TesseraFlyoutAnimationPolicy.ResolvePhase1OpacityEase(ease, entrance: true)
+            .Should().Be(TesseraFlyoutAnimationPolicy.EaseLinear);
+        TesseraFlyoutAnimationPolicy.ResolvePhase1OpacityEase(ease, entrance: false)
+            .Should().Be(TesseraFlyoutAnimationPolicy.EaseLinear);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(5)]
+    [InlineData(10)]
+    [InlineData(20)]
+    public void Linear_fade_in_plus_fade_out_is_one(int step)
+    {
+        var fadeIn = TesseraFlyoutAnimationPolicy.InterpolateForward(
+            0, 1, step, 20, TesseraFlyoutAnimationPolicy.EaseLinear);
+        var fadeOut = TesseraFlyoutAnimationPolicy.InterpolateForward(
+            1, 0, step, 20, TesseraFlyoutAnimationPolicy.EaseLinear);
+        (fadeIn + fadeOut).Should().BeApproximately(1, 0.001);
+    }
+
+    [Fact]
+    public void Single_step_fade_reaches_both_endpoints()
+    {
+        TesseraFlyoutAnimationPolicy.InterpolateForward(
+                0, 1, 1, 1, TesseraFlyoutAnimationPolicy.EaseLinear)
+            .Should().BeApproximately(1, 0.01);
+        TesseraFlyoutAnimationPolicy.InterpolateForward(
+                1, 0, 1, 1, TesseraFlyoutAnimationPolicy.EaseLinear)
+            .Should().BeApproximately(0, 0.01);
     }
 
     [Fact]
@@ -245,6 +312,7 @@ public class TesseraFlyoutAnimationPolicyTests
     {
         TesseraFlyoutAnimationPolicy.CancelledEntranceMustSnapToRest.Should().BeTrue();
         TesseraFlyoutAnimationPolicy.MotionAnimatingMustClearOnSupersede.Should().BeTrue();
+        TesseraFlyoutAnimationPolicy.SupersededMotionMustCancelInFlightTweens.Should().BeTrue();
         TesseraFlyoutAnimationPolicy.SteppedKeyframesMustUseLinearInterpolation.Should().BeTrue();
     }
 

@@ -23,6 +23,7 @@ internal static class FlyoutMotionController
         public required bool ShowMediaStrip { get; init; }
         public required bool RunPhase2 { get; init; }
         public Func<bool> IsCancelled { get; init; } = () => false;
+        public CancellationToken MotionToken { get; init; }
     }
 
     public static async Task RunEntranceAsync(MotionContext ctx)
@@ -95,6 +96,7 @@ internal static class FlyoutMotionController
         var surface = window.MotionSurface;
         var ms = TesseraFlyoutAnimationPolicy.ResolvePhaseDurationMs(request.AniSteps);
         var ease = TesseraFlyoutAnimationPolicy.NormalizeEase(request.AniEase);
+        var opacityEase = TesseraFlyoutAnimationPolicy.ResolvePhase1OpacityEase(ease, entrance);
         var steps = TesseraFlyoutAnimationPolicy.NormalizeAniSteps(request.AniSteps);
         var slide = TesseraFlyoutAnimationPolicy.ShouldSlide(request.Ani);
 
@@ -126,13 +128,18 @@ internal static class FlyoutMotionController
 
         var tasks = new List<Task>
         {
-            AnimateSteppedAsync(surface, Visual.OpacityProperty, opFrom, opTo, ms, ease, steps, entrance),
+            AnimateSteppedAsync(
+                surface, Visual.OpacityProperty, opFrom, opTo, ms, opacityEase, steps, entrance,
+                forwardClock: TesseraFlyoutAnimationPolicy.FadeInMustInverseFadeOut,
+                cancellationToken: ctx.MotionToken),
         };
 
         if (tt is not null)
         {
-            tasks.Add(AnimateSteppedAsync(tt, TranslateTransform.XProperty, xFrom, xTo, ms, ease, steps, entrance));
-            tasks.Add(AnimateSteppedAsync(tt, TranslateTransform.YProperty, yFrom, yTo, ms, ease, steps, entrance));
+            tasks.Add(AnimateSteppedAsync(tt, TranslateTransform.XProperty, xFrom, xTo, ms, ease, steps, entrance,
+                cancellationToken: ctx.MotionToken));
+            tasks.Add(AnimateSteppedAsync(tt, TranslateTransform.YProperty, yFrom, yTo, ms, ease, steps, entrance,
+                cancellationToken: ctx.MotionToken));
         }
 
         await Task.WhenAll(tasks).ConfigureAwait(true);
@@ -149,7 +156,10 @@ internal static class FlyoutMotionController
 
         var hosts = ctx.Window.GetVisualDescendants().OfType<TesseraRevealHost>().ToList();
         if (hosts.Count == 0)
+        {
+            EnsurePhase2Rest(ctx);
             return;
+        }
 
         ctx.Window.Phase2Animating = true;
         foreach (var host in hosts)
@@ -157,7 +167,8 @@ internal static class FlyoutMotionController
         try
         {
             var tasks = hosts.Select(h =>
-                AnimateSteppedAsync(h, TesseraRevealHost.RevealProgressProperty, from, to, ms, ease, steps, entrance));
+                AnimateSteppedAsync(h, TesseraRevealHost.RevealProgressProperty, from, to, ms, ease, steps, entrance,
+                    cancellationToken: ctx.MotionToken));
             await Task.WhenAll(tasks).ConfigureAwait(true);
         }
         finally
@@ -192,11 +203,13 @@ internal static class FlyoutMotionController
                 ms,
                 TesseraFlyoutAnimationPolicy.EaseLinear,
                 steps: 1,
-                entrance)
+                entrance: true,
+                forwardClock: TesseraFlyoutAnimationPolicy.FadeInMustInverseFadeOut,
+                cancellationToken: ctx.MotionToken)
             .ConfigureAwait(true);
     }
 
-    private static Task AnimateSteppedAsync(
+    internal static async Task AnimateSteppedAsync(
         Animatable target,
         AvaloniaProperty property,
         double from,
@@ -204,7 +217,9 @@ internal static class FlyoutMotionController
         int ms,
         string ease,
         int steps,
-        bool entrance)
+        bool entrance,
+        CancellationToken cancellationToken = default,
+        bool forwardClock = false)
     {
         var duration = Math.Max(1, ms);
         var sampleCount = Math.Max(1, steps);
@@ -217,8 +232,10 @@ internal static class FlyoutMotionController
 
         for (var i = 0; i <= sampleCount; i++)
         {
+            var value = forwardClock
+                ? TesseraFlyoutAnimationPolicy.InterpolateForward(from, to, i, sampleCount, ease)
+                : TesseraFlyoutAnimationPolicy.InterpolateStepped(from, to, i, sampleCount, ease, entrance);
             var linearT = i / (double)sampleCount;
-            var value = TesseraFlyoutAnimationPolicy.InterpolateStepped(from, to, i, sampleCount, ease, entrance);
             animation.Children.Add(new KeyFrame
             {
                 Cue = new Cue(linearT),
@@ -226,7 +243,14 @@ internal static class FlyoutMotionController
             });
         }
 
-        return animation.RunAsync(target);
+        try
+        {
+            await animation.RunAsync(target, cancellationToken).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException)
+        {
+            /* superseded show/hide */
+        }
     }
 
     private static void EnsurePhase2Rest(MotionContext ctx)

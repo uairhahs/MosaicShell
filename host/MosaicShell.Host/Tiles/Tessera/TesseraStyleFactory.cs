@@ -8,14 +8,19 @@ public static class TesseraStyleFactory
     public static Control Create(string styleId, TesseraFlyoutViewModel vm) =>
         Create(styleId, vm, accentColor: null);
 
-    public static Control Create(string styleId, TesseraFlyoutViewModel vm, string? accentColor, bool embeddedPreview = false)
+    public static Control Create(
+        string styleId,
+        TesseraFlyoutViewModel vm,
+        string? accentColor,
+        bool embeddedPreview = false,
+        bool sessionAlreadyShowing = false)
     {
         TesseraPalette.ApplyAccentFromSettings(accentColor);
         var host = new TesseraLiveHost { IsEmbeddedPreview = embeddedPreview };
         TesseraLiveAmbient.Current = host.Bindings;
         if (embeddedPreview)
             TesseraGlass.EmbeddedPreviewBuild = true;
-        using var revealCtx = TesseraRevealBuildContext.Begin(embeddedPreview, vm.Ani);
+        using var revealCtx = TesseraRevealBuildContext.Begin(embeddedPreview, vm.Ani, sessionAlreadyShowing);
         try
         {
             host.Content = CreateLayoutPanel(styleId, vm);

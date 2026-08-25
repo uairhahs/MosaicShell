@@ -179,7 +179,7 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _tesseraMotionFancyEnabled = true;
     [ObservableProperty] private string _tesseraAniStyleDescription =
         "Slide and fade first, then reveal the media strip after a short pause.";
-    [ObservableProperty] private string _tesseraAniPhaseDurationLabel = "~40 ms per phase";
+    [ObservableProperty] private string _tesseraAniPhaseDurationLabel = "~320 ms per phase";
     [ObservableProperty] private string _tesseraAniFancyDurationLabel = string.Empty;
     private bool _syncingEaseParts;
     [ObservableProperty] private bool _tesseraMediaFlyouts = true;
@@ -619,7 +619,7 @@ public partial class MainViewModel : ViewModelBase
         };
 
         var phaseMs = TesseraFlyoutAnimationPolicy.ResolvePhaseDurationMs(TesseraAniSteps);
-        TesseraAniPhaseDurationLabel = $"~{phaseMs} ms per phase (steps x 2 ms)";
+        TesseraAniPhaseDurationLabel = $"~{phaseMs} ms per phase ({TesseraFlyoutAnimationPolicy.NormalizeAniSteps(TesseraAniSteps)} steps x {TesseraFlyoutAnimationPolicy.StepPresentationIntervalMs} ms)";
         TesseraAniFancyDurationLabel = TesseraAni >= 2
             ? $"Fancy show total: ~{TesseraFlyoutAnimationPolicy.ResolveFancyEntranceDurationMs(TesseraAniSteps)} ms when media strip is visible"
             : string.Empty;

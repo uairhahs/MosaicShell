@@ -32,9 +32,18 @@ public static class TesseraFlyoutRevealSpec
     /// <summary>
     /// Initial TweenNode1 for a newly built reveal host.
     /// Preview and non-phase-2 live are rest; live Fancy starts at 0 through phase 1.
+    /// Visible rebuilds stay at rest (YourFlyouts does not reset TweenNode1 while shown).
     /// </summary>
-    public static double ResolveInitialRevealProgress(bool isPreview, bool willRunPhase2)
+    public static double ResolveInitialRevealProgress(bool isPreview, bool willRunPhase2) =>
+        ResolveInitialRevealProgress(isPreview, willRunPhase2, sessionAlreadyShowing: false);
+
+    public static double ResolveInitialRevealProgress(
+        bool isPreview,
+        bool willRunPhase2,
+        bool sessionAlreadyShowing)
     {
+        if (sessionAlreadyShowing)
+            return RestRevealProgress;
         if (isPreview && PreviewMustUseRestReveal)
             return RestRevealProgress;
         if (!willRunPhase2)
@@ -43,8 +52,11 @@ public static class TesseraFlyoutRevealSpec
     }
 
     /// <summary>Win11 media clip is live only while Fancy phase 2 is engaged or at rest.</summary>
-    public static bool ResolveInitialPhase2Engaged(bool isPreview, bool willRunPhase2) =>
-        ResolveInitialRevealProgress(isPreview, willRunPhase2) >= RestRevealProgress;
+    public static bool ResolveInitialPhase2Engaged(
+        bool isPreview,
+        bool willRunPhase2,
+        bool sessionAlreadyShowing = false) =>
+        ResolveInitialRevealProgress(isPreview, willRunPhase2, sessionAlreadyShowing) >= RestRevealProgress;
 
     /// <summary>
     /// Hide/revive pose. Fancy must start TweenNode1 at 0. Fast and fade keep rest so

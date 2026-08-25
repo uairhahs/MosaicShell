@@ -110,6 +110,17 @@ public class TesseraFlyoutRevealSpecTests
             .Should().Be(expected);
     }
 
+    [Fact]
+    public void Visible_rebuild_initial_reveal_is_rest_even_for_live_fancy()
+    {
+        TesseraFlyoutRevealSpec
+            .ResolveInitialRevealProgress(isPreview: false, willRunPhase2: true, sessionAlreadyShowing: true)
+            .Should().Be(TesseraFlyoutRevealSpec.RestRevealProgress);
+        TesseraFlyoutRevealSpec
+            .ResolveInitialPhase2Engaged(isPreview: false, willRunPhase2: true, sessionAlreadyShowing: true)
+            .Should().BeTrue();
+    }
+
     [Theory]
     [InlineData(true, true, true)]
     [InlineData(true, false, true)]

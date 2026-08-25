@@ -60,24 +60,46 @@ public static class TesseraFlyoutLiveSyncPolicy
     public const bool PumpMayWriteVolumeBindings = false;
 
     /// <summary>
-    /// ApplyRequest zeros MotionSurface opacity when SoftFrost hide-until-ready is on.
-    /// Rebuild must replay entrance even if the HWND was already session-showing.
-    /// Patch must not call this (no ApplyRequest).
+    /// YourFlyouts Execute 1 only when hidden (mToggle=0). Visible rebuilds swap
+    /// content at rest. Revive (not showing) still replays, including SoftFrost
+    /// hide-until-ready which zeros the motion surface.
     /// </summary>
     public static bool ShouldPlayShowAnimationAfterApplyRequest(
         bool reuseWasVisible,
         bool hideUntilCompositionReady)
     {
-        if (hideUntilCompositionReady)
-            return true;
+        _ = hideUntilCompositionReady;
         return !reuseWasVisible;
     }
+
+    /// <summary>
+    /// SoftFrost zeros the surface only when reviving a hidden HWND. Zeroing a
+    /// visible session forces a full entrance replay (M4).
+    /// </summary>
+    public static bool ShouldZeroMotionSurfaceOnApplyRequest(
+        bool reuseWasVisible,
+        bool hideUntilCompositionReady) =>
+        hideUntilCompositionReady && !reuseWasVisible;
+
+    /// <summary>
+    /// Visible ApplyRequest must snap TweenNode1 to rest so a skipped entrance
+    /// does not leave Fancy start pose.
+    /// </summary>
+    public static bool ShouldSnapRevealToRestAfterApplyRequest(bool reuseWasVisible) =>
+        reuseWasVisible;
 
     /// <summary>
     /// Host must merge high-frequency Update calls before Post/Invoke; coalesce inside ShowOrUpdateCore alone
     /// still floods the dispatcher (see flyout.log volume-drag bursts).
     /// </summary>
     public const bool MustCoalesceBeforeUiPost = true;
+
+    /// <summary>
+    /// Hub Try now is one Show. Volume/brightness keys fire many Shows in one burst.
+    /// Uncoalesced Present stomps generation-gated SoftFrost reveal, so live pops
+    /// while Try now animates. Non-status Show must use the same dispatch gate as Update.
+    /// </summary>
+    public const bool NonStatusShowMustCoalesceThroughUpdateGate = true;
 
     /// <summary>
     /// SoftRefresh shares the patch coalescer; rejected flushes must defer last-value retry.
