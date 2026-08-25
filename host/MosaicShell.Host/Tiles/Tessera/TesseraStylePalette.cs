@@ -78,7 +78,7 @@ internal static class TesseraMaterialYouM3
 
 internal static class TesseraStyleMetrics
 {
-    public const double MaterialYouColumnW = 60;
+    public const double MaterialYouColumnW = TesseraFlyoutAnimatedTargetSpec.MaterialYouColumnWidthDip;
     public const double MaterialYouHeight = 384;
     public const double MaterialYouColH = 154;
     public const double MaterialYouGap = 10;

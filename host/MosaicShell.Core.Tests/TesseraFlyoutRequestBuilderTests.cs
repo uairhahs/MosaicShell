@@ -28,6 +28,17 @@ public class TesseraFlyoutRequestBuilderTests
     }
 
     [Fact]
+    public void MaterialYou_payload_requests_in_layout_media_chrome()
+    {
+        var services = HostServicesFakes.Create();
+        var settings = new TesseraSettings { Style = StyleIds.MaterialYou, ShowMediaStripOnVolume = true };
+        var payload = new TesseraFlyoutRequestBuilder().BuildPayload(services, settings, "vol");
+        TesseraFlyoutTweenTargetCatalog.StyleRequestsVolumeMediaChrome(StyleIds.MaterialYou).Should().BeTrue();
+        TesseraLayoutCoverage.UsesStackedMediaStrip(StyleIds.MaterialYou).Should().BeFalse();
+        payload["showMediaStrip"].Should().Be("1");
+    }
+
+    [Fact]
     public void BuildLivePayload_honors_show_media_strip_override()
     {
         var services = HostServicesFakes.Create();

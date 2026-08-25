@@ -60,7 +60,7 @@ public sealed class TesseraFlyoutRequestBuilder
         p["mediaPlaying"] = services.Media.Current?.IsPlaying == true ? "1" : "0";
         p["showMediaStrip"] = !TesseraStatusFlyoutPolicy.IsStatusKind(kind)
                               && settings.ShowMediaStripOnVolume
-                              && TesseraLayoutCoverage.UsesStackedMediaStrip(settings.Style)
+                              && TesseraFlyoutTweenTargetCatalog.StyleRequestsVolumeMediaChrome(settings.Style)
             ? "1"
             : "0";
         p["acrylic"] = settings.UseAcrylicBackdrop ? "1" : "0";

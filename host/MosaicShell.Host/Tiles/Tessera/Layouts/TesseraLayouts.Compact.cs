@@ -9,6 +9,7 @@ using Material.Icons.Avalonia;
 using MosaicShell.Core.Services;
 
 using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Host.Tiles.Tessera;
 
@@ -30,10 +31,19 @@ internal static partial class TesseraLayouts
 
         var vol = CompactVolumeWrap(CompactVolumeCore(vm));
         if (!vm.ShowMediaStrip) return vol;
+        TesseraFlyoutTweenTargetCatalog.TryResolveMediaRestSizeDip(StyleIds.Compact, out var mediaW, out var mediaH);
         return new StackPanel
         {
             Spacing = 10,
-            Children = { vol, TesseraMediaPanel.Create(vm, TesseraMediaMode.SimpleRow) }
+            Children =
+            {
+                vol,
+                TesseraRevealHost.WrapMedia(
+                    vm,
+                    TesseraMediaPanel.Create(vm, TesseraMediaMode.SimpleRow),
+                    fullMediaWidth: mediaW,
+                    fullMediaHeight: mediaH)
+            }
         };
     }
 

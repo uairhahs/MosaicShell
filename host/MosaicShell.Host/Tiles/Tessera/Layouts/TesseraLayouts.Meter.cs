@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Host.Tiles.Tessera;
 
@@ -25,13 +26,18 @@ internal static partial class TesseraLayouts
         if (!vm.ShowMediaStrip)
             return volPill;
 
+        TesseraFlyoutTweenTargetCatalog.TryResolveMediaRestSizeDip(StyleIds.Meter, out var mediaW, out var mediaH);
         return new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 12,
             Children =
             {
-                TesseraMediaPanel.Create(vm, TesseraMediaMode.MeterCard),
+                TesseraRevealHost.WrapMedia(
+                    vm,
+                    TesseraMediaPanel.Create(vm, TesseraMediaMode.MeterCard),
+                    fullMediaWidth: mediaW,
+                    fullMediaHeight: mediaH),
                 volPill
             }
         };

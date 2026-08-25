@@ -33,10 +33,10 @@ public sealed class TesseraFlyoutViewModel
         ThumbnailPng = media?.ThumbnailPng;
         MediaPositionSeconds = media?.PositionSeconds ?? 0;
         MediaDurationSeconds = media?.DurationSeconds ?? 0;
-        ShowMediaStrip = TesseraLayoutCoverage.UsesStackedMediaStrip(styleId)
-                         && payload.GetValueOrDefault("showMediaStrip") == "1"
-                         && !string.IsNullOrWhiteSpace(MediaTitle)
-                         && MediaTitle != "No media";
+        HasMediaSession = payload.GetValueOrDefault("showMediaStrip") == "1"
+                          && !string.IsNullOrWhiteSpace(MediaTitle)
+                          && MediaTitle != "No media";
+        ShowMediaStrip = TesseraLayoutCoverage.UsesStackedMediaStrip(styleId) && HasMediaSession;
         LockName = payload.GetValueOrDefault("lock") ?? "CapsLock";
         LockOn = payload.GetValueOrDefault("on") == "1";
         FlightOn = payload.GetValueOrDefault("on") == "1";
@@ -67,6 +67,7 @@ public sealed class TesseraFlyoutViewModel
     public double MediaProgress =>
         MediaDurationSeconds > 0.5 ? Math.Clamp(MediaPositionSeconds / MediaDurationSeconds, 0, 1) : 0;
     public bool ShowMediaStrip { get; }
+    public bool HasMediaSession { get; }
     public string LockName { get; }
     public bool LockOn { get; }
     public bool FlightOn { get; }

@@ -1,5 +1,6 @@
 using FluentAssertions;
 using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Core.Tests;
 
@@ -48,7 +49,9 @@ public class TesseraFlyoutRevealSpecTests
     public void Smouti_is_phase2_no_op()
     {
         TesseraFlyoutRevealSpec.StyleIsPhase2NoOp(TesseraFlyoutRevealSpec.StyleSmouti).Should().BeTrue();
+        TesseraFlyoutRevealSpec.StyleIsPhase2NoOp(StyleIds.Radial).Should().BeTrue();
         TesseraFlyoutRevealSpec.StyleSupportsPhase2(TesseraFlyoutRevealSpec.StyleSmouti).Should().BeFalse();
+        TesseraFlyoutRevealSpec.StyleSupportsPhase2(StyleIds.Radial).Should().BeFalse();
     }
 
     [Fact]
@@ -67,6 +70,10 @@ public class TesseraFlyoutRevealSpecTests
         TesseraFlyoutRevealSpec.ResolveHideRevealProgress(willRunPhase2: false)
             .Should().Be(TesseraFlyoutRevealSpec.RestRevealProgress);
         TesseraFlyoutRevealSpec.ResolveHidePhase2Engaged(false).Should().BeTrue();
+        TesseraFlyoutRevealSpec.ResolveShowRevealProgress(willRunPhase2: true)
+            .Should().Be(TesseraFlyoutRevealSpec.FancyPhase2StartProgress);
+        TesseraFlyoutRevealSpec.ResolveShowRevealProgress(willRunPhase2: false)
+            .Should().Be(TesseraFlyoutRevealSpec.RestRevealProgress);
     }
 
     [Fact]

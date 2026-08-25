@@ -31,8 +31,14 @@ public static class TesseraFlyoutAnimatedTargetSpec
     /// </summary>
     public const bool Win11XorFrostMustNotPaintCoverOverlay = true;
 
-    /// <summary>YF MediaC grows as a container; Host clips in place (no leaf slide or fade).</summary>
+    /// <summary>YF MediaC grows as a container; Host clips in place (no leaf slide).</summary>
     public const bool CoreUiMediaMustClipOnly = true;
+
+    /// <summary>Amber.inc MediaB X inset at TweenNode1=0 (<c>20*Scale</c>).</summary>
+    public const double MeterMediaSlideRestDip = 20;
+
+    /// <summary>Pixel.inc <c>#ColumnW#</c>. Host Material You column aliases this.</summary>
+    public const double MaterialYouColumnWidthDip = 60;
 
     /// <summary>YF VolumeB fill alpha, not ScaleTransform. MediaB keeps scale.</summary>
     public const bool GnomeVolumeMustNotUseContentScale = true;
@@ -59,12 +65,92 @@ public static class TesseraFlyoutAnimatedTargetSpec
     public static double ResolveMediaMaskOpacity(double progress, bool musicVisible) =>
         musicVisible ? ClampProgress(progress) : 0;
 
+    /// <summary>
+    /// YourFlyouts MediaC fill alpha is a container mask. Host must fade media content with
+    /// TweenNode1. Leaving the leaf at 1 paints a fully rendered card behind the clip on show.
+    /// </summary>
+    public const bool AnimatedMediaMustDissolveWithTweenNode1 = true;
+
+    /// <summary>YF VolumeB Group=Standard. TweenNode1 does not fade the volume column.</summary>
+    public const bool FluentVolumeStaysOpaqueDuringPhase2 = true;
+
+    /// <summary>Fluent divider rest stroke opacity (Host Line.Opacity while music is visible).</summary>
+    public const double FluentDividerRestOpacity = 0.55;
+
+    /// <summary>
+    /// Catalog MediaB is DividerHeight only. Scaling stroke alpha with TweenNode1
+    /// hides the in-place grow on show; hide still looks like a wipe because the
+    /// line is already opaque. Opacity stays rest while music is visible.
+    /// </summary>
+    public const bool FluentDividerOpacityMustStayRestWhileMusicVisible = true;
+
+    public static double ResolveFluentMediaContentOpacity(double progress, bool musicVisible) =>
+        ResolveMediaMaskOpacity(progress, musicVisible);
+
+    public static double ResolveFluentDividerOpacity(double progress, bool musicVisible)
+    {
+        _ = progress;
+        if (!musicVisible)
+            return 0;
+        return FluentDividerOpacityMustStayRestWhileMusicVisible
+            ? FluentDividerRestOpacity
+            : FluentDividerRestOpacity * ClampProgress(progress);
+    }
+
     /// <summary>Fluent StrokeB static width when music visible (not Animated).</summary>
     public static double ResolveFluentShellWidthDip(
         double volumeWidth,
         double mediaWidth,
         bool musicVisible) =>
         musicVisible ? volumeWidth + mediaWidth : volumeWidth;
+
+    /// <summary>
+    /// Hide wipes MediaB in place on a visible card. Show must keep that column inside
+    /// the collapsed shell (height 0) so the line grows there instead of popping in
+    /// when the media HWND/region first includes it.
+    /// </summary>
+    public const bool FluentDividerMustTweenInPlaceOnShow = true;
+
+    public static double ResolveFluentCollapsedShellWidthDip(bool musicVisible) =>
+        TesseraFluentLayoutSpec.VolumeWidthDip
+        + (musicVisible && FluentDividerMustTweenInPlaceOnShow
+            ? TesseraFluentLayoutSpec.DividerColumnWidthDip
+            : 0);
+
+    /// <summary>
+    /// Stacked media HWND starts at the collapsed shell. Divider column is inside
+    /// volume, so media abuts volume instead of repeating the 3 DIP as a gap.
+    /// </summary>
+    public static double ResolveFluentStackedMediaOffsetXDip(bool musicVisible) =>
+        ResolveFluentCollapsedShellWidthDip(musicVisible);
+
+    /// <summary>
+    /// Visible Fluent shell width. At TweenNode1=0 this is volume plus the divider
+    /// column (line height still 0). Rest-sized chrome at p=0 is the black media bay.
+    /// </summary>
+    public static double ResolveFluentVisibleShellWidthDip(double progress, bool musicVisible)
+    {
+        var collapsed = ResolveFluentCollapsedShellWidthDip(musicVisible);
+        if (!musicVisible)
+            return collapsed;
+        var p = ClampProgress(progress);
+        if (p <= 0)
+            return collapsed;
+        return TesseraFluentLayoutSpec.VolumeWidthDip
+               + TesseraStackedPlacementPolicy.FluentDividerDip
+               + ResolveFluentMediaClipWidthDip(TesseraFluentLayoutSpec.MediaWidthDip, p, true);
+    }
+
+    /// <summary>Stacked Fluent media HWND width. 0 at p=0 so Host can hide rest-sized frost.</summary>
+    public static double ResolveFluentStackedMediaRegionWidthDip(double progress, bool musicVisible)
+    {
+        if (!musicVisible)
+            return 0;
+        var p = ClampProgress(progress);
+        if (p <= 0)
+            return 0;
+        return ResolveFluentMediaClipWidthDip(TesseraFluentLayoutSpec.MediaWidthDip, p, true);
+    }
 
     /// <summary>Rest measure for Fluent MediaC (YourFlyouts skin width, not TweenNode1).</summary>
     public static double ResolveFluentMediaLayoutWidthDip(double fullMediaWidth, bool musicVisible)
@@ -187,10 +273,43 @@ public static class TesseraFlyoutAnimatedTargetSpec
     public static double ResolveCoreUiMediaOverlayAlpha(double progress, bool musicVisible) =>
         ResolveMediaCoverOverlayAlpha(progress, musicVisible);
 
-    public static double ResolveCoreUiMediaContentOpacityFactor(double progress, bool musicVisible)
+    public static double ResolveCoreUiMediaContentOpacityFactor(double progress, bool musicVisible) =>
+        ResolveMediaMaskOpacity(progress, musicVisible);
+
+    public static double ResolveMeterMediaSlideOffsetDip(double progress, bool musicVisible)
     {
-        _ = (progress, musicVisible);
-        return 1;
+        if (!musicVisible)
+            return 0;
+        return MeterMediaSlideRestDip * (1 - ClampProgress(progress));
+    }
+
+    public static double ResolveCompactMediaSlideOffsetDip(
+        double volumeWidthDip,
+        double padDip,
+        double progress,
+        bool musicVisible)
+    {
+        if (!musicVisible)
+            return 0;
+        var restDelta = volumeWidthDip / 2 + padDip / 2;
+        return restDelta * (ClampProgress(progress) - 1);
+    }
+
+    public static double ResolveModernMediaClipHeightDip(
+        double fullMediaHeight,
+        double progress,
+        bool musicVisible)
+    {
+        if (!musicVisible)
+            return 0;
+        return fullMediaHeight * ClampProgress(progress);
+    }
+
+    public static double ResolveMaterialYouMediaSlideOffsetDip(double progress, bool musicVisible)
+    {
+        if (!musicVisible)
+            return 0;
+        return MaterialYouColumnWidthDip * (1 - ClampProgress(progress));
     }
 
     private static double ClampProgress(double progress) =>

@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -32,8 +31,8 @@ internal static partial class TesseraLayouts
             vm,
             buildVolume: FluentVolumeCore,
             buildMedia: v => TesseraMediaPanel.Create(v, TesseraMediaMode.FluentSide),
-            wrapVolume: FluentVolumeWrap,
-            wrapMedia: FluentMediaWrap);
+            wrapVolume: vol => FluentVolumeWrap(vm, vol),
+            wrapMedia: media => FluentMediaReveal(vm, media));
         if (stacked is not null)
             return stacked;
 
@@ -41,31 +40,16 @@ internal static partial class TesseraLayouts
         Control body = volCol;
         if (vm.ShowMediaStrip)
         {
-            const double h = TesseraFluentMetrics.Height;
-            const double pad = TesseraFluentMetrics.Pad;
-            var divider = new Line
-            {
-                StartPoint = new Point(0, 0),
-                EndPoint = new Point(0, h - pad * 2),
-                Stroke = TesseraPalette.StrokeBrush,
-                StrokeThickness = 1,
-                VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(0, pad, 0, pad),
-                Opacity = 0.55
-            };
             var media = TesseraMediaPanel.Create(vm, TesseraMediaMode.FluentSide);
-            var mediaW = TesseraFluentMetrics.MediaWidth;
             var reveal = TesseraRevealHost.WrapMedia(
                 vm,
                 media,
-                divider,
-                fullMediaWidth: mediaW,
-                fullDividerHeight: h - pad * 2);
+                fullMediaWidth: TesseraFluentMetrics.MediaWidth);
             body = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Spacing = 2,
-                Children = { volCol, reveal }
+                Spacing = 0,
+                Children = { AttachFluentDivider(vm, volCol), reveal }
             };
         }
 
@@ -128,11 +112,27 @@ internal static partial class TesseraLayouts
         return volCol;
     }
 
-    private static Control FluentVolumeWrap(Control volCol)
+    private static Control FluentVolumeWrap(TesseraFlyoutViewModel vm, Control volCol)
     {
+        var inner = AttachFluentDivider(vm, volCol);
         var options = TesseraStackedBuildContext.IsActive ? TesseraShellOptions.None : TesseraShellOptions.InsetMargin;
-        return TesseraChrome.Shell(volCol, 10, options,
+        return TesseraChrome.Shell(inner, 10, options,
             new SolidColorBrush(TesseraPalette.Primary));
+    }
+
+    private static Control AttachFluentDivider(TesseraFlyoutViewModel vm, Control volCol)
+    {
+        if (!vm.ShowMediaStrip || !TesseraFlyoutAnimatedTargetSpec.FluentDividerMustTweenInPlaceOnShow)
+            return volCol;
+        return TesseraRevealHost.WrapFluentVolumeDivider(vm, volCol);
+    }
+
+    private static Control FluentMediaReveal(TesseraFlyoutViewModel vm, Control media)
+    {
+        return TesseraRevealHost.WrapMedia(
+            vm,
+            FluentMediaWrap(media),
+            fullMediaWidth: TesseraFluentMetrics.MediaWidth);
     }
 
     private static Control FluentMediaWrap(Control media)

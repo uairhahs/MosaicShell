@@ -367,32 +367,13 @@ public sealed partial class AvaloniaFlyoutPresenter
 
     private static async Task RunStackedShowAnimationAsync(IReadOnlyList<FlyoutWindow> windows)
     {
-        try
-        {
-            await Task.WhenAll(windows.Select(w => w.RunEntranceMotionAsync())).ConfigureAwait(true);
-        }
-        catch (Exception ex)
-        {
-            TesseraFlyoutDiagnostics.Log($"stacked show animation failed: {ex.Message}");
-        }
+        await FlyoutMotionSession.RunShowAsync(windows).ConfigureAwait(true);
     }
 
     private async Task RunStackedExitAnimationAsync(FlyoutRequest request, IReadOnlyList<FlyoutWindow> windows)
     {
-        if (windows.Count == 0)
-            return;
-
-        try
-        {
-            foreach (var window in windows)
-                window.PrepareExitMotion();
-
-            await Task.WhenAll(windows.Select(w => w.RunExitMotionAsync())).ConfigureAwait(true);
-        }
-        catch (Exception ex)
-        {
-            Log($"stacked exit animation failed: {ex.Message}");
-        }
+        _ = request;
+        await FlyoutMotionSession.RunHideAsync(windows).ConfigureAwait(true);
     }
 
     private void TransientDismissAllStackedSlots(bool notify)

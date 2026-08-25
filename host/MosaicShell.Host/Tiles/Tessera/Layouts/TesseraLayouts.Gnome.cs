@@ -23,7 +23,7 @@ internal static partial class TesseraLayouts
             vm,
             buildVolume: GnomeVolumeCore,
             buildMedia: v => TesseraMediaPanel.Create(v, TesseraMediaMode.GnomePill),
-            wrapVolume: GnomeVolumeWrap,
+            wrapVolume: inner => TesseraRevealHost.WrapGnomeVolumeFill(vm, GnomeVolumeWrap(inner)),
             wrapMedia: static p => p);
         if (stacked is not null)
             return stacked;

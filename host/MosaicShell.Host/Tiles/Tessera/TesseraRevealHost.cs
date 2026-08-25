@@ -190,26 +190,41 @@ internal sealed class TesseraRevealHost : ContentControl
         {
             case TesseraFlyoutRevealSpec.StyleFluent:
                 ApplyFluentReveal(p, music);
-                return;
+                break;
             case TesseraFlyoutRevealSpec.StyleWindows11:
                 ApplyWin11Reveal(p, music);
-                return;
+                break;
             case TesseraFlyoutRevealSpec.StyleGnome:
                 ApplyGnomeReveal(p, music);
-                return;
+                break;
             case TesseraFlyoutRevealSpec.StylePlainText:
                 ApplyPlainTextReveal(p, music);
-                return;
+                break;
             case TesseraFlyoutRevealSpec.StyleCoreUi:
                 ApplyCoreUiReveal(p, music);
-                return;
+                break;
             case TesseraFlyoutRevealSpec.StyleSquare:
                 ApplySquareReveal(p);
-                return;
+                break;
+            case TesseraFlyoutRevealSpec.StyleMeter:
+                ApplyMeterReveal(p, music);
+                break;
+            case TesseraFlyoutRevealSpec.StyleCompact:
+                ApplyCompactReveal(p, music);
+                break;
+            case TesseraFlyoutRevealSpec.StyleModernFlyouts:
+                ApplyModernReveal(p, music);
+                break;
+            case TesseraFlyoutRevealSpec.StyleMaterialYou:
+                ApplyMaterialYouReveal(p, music);
+                break;
             default:
                 ApplyLegacyReveal(style, p, music);
                 break;
         }
+
+        if (VisualRoot is FlyoutWindow flyout)
+            flyout.SyncRevealRegion();
     }
 
     private void ApplyFluentReveal(double p, bool music)
@@ -222,8 +237,9 @@ internal sealed class TesseraRevealHost : ContentControl
                 FullDividerHeight, p, music);
             line.StartPoint = new Point(0, 0);
             line.EndPoint = new Point(0, endY);
-            line.Opacity = music ? 0.55 : 0;
-            line.IsVisible = music || p > 0.001;
+            line.Height = Math.Max(0, endY);
+            line.Opacity = TesseraFlyoutAnimatedTargetSpec.ResolveFluentDividerOpacity(p, music);
+            line.IsVisible = music && endY > 0.5;
         }
         else if (Divider is Control divider
                  && !double.IsNaN(FullDividerHeight)
@@ -231,7 +247,7 @@ internal sealed class TesseraRevealHost : ContentControl
         {
             divider.Height = TesseraFlyoutAnimatedTargetSpec.ResolveFluentDividerHeightDip(
                 FullDividerHeight, p, music);
-            divider.Opacity = music ? 1 : 0;
+            divider.Opacity = TesseraFlyoutAnimatedTargetSpec.ResolveFluentDividerOpacity(p, music);
             divider.IsVisible = music || p > 0.001;
         }
 
@@ -256,11 +272,13 @@ internal sealed class TesseraRevealHost : ContentControl
             _mediaOverlay.IsVisible = false;
         }
 
-        if (_mediaLeaf is not null)
+        if (_mediaLeaf is not null
+            && !double.IsNaN(FullMediaWidth)
+            && FullMediaWidth > 0)
         {
-            _mediaLeaf.Opacity = 1;
+            _mediaLeaf.Opacity = TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaContentOpacity(p, music);
             _mediaLeaf.RenderTransform = null;
-            _mediaLeaf.MaxWidth = double.IsNaN(FullMediaWidth) ? double.PositiveInfinity : FullMediaWidth;
+            _mediaLeaf.MaxWidth = FullMediaWidth;
             _mediaLeaf.MaxHeight = double.PositiveInfinity;
         }
     }
@@ -304,7 +322,7 @@ internal sealed class TesseraRevealHost : ContentControl
 
         if (Divider is Control divider)
         {
-            divider.Opacity = music ? 1 : 0;
+            divider.Opacity = TesseraFlyoutAnimatedTargetSpec.ResolveMediaMaskOpacity(p, music);
             divider.IsVisible = music && p > 0.001;
         }
 
@@ -312,8 +330,12 @@ internal sealed class TesseraRevealHost : ContentControl
             && !double.IsNaN(FullMediaHeight)
             && FullMediaHeight > 0)
         {
-            _mediaClipHost.MaxHeight = FullMediaHeight;
+            var clipH = TesseraFlyoutAnimatedTargetSpec.ResolveWin11MediaClipHeightDip(
+                FullMediaHeight, p, music);
+            _mediaClipHost.MaxHeight = clipH;
             _mediaClipHost.Width = double.NaN;
+            _mediaClipHost.ClipToBounds = true;
+            ApplyVerticalClip(_mediaClipHost, clipH, FullMediaHeight);
             _mediaClipHost.IsVisible = music || p > 0.001;
         }
 
@@ -325,7 +347,7 @@ internal sealed class TesseraRevealHost : ContentControl
 
         if (_mediaLeaf is not null)
         {
-            _mediaLeaf.Opacity = 1;
+            _mediaLeaf.Opacity = TesseraFlyoutAnimatedTargetSpec.ResolveMediaMaskOpacity(p, music);
             _mediaLeaf.RenderTransform = null;
             _mediaLeaf.MaxHeight = double.IsNaN(FullMediaHeight) ? double.PositiveInfinity : FullMediaHeight;
         }
@@ -364,19 +386,10 @@ internal sealed class TesseraRevealHost : ContentControl
             _mediaOverlay.IsVisible = false;
         }
 
-        if (_mediaLeaf is not null && !TesseraFlyoutAnimatedTargetSpec.CoreUiMediaMustClipOnly)
-        {
-            var offset = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaSlideOffsetDip(
-                FullMediaWidth, p, music);
-            _mediaLeaf.RenderTransform = Math.Abs(offset) > 0.01
-                ? new TranslateTransform(offset, 0)
-                : null;
-            _mediaLeaf.Opacity = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaContentOpacityFactor(p, music);
-        }
-        else if (_mediaLeaf is not null)
+        if (_mediaLeaf is not null)
         {
             _mediaLeaf.RenderTransform = null;
-            _mediaLeaf.Opacity = 1;
+            _mediaLeaf.Opacity = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaContentOpacityFactor(p, music);
         }
     }
 
@@ -405,7 +418,7 @@ internal sealed class TesseraRevealHost : ContentControl
 
         if (_mediaLeaf is not null)
         {
-            _mediaLeaf.Opacity = 1;
+            _mediaLeaf.Opacity = TesseraFlyoutAnimatedTargetSpec.ResolveMediaMaskOpacity(p, music);
             _mediaLeaf.RenderTransformOrigin = new RelativePoint(0.5, 0.5, RelativeUnit.Relative);
             _mediaLeaf.RenderTransform = Math.Abs(scale - 1) > 0.001
                 ? new ScaleTransform(scale, scale)
@@ -441,6 +454,62 @@ internal sealed class TesseraRevealHost : ContentControl
             : null;
     }
 
+    private void ApplyMeterReveal(double p, bool music)
+    {
+        ApplyMediaMask(p, music);
+        if (_mediaLeaf is null)
+            return;
+        var offset = TesseraFlyoutAnimatedTargetSpec.ResolveMeterMediaSlideOffsetDip(p, music);
+        _mediaLeaf.RenderTransform = Math.Abs(offset) > 0.01
+            ? new TranslateTransform(offset, 0)
+            : null;
+    }
+
+    private void ApplyCompactReveal(double p, bool music)
+    {
+        ApplyMediaMask(p, music);
+        if (_mediaLeaf is not null)
+            _mediaLeaf.RenderTransform = null;
+    }
+
+    private void ApplyModernReveal(double p, bool music)
+    {
+        ApplyMediaMask(p, music);
+        if (_mediaLeaf is not null)
+            _mediaLeaf.RenderTransform = null;
+
+        if (_mediaClipHost is not null
+            && !double.IsNaN(FullMediaHeight)
+            && FullMediaHeight > 0)
+        {
+            var clipH = TesseraFlyoutAnimatedTargetSpec.ResolveModernMediaClipHeightDip(
+                FullMediaHeight, p, music);
+            _mediaClipHost.MaxHeight = clipH;
+            _mediaClipHost.ClipToBounds = true;
+            ApplyVerticalClip(_mediaClipHost, clipH, FullMediaHeight);
+            _mediaClipHost.IsVisible = music || p > 0.001;
+        }
+    }
+
+    private void ApplyMaterialYouReveal(double p, bool music)
+    {
+        ApplyMediaMask(p, music);
+        if (_mediaLeaf is null)
+            return;
+        var offset = TesseraFlyoutAnimatedTargetSpec.ResolveMaterialYouMediaSlideOffsetDip(p, music);
+        _mediaLeaf.RenderTransform = Math.Abs(offset) > 0.01
+            ? new TranslateTransform(offset, 0)
+            : null;
+    }
+
+    private void ApplyMediaMask(double p, bool music)
+    {
+        if (_mediaLeaf is not null)
+            _mediaLeaf.Opacity = TesseraFlyoutAnimatedTargetSpec.ResolveMediaMaskOpacity(p, music);
+        if (_mediaOverlay is not null)
+            _mediaOverlay.IsVisible = false;
+    }
+
     private static void ApplyHorizontalClip(Border host, double clipWidthDip, double layoutWidthDip)
     {
         if (clipWidthDip <= 0)
@@ -461,6 +530,26 @@ internal sealed class TesseraRevealHost : ContentControl
         host.Clip = new RectangleGeometry(new Rect(0, 0, clipWidthDip, clipH));
     }
 
+    private static void ApplyVerticalClip(Border host, double clipHeightDip, double layoutHeightDip)
+    {
+        if (clipHeightDip <= 0)
+        {
+            host.Clip = new RectangleGeometry(new Rect(0, 0, 0, 0));
+            return;
+        }
+
+        if (clipHeightDip >= layoutHeightDip - 0.01)
+        {
+            host.Clip = null;
+            return;
+        }
+
+        var clipW = host.Bounds.Width;
+        if (clipW < 1)
+            clipW = 4096;
+        host.Clip = new RectangleGeometry(new Rect(0, 0, clipW, clipHeightDip));
+    }
+
     private void ApplyLegacyReveal(string style, double p, bool music)
     {
         if (_mediaLeaf is not null)
@@ -471,6 +560,49 @@ internal sealed class TesseraRevealHost : ContentControl
             var scale = TesseraFlyoutRevealSpec.ResolveDividerScale(style, p, music);
             divider.Opacity = music ? scale : 0;
         }
+    }
+
+    internal static TesseraRevealHost WrapFluentVolumeDivider(TesseraFlyoutViewModel vm, Control volume)
+    {
+        var colW = TesseraFluentLayoutSpec.DividerColumnWidthDip;
+        const double h = TesseraFluentLayoutSpec.HeightDip;
+        const double pad = TesseraFluentLayoutSpec.PadDip;
+        var innerH = h - pad * 2;
+        var line = new Line
+        {
+            StartPoint = new Point(0, 0),
+            EndPoint = new Point(0, 0),
+            Stroke = TesseraPalette.StrokeBrush,
+            StrokeThickness = 1,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, pad, 0, pad),
+            Opacity = 0,
+            IsHitTestVisible = false
+        };
+        var column = new Border
+        {
+            Width = colW,
+            Height = h,
+            Background = Brushes.Transparent,
+            Child = line
+        };
+        var row = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 0,
+            Children = { volume, column }
+        };
+        var unusedClip = new Border { IsVisible = false };
+        var unusedOverlay = new Border { IsVisible = false, IsHitTestVisible = false };
+        return CreateHost(
+            vm,
+            row,
+            unusedClip,
+            unusedOverlay,
+            mediaLeaf: null,
+            divider: line,
+            fullDividerHeight: innerH);
     }
 
     internal static TesseraRevealHost WrapMedia(
@@ -608,7 +740,7 @@ internal sealed class TesseraRevealHost : ContentControl
         Control content,
         Border clipHost,
         Border overlay,
-        Control mediaLeaf,
+        Control? mediaLeaf,
         Control? divider = null,
         double fullMediaWidth = double.NaN,
         double fullMediaHeight = double.NaN,
@@ -625,12 +757,13 @@ internal sealed class TesseraRevealHost : ContentControl
         var styleId = (styleOverride ?? StyleIds.Normalize(vm.StyleId)).ToLowerInvariant();
         var isPreview = TesseraRevealBuildContext.IsPreview;
         var ani = TesseraRevealBuildContext.IsActive ? TesseraRevealBuildContext.Ani : vm.Ani;
+        var music = vm.ShowMediaStrip || vm.HasMediaSession;
         var willRunPhase2 = TesseraFlyoutAnimationPolicy.Phase2RequiresAnimatedLayout(
-            ani, styleId, vm.ShowMediaStrip);
+            ani, styleId, music);
         return new TesseraRevealHost
         {
             StyleId = styleId,
-            MusicVisible = vm.ShowMediaStrip,
+            MusicVisible = music,
             RevealProgress = TesseraFlyoutRevealSpec.ResolveInitialRevealProgress(
                 isPreview, willRunPhase2, TesseraRevealBuildContext.SessionAlreadyShowing),
             Phase2Engaged = TesseraFlyoutRevealSpec.ResolveInitialPhase2Engaged(

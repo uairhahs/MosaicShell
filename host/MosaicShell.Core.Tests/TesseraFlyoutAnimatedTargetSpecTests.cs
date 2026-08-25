@@ -29,6 +29,72 @@ public class TesseraFlyoutAnimatedTargetSpecTests
     }
 
     [Fact]
+    public void Fluent_visible_shell_keeps_divider_column_when_collapsed()
+    {
+        TesseraFlyoutAnimatedTargetSpec.FluentDividerMustTweenInPlaceOnShow.Should().BeTrue();
+        var collapsed = TesseraFlyoutAnimatedTargetSpec.ResolveFluentCollapsedShellWidthDip(true);
+        collapsed.Should().Be(
+            TesseraFluentLayoutSpec.VolumeWidthDip + TesseraFluentLayoutSpec.DividerColumnWidthDip);
+        TesseraFlyoutAnimatedTargetSpec.ResolveFluentVisibleShellWidthDip(0, musicVisible: true)
+            .Should().Be(collapsed);
+        TesseraFlyoutAnimatedTargetSpec.ResolveFluentStackedMediaRegionWidthDip(0, musicVisible: true)
+            .Should().Be(0);
+        var rest = TesseraFluentLayoutSpec.VolumeWidthDip + TesseraFluentLayoutSpec.MediaWidthDip;
+        collapsed.Should().BeLessThan(rest * 0.3);
+        TesseraFlyoutAnimatedTargetSpec.ResolveFluentVisibleShellWidthDip(1, musicVisible: true)
+            .Should().BeGreaterThan(rest * 0.9);
+    }
+
+    [Fact]
+    public void Fluent_stacked_volume_owns_divider_column_and_media_abuts()
+    {
+        TesseraFlyoutAnimatedTargetSpec.FluentDividerMustTweenInPlaceOnShow.Should().BeTrue();
+        var collapsed = TesseraFlyoutAnimatedTargetSpec.ResolveFluentCollapsedShellWidthDip(true);
+        collapsed.Should().Be(TesseraFlyoutAnimatedTargetSpec.ResolveFluentStackedMediaOffsetXDip(true));
+
+        var placements = TesseraStackedPlacementPolicy.EstimatePlacements("Fluent");
+        var volume = placements.Single(p => p.Role == TesseraStackedPanelRole.Volume);
+        var media = placements.Single(p => p.Role == TesseraStackedPanelRole.Media);
+        volume.WidthDip.Should().Be(collapsed);
+        media.OffsetXDip.Should().Be(collapsed);
+        media.OffsetXDip.Should().Be(volume.OffsetXDip + volume.WidthDip);
+
+        var computed = TesseraStackedPlacementPolicy.ComputePlacements(
+            "Fluent",
+            volumeWidthDip: collapsed,
+            volumeHeightDip: TesseraFluentLayoutSpec.HeightDip,
+            mediaWidthDip: 324,
+            mediaHeightDip: TesseraFluentLayoutSpec.HeightDip);
+        computed.Single(p => p.Role == TesseraStackedPanelRole.Media).OffsetXDip.Should().Be(collapsed);
+    }
+
+    [Fact]
+    public void Fluent_phase2_show_wipes_in_with_the_same_ease_hide_uses()
+    {
+        const int steps = 20;
+        var showEase = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(
+            TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: true);
+        var hideEase = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(
+            TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: false);
+        var pShow = TesseraFlyoutAnimationPolicy.InterpolateStepped(
+            0, 1, 5, steps, showEase, entrance: true);
+        var pHide = TesseraFlyoutAnimationPolicy.InterpolateStepped(
+            1, 0, 5, steps, hideEase, entrance: false);
+
+        var mediaShow = TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaClipWidthDip(
+            FluentMediaW, pShow, musicVisible: true);
+        var mediaHide = TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaClipWidthDip(
+            FluentMediaW, pHide, musicVisible: true);
+        var dividerShow = TesseraFlyoutAnimatedTargetSpec.ResolveFluentDividerHeightDip(
+            FluentInnerH, pShow, musicVisible: true);
+
+        showEase.Should().Be(hideEase);
+        mediaShow.Should().BeGreaterThan(FluentMediaW * 0.5);
+        dividerShow.Should().BeGreaterThan(FluentInnerH * 0.5);
+        mediaHide.Should().BeGreaterThan(FluentMediaW * 0.9);
+    }
+
+    [Fact]
     public void Fluent_no_music_keeps_divider_and_clip_at_zero()
     {
         TesseraFlyoutAnimatedTargetSpec.ResolveFluentDividerHeightDip(FluentInnerH, 1, musicVisible: false)
@@ -113,9 +179,9 @@ public class TesseraFlyoutAnimatedTargetSpecTests
         TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaSlideOffsetDip(388, 0.5, true)
             .Should().Be(0);
         TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaContentOpacityFactor(0, true)
-            .Should().Be(1);
+            .Should().Be(0);
         TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaContentOpacityFactor(0.5, true)
-            .Should().Be(1);
+            .Should().Be(0.5);
     }
 
     [Fact]
@@ -151,6 +217,32 @@ public class TesseraFlyoutAnimatedTargetSpecTests
             .Should().Be(0);
         TesseraFlyoutAnimatedTargetSpec.ResolveMediaMaskOpacity(0.5, musicVisible: true)
             .Should().Be(0.5);
+        TesseraFlyoutAnimatedTargetSpec.ResolveMediaMaskOpacity(0, musicVisible: true)
+            .Should().Be(0);
+        TesseraFlyoutAnimatedTargetSpec.ResolveMediaMaskOpacity(1, musicVisible: true)
+            .Should().Be(1);
+    }
+
+    [Fact]
+    public void Fluent_animated_meters_dissolve_with_tween_node1()
+    {
+        TesseraFlyoutAnimatedTargetSpec.AnimatedMediaMustDissolveWithTweenNode1.Should().BeTrue();
+        TesseraFlyoutAnimatedTargetSpec.FluentVolumeStaysOpaqueDuringPhase2.Should().BeTrue();
+        TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaContentOpacity(0, musicVisible: true)
+            .Should().Be(0);
+        TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaContentOpacity(0.5, musicVisible: true)
+            .Should().Be(0.5);
+        TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaContentOpacity(1, musicVisible: true)
+            .Should().Be(1);
+        TesseraFlyoutAnimatedTargetSpec.ResolveFluentDividerOpacity(0, musicVisible: true)
+            .Should().Be(TesseraFlyoutAnimatedTargetSpec.FluentDividerRestOpacity);
+        TesseraFlyoutAnimatedTargetSpec.ResolveFluentDividerOpacity(1, musicVisible: true)
+            .Should().Be(TesseraFlyoutAnimatedTargetSpec.FluentDividerRestOpacity);
+        TesseraFlyoutAnimatedTargetSpec.ResolveFluentDividerOpacity(0.5, musicVisible: true)
+            .Should().Be(TesseraFlyoutAnimatedTargetSpec.FluentDividerRestOpacity);
+        TesseraFlyoutAnimatedTargetSpec.FluentDividerOpacityMustStayRestWhileMusicVisible.Should().BeTrue();
+        TesseraFlyoutAnimatedTargetSpec.ResolveFluentDividerOpacity(1, musicVisible: false)
+            .Should().Be(0);
     }
 
     [Fact]

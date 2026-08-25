@@ -34,7 +34,11 @@ internal sealed class FlyoutWindow : Window
     private PixelPoint _restPosition;
     private bool _motionAnimating;
     private bool _phase2Animating;
+    private bool _syncingRevealRegion;
+    private double _signedRevealRestWidthDip;
+    private double _signedRevealRestHeightDip;
     private int _motionGeneration;
+    private int _stackedShowGeneration;
     private CancellationTokenSource _motionCts = new();
     private readonly Panel _motionSurface = new();
 
@@ -50,7 +54,7 @@ internal sealed class FlyoutWindow : Window
     /// <summary>H3 stacked acrylic: Win32 region clip radius in DIP (pill/card geometry).</summary>
     public double? BackdropCornerRadiusDip { get; set; }
 
-    /// <summary>Stacked acrylic panel role (phase-2 reveal runs on media only).</summary>
+    /// <summary>Stacked acrylic panel role (show phase 1 skips media; phase 2 still hits Animated meters).</summary>
     public TesseraStackedPanelRole? StackedRole { get; set; }
 
     /// <summary>When true, stacked presenter runs entrance/exit via parallel motion tasks.</summary>
@@ -142,35 +146,96 @@ internal sealed class FlyoutWindow : Window
         }
     }
 
-    internal void SyncStrokeBRegion()
+    internal void SyncStrokeBRegion() => SyncRevealRegion();
+
+    internal void SyncRevealRegion()
     {
+        if (_syncingRevealRegion)
+            return;
+
         var showMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(_request.Payload);
-        if (!TesseraFlyoutHwndRegionSpec.StyleNeedsStrokeBRegion(_request.StyleId, showMedia))
+        if (!TesseraFlyoutHwndRegionSpec.StyleNeedsRevealRegion(_request.StyleId, showMedia, StackedRole)
+            && !TesseraFlyoutHwndRegionSpec.StyleNeedsStrokeBRegion(_request.StyleId, showMedia))
             return;
 
-        var host = this.GetVisualDescendants().OfType<TesseraRevealHost>().FirstOrDefault();
-        var progress = host?.RevealProgress ?? 0;
-        var engaged = host?.Phase2Engaged ?? false;
-        var heightDip = TesseraFlyoutHwndRegionSpec.ResolveRegionHeightDip(progress, engaged, showMedia);
-        var widthDip = Bounds.Width > 1
-            ? Bounds.Width
-            : TesseraStackedPlacementSpec.Win11WidthDip;
-        var radiusDip = TesseraStackedPlacementSpec.Win11CornerRadiusDip;
-        var scale = ResolveMonitorScale();
-        var phys = TesseraFlyoutHwndRegionSpec.ResolveRoundRectPhysical(
-            widthDip, heightDip, radiusDip, scale);
-        if (phys.HeightPx < 2 || phys.WidthPx < 2)
-            return;
+        _syncingRevealRegion = true;
+        try
+        {
+            var hosts = this.GetVisualDescendants().OfType<TesseraRevealHost>().ToList();
+            var forceRest = TesseraFlyoutHwndRegionSpec.ShouldForceRestRevealRegion(
+                _motionAnimating, _phase2Animating, IsFlyoutSessionShowing);
+            if (forceRest)
+            {
+                foreach (var host in hosts)
+                {
+                    host.Phase2Engaged = true;
+                    if (!TesseraFlyoutHwndRegionSpec.IsRestRevealProgress(host.RevealProgress))
+                        host.RevealProgress = TesseraFlyoutRevealSpec.RestRevealProgress;
+                }
+            }
 
-        Win32Properties.SetWindowCornerPreference(
-            this,
-            Win32Properties.WindowCornerPreference.DoNotRound);
-        Win32WindowChrome.ApplyRoundRectRegion(
-            this,
-            phys.WidthPx,
-            phys.HeightPx,
-            phys.CornerRadiusPx,
-            applySynchronously: true);
+            var progress = TesseraFlyoutHwndRegionSpec.ResolveRegionProgress(
+                hosts.ConvertAll(static h => h.RevealProgress),
+                _motionAnimating,
+                _phase2Animating,
+                IsFlyoutSessionShowing);
+            var engaged = forceRest
+                          || TesseraFlyoutHwndRegionSpec.IsRestRevealProgress(progress)
+                          || hosts.Exists(static h => h.Phase2Engaged);
+
+            var signedW = StackedPanelWidthDip ?? (_signedRevealRestWidthDip > 1 ? _signedRevealRestWidthDip : 0);
+            var signedH = StackedPanelHeightDip ?? (_signedRevealRestHeightDip > 1 ? _signedRevealRestHeightDip : 0);
+            var restW = TesseraFlyoutHwndRegionSpec.ResolveRestExtentDip(signedW, Bounds.Width);
+            var restH = TesseraFlyoutHwndRegionSpec.ResolveRestExtentDip(signedH, Bounds.Height);
+            var region = TesseraFlyoutHwndRegionSpec.ResolveRevealRegionDip(
+                _request.StyleId,
+                StackedRole,
+                progress,
+                engaged,
+                showMedia,
+                restW,
+                restH);
+            var scale = ResolveMonitorScale();
+            var radiusDip = BackdropCornerRadiusDip
+                            ?? (TesseraFlyoutHwndRegionSpec.StyleNeedsStrokeBRegion(_request.StyleId, showMedia)
+                                ? TesseraStackedPlacementSpec.Win11CornerRadiusDip
+                                : 10);
+
+            if (region.HideChrome
+                && TesseraFlyoutHwndRegionSpec.CollapsedRevealRegionMustHideRestChrome
+                && !TesseraFlyoutHwndRegionSpec.IsRestRevealProgress(progress))
+            {
+                Win32Properties.SetWindowCornerPreference(
+                    this,
+                    Win32Properties.WindowCornerPreference.DoNotRound);
+                Win32WindowChrome.ApplyRoundRectRegion(this, 1, 1, 1, applySynchronously: true);
+                if (StackedRole == TesseraStackedPanelRole.Media)
+                    Opacity = 0;
+                return;
+            }
+
+            var phys = TesseraFlyoutHwndRegionSpec.ResolveRoundRectPhysical(
+                region.WidthDip, region.HeightDip, radiusDip, scale);
+            if (phys.HeightPx < 2 || phys.WidthPx < 2)
+                return;
+
+            if (StackedRole == TesseraStackedPanelRole.Media)
+                Opacity = 1;
+
+            Win32Properties.SetWindowCornerPreference(
+                this,
+                Win32Properties.WindowCornerPreference.DoNotRound);
+            Win32WindowChrome.ApplyRoundRectRegion(
+                this,
+                phys.WidthPx,
+                phys.HeightPx,
+                phys.CornerRadiusPx,
+                applySynchronously: true);
+        }
+        finally
+        {
+            _syncingRevealRegion = false;
+        }
     }
 
     /// <summary>Raised after auto-dismiss / TransientDismiss so Host can close FocusDim.</summary>
@@ -213,6 +278,9 @@ internal sealed class FlyoutWindow : Window
                 // Timeline UI: ApplyLive only. PumpTimeline runs from armed poll / user events.
                 if (Content is Control root && TesseraLiveHost.FindIn(root) is { } host)
                     host.ApplyLive(_services, _request);
+                if (TesseraFlyoutHwndRegionSpec.ShouldForceRestRevealRegion(
+                        _motionAnimating, _phase2Animating, IsFlyoutSessionShowing))
+                    SyncRevealRegion();
             }
             catch (Exception ex)
             {
@@ -306,6 +374,8 @@ internal sealed class FlyoutWindow : Window
         PanelOffsetYDip = 0;
         StackedPanelWidthDip = null;
         StackedPanelHeightDip = null;
+        _signedRevealRestWidthDip = 0;
+        _signedRevealRestHeightDip = 0;
         _clientSizeLocked = false;
         SizeToContent = SizeToContent.WidthAndHeight;
         Width = double.NaN;
@@ -530,7 +600,7 @@ internal sealed class FlyoutWindow : Window
                 yPad);
             CommitRestPosition(new PixelPoint(x, y));
             ApplyStackedBackdropClip(w, h, scale);
-            SyncStrokeBRegion();
+            SyncRevealRegion();
             _lastSize = Bounds.Size;
         }
         catch (Exception ex)
@@ -588,58 +658,7 @@ internal sealed class FlyoutWindow : Window
         if (PresenterDrivesMotion)
             return;
 
-        await RunEntranceMotionAsync().ConfigureAwait(true);
-    }
-
-    internal async Task RunEntranceMotionAsync()
-    {
-        var (generation, token) = BeginMotionRun();
-        try
-        {
-            EnsureStatusRoundClipBeforeReveal();
-            Position = _restPosition;
-
-            if (!TesseraFlyoutAnimationPolicy.ShouldAnimateOpacity(_request.Ani))
-            {
-                _motionSurface.Opacity = 1;
-                RenderTransform = null;
-                ApplyPhase2Reveal(1);
-                return;
-            }
-
-            _motionAnimating = true;
-            var scale = ResolveMonitorScale();
-            var showMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(_request.Payload);
-            var runPhase2 = ShouldRunPhase2Reveal(showMedia);
-
-            await FlyoutMotionController.RunEntranceAsync(CreateMotionContext(
-                    showMedia, runPhase2, scale, () => generation != _motionGeneration, token))
-                .ConfigureAwait(true);
-        }
-        catch
-        {
-            if (generation == _motionGeneration)
-            {
-                Opacity = 1;
-                _motionSurface.Opacity = 1;
-                RenderTransform = null;
-                Position = _restPosition;
-                ApplyPhase2Reveal(1);
-            }
-        }
-        finally
-        {
-            if (generation == _motionGeneration)
-            {
-                _motionAnimating = false;
-                Opacity = 1;
-                _motionSurface.Opacity = 1;
-                RenderTransform = null;
-                Position = _restPosition;
-                if (TesseraFlyoutAnimationPolicy.CancelledEntranceMustSnapToRest)
-                    ApplyPhase2Reveal(TesseraFlyoutRevealSpec.RestRevealProgress);
-            }
-        }
+        await FlyoutMotionSession.RunShowAsync([this]).ConfigureAwait(true);
     }
 
     internal double ResolveMonitorScale() =>
@@ -650,6 +669,119 @@ internal sealed class FlyoutWindow : Window
     internal bool ShouldRunPhase2Reveal(bool showMediaStrip) =>
         TesseraFlyoutAnimationPolicy.ShouldRunPhase2Reveal(
             _request.Ani, _request.StyleId, showMediaStrip, StackedRole);
+
+    internal void BeginMotion(bool entrance)
+    {
+        EnsureStatusRoundClipBeforeReveal();
+        Position = _restPosition;
+        var (generation, _) = BeginMotionRun();
+        _stackedShowGeneration = generation;
+
+        if (!TesseraFlyoutAnimationPolicy.ShouldAnimateOpacity(_request.Ani))
+        {
+            if (entrance)
+            {
+                Opacity = 1;
+                _motionSurface.Opacity = 1;
+                RenderTransform = null;
+                ApplyPhase2Reveal(1);
+            }
+            else
+            {
+                _motionSurface.Opacity = 0;
+                RenderTransform = null;
+            }
+
+            return;
+        }
+
+        _motionAnimating = true;
+        var showMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(_request.Payload);
+        if (entrance)
+        {
+            ApplyPhase2Reveal(TesseraFlyoutRevealSpec.ResolveShowRevealProgress(ShouldRunPhase2Reveal(showMedia)));
+            if (TesseraFlyoutAnimationPolicy.ShouldHoldStackedMediaHiddenThroughShowPhase1(
+                    _request.Ani, _request.StyleId, showMedia, StackedRole))
+            {
+                Opacity = 0;
+                _motionSurface.Opacity = 0;
+            }
+        }
+        else if (TesseraFlyoutAnimationPolicy.Phase2HideMustStartFromRestReveal)
+        {
+            ApplyPhase2Reveal(TesseraFlyoutRevealSpec.RestRevealProgress);
+            SyncRevealRegion();
+        }
+    }
+
+    internal void PreparePhase2Show()
+    {
+        if (_stackedShowGeneration != _motionGeneration || !_motionAnimating)
+            return;
+        _motionSurface.Opacity = 1;
+        SyncRevealRegion();
+    }
+
+    internal async Task RunMotionPhase1Async(bool entrance)
+    {
+        var generation = _stackedShowGeneration;
+        var token = _motionCts.Token;
+        if (generation != _motionGeneration
+            || !TesseraFlyoutAnimationPolicy.ShouldAnimateOpacity(_request.Ani))
+            return;
+
+        var showMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(_request.Payload);
+        await FlyoutMotionController.RunPhase1OnlyAsync(
+                CreateMotionContext(
+                    showMedia,
+                    runPhase2: false,
+                    ResolveMonitorScale(),
+                    () => generation != _motionGeneration,
+                    token),
+                entrance)
+            .ConfigureAwait(true);
+    }
+
+    internal async Task RunMotionPhase2Async(bool entrance)
+    {
+        var generation = _stackedShowGeneration;
+        var token = _motionCts.Token;
+        if (generation != _motionGeneration
+            || !TesseraFlyoutAnimationPolicy.ShouldAnimateOpacity(_request.Ani))
+            return;
+
+        var showMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(_request.Payload);
+        await FlyoutMotionController.RunPhase2OnlyAsync(
+                CreateMotionContext(
+                    showMedia,
+                    ShouldRunPhase2Reveal(showMedia),
+                    ResolveMonitorScale(),
+                    () => generation != _motionGeneration,
+                    token),
+                entrance)
+            .ConfigureAwait(true);
+    }
+
+    internal void CompleteMotion(bool entrance)
+    {
+        if (_stackedShowGeneration != _motionGeneration)
+            return;
+
+        _motionAnimating = false;
+        RenderTransform = null;
+        if (entrance)
+        {
+            Opacity = 1;
+            _motionSurface.Opacity = 1;
+            Position = _restPosition;
+            if (TesseraFlyoutAnimationPolicy.CancelledEntranceMustSnapToRest)
+                ApplyPhase2Reveal(TesseraFlyoutRevealSpec.RestRevealProgress);
+        }
+        else
+        {
+            _motionSurface.Opacity = 0;
+        }
+    }
 
     internal FlyoutMotionController.MotionContext CreateMotionContext(
         bool showMediaStrip,
@@ -686,12 +818,11 @@ internal sealed class FlyoutWindow : Window
     {
         foreach (var host in this.GetVisualDescendants().OfType<TesseraRevealHost>())
         {
-            if (progress >= 0.999)
-                host.Phase2Engaged = true;
+            host.Phase2Engaged = progress >= TesseraFlyoutRevealSpec.RestRevealProgress - 0.001;
             host.RevealProgress = progress;
         }
 
-        SyncStrokeBRegion();
+        SyncRevealRegion();
     }
 
     private void ResetDismissTimer()
@@ -745,48 +876,11 @@ internal sealed class FlyoutWindow : Window
         FinishTransientHide(notify);
     }
 
-    internal void PrepareExitMotion() => SupersedeMotion();
-
-    internal async Task RunExitMotionAsync()
-    {
-        var generation = _motionGeneration;
-        var token = _motionCts.Token;
-        try
-        {
-            if (!TesseraFlyoutAnimationPolicy.ShouldAnimateOpacity(_request.Ani))
-                return;
-
-            _motionAnimating = true;
-            var scale = ResolveMonitorScale();
-            var showMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(_request.Payload);
-            await FlyoutMotionController.RunExitAsync(CreateMotionContext(
-                    showMedia,
-                    ShouldRunPhase2Reveal(showMedia),
-                    scale,
-                    () => generation != _motionGeneration,
-                    token))
-                .ConfigureAwait(true);
-        }
-        catch
-        {
-            /* fall through */
-        }
-        finally
-        {
-            if (generation == _motionGeneration)
-            {
-                _motionAnimating = false;
-                _motionSurface.Opacity = 0;
-                RenderTransform = null;
-            }
-        }
-    }
-
     private async Task RunExitAnimationAsync(Action onComplete)
     {
         try
         {
-            await RunExitMotionAsync().ConfigureAwait(true);
+            await FlyoutMotionSession.RunHideAsync([this]).ConfigureAwait(true);
         }
         catch
         {

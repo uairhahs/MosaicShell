@@ -12,6 +12,11 @@ public static class TesseraFlyoutRevealSpec
     public const string StyleCoreUi = "coreui";
     public const string StyleSquare = "square";
     public const string StyleSmouti = "smouti";
+    public const string StyleMeter = "meter";
+    public const string StyleCompact = "compact";
+    public const string StyleModernFlyouts = "modernflyouts";
+    public const string StyleMaterialYou = "materialyou";
+    public const string StyleRadial = "radial";
 
     /// <summary>
     /// YourFlyouts rest pose: TweenNode1 stays at 1 after Fancy until hide.
@@ -65,29 +70,29 @@ public static class TesseraFlyoutRevealSpec
     public static double ResolveHideRevealProgress(bool willRunPhase2) =>
         willRunPhase2 ? FancyPhase2StartProgress : RestRevealProgress;
 
+    /// <summary>
+    /// Show must start TweenNode1 at 0 when Fancy phase 2 will run. A rest pose during
+    /// phase 1 paints a finished media card, so in cannot match the hide dissolve.
+    /// </summary>
+    public static double ResolveShowRevealProgress(bool willRunPhase2) =>
+        ResolveHideRevealProgress(willRunPhase2);
+
     public static bool ResolveHidePhase2Engaged(bool willRunPhase2) =>
         ResolveHideRevealProgress(willRunPhase2) >= RestRevealProgress;
 
-    public static bool StyleSupportsPhase2(string? styleId)
-    {
-        var id = (styleId ?? string.Empty).ToLowerInvariant();
-        return id is StyleFluent or StyleWindows11 or StyleGnome or StylePlainText
-            or StyleCoreUi or StyleSquare;
-    }
+    public static bool StyleSupportsPhase2(string? styleId) =>
+        TesseraFlyoutTweenTargetCatalog.StyleSupportsPhase2(styleId);
 
     /// <summary>YF Center.inc Animated fonts run on the volume card without a media strip.</summary>
-    public static bool StylePhase2WithoutMediaStrip(string? styleId)
-    {
-        var id = (styleId ?? string.Empty).ToLowerInvariant();
-        return id is StyleSquare;
-    }
+    public static bool StylePhase2WithoutMediaStrip(string? styleId) =>
+        TesseraFlyoutTweenTargetCatalog.StylePhase2WithoutMediaStrip(styleId);
 
     /// <summary>Known binders; Host must not take the legacy MaxWidth/MaxHeight path.</summary>
     public static bool UsesDedicatedRevealBinder(string? styleId) =>
         StyleSupportsPhase2(styleId);
 
     public static bool StyleIsPhase2NoOp(string? styleId) =>
-        (styleId ?? string.Empty).Equals(StyleSmouti, StringComparison.OrdinalIgnoreCase);
+        TesseraFlyoutTweenTargetCatalog.StyleIsPhase2NoOp(styleId);
 
     /// <summary>Fluent.inc: media width, divider height, overlay alpha scale with TweenNode1.</summary>
     public static double ResolveMediaWidthFactor(string? styleId, double revealProgress, bool musicVisible) =>
@@ -101,15 +106,9 @@ public static class TesseraFlyoutRevealSpec
         if (!musicVisible)
             return 1;
         var id = (styleId ?? string.Empty).ToLowerInvariant();
-        return id switch
-        {
-            StyleFluent => revealProgress,
-            StyleWindows11 => revealProgress,
-            StyleGnome => revealProgress,
-            StylePlainText => revealProgress,
-            StyleCoreUi => revealProgress,
-            _ => 1,
-        };
+        if (TesseraFlyoutTweenTargetCatalog.HasChannel(styleId, TesseraTweenChannel.ContentOpacity))
+            return revealProgress;
+        return 1;
     }
 
     /// <summary>Win11.inc: shell height grows with MusicVisible * TweenNode1.</summary>

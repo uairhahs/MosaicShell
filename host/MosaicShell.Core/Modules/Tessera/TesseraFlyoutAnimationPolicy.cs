@@ -90,6 +90,12 @@ public static class TesseraFlyoutAnimationPolicy
     public const int FadeDurationMs = 250;
 
     /// <summary>
+    /// Ani0 fade keyframe count. Two samples would lerp linearly and hide In vs Out.
+    /// </summary>
+    public static int ResolveFadeSampleCount() =>
+        Math.Max(MinAniSteps, FadeDurationMs / StepPresentationIntervalMs);
+
+    /// <summary>
     /// YourFlyouts TweenNode1 is skin-wide (Ani2 In2). Stacked Host must not restrict
     /// phase 2 to the Media HWND.
     /// </summary>
@@ -126,6 +132,13 @@ public static class TesseraFlyoutAnimationPolicy
 
     /// <summary>Aborted Fancy entrance on the owning generation must snap TweenNode1 to rest.</summary>
     public const bool CancelledEntranceMustSnapToRest = true;
+
+    /// <summary>
+    /// A visible session that is not running motion must keep TweenNode1 and the HWND
+    /// region at rest. Cancelled/superseded Fancy must not leave a partial media clip
+    /// (art column only, jumping scrubber).
+    /// </summary>
+    public const bool IdleShowingSessionMustSnapRevealToRest = true;
 
     /// <summary>ApplyRequest supersedes in-flight motion and must clear the Host motion flag.</summary>
     public const bool MotionAnimatingMustClearOnSupersede = true;
@@ -238,6 +251,40 @@ public static class TesseraFlyoutAnimationPolicy
         }
 
         return (DefaultEaseFamily, DefaultEaseVariant);
+    }
+
+    /// <summary>
+    /// InOut of the selected family. Linear is unchanged. Entrance uses this so the
+    /// first quarter stays near the hide pose and the last quarter settles into rest.
+    /// Pure In* dumps the remaining travel into the final frames.
+    /// </summary>
+    public static string ResolveInOutEase(string? ease)
+    {
+        var id = NormalizeEase(ease);
+        if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
+            return EaseLinear;
+
+        var (family, _) = SplitEase(id);
+        return ComposeEase(family, "InOut");
+    }
+
+    /// <summary>
+    /// Time-reverse of a selected ease. OutQuart hide lingers then leaves; show uses InQuart
+    /// so it stays offscreen/dim then arrives. InOut and Linear are their own inverses.
+    /// </summary>
+    public static string InvertEaseVariant(string? ease)
+    {
+        var id = NormalizeEase(ease);
+        if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
+            return EaseLinear;
+
+        var (family, variant) = SplitEase(id);
+        var inverted = variant.Equals("In", StringComparison.OrdinalIgnoreCase)
+            ? "Out"
+            : variant.Equals("Out", StringComparison.OrdinalIgnoreCase)
+                ? "In"
+                : variant;
+        return ComposeEase(family, inverted);
     }
 
     /// <summary>Compose Hub family + variant into canonical ease id.</summary>
@@ -459,19 +506,83 @@ public static class TesseraFlyoutAnimationPolicy
     public const bool SteppedKeyframesMustUseLinearInterpolation = true;
 
     /// <summary>
-    /// Fade in is fade out with endpoints swapped on a forward Linear clock.
-    /// Selected Easetype stays on the slide. Reverse-clock OutQuart on opacity
-    /// made hide look smooth and show look like a pop.
+    /// Hide keeps the selected ease on the reverse clock. Show uses InOut of that family
+    /// so arrival settles instead of slamming. Linear fade-in/out remains a numeric inverse.
     /// </summary>
     public const bool FadeInMustInverseFadeOut = true;
 
+    /// <summary>Entrance uses InOut of the selected family, not a pure In* slam.</summary>
+    public const bool Phase1EntranceMustUseInOutFamily = true;
+
     public const bool EntranceOpacityMustStayVisibleDuringInEase = true;
 
-    public static string ResolvePhase1OpacityEase(string? ease, bool entrance)
+    public static string ResolvePhase1MotionEase(string? ease, bool entrance)
     {
-        _ = ease;
+        var id = NormalizeEase(ease);
+        if (entrance && Phase1EntranceMustUseInOutFamily)
+            return ResolveInOutEase(id);
+        return id;
+    }
+
+    public static string ResolvePhase1OpacityEase(string? ease, bool entrance) =>
+        ResolvePhase1MotionEase(ease, entrance);
+
+    /// <summary>
+    /// YourFlyouts TweenNode1 uses <c>Easetype</c> both ways. Hide steps the reverse
+    /// clock (OutQuart lingers open, then wipes). Show steps the same ease forward
+    /// so media wipes in instead of InQuart-slamming after volume phase 1.
+    /// </summary>
+    public const bool Phase2MustUseSelectedEaseBothWays = true;
+
+    /// <summary>
+    /// InQuart show dumps remaining travel into the last frames (volume sits, rest pops).
+    /// Phase 2 must not invert Out* to In* to "complement" hide.
+    /// </summary>
+    public const bool Phase2ShowMustNotInvertToInEase = true;
+
+    /// <summary>
+    /// Stacked Host splits YourFlyouts' one skin into Volume/Media HWNDs. Show phase 1
+    /// is the volume card only; media stays fully hidden until TweenNode1 (phase 2).
+    /// Hide still fades every slot after the dissolve (YourFlyouts phase 1 out).
+    /// </summary>
+    public const bool StackedMediaMustSkipPhase1OnShow = true;
+
+    /// <summary>
+    /// Cluster show must not WhenAll each HWND through phase 1 then phase 2 independently:
+    /// media phase 2 would start during the 100 ms pause while volume is still arriving,
+    /// or worse, media would fade in as a finished card in phase 1.
+    /// </summary>
+    public const bool StackedShowMustFinishVolumePhase1BeforeMediaPhase2 = true;
+
+    /// <summary>
+    /// Cluster hide must not WhenAll each HWND through the full exit. A volume slot
+    /// without a phase-2 host would start sliding while media is still dissolving.
+    /// Reverse of show: all phase 2, then pause, then all phase 1.
+    /// </summary>
+    public const bool StackedHideMustFinishPhase2BeforeAnySlotPhase1 = true;
+
+    /// <summary>
+    /// Show and hide must SyncRevealRegion before TweenNode1 ticks. Skipping it on
+    /// hide leaves a stale clip while phase 2 starts from rest progress.
+    /// </summary>
+    public const bool Phase2MustSyncRevealRegionBeforeTweenBothWays = true;
+
+    /// <summary>
+    /// Hide phase 2 must start at rest reveal (progress 1). Show starts at 0.
+    /// A stuck partial clip would otherwise dissolve from the wrong width.
+    /// </summary>
+    public const bool Phase2HideMustStartFromRestReveal = true;
+
+    /// <summary>
+    /// A slot with no TesseraRevealHost (volume without a meter) must not snap
+    /// TweenNode1 to rest on hide. That would pop media back open while it dissolves.
+    /// </summary>
+    public const bool Phase2HideMustNotSnapMissingHostsToRest = true;
+
+    public static string ResolvePhase2MotionEase(string? ease, bool entrance)
+    {
         _ = entrance;
-        return EaseLinear;
+        return NormalizeEase(ease);
     }
 
     public static bool Phase2RequiresAnimatedLayout(int ani, string? styleId, bool showMediaStrip)
@@ -498,6 +609,33 @@ public static class TesseraFlyoutAnimationPolicy
         _ = stackedRole;
         return Phase2RequiresAnimatedLayout(ani, styleId, showMediaStrip);
     }
+
+    /// <summary>
+    /// Phase 1 (slide + surface fade). Stacked media skips this on show so the rest
+    /// is not faded in as a second finished acrylic card before TweenNode1.
+    /// </summary>
+    public static bool ShouldRunPhase1(
+        int ani,
+        string? styleId,
+        bool showMediaStrip,
+        TesseraStackedPanelRole? stackedRole,
+        bool entrance)
+    {
+        if (!ShouldAnimateOpacity(ani))
+            return false;
+        if (!entrance
+            || stackedRole != TesseraStackedPanelRole.Media
+            || !StackedMediaMustSkipPhase1OnShow)
+            return true;
+        return !Phase2RequiresAnimatedLayout(ani, styleId, showMediaStrip);
+    }
+
+    public static bool ShouldHoldStackedMediaHiddenThroughShowPhase1(
+        int ani,
+        string? styleId,
+        bool showMediaStrip,
+        TesseraStackedPanelRole? stackedRole) =>
+        !ShouldRunPhase1(ani, styleId, showMediaStrip, stackedRole, entrance: true);
 
     public static bool ExitMustMirrorEntrance => true;
 }

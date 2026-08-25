@@ -386,7 +386,7 @@ public static class TesseraStackedPlacementPolicy
 
                     (TesseraStackedPanelRole.Volume, 0, volW, volH),
 
-                    (TesseraStackedPanelRole.Media, volW + FluentDividerDip, mediaW, mediaH)),
+                    (TesseraStackedPanelRole.Media, volW, mediaW, mediaH)),
 
             TesseraStackedLayoutKind.HorizontalMediaFirst =>
 
@@ -636,13 +636,13 @@ public static class TesseraStackedPlacementPolicy
 
     {
 
-        const double volW = 72;
+        var volW = TesseraFlyoutAnimatedTargetSpec.ResolveFluentCollapsedShellWidthDip(true);
 
         const double h = 176;
 
         const double mediaW = 324;
 
-        var mediaX = volW + FluentDividerDip;
+        var mediaX = TesseraFlyoutAnimatedTargetSpec.ResolveFluentStackedMediaOffsetXDip(true);
 
         return
 

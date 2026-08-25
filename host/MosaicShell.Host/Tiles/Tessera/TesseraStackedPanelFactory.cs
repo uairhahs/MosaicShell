@@ -32,8 +32,17 @@ internal static class TesseraStackedPanelFactory
                 };
             }
 
-            if (vm.ShowMediaStrip && TesseraFlyoutRevealSpec.StyleSupportsPhase2(styleId))
-                panel = TesseraRevealHost.WrapMedia(vm, panel);
+            if (panel is not TesseraRevealHost
+                && vm.ShowMediaStrip
+                && TesseraFlyoutRevealSpec.StyleSupportsPhase2(styleId))
+            {
+                TesseraFlyoutTweenTargetCatalog.TryResolveMediaRestSizeDip(styleId, out var mediaW, out var mediaH);
+                panel = TesseraRevealHost.WrapMedia(
+                    vm,
+                    panel,
+                    fullMediaWidth: mediaW,
+                    fullMediaHeight: mediaH);
+            }
 
             return panel;
         }

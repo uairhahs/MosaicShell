@@ -6,6 +6,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Material.Icons;
 using Material.Icons.Avalonia;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 
 namespace MosaicShell.Host.Tiles.Tessera;
@@ -127,7 +128,14 @@ internal static partial class TesseraLayouts
             e.Handled = true;
         };
 
-        var left = new StackPanel { Spacing = gap, Children = { transport, extras } };
+        Control left = new StackPanel { Spacing = gap, Children = { transport, extras } };
+        if (vm.HasMediaSession)
+        {
+            left = TesseraRevealHost.WrapMedia(
+                vm,
+                left,
+                fullMediaWidth: TesseraFlyoutAnimatedTargetSpec.MaterialYouColumnWidthDip);
+        }
         var right = new StackPanel { Spacing = gap, Children = { volPill, eq } };
         var row = new StackPanel
         {
