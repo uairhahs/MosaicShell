@@ -13,4 +13,4 @@ Rainmeter **Tessera** promised YourFlyouts-class volume / brightness / media / l
 
 ## Host today
 
-Native capability in `MosaicShell.Host`, refer to [`docs/native-rewrite.md`](../native-rewrite.md) and [`docs/parity/README.md`](../parity/README.md). Install stub: [`Tiles/Tessera`](../../Tiles/Tessera).
+Native capability in `MosaicShell.Host`, refer to [`docs/architecture.md`](../architecture.md) and [`docs/parity/README.md`](../parity/README.md). Install stub: [`Tiles/Tessera`](../../Tiles/Tessera).

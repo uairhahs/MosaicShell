@@ -96,7 +96,7 @@ MosaicShell is a fork of [JaxCore](https://github.com/Jax-Core/JaxCore) by [@Enh
 
 Issues and pull requests are welcome. If you are building a module or widget compatible with MosaicShell, open an issue to discuss integration.
 
-**Development:** [`.github/docs/`](.github/docs/) (testing, parity honesty, scaling).
+**Development:** [`.github/docs/`](.github/docs/) (testing, parity honesty, scaling), [`docs/architecture.md`](docs/architecture.md) (how the repo is put together), [`docs/parity/README.md`](docs/parity/README.md) (per-module MVP bars), [`docs/legacy/`](docs/legacy/) (what the Rainmeter-era modules promised).
 
 ---
 

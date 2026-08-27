@@ -1,6 +1,6 @@
 # MosaicShell Host
 
-Avalonia hub and `Mosaicist` CLI. See [`.cursor/docs/architecture-native.md`](../.cursor/docs/architecture-native.md).
+Avalonia hub and `Mosaicist` CLI. See [`docs/architecture.md`](../docs/architecture.md).
 
 ## Dev loop
 

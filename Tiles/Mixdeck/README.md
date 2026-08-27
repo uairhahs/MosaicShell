@@ -1,12 +1,11 @@
 # Mixdeck (native-only)
 
-Mixdeck runs as an **Avalonia capability** inside `MosaicShell.Host` - not as a Rainmeter skin.
+Mixdeck runs as an **Avalonia capability** inside `MosaicShell.Host`.
 
-| Path | Role |
-|------|------|
-| `host/MosaicShell.Core/Capabilities/BuiltIn/` | Arm / hotkey (default Ctrl+Alt+M) |
-| `host/MosaicShell.Host/Tiles/Surfaces/LiveTilesB.cs` (`MixdeckTileView`) | Per-app mixer overlay |
-| This folder | Install stub so `install-module Mixdeck` creates `Modules/Mixdeck` |
+| Path                                                                     | Role                              |
+| ------------------------------------------------------------------------ | --------------------------------- |
+| `host/MosaicShell.Core/Capabilities/BuiltIn/`                            | Arm / hotkey (default Ctrl+Alt+M) |
+| `host/MosaicShell.Host/Tiles/Surfaces/LiveTilesB.cs` (`MixdeckTileView`) | Per-app mixer overlay             |
 
 ## Install / arm
 
@@ -16,6 +15,6 @@ dotnet run --project Mosaicist -- install-module Mixdeck
 dotnet run --project MosaicShell.Host
 ```
 
-In Host: Library → Mixdeck → Arm (or Tessera Material You deep-link).
+Host: Library → Mixdeck → Arm. Also reachable via the Tessera Material You deep-link.
 
-Promised Rainmeter-era behavior: [`.cursor/docs/legacy/mixdeck.md`](../../.cursor/docs/legacy/mixdeck.md).
+Promised Rainmeter-era behavior: [`docs/legacy/mixdeck.md`](../../docs/legacy/mixdeck.md).

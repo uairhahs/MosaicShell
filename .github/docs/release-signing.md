@@ -8,7 +8,7 @@ CI: [`.github/workflows/release.yml`](../workflows/release.yml). Local packaging
 
 There is no free Authenticode option that SmartScreen trusts. Enable this when downloads and publisher trust matter enough to justify Azure’s monthly Artifact Signing fee (~Basic tier).
 
-When you are ready, finish **sections A–C** below. Incomplete config = unsigned release (not a failed job).
+When you are ready, finish **sections A to C** below. Incomplete config = unsigned release (not a failed job).
 
 ---
 
@@ -23,14 +23,14 @@ When you are ready, finish **sections A–C** below. Incomplete config = unsigne
    - Certificate profile **name**
    - Regional **endpoint** URI from the table below
 
-| Region | Endpoint |
-|--------|----------|
-| East US | `https://eus.codesigning.azure.net/` |
-| West US 2 | `https://wus2.codesigning.azure.net/` |
-| West US 3 | `https://wus3.codesigning.azure.net/` |
+| Region          | Endpoint                              |
+| --------------- | ------------------------------------- |
+| East US         | `https://eus.codesigning.azure.net/`  |
+| West US 2       | `https://wus2.codesigning.azure.net/` |
+| West US 3       | `https://wus3.codesigning.azure.net/` |
 | West Central US | `https://wcus.codesigning.azure.net/` |
-| North Europe | `https://neu.codesigning.azure.net/` |
-| West Europe | `https://weu.codesigning.azure.net/` |
+| North Europe    | `https://neu.codesigning.azure.net/`  |
+| West Europe     | `https://weu.codesigning.azure.net/`  |
 
 A wrong endpoint usually shows up as **403 Forbidden** during sign.
 
@@ -65,21 +65,21 @@ Repo: `uairhahs/MosaicShell` → **Settings** → **Secrets and variables** → 
 
 ### Secrets
 
-| Name | Value |
-|------|--------|
-| `AZURE_CLIENT_ID` | App registration client ID |
-| `AZURE_TENANT_ID` | Directory (tenant) ID |
-| `AZURE_SUBSCRIPTION_ID` | Subscription ID |
+| Name                    | Value                      |
+| ----------------------- | -------------------------- |
+| `AZURE_CLIENT_ID`       | App registration client ID |
+| `AZURE_TENANT_ID`       | Directory (tenant) ID      |
+| `AZURE_SUBSCRIPTION_ID` | Subscription ID            |
 
 ### Variables (non-secret names/URIs)
 
-| Name | Value |
-|------|--------|
-| `TRUSTED_SIGNING_ACCOUNT` | Signing account name |
-| `TRUSTED_SIGNING_CERT_PROFILE` | Certificate profile name |
-| `TRUSTED_SIGNING_ENDPOINT` | Regional endpoint, e.g. `https://eus.codesigning.azure.net/` |
+| Name                           | Value                                                        |
+| ------------------------------ | ------------------------------------------------------------ |
+| `TRUSTED_SIGNING_ACCOUNT`      | Signing account name                                         |
+| `TRUSTED_SIGNING_CERT_PROFILE` | Certificate profile name                                     |
+| `TRUSTED_SIGNING_ENDPOINT`     | Regional endpoint, e.g. `https://eus.codesigning.azure.net/` |
 
-After A–C, run **Actions** → **Release** → **Run workflow**, or push to `main`.
+After A to C, run **Actions**, then **Release**, then **Run workflow**, or push to `main`.
 
 ---
 
