@@ -13,12 +13,9 @@ namespace MosaicShell.Host.Tiles.Surfaces
         {
             ApplyTypography(settings, time, date);
             string style = StyleIds.Normalize(settings.Style);
-            if (style.Equals(StyleIds.Square, StringComparison.OrdinalIgnoreCase))
-            {
-                return CreateSquare(time, date);
-            }
-
-            return style.Equals("Text", StringComparison.OrdinalIgnoreCase)
+            return style.Equals(StyleIds.Square, StringComparison.OrdinalIgnoreCase)
+                ? CreateSquare(time, date)
+                : style.Equals("Text", StringComparison.OrdinalIgnoreCase)
                 || style.Equals("Minimal", StringComparison.OrdinalIgnoreCase)
                 ? CreateText(time, date)
                 : style.Equals("Tech", StringComparison.OrdinalIgnoreCase)

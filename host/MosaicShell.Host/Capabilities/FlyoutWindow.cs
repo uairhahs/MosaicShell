@@ -356,6 +356,14 @@ namespace MosaicShell.Host.Capabilities
                 return false;
             }
 
+            // The scale wrapper (LayoutTransformControl) is baked in at content-build time and
+            // isn't touched by a live patch, so a scale change must fall through to a full rebuild.
+            if (TesseraFlyoutRequestBuilder.FlyoutScaleFromPayload(FlyoutRequest.Payload)
+                != TesseraFlyoutRequestBuilder.FlyoutScaleFromPayload(request.Payload))
+            {
+                return false;
+            }
+
             if (Content is not Control root)
             {
                 return false;
@@ -370,6 +378,20 @@ namespace MosaicShell.Host.Capabilities
             // Rebuild + PresentFlyout (Win32 restack ×3) on every Audio.Changed freezes the app.
             // Strip structure can catch up on the next cold Show.
             liveHost.ApplyLive(services, request);
+            // TesseraPalette is read live at paint/render time (TesseraGlassPanel.DrawGlassChrome,
+            // TesseraTrack.ApplyFillBrush), so re-applying it here (unlike the scale wrapper) keeps
+            // acrylic/backdrop-blur/accent settings in sync on a patch without needing a rebuild.
+            TesseraPalette.ApplyMaterial(TesseraFlyoutMaterialFactory.FromPayload(
+                request.Payload, request.StyleId, request.Kind));
+            string? priorAccent = TesseraFlyoutRequestBuilder.AccentFromPayload(FlyoutRequest.Payload);
+            string? nextAccent = TesseraFlyoutRequestBuilder.AccentFromPayload(request.Payload);
+            if (!string.Equals(priorAccent, nextAccent, StringComparison.OrdinalIgnoreCase))
+            {
+                // Gated on change: the fallback branch does a DwmGetColorizationColor syscall,
+                // and TryApplyLive runs on every volume/media tick, not just settings changes.
+                TesseraPalette.ApplyAccentFromSettings(nextAccent);
+            }
+
             FlyoutRequest = request;
             if (resetDismiss)
             {

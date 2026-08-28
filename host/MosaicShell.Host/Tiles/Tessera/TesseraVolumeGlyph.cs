@@ -15,22 +15,13 @@ namespace MosaicShell.Host.Tiles.Tessera
                 return Icon(bright, size);
             }
 
-            if (vm.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase))
-            {
-                return Icon(MaterialIconKind.AlphaCCircle, size);
-            }
-
-            if (vm.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase))
-            {
-                return Icon(MaterialIconKind.Airplane, size);
-            }
-
-            if (vm.Kind.Equals("media", StringComparison.OrdinalIgnoreCase))
-            {
-                return Icon(MaterialIconKind.Music, size);
-            }
-
-            return vm.IsMuted || vm.Volume <= 0.001
+            return vm.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
+                ? Icon(MaterialIconKind.AlphaCCircle, size)
+                : vm.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase)
+                ? Icon(MaterialIconKind.Airplane, size)
+                : vm.Kind.Equals("media", StringComparison.OrdinalIgnoreCase)
+                ? Icon(MaterialIconKind.Music, size)
+                : vm.IsMuted || vm.Volume <= 0.001
                 ? Icon(MaterialIconKind.VolumeOff, size)
                 : vm.Volume < 0.20
                 ? Icon(MaterialIconKind.VolumeLow, size)

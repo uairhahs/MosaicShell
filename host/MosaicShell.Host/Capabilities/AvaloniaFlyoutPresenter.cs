@@ -857,7 +857,7 @@ namespace MosaicShell.Host.Capabilities
                     accentColor: TesseraFlyoutRequestBuilder.AccentFromPayload(request.Payload),
                     embeddedPreview: glass.UseEmbeddedPreview,
                     sessionAlreadyShowing: sessionAlreadyShowing);
-                double scale = FlyoutScaleFromPayload(request.Payload);
+                double scale = TesseraFlyoutRequestBuilder.FlyoutScaleFromPayload(request.Payload);
                 if (Math.Abs(scale - 1.0) > 0.01)
                 {
                     root = new LayoutTransformControl
@@ -893,13 +893,6 @@ namespace MosaicShell.Host.Capabilities
                     TextWrapping = TextWrapping.Wrap
                 }
             };
-        }
-
-        private static double FlyoutScaleFromPayload(IReadOnlyDictionary<string, string>? payload)
-        {
-            return payload is null || !payload.TryGetValue("flyoutScale", out string? raw)
-                ? 1.0
-                : !int.TryParse(raw, out int pct) ? 1.0 : Math.Clamp(pct, 50, 150) / 100.0;
         }
 
         private static void Log(string message)

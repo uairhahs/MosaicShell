@@ -63,7 +63,7 @@ namespace MosaicShell.Host.Capabilities
             _stackedSession.Kind = request.Kind;
             _stackedSession.StyleId = request.StyleId;
             EnsureTesseraSession(request, TesseraFlyoutSessionMode.Stacked);
-            RebuildStackedSlots(request, panels, resetDismiss);
+            RebuildStackedSlots(request, panels);
         }
 
         private bool TryPatchStacked(FlyoutRequest request, bool resetDismiss)
@@ -179,9 +179,11 @@ namespace MosaicShell.Host.Capabilities
 
         private void RebuildStackedSlots(
             FlyoutRequest request,
-            IReadOnlyList<TesseraStackedPanelRole> panels,
-            bool resetDismiss)
+            IReadOnlyList<TesseraStackedPanelRole> panels)
         {
+            // No resetDismiss param: WireStackedDismissCoordinator below unconditionally
+            // stops+restarts the session dismiss clock on every rebuild, same as a fresh
+            // single-window FlyoutWindow always arms its own timer on construction.
             bool reuseWasVisible = GetStackedWindowsFromSession().Any(w => w.IsFlyoutSessionShowing);
             TesseraLiveBindings bindings = _stackedSession!.Bindings;
             List<string> newKeys = [];
@@ -707,7 +709,7 @@ namespace MosaicShell.Host.Capabilities
                 accent,
                 glass.UseEmbeddedPreview,
                 sessionAlreadyShowing);
-            double scale = FlyoutScaleFromPayload(request.Payload);
+            double scale = TesseraFlyoutRequestBuilder.FlyoutScaleFromPayload(request.Payload);
             if (Math.Abs(scale - 1.0) > 0.01)
             {
                 root = new LayoutTransformControl
