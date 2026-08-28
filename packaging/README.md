@@ -36,4 +36,4 @@ Unlike UniGetUI's local `scripts/build.ps1` (searches Inno Setup 6 and **soft-sk
 
 When you want Authenticode later: [`.github/docs/release-signing.md`](../.github/docs/release-signing.md). Completing A–C there turns signing on automatically.
 
-Local agent follow-ups: [`.cursor/docs/release-outstanding.md`](../.cursor/docs/release-outstanding.md).
+Local agent follow-ups: [`docs/release-outstanding.md`](../docs/release-outstanding.md).

@@ -16,24 +16,31 @@ runtimes:
     - python@3.14.4
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
-  enabled:
-    - taplo@0.10.0
-    - actionlint@1.7.12
-    - bandit@1.9.4
-    - black@26.5.1
-    - checkov@3.3.15
+  disabled:
+    - bandit
+    - checkov
     - git-diff-check
-    - isort@8.0.1
+    - isort
+    - pinact
+    # trunk's dotnet-format plugin hardcodes dotnet SDK 7.0.400 (with roll-forward disabled) and
+    # has no way to pin a different version. This repo targets net10.0, so dotnet-format's bundled
+    # Roslyn can never load this project's analyzers (Microsoft.CodeAnalysis version mismatch) -
+    # it is not a shell/PATH issue and cannot be fixed via trunk.yaml config.
+    - dotnet-format
+  enabled:
+    - actionlint@1.7.12
+    - black@26.5.1
     - markdownlint@0.49.1
     - oxipng@10.2.0
-    - pinact@4.1.1
     - prettier@3.9.6
-    - ruff@0.16.4
+    - ruff@0.16.5
+    - taplo@0.10.0
     - trufflehog@3.97.1
     - yamllint@1.38.0
 actions:
-  enabled:
+  disabled:
     - trunk-announce
     - trunk-check-pre-push
     - trunk-fmt-pre-commit
+  enabled:
     - trunk-upgrade-available

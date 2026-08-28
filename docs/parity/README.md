@@ -10,18 +10,19 @@ Living flags live in `host/MosaicShell.Core.Tests/HubParityBacklogTests.cs`. Ful
 
 Runtime is host-only; `Tiles/Tessera` is a native install stub. B0 is **not** full YourFlyouts parity.
 
-| Flag                               | Meaning                                                                                                   |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `tessera_osd_flyout`               | Armed flyout + OSD suppress (+ ShellHook triggers)                                                        |
-| `tessera_named_styles`             | Style catalog JaxCore ids                                                                                 |
-| `tessera_locks_flight`             | Lock-key + airplane flyouts                                                                               |
-| `tessera_live_update_multimonitor` | Reuse/update window; monitor + anchor math                                                                |
-| `tessera_fluent_win11_kit`         | Fluent + Win11 transfer kit present                                                                       |
-| `tessera_layout_fidelity`          | **false** - non-kit styles still approximate; Host does not require pixel-YourFlyouts                     |
-| `tessera_fluent_yourflyouts`       | **true** - Fluent / Win11 / Center tightened for Host identity (compact, soft frost, optional baked wash) |
-| `tessera_media_smtc_only`          | **false** - SMTC is not the only media path                                                               |
-| `tessera_media_wnp`                | **true** - WebNowPlaying host on CLI port **5468**                                                        |
-| `tile_tessera_mvp`                 | Armed flyouts + named styles (Host path)                                                                  |
+| Flag                               | Meaning                                                                                                                                                                                                   |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tessera_osd_flyout`               | Armed flyout + OSD suppress (+ ShellHook triggers)                                                                                                                                                        |
+| `tessera_named_styles`             | Style catalog JaxCore ids                                                                                                                                                                                 |
+| `tessera_locks_flight`             | Lock-key + airplane flyouts                                                                                                                                                                               |
+| `tessera_live_update_multimonitor` | Reuse/update window; monitor + anchor math                                                                                                                                                                |
+| `tessera_fluent_win11_kit`         | Fluent + Win11 transfer kit present                                                                                                                                                                       |
+| `tessera_layout_fidelity`          | **true** - all 11 StyleCatalog styles signed off; proofs in [`.github/res/Tessera/`](../../.github/res/Tessera/)                                                                                          |
+| `tessera_os_acrylic_win11_eval`    | **true** - Win11 OS acrylic trial (single-shell + H3 stacked N-window); hub toggle or `--tessera-os-acrylic`; frost remains alpha default. See [tessera-os-acrylic-spike.md](tessera-os-acrylic-spike.md) |
+| `tessera_fluent_yourflyouts`       | **true** - Fluent / Win11 / Center tightened for Host identity (compact, soft frost, optional baked wash)                                                                                                 |
+| `tessera_media_smtc_only`          | **false** - SMTC is not the only media path                                                                                                                                                               |
+| `tessera_media_wnp`                | **true** - WebNowPlaying host on CLI port **5468**                                                                                                                                                        |
+| `tile_tessera_mvp`                 | Armed flyouts + named styles (Host path)                                                                                                                                                                  |
 
 References: [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts) (OSD / ShellHook).
 
@@ -32,7 +33,9 @@ References: [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [Mo
 - Brightness / airplane caveats on some Win11 builds (see YourFlyouts README)
 - Vendor laptop OEM HUDs unsupported
 - Multi-player Auto NowPlaying outside WNP + SMTC
-- Remaining named styles (Amber/Gnome/Pixel/…) still light approximations (`tessera_layout_fidelity` false)
+- Radial remains a lighter Host layout (`TesseraLayoutCoverage.IsApproximate`) but is visually signed off with the rest of the catalog
+
+Screenshot proof checklist and process: [`screenshots/README.md`](screenshots/README.md).
 
 ## Mixdeck MVP bar (must all hold for `tile_mixdeck_mvp`)
 
