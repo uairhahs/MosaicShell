@@ -30,7 +30,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot ".")
 $hostProj = Join-Path $repoRoot "host\MosaicShell.Host\MosaicShell.Host.csproj"
 # version pinned to match the target framework of the Host project
 $tfm = "net10.0-windows10.0.19041.0"
@@ -58,25 +58,25 @@ function Set-TesseraOsAcrylicEnabled([bool] $enabled) {
     }
     else {
         $settings = [PSCustomObject]@{
-            Style                 = "Fluent"
-            Position              = "TL"
-            MonitorIndex          = 1
-            XPad                  = 20
-            YPad                  = 20
-            AutoDismissMs         = 2000
-            Ani                   = 2
-            AniDir                = "Left"
-            UseLegacyVolumeHooks  = $true
-            LegacyVolumeStep      = 0.02
-            EnableMediaFlyouts    = $true
-            EnableLockFlyouts     = $true
-            EnableFlightFlyouts   = $true
+            Style                  = "Fluent"
+            Position               = "TL"
+            MonitorIndex           = 1
+            XPad                   = 20
+            YPad                   = 20
+            AutoDismissMs          = 2000
+            Ani                    = 2
+            AniDir                 = "Left"
+            UseLegacyVolumeHooks   = $true
+            LegacyVolumeStep       = 0.02
+            EnableMediaFlyouts     = $true
+            EnableLockFlyouts      = $true
+            EnableFlightFlyouts    = $true
             ShowMediaStripOnVolume = $true
-            UseAcrylicBackdrop    = $true
-            UseFocusDim           = $true
-            FlyoutScalePercent    = 100
-            UseBackdropBlur       = $true
-            AccentColor           = ""
+            UseAcrylicBackdrop     = $true
+            UseFocusDim            = $true
+            FlyoutScalePercent     = 100
+            UseBackdropBlur        = $true
+            AccentColor            = ""
         }
     }
 

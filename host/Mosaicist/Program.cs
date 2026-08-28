@@ -4,44 +4,44 @@ using MosaicShell.Core.Modules;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Shp;
 
-namespace Mosaicist;
-
-/// <summary>
-/// MosaicShell installer CLI, copies native Tiles/ stubs into the modules directory.
-/// </summary>
-public static class Program
+namespace Mosaicist
 {
-    public static async Task<int> Main(string[] args)
+    /// <summary>
+    /// MosaicShell installer CLI, copies native Tiles/ stubs into the modules directory.
+    /// </summary>
+    public static class Program
     {
-        if (args.Length == 0 || args[0] is "-h" or "--help" or "help")
+        public static async Task<int> Main(string[] args)
         {
-            PrintHelp();
-            return 0;
-        }
-
-        try
-        {
-            return args[0] switch
+            if (args.Length == 0 || args[0] is "-h" or "--help" or "help")
             {
-                "list" => CmdList(),
-                "hash" => await CmdHashAsync(args.Skip(1).ToArray()),
-                "install-module" => await CmdInstallModuleAsync(args.Skip(1).ToArray()),
-                "install-package" => await CmdInstallPackageAsync(args.Skip(1).ToArray()),
-                "uninstall-module" => CmdUninstallModule(args.Skip(1).ToArray()),
-                "import-shp" => CmdImportShp(args.Skip(1).ToArray()),
-                _ => Fail($"Unknown command '{args[0]}'.")
-            };
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine(ex.Message);
-            return 1;
-        }
-    }
+                PrintHelp();
+                return 0;
+            }
 
-    private static void PrintHelp()
-    {
-        Console.WriteLine("""
+            try
+            {
+                return args[0] switch
+                {
+                    "list" => CmdList(),
+                    "hash" => await CmdHashAsync([.. args.Skip(1)]),
+                    "install-module" => await CmdInstallModuleAsync([.. args.Skip(1)]),
+                    "install-package" => await CmdInstallPackageAsync([.. args.Skip(1)]),
+                    "uninstall-module" => CmdUninstallModule([.. args.Skip(1)]),
+                    "import-shp" => CmdImportShp([.. args.Skip(1)]),
+                    _ => Fail($"Unknown command '{args[0]}'.")
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex.Message);
+                return 1;
+            }
+        }
+
+        private static void PrintHelp()
+        {
+            Console.WriteLine("""
             Mosaicist - MosaicShell native module installer
 
             Commands:
@@ -60,76 +60,107 @@ public static class Program
               Mosaicist uninstall-module Canvas
               Mosaicist import-shp .\Nordic{0}.shp
             """);
-    }
-
-    private static int Fail(string message)
-    {
-        Console.Error.WriteLine(message);
-        return 1;
-    }
-
-    private static int CmdList()
-    {
-        AppPaths.EnsureLayout();
-        foreach (var m in ModuleCatalog.All)
-        {
-            var state = ModuleCatalog.IsInstalled(m.Id) ? "installed" : "missing";
-            Console.WriteLine($"{m.Id,-12} {m.Kind,-8} {state}");
         }
-        Console.WriteLine($"Modules root: {AppPaths.ModulesDirectory}");
-        return 0;
-    }
 
-    private static async Task<int> CmdHashAsync(string[] args)
-    {
-        if (args.Length < 1) return Fail("Usage: hash <file>");
-        var path = args[0];
-        if (!File.Exists(path)) return Fail($"Not found: {path}");
-        Console.WriteLine(await ReleaseDownloader.ComputeSha256Async(path));
-        return 0;
-    }
+        private static int Fail(string message)
+        {
+            Console.Error.WriteLine(message);
+            return 1;
+        }
 
-    private static async Task<int> CmdInstallModuleAsync(string[] args)
-    {
-        if (args.Length < 1) return Fail("Usage: install-module <id>");
-        var id = args[0];
-        AppPaths.EnsureLayout();
+        private static int CmdList()
+        {
+            AppPaths.EnsureLayout();
+            foreach (ModuleInfo m in ModuleCatalog.All)
+            {
+                string state = ModuleCatalog.IsInstalled(m.Id) ? "installed" : "missing";
+                Console.WriteLine($"{m.Id,-12} {m.Kind,-8} {state}");
+            }
+            Console.WriteLine($"Modules root: {AppPaths.ModulesDirectory}");
+            return 0;
+        }
 
-        Console.WriteLine($"Installing {id} from Tiles/{id}/ native stub…");
-        await new ModuleInstaller().InstallAsync(id);
+        private static async Task<int> CmdHashAsync(string[] args)
+        {
+            if (args.Length < 1)
+            {
+                return Fail("Usage: hash <file>");
+            }
 
-        Console.WriteLine($"Installed {id} → {Path.Combine(AppPaths.ModulesDirectory, id)}");
-        return 0;
-    }
+            string path = args[0];
+            if (!File.Exists(path))
+            {
+                return Fail($"Not found: {path}");
+            }
 
-    private static async Task<int> CmdInstallPackageAsync(string[] args)
-    {
-        if (args.Length < 1) return Fail("Usage: install-package <folder-or.zip>");
-        AppPaths.EnsureLayout();
-        var path = args[0];
-        Console.WriteLine($"Installing package from {path}…");
-        await new ModuleInstaller().InstallFromPackageAsync(path);
-        Console.WriteLine($"Installed → {AppPaths.ModulesDirectory}");
-        return 0;
-    }
+            Console.WriteLine(await ReleaseDownloader.ComputeSha256Async(path));
+            return 0;
+        }
 
-    private static int CmdUninstallModule(string[] args)
-    {
-        if (args.Length < 1) return Fail("Usage: uninstall-module <id>");
-        AppPaths.EnsureLayout();
-        if (!ModuleUninstaller.Uninstall(args[0]))
-            return Fail($"Could not uninstall '{args[0]}'.");
-        Console.WriteLine($"Uninstalled {args[0]}");
-        return 0;
-    }
+        private static async Task<int> CmdInstallModuleAsync(string[] args)
+        {
+            if (args.Length < 1)
+            {
+                return Fail("Usage: install-module <id>");
+            }
 
-    private static int CmdImportShp(string[] args)
-    {
-        if (args.Length < 1) return Fail("Usage: import-shp <file.shp>");
-        var result = ShpImporter.Import(args[0]);
-        Console.WriteLine(result.Message);
-        if (result.ImportedModules.Count > 0)
-            Console.WriteLine("Modules: " + string.Join(", ", result.ImportedModules));
-        return result.Success ? 0 : 1;
+            string id = args[0];
+            AppPaths.EnsureLayout();
+
+            Console.WriteLine($"Installing {id} from Tiles/{id}/ native stub…");
+            await new ModuleInstaller().InstallAsync(id);
+
+            Console.WriteLine($"Installed {id} → {Path.Combine(AppPaths.ModulesDirectory, id)}");
+            return 0;
+        }
+
+        private static async Task<int> CmdInstallPackageAsync(string[] args)
+        {
+            if (args.Length < 1)
+            {
+                return Fail("Usage: install-package <folder-or.zip>");
+            }
+
+            AppPaths.EnsureLayout();
+            string path = args[0];
+            Console.WriteLine($"Installing package from {path}…");
+            await new ModuleInstaller().InstallFromPackageAsync(path);
+            Console.WriteLine($"Installed → {AppPaths.ModulesDirectory}");
+            return 0;
+        }
+
+        private static int CmdUninstallModule(string[] args)
+        {
+            if (args.Length < 1)
+            {
+                return Fail("Usage: uninstall-module <id>");
+            }
+
+            AppPaths.EnsureLayout();
+            if (!ModuleUninstaller.Uninstall(args[0]))
+            {
+                return Fail($"Could not uninstall '{args[0]}'.");
+            }
+
+            Console.WriteLine($"Uninstalled {args[0]}");
+            return 0;
+        }
+
+        private static int CmdImportShp(string[] args)
+        {
+            if (args.Length < 1)
+            {
+                return Fail("Usage: import-shp <file.shp>");
+            }
+
+            ShpImportResult result = ShpImporter.Import(args[0]);
+            Console.WriteLine(result.Message);
+            if (result.ImportedModules.Count > 0)
+            {
+                Console.WriteLine("Modules: " + string.Join(", ", result.ImportedModules));
+            }
+
+            return result.Success ? 0 : 1;
+        }
     }
 }

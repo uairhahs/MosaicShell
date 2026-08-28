@@ -1,35 +1,37 @@
-namespace MosaicShell.Core.Runtime;
-
-public enum ModuleLaunchBlocker
+namespace MosaicShell.Core.Runtime
 {
-    None,
-    NotInstalled,
-    NativeRuntimeMissing,
-}
-
-public sealed record ModuleLaunchResult(
-    bool Started,
-    ModuleLaunchBlocker Blocker,
-    string Message);
-
-public interface IModuleLauncher
-{
-    ModuleLaunchResult TryLaunch(string moduleId);
-}
-
-/// <summary>
-/// Starts installed modules via the native <see cref="ITileRuntime"/>.
-/// </summary>
-public sealed class ModuleLauncher : IModuleLauncher
-{
-    private readonly ITileRuntime _runtime;
-
-    public ModuleLauncher(ITileRuntime runtime)
+    public enum ModuleLaunchBlocker
     {
-        _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
+        None,
+        NotInstalled,
+        NativeRuntimeMissing,
     }
 
-    public ModuleLaunchResult TryLaunch(string moduleId) => _runtime.Start(moduleId);
+    public sealed record ModuleLaunchResult(
+        bool Started,
+        ModuleLaunchBlocker Blocker,
+        string Message);
 
-    public bool TryStop(string moduleId) => _runtime.Stop(moduleId);
+    public interface IModuleLauncher
+    {
+        ModuleLaunchResult TryLaunch(string moduleId);
+    }
+
+    /// <summary>
+    /// Starts installed modules via the native <see cref="ITileRuntime"/>.
+    /// </summary>
+    public sealed class ModuleLauncher(ITileRuntime runtime) : IModuleLauncher
+    {
+        private readonly ITileRuntime _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
+
+        public ModuleLaunchResult TryLaunch(string moduleId)
+        {
+            return _runtime.Start(moduleId);
+        }
+
+        public bool TryStop(string moduleId)
+        {
+            return _runtime.Stop(moduleId);
+        }
+    }
 }

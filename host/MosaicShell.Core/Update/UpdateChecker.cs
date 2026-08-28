@@ -2,137 +2,156 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using MosaicShell.Core.Install;
 
-namespace MosaicShell.Core.Update;
-
-public sealed record UpdateCheckResult(
-    bool UpdateAvailable,
-    string? LatestVersion,
-    string? CurrentVersion,
-    string? ReleaseUrl,
-    string? SetupDownloadUrl = null,
-    string? SetupFileName = null);
-
-public static class UpdateChecker
+namespace MosaicShell.Core.Update
 {
-    public static async Task<UpdateCheckResult> CheckGitHubAsync(
-        HttpClient http,
-        string owner = "uairhahs",
-        string repo = "MosaicShell",
-        string? currentVersion = null,
-        CancellationToken ct = default)
+    public sealed record UpdateCheckResult(
+        bool UpdateAvailable,
+        string? LatestVersion,
+        string? CurrentVersion,
+        string? ReleaseUrl,
+        string? SetupDownloadUrl = null,
+        string? SetupFileName = null);
+
+    public static class UpdateChecker
     {
-        currentVersion ??= HostBuildVersion.ReadCurrent();
-        try
+        public static async Task<UpdateCheckResult> CheckGitHubAsync(
+            HttpClient http,
+            string owner = "uairhahs",
+            string repo = "MosaicShell",
+            string? currentVersion = null,
+            CancellationToken ct = default)
         {
-            using var req = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{owner}/{repo}/releases/latest");
-            req.Headers.Accept.ParseAdd("application/vnd.github+json");
-            if (!http.DefaultRequestHeaders.UserAgent.Any())
-                http.DefaultRequestHeaders.UserAgent.ParseAdd($"MosaicShell-Host/{currentVersion}");
-            using var res = await http.SendAsync(req, ct);
-            if (!res.IsSuccessStatusCode)
+            currentVersion ??= HostBuildVersion.ReadCurrent();
+            try
+            {
+                using HttpRequestMessage req = new(HttpMethod.Get, $"https://api.github.com/repos/{owner}/{repo}/releases/latest");
+                req.Headers.Accept.ParseAdd("application/vnd.github+json");
+                if (!http.DefaultRequestHeaders.UserAgent.Any())
+                {
+                    http.DefaultRequestHeaders.UserAgent.ParseAdd($"MosaicShell-Host/{currentVersion}");
+                }
+
+                using HttpResponseMessage res = await http.SendAsync(req, ct);
+                if (!res.IsSuccessStatusCode)
+                {
+                    return new UpdateCheckResult(false, null, currentVersion, null);
+                }
+
+                GhRelease? release = await res.Content.ReadFromJsonAsync<GhRelease>(cancellationToken: ct);
+                string? latest = NormalizeTag(release?.TagName);
+                if (string.IsNullOrWhiteSpace(latest))
+                {
+                    return new UpdateCheckResult(false, null, currentVersion, release?.HtmlUrl);
+                }
+
+                GhAsset? setup = SelectSetupAsset(release?.Assets);
+                bool available = HostBuildVersionPolicy.IsNewer(latest, currentVersion);
+                return new UpdateCheckResult(
+                    available,
+                    latest,
+                    currentVersion,
+                    release?.HtmlUrl,
+                    setup?.BrowserDownloadUrl,
+                    setup?.Name);
+            }
+            catch
+            {
                 return new UpdateCheckResult(false, null, currentVersion, null);
-
-            var release = await res.Content.ReadFromJsonAsync<GhRelease>(cancellationToken: ct);
-            var latest = NormalizeTag(release?.TagName);
-            if (string.IsNullOrWhiteSpace(latest))
-                return new UpdateCheckResult(false, null, currentVersion, release?.HtmlUrl);
-
-            var setup = SelectSetupAsset(release?.Assets);
-            var available = HostBuildVersionPolicy.IsNewer(latest, currentVersion);
-            return new UpdateCheckResult(
-                available,
-                latest,
-                currentVersion,
-                release?.HtmlUrl,
-                setup?.BrowserDownloadUrl,
-                setup?.Name);
+            }
         }
-        catch
+
+        /// <summary>
+        /// Downloads the Setup asset for an update check result into the update cache.
+        /// </summary>
+        public static async Task<string> DownloadSetupAsync(
+            HttpClient http,
+            UpdateCheckResult check,
+            CancellationToken ct = default)
         {
-            return new UpdateCheckResult(false, null, currentVersion, null);
-        }
-    }
-
-    /// <summary>
-    /// Downloads the Setup asset for an update check result into the update cache.
-    /// </summary>
-    public static async Task<string> DownloadSetupAsync(
-        HttpClient http,
-        UpdateCheckResult check,
-        CancellationToken ct = default)
-    {
-        if (string.IsNullOrWhiteSpace(check.SetupDownloadUrl))
-            throw new InvalidOperationException("No Setup.exe asset URL on the latest release.");
-
-        var name = string.IsNullOrWhiteSpace(check.SetupFileName)
-            ? HostInstallLayoutSpec.SetupExeName
-            : check.SetupFileName!;
-
-        var dl = new ReleaseDownloader(http);
-        return await dl.DownloadAsync(
-            new ReleaseAsset
+            if (string.IsNullOrWhiteSpace(check.SetupDownloadUrl))
             {
-                Url = check.SetupDownloadUrl!,
-                FileName = name,
-            },
-            HostUpdatePolicy.CacheDirectory,
-            ct);
-    }
-
-    /// <summary>Picks MosaicShell-Setup.exe or MosaicShell-Setup-*.exe from release assets.</summary>
-    public static GhAsset? SelectSetupAsset(IReadOnlyList<GhAsset>? assets)
-    {
-        if (assets is null || assets.Count == 0)
-            return null;
-
-        GhAsset? exact = null;
-        GhAsset? versioned = null;
-        foreach (var asset in assets)
-        {
-            var name = asset.Name ?? "";
-            if (!name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                continue;
-            if (name.Equals(HostInstallLayoutSpec.SetupExeName, StringComparison.OrdinalIgnoreCase))
-            {
-                exact = asset;
-                break;
+                throw new InvalidOperationException("No Setup.exe asset URL on the latest release.");
             }
 
-            if (name.StartsWith("MosaicShell-Setup-", StringComparison.OrdinalIgnoreCase)
-                && versioned is null)
-                versioned = asset;
+            string name = string.IsNullOrWhiteSpace(check.SetupFileName)
+                ? HostInstallLayoutSpec.SetupExeName
+                : check.SetupFileName;
+
+            ReleaseDownloader dl = new(http);
+            return await dl.DownloadAsync(
+                new ReleaseAsset
+                {
+                    Url = check.SetupDownloadUrl,
+                    FileName = name,
+                },
+                HostUpdatePolicy.CacheDirectory,
+                ct);
         }
 
-        return exact ?? versioned;
-    }
+        /// <summary>Picks MosaicShell-Setup.exe or MosaicShell-Setup-*.exe from release assets.</summary>
+        public static GhAsset? SelectSetupAsset(IReadOnlyList<GhAsset>? assets)
+        {
+            if (assets is null || assets.Count == 0)
+            {
+                return null;
+            }
 
-    private static string? NormalizeTag(string? tagName)
-    {
-        if (string.IsNullOrWhiteSpace(tagName))
-            return null;
+            GhAsset? exact = null;
+            GhAsset? versioned = null;
+            foreach (GhAsset asset in assets)
+            {
+                string name = asset.Name ?? "";
+                if (!name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
 
-        var text = tagName.Trim().TrimStart('v', 'V');
-        return string.IsNullOrWhiteSpace(text) ? null : text;
-    }
+                if (name.Equals(HostInstallLayoutSpec.SetupExeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    exact = asset;
+                    break;
+                }
 
-    private sealed class GhRelease
-    {
-        [JsonPropertyName("tag_name")]
-        public string? TagName { get; set; }
+                if (name.StartsWith("MosaicShell-Setup-", StringComparison.OrdinalIgnoreCase)
+                    && versioned is null)
+                {
+                    versioned = asset;
+                }
+            }
 
-        [JsonPropertyName("html_url")]
-        public string? HtmlUrl { get; set; }
+            return exact ?? versioned;
+        }
 
-        [JsonPropertyName("assets")]
-        public List<GhAsset>? Assets { get; set; }
-    }
+        private static string? NormalizeTag(string? tagName)
+        {
+            if (string.IsNullOrWhiteSpace(tagName))
+            {
+                return null;
+            }
 
-    public sealed class GhAsset
-    {
-        [JsonPropertyName("name")]
-        public string? Name { get; set; }
+            string text = tagName.Trim().TrimStart('v', 'V');
+            return string.IsNullOrWhiteSpace(text) ? null : text;
+        }
 
-        [JsonPropertyName("browser_download_url")]
-        public string? BrowserDownloadUrl { get; set; }
+        private sealed class GhRelease
+        {
+            [JsonPropertyName("tag_name")]
+            public string? TagName { get; set; }
+
+            [JsonPropertyName("html_url")]
+            public string? HtmlUrl { get; set; }
+
+            [JsonPropertyName("assets")]
+            public List<GhAsset>? Assets { get; set; }
+        }
+
+        public sealed class GhAsset
+        {
+            [JsonPropertyName("name")]
+            public string? Name { get; set; }
+
+            [JsonPropertyName("browser_download_url")]
+            public string? BrowserDownloadUrl { get; set; }
+        }
     }
 }

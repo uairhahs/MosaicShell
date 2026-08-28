@@ -1,19 +1,20 @@
 using FluentAssertions;
 using MosaicShell.Core.Modules.Tessera;
 
-namespace MosaicShell.Core.Tests;
-
-public class TesseraFlyoutDismissCoordinatorTests
+namespace MosaicShell.Core.Tests
 {
-    [Fact]
-    public void Session_owns_auto_dismiss_and_ipc_must_echo_snapshot()
+    public class TesseraFlyoutDismissCoordinatorTests
     {
-        TesseraFlyoutDismissCoordinator.SessionOwnsAutoDismissClock.Should().BeTrue();
-        TesseraFlyoutDismissCoordinator.IpcMustEchoSessionSnapshot.Should().BeTrue();
-        TesseraFlyoutDismissCoordinator.WindowMustSuppressAutoDismiss(true).Should().BeTrue();
-        TesseraFlyoutDismissCoordinator.WindowMustSuppressAutoDismiss(false).Should().BeFalse();
-        TesseraFlyoutDismissCoordinator.ShouldArmSessionAutoDismiss(2500, sessionOpen: true).Should().BeTrue();
-        TesseraFlyoutDismissCoordinator.ShouldArmSessionAutoDismiss(0, sessionOpen: true).Should().BeFalse();
-        TesseraFlyoutDismissCoordinator.ShouldArmSessionAutoDismiss(2500, sessionOpen: false).Should().BeFalse();
+        [Fact]
+        public void Session_owns_auto_dismiss_and_ipc_must_echo_snapshot()
+        {
+            _ = TesseraFlyoutDismissCoordinator.SessionOwnsAutoDismissClock.Should().BeTrue();
+            _ = TesseraFlyoutDismissCoordinator.IpcMustEchoSessionSnapshot.Should().BeTrue();
+            _ = TesseraFlyoutDismissCoordinator.WindowMustSuppressAutoDismiss(true).Should().BeTrue();
+            _ = TesseraFlyoutDismissCoordinator.WindowMustSuppressAutoDismiss(false).Should().BeFalse();
+            _ = TesseraFlyoutDismissCoordinator.ShouldArmSessionAutoDismiss(2500, sessionOpen: true).Should().BeTrue();
+            _ = TesseraFlyoutDismissCoordinator.ShouldArmSessionAutoDismiss(0, sessionOpen: true).Should().BeFalse();
+            _ = TesseraFlyoutDismissCoordinator.ShouldArmSessionAutoDismiss(2500, sessionOpen: false).Should().BeFalse();
+        }
     }
 }

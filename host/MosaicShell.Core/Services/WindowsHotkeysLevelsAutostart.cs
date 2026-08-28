@@ -2,322 +2,377 @@ using System.Runtime.InteropServices;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
-namespace MosaicShell.Core.Services;
-
-public sealed class WindowsHotkeyService : IHotkeyService
+namespace MosaicShell.Core.Services
 {
-    private readonly Dictionary<string, int> _ids = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<int, Action> _callbacks = new();
-    private int _nextId = 1;
-    private readonly HotkeyWindow _window;
-
-    public WindowsHotkeyService()
+    public sealed class WindowsHotkeyService : IHotkeyService
     {
-        _window = new HotkeyWindow(OnHotkey);
-    }
+        private readonly Dictionary<string, int> _ids = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<int, Action> _callbacks = [];
+        private int _nextId = 1;
+        private readonly HotkeyWindow _window;
 
-    public bool Register(string id, ModifierKeys modifiers, int virtualKey, Action callback)
-    {
-        Unregister(id);
-        if (_window.Handle == IntPtr.Zero)
-            return false;
-
-        var hotkeyId = _nextId++;
-        // MOD_NOREPEAT = 0x4000 avoids key-repeat floods
-        var fsModifiers = (uint)modifiers | 0x4000u;
-        if (!RegisterHotKey(_window.Handle, hotkeyId, fsModifiers, (uint)virtualKey))
-            return false;
-
-        _ids[id] = hotkeyId;
-        _callbacks[hotkeyId] = callback;
-        return true;
-    }
-
-    public void Unregister(string id)
-    {
-        if (!_ids.Remove(id, out var hotkeyId)) return;
-        UnregisterHotKey(_window.Handle, hotkeyId);
-        _callbacks.Remove(hotkeyId);
-    }
-
-    private void OnHotkey(int id)
-    {
-        if (_callbacks.TryGetValue(id, out var cb))
-            cb();
-    }
-
-    public void Dispose()
-    {
-        foreach (var id in _ids.Values.ToList())
-            UnregisterHotKey(_window.Handle, id);
-        _ids.Clear();
-        _callbacks.Clear();
-        _window.Dispose();
-    }
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
-
-    private sealed class HotkeyWindow : IDisposable
-    {
-        private readonly Action<int> _onHotkey;
-        private readonly Thread _thread;
-        private volatile bool _running = true;
-        public IntPtr Handle { get; private set; }
-
-        public HotkeyWindow(Action<int> onHotkey)
+        public WindowsHotkeyService()
         {
-            _onHotkey = onHotkey;
-            using var ready = new ManualResetEventSlim(false);
-            Exception? startError = null;
-            _thread = new Thread(() =>
-            {
-                try
-                {
-                    Handle = CreateMessageWindow();
-                    if (Handle == IntPtr.Zero)
-                    {
-                        startError = new InvalidOperationException(
-                            "CreateWindowEx failed for hotkey HWND_MESSAGE (err=" +
-                            Marshal.GetLastWin32Error() + ").");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    startError = ex;
-                }
-                finally
-                {
-                    ready.Set();
-                }
+            _window = new HotkeyWindow(OnHotkey);
+        }
 
-                if (Handle == IntPtr.Zero)
-                    return;
-
-                while (_running && GetMessage(out var msg, IntPtr.Zero, 0, 0) > 0)
-                {
-                    if (msg.message == 0x0312) // WM_HOTKEY
-                        _onHotkey((int)msg.wParam);
-                    TranslateMessage(ref msg);
-                    DispatchMessage(ref msg);
-                }
-            })
+        public bool Register(string id, ModifierKeys modifiers, int virtualKey, Action callback)
+        {
+            Unregister(id);
+            if (_window.Handle == IntPtr.Zero)
             {
-                IsBackground = true,
-                Name = "MosaicShell.Hotkeys"
-            };
-            _thread.SetApartmentState(ApartmentState.STA);
-            _thread.Start();
-            if (!ready.Wait(5000))
-                throw new InvalidOperationException("Timed out creating hotkey message window.");
-            if (Handle == IntPtr.Zero)
-                throw new InvalidOperationException("Failed to create hotkey message window.", startError);
+                return false;
+            }
+
+            int hotkeyId = _nextId++;
+            // MOD_NOREPEAT = 0x4000 avoids key-repeat floods
+            uint fsModifiers = (uint)modifiers | 0x4000u;
+            if (!RegisterHotKey(_window.Handle, hotkeyId, fsModifiers, (uint)virtualKey))
+            {
+                return false;
+            }
+
+            _ids[id] = hotkeyId;
+            _callbacks[hotkeyId] = callback;
+            return true;
+        }
+
+        public void Unregister(string id)
+        {
+            if (!_ids.Remove(id, out int hotkeyId))
+            {
+                return;
+            }
+
+            _ = UnregisterHotKey(_window.Handle, hotkeyId);
+            _ = _callbacks.Remove(hotkeyId);
+        }
+
+        private void OnHotkey(int id)
+        {
+            if (_callbacks.TryGetValue(id, out Action? cb))
+            {
+                cb();
+            }
         }
 
         public void Dispose()
         {
-            _running = false;
-            if (Handle != IntPtr.Zero)
-                PostMessage(Handle, 0x0012, IntPtr.Zero, IntPtr.Zero); // WM_QUIT
-        }
-
-        private static IntPtr CreateMessageWindow()
-        {
-            var className = "MosaicShellHotkeyWnd." + Guid.NewGuid().ToString("N");
-            var hInstance = GetModuleHandle(null);
-            var wndClass = new WNDCLASS
+            foreach (int id in _ids.Values.ToList())
             {
-                style = 0,
-                lpfnWndProc = Marshal.GetFunctionPointerForDelegate(s_wndProc),
-                cbClsExtra = 0,
-                cbWndExtra = 0,
-                hInstance = hInstance,
-                hIcon = IntPtr.Zero,
-                hCursor = IntPtr.Zero,
-                hbrBackground = IntPtr.Zero,
-                lpszMenuName = null,
-                lpszClassName = className
-            };
-
-            var atom = RegisterClass(ref wndClass);
-            if (atom == 0)
-            {
-                var err = Marshal.GetLastWin32Error();
-                if (err != 1410) // ERROR_CLASS_ALREADY_EXISTS
-                    return IntPtr.Zero;
+                _ = UnregisterHotKey(_window.Handle, id);
             }
 
-            return CreateWindowEx(
-                0,
-                className,
-                "MosaicShellHotkeys",
-                0,
-                0, 0, 0, 0,
-                HWND_MESSAGE,
-                IntPtr.Zero,
-                hInstance,
-                IntPtr.Zero);
+            _ids.Clear();
+            _callbacks.Clear();
+            _window.Dispose();
         }
 
-        private static readonly WndProc s_wndProc = (hWnd, msg, w, l) => DefWindowProc(hWnd, msg, w, l);
-        private static readonly IntPtr HWND_MESSAGE = new(-3);
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
 
-        private delegate IntPtr WndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-        private struct WNDCLASS
+        private sealed class HotkeyWindow : IDisposable
         {
-            public uint style;
-            public IntPtr lpfnWndProc;
-            public int cbClsExtra;
-            public int cbWndExtra;
-            public IntPtr hInstance;
-            public IntPtr hIcon;
-            public IntPtr hCursor;
-            public IntPtr hbrBackground;
-            public string? lpszMenuName;
-            public string lpszClassName;
+            private readonly Action<int> _onHotkey;
+            private readonly Thread _thread;
+            private volatile bool _running = true;
+            public IntPtr Handle { get; private set; }
+
+            public HotkeyWindow(Action<int> onHotkey)
+            {
+                _onHotkey = onHotkey;
+                using ManualResetEventSlim ready = new(false);
+                Exception? startError = null;
+                _thread = new Thread(() =>
+                {
+                    try
+                    {
+                        Handle = CreateMessageWindow();
+                        if (Handle == IntPtr.Zero)
+                        {
+                            startError = new InvalidOperationException(
+                                "CreateWindowEx failed for hotkey HWND_MESSAGE (err=" +
+                                Marshal.GetLastWin32Error() + ").");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        startError = ex;
+                    }
+                    finally
+                    {
+                        ready.Set();
+                    }
+
+                    if (Handle == IntPtr.Zero)
+                    {
+                        return;
+                    }
+
+                    while (_running && GetMessage(out MSG msg, IntPtr.Zero, 0, 0) > 0)
+                    {
+                        if (msg.message == 0x0312) // WM_HOTKEY
+                        {
+                            _onHotkey((int)msg.wParam);
+                        }
+
+                        _ = TranslateMessage(ref msg);
+                        _ = DispatchMessage(ref msg);
+                    }
+                })
+                {
+                    IsBackground = true,
+                    Name = "MosaicShell.Hotkeys"
+                };
+                _thread.SetApartmentState(ApartmentState.STA);
+                _thread.Start();
+                if (!ready.Wait(5000))
+                {
+                    throw new InvalidOperationException("Timed out creating hotkey message window.");
+                }
+
+                if (Handle == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException("Failed to create hotkey message window.", startError);
+                }
+            }
+
+            public void Dispose()
+            {
+                _running = false;
+                if (Handle != IntPtr.Zero)
+                {
+                    _ = PostMessage(Handle, 0x0012, IntPtr.Zero, IntPtr.Zero); // WM_QUIT
+                }
+            }
+
+            private static IntPtr CreateMessageWindow()
+            {
+                string className = "MosaicShellHotkeyWnd." + Guid.NewGuid().ToString("N");
+                nint hInstance = GetModuleHandle(null);
+                WNDCLASS wndClass = new()
+                {
+                    style = 0,
+                    lpfnWndProc = Marshal.GetFunctionPointerForDelegate(s_wndProc),
+                    cbClsExtra = 0,
+                    cbWndExtra = 0,
+                    hInstance = hInstance,
+                    hIcon = IntPtr.Zero,
+                    hCursor = IntPtr.Zero,
+                    hbrBackground = IntPtr.Zero,
+                    lpszMenuName = null,
+                    lpszClassName = className
+                };
+
+                ushort atom = RegisterClass(ref wndClass);
+                if (atom == 0)
+                {
+                    int err = Marshal.GetLastWin32Error();
+                    if (err != 1410) // ERROR_CLASS_ALREADY_EXISTS
+                    {
+                        return IntPtr.Zero;
+                    }
+                }
+
+                return CreateWindowEx(
+                    0,
+                    className,
+                    "MosaicShellHotkeys",
+                    0,
+                    0, 0, 0, 0,
+                    HWND_MESSAGE,
+                    IntPtr.Zero,
+                    hInstance,
+                    IntPtr.Zero);
+            }
+
+            private static readonly WndProc s_wndProc = DefWindowProc;
+            private static readonly IntPtr HWND_MESSAGE = new(-3);
+
+            private delegate IntPtr WndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+            [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+            private struct WNDCLASS
+            {
+                public uint style;
+                public IntPtr lpfnWndProc;
+                public int cbClsExtra;
+                public int cbWndExtra;
+                public IntPtr hInstance;
+                public IntPtr hIcon;
+                public IntPtr hCursor;
+                public IntPtr hbrBackground;
+                public string? lpszMenuName;
+                public string lpszClassName;
+            }
+
+            [StructLayout(LayoutKind.Sequential)]
+            private struct MSG
+            {
+                public IntPtr hwnd;
+                public uint message;
+                public IntPtr wParam;
+                public IntPtr lParam;
+                public uint time;
+                public int pt_x;
+                public int pt_y;
+            }
+
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+            private static extern IntPtr GetModuleHandle(string? lpModuleName);
+
+            [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+            private static extern ushort RegisterClass(ref WNDCLASS lpWndClass);
+
+            [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+            private static extern IntPtr CreateWindowEx(
+                int dwExStyle,
+                string lpClassName,
+                string lpWindowName,
+                int dwStyle,
+                int x, int y, int nWidth, int nHeight,
+                IntPtr hWndParent,
+                IntPtr hMenu,
+                IntPtr hInstance,
+                IntPtr lpParam);
+
+            [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+            private static extern IntPtr DefWindowProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam);
+
+            [DllImport("user32.dll")]
+            private static extern int GetMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
+
+            [DllImport("user32.dll")]
+            private static extern bool TranslateMessage(ref MSG lpMsg);
+
+            [DllImport("user32.dll")]
+            private static extern IntPtr DispatchMessage(ref MSG lpMsg);
+
+            [DllImport("user32.dll")]
+            private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
         }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct MSG
-        {
-            public IntPtr hwnd;
-            public uint message;
-            public IntPtr wParam;
-            public IntPtr lParam;
-            public uint time;
-            public int pt_x;
-            public int pt_y;
-        }
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-        private static extern IntPtr GetModuleHandle(string? lpModuleName);
-
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern ushort RegisterClass(ref WNDCLASS lpWndClass);
-
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern IntPtr CreateWindowEx(
-            int dwExStyle,
-            string lpClassName,
-            string lpWindowName,
-            int dwStyle,
-            int x, int y, int nWidth, int nHeight,
-            IntPtr hWndParent,
-            IntPtr hMenu,
-            IntPtr hInstance,
-            IntPtr lpParam);
-
-        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-        private static extern IntPtr DefWindowProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam);
-
-        [DllImport("user32.dll")]
-        private static extern int GetMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
-
-        [DllImport("user32.dll")]
-        private static extern bool TranslateMessage(ref MSG lpMsg);
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr DispatchMessage(ref MSG lpMsg);
-
-        [DllImport("user32.dll")]
-        private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
     }
-}
 
-public sealed class WindowsAudioLevelService : IAudioLevelService
-{
-    private WasapiRecorder? _capture;
-    private readonly float[] _bands = new float[AudioLevelMeter.BandCount];
-    private double _peak;
-    private readonly object _gate = new();
-
-    public double Peak
+    public sealed class WindowsAudioLevelService : IAudioLevelService
     {
-        get { lock (_gate) return _peak; }
-    }
+        private WasapiRecorder? _capture;
+        private readonly float[] _bands = new float[AudioLevelMeter.BandCount];
+        private readonly Lock _gate = new();
 
-    public IReadOnlyList<double> Bands
-    {
-        get
+        public double Peak
         {
-            lock (_gate)
-                return _bands.Select(b => (double)b).ToArray();
+            get
+            {
+                lock (_gate)
+                {
+                    return field;
+                }
+            }
+
+            private set;
         }
-    }
 
-    public void Start()
-    {
-        if (_capture is not null) return;
-        try
+        public IReadOnlyList<double> Bands
         {
-            _capture = new WasapiRecorderBuilder()
-                .WithLoopbackCapture()
-                .Build();
-            _capture.DataAvailable += OnData;
-            _capture.StartRecording();
+            get
+            {
+                lock (_gate)
+                {
+                    return [.. _bands.Select(b => (double)b)];
+                }
+            }
         }
-        catch
+
+        public void Start()
         {
+            if (_capture is not null)
+            {
+                return;
+            }
+
+            try
+            {
+                _capture = new WasapiRecorderBuilder()
+                    .WithLoopbackCapture()
+                    .Build();
+                _capture.DataAvailable += OnData;
+                _capture.StartRecording();
+            }
+            catch
+            {
+                _capture = null;
+            }
+        }
+
+        public void Stop()
+        {
+            if (_capture is null)
+            {
+                return;
+            }
+
+            try
+            {
+                _capture.DataAvailable -= OnData;
+                _capture.StopRecording();
+                _capture.Dispose();
+            }
+            catch { /* ignore */ }
             _capture = null;
         }
-    }
 
-    public void Stop()
-    {
-        if (_capture is null) return;
-        try
+        private void OnData(ReadOnlySpan<byte> buffer, AudioClientBufferFlags flags, long devicePosition, long qpcPosition)
         {
-            _capture.DataAvailable -= OnData;
-            _capture.StopRecording();
-            _capture.Dispose();
+            _ = flags;
+            _ = devicePosition;
+            _ = qpcPosition;
+            if (buffer.Length < 4)
+            {
+                return;
+            }
+
+            Span<float> bands = stackalloc float[AudioLevelMeter.BandCount];
+            AudioLevelMeter.ProcessIeeeFloat(buffer, bands, out double peak);
+
+            lock (_gate)
+            {
+                Peak = peak;
+                bands.CopyTo(_bands);
+            }
         }
-        catch { /* ignore */ }
-        _capture = null;
-    }
 
-    private void OnData(ReadOnlySpan<byte> buffer, AudioClientBufferFlags flags, long devicePosition, long qpcPosition)
-    {
-        _ = flags;
-        _ = devicePosition;
-        _ = qpcPosition;
-        if (buffer.Length < 4) return;
-
-        Span<float> bands = stackalloc float[AudioLevelMeter.BandCount];
-        AudioLevelMeter.ProcessIeeeFloat(buffer, bands, out var peak);
-
-        lock (_gate)
+        public void Dispose()
         {
-            _peak = peak;
-            bands.CopyTo(_bands);
+            Stop();
         }
     }
 
-    public void Dispose() => Stop();
-}
-
-public sealed class WindowsAutostartService : IAutostartService
-{
-    private static string ShortcutPath =>
-        Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.Startup),
-            "MosaicShell.Host.url");
-
-    public bool IsEnabled => File.Exists(ShortcutPath);
-
-    public void SetEnabled(bool enabled)
+    public sealed class WindowsAutostartService : IAutostartService
     {
-        if (!enabled)
-        {
-            if (File.Exists(ShortcutPath)) File.Delete(ShortcutPath);
-            return;
-        }
+        private static string ShortcutPath =>
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Startup),
+                "MosaicShell.Host.url");
 
-        var exe = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "MosaicShell.Host.exe");
-        MosaicShell.Core.Install.StartupShortcutPolicy.WriteHostShortcut(ShortcutPath, exe, trayOnly: false);
+        public bool IsEnabled => File.Exists(ShortcutPath);
+
+        public void SetEnabled(bool enabled)
+        {
+            if (!enabled)
+            {
+                if (File.Exists(ShortcutPath))
+                {
+                    File.Delete(ShortcutPath);
+                }
+
+                return;
+            }
+
+            string exe = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "MosaicShell.Host.exe");
+            Install.StartupShortcutPolicy.WriteHostShortcut(ShortcutPath, exe, trayOnly: false);
+        }
     }
 }

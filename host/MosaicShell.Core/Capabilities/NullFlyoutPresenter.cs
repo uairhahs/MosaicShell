@@ -1,13 +1,17 @@
-namespace MosaicShell.Core.Capabilities;
-
-/// <summary>No-op flyout presenter for tests and headless capability wiring.</summary>
-public sealed class NullFlyoutPresenter : IFlyoutPresenter
+namespace MosaicShell.Core.Capabilities
 {
-    event Action<string>? IFlyoutPresenter.TransientDismissed { add { } remove { } }
-    public void Show(FlyoutRequest request) { }
-    public void Update(FlyoutRequest request) { }
-    public void SoftRefresh(FlyoutRequest request) { }
-    public void Hide(string moduleId) { }
-    public void HideAll() { }
-    public bool IsVisible(string moduleId) => false;
+    /// <summary>No-op flyout presenter for tests and headless capability wiring.</summary>
+    public sealed class NullFlyoutPresenter : IFlyoutPresenter
+    {
+        event Action<string>? IFlyoutPresenter.TransientDismissed { add { } remove { } }
+        public void Show(FlyoutRequest request) { }
+        public void Update(FlyoutRequest request) { }
+        public void SoftRefresh(FlyoutRequest request) { }
+        public void Hide(string moduleId) { }
+        public void HideAll() { }
+        public bool IsVisible(string moduleId)
+        {
+            return false;
+        }
+    }
 }

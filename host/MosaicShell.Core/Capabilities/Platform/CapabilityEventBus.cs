@@ -1,125 +1,139 @@
-namespace MosaicShell.Core.Capabilities.Platform;
-
-using MosaicShell.Core.Services;
-
-/// <summary>Cross-module capability platform events (media, volume, lifecycle).</summary>
-public enum CapabilityEventKind
+namespace MosaicShell.Core.Capabilities.Platform
 {
-    MediaTrackBoundary,
-    MediaSessionChanged,
-    MediaProgress,
-    VolumeChanged,
-    FlyoutTransientDismissed,
-    CapabilityArmed,
-    CapabilityDisarmed,
-}
-
-public sealed record CapabilityEvent(
-    CapabilityEventKind Kind,
-    string? SourceModuleId = null,
-    object? Payload = null);
-
-public interface ICapabilityEventBus
-{
-    void Publish(CapabilityEvent evt);
-
-    /// <summary>Subscribe to one kind; dispose to unsubscribe.</summary>
-    IDisposable Subscribe(CapabilityEventKind kind, Action<CapabilityEvent> handler);
-
-    /// <summary>Subscribe to all kinds; dispose to unsubscribe.</summary>
-    IDisposable SubscribeAll(Action<CapabilityEvent> handler);
-}
-
-public sealed class CapabilityEventBus : ICapabilityEventBus
-{
-    private readonly object _gate = new();
-    private readonly Dictionary<CapabilityEventKind, List<Action<CapabilityEvent>>> _byKind = new();
-    private readonly List<Action<CapabilityEvent>> _all = new();
-
-    public void Publish(CapabilityEvent evt)
+    /// <summary>Cross-module capability platform events (media, volume, lifecycle).</summary>
+    public enum CapabilityEventKind
     {
-        Action<CapabilityEvent>[] kindHandlers;
-        Action<CapabilityEvent>[] allHandlers;
-        lock (_gate)
-        {
-            kindHandlers = _byKind.TryGetValue(evt.Kind, out var list)
-                ? list.ToArray()
-                : Array.Empty<Action<CapabilityEvent>>();
-            allHandlers = _all.ToArray();
-        }
-
-        foreach (var handler in kindHandlers)
-        {
-            try { handler(evt); }
-            catch { /* soft-fail */ }
-        }
-
-        foreach (var handler in allHandlers)
-        {
-            try { handler(evt); }
-            catch { /* soft-fail */ }
-        }
+        MediaTrackBoundary,
+        MediaSessionChanged,
+        MediaProgress,
+        VolumeChanged,
+        FlyoutTransientDismissed,
+        CapabilityArmed,
+        CapabilityDisarmed,
     }
 
-    public IDisposable Subscribe(CapabilityEventKind kind, Action<CapabilityEvent> handler)
+    public sealed record CapabilityEvent(
+        CapabilityEventKind Kind,
+        string? SourceModuleId = null,
+        object? Payload = null);
+
+    public interface ICapabilityEventBus
     {
-        lock (_gate)
+        void Publish(CapabilityEvent evt);
+
+        /// <summary>Subscribe to one kind; dispose to unsubscribe.</summary>
+        IDisposable Subscribe(CapabilityEventKind kind, Action<CapabilityEvent> handler);
+
+        /// <summary>Subscribe to all kinds; dispose to unsubscribe.</summary>
+        IDisposable SubscribeAll(Action<CapabilityEvent> handler);
+    }
+
+    public sealed class CapabilityEventBus : ICapabilityEventBus
+    {
+        private readonly Lock _gate = new();
+        private readonly Dictionary<CapabilityEventKind, List<Action<CapabilityEvent>>> _byKind = [];
+        private readonly List<Action<CapabilityEvent>> _all = [];
+
+        public void Publish(CapabilityEvent evt)
         {
-            if (!_byKind.TryGetValue(kind, out var list))
+            Action<CapabilityEvent>[] kindHandlers;
+            Action<CapabilityEvent>[] allHandlers;
+            lock (_gate)
             {
-                list = new List<Action<CapabilityEvent>>();
-                _byKind[kind] = list;
+                kindHandlers = _byKind.TryGetValue(evt.Kind, out List<Action<CapabilityEvent>>? list)
+                    ? [.. list]
+                    : [];
+                allHandlers = [.. _all];
             }
 
-            list.Add(handler);
+            foreach (Action<CapabilityEvent> handler in kindHandlers)
+            {
+                try { handler(evt); }
+                catch { /* soft-fail */ }
+            }
+
+            foreach (Action<CapabilityEvent> handler in allHandlers)
+            {
+                try { handler(evt); }
+                catch { /* soft-fail */ }
+            }
         }
 
-        return new Subscription(() => Unsubscribe(kind, handler));
-    }
-
-    public IDisposable SubscribeAll(Action<CapabilityEvent> handler)
-    {
-        lock (_gate) _all.Add(handler);
-        return new Subscription(() =>
+        public IDisposable Subscribe(CapabilityEventKind kind, Action<CapabilityEvent> handler)
         {
-            lock (_gate) _all.Remove(handler);
-        });
-    }
+            lock (_gate)
+            {
+                if (!_byKind.TryGetValue(kind, out List<Action<CapabilityEvent>>? list))
+                {
+                    list = [];
+                    _byKind[kind] = list;
+                }
 
-    private void Unsubscribe(CapabilityEventKind kind, Action<CapabilityEvent> handler)
-    {
-        lock (_gate)
+                list.Add(handler);
+            }
+
+            return new Subscription(() => Unsubscribe(kind, handler));
+        }
+
+        public IDisposable SubscribeAll(Action<CapabilityEvent> handler)
         {
-            if (_byKind.TryGetValue(kind, out var list))
-                list.Remove(handler);
+            lock (_gate)
+            {
+                _all.Add(handler);
+            }
+
+            return new Subscription(() =>
+            {
+                lock (_gate)
+                {
+                    _ = _all.Remove(handler);
+                }
+            });
+        }
+
+        private void Unsubscribe(CapabilityEventKind kind, Action<CapabilityEvent> handler)
+        {
+            lock (_gate)
+            {
+                if (_byKind.TryGetValue(kind, out List<Action<CapabilityEvent>>? list))
+                {
+                    _ = list.Remove(handler);
+                }
+            }
+        }
+
+        private sealed class Subscription(Action dispose) : IDisposable
+        {
+            private int _disposed;
+            public void Dispose()
+            {
+                if (Interlocked.Exchange(ref _disposed, 1) != 0)
+                {
+                    return;
+                }
+
+                dispose();
+            }
         }
     }
 
-    private sealed class Subscription(Action dispose) : IDisposable
+    /// <summary>Maps platform media signals to bus events.</summary>
+    public static class CapabilityEventPublishing
     {
-        private int _disposed;
-        public void Dispose()
+        public static CapabilityEvent FromMediaSignal(MediaSessionSignal signal)
         {
-            if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
-            dispose();
+            return signal.Kind switch
+            {
+                MediaSessionSignalKind.Progress => new CapabilityEvent(
+                    CapabilityEventKind.MediaProgress,
+                    Payload: signal),
+                _ when signal.IsTrackBoundary => new CapabilityEvent(
+                    CapabilityEventKind.MediaTrackBoundary,
+                    Payload: signal),
+                _ => new CapabilityEvent(
+                                CapabilityEventKind.MediaSessionChanged,
+                                Payload: signal),
+            };
         }
     }
-}
-
-/// <summary>Maps platform media signals to bus events.</summary>
-public static class CapabilityEventPublishing
-{
-    public static CapabilityEvent FromMediaSignal(MediaSessionSignal signal) =>
-        signal.Kind switch
-        {
-            MediaSessionSignalKind.Progress => new CapabilityEvent(
-                CapabilityEventKind.MediaProgress,
-                Payload: signal),
-            _ when signal.IsTrackBoundary => new CapabilityEvent(
-                CapabilityEventKind.MediaTrackBoundary,
-                Payload: signal),
-            _ => new CapabilityEvent(
-                CapabilityEventKind.MediaSessionChanged,
-                Payload: signal),
-        };
 }

@@ -1,76 +1,83 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 
-namespace MosaicShell.Core.Install;
-
-public sealed class ReleaseAsset
+namespace MosaicShell.Core.Install
 {
-    public required string Url { get; init; }
-    public string? Sha256 { get; init; }
-    public string? FileName { get; init; }
-}
-
-/// <summary>
-/// Downloads release assets to disk and verifies SHA-256 when provided.
-/// Never executes downloaded content (no iex / script piping).
-/// </summary>
-public sealed class ReleaseDownloader
-{
-    private readonly HttpClient _http;
-
-    public ReleaseDownloader(HttpClient? http = null)
+    public sealed class ReleaseAsset
     {
-        _http = http ?? new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
-        if (!_http.DefaultRequestHeaders.UserAgent.Any())
-            _http.DefaultRequestHeaders.UserAgent.ParseAdd("MosaicShell-Mosaicist");
+        public required string Url { get; init; }
+        public string? Sha256 { get; init; }
+        public string? FileName { get; init; }
     }
 
-    public async Task<string> DownloadAsync(ReleaseAsset asset, string destinationDirectory, CancellationToken ct = default)
+    /// <summary>
+    /// Downloads release assets to disk and verifies SHA-256 when provided.
+    /// Never executes downloaded content (no iex / script piping).
+    /// </summary>
+    public sealed class ReleaseDownloader
     {
-        Directory.CreateDirectory(destinationDirectory);
-        var name = asset.FileName
-                   ?? Path.GetFileName(new Uri(asset.Url).AbsolutePath)
-                   ?? "download.bin";
-        var path = Path.Combine(destinationDirectory, name);
+        private readonly HttpClient _http;
 
-        await using (var remote = await _http.GetStreamAsync(asset.Url, ct))
-        await using (var local = File.Create(path))
-            await remote.CopyToAsync(local, ct);
-
-        if (!string.IsNullOrWhiteSpace(asset.Sha256))
+        public ReleaseDownloader(HttpClient? http = null)
         {
-            var hash = await ComputeSha256Async(path, ct);
-            if (!hash.Equals(asset.Sha256, StringComparison.OrdinalIgnoreCase))
+            _http = http ?? new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
+            if (!_http.DefaultRequestHeaders.UserAgent.Any())
             {
-                File.Delete(path);
-                throw new InvalidOperationException(
-                    $"SHA-256 mismatch for {name}. Expected {asset.Sha256}, got {hash}.");
+                _http.DefaultRequestHeaders.UserAgent.ParseAdd("MosaicShell-Mosaicist");
             }
         }
 
-        return path;
-    }
+        public async Task<string> DownloadAsync(ReleaseAsset asset, string destinationDirectory, CancellationToken ct = default)
+        {
+            _ = Directory.CreateDirectory(destinationDirectory);
+            string name = asset.FileName
+                       ?? Path.GetFileName(new Uri(asset.Url).AbsolutePath)
+                       ?? "download.bin";
+            string path = Path.Combine(destinationDirectory, name);
 
-    public static async Task<string> ComputeSha256Async(string filePath, CancellationToken ct = default)
-    {
-        await using var stream = File.OpenRead(filePath);
-        var hash = await SHA256.HashDataAsync(stream, ct);
-        return Convert.ToHexString(hash).ToLowerInvariant();
-    }
+            await using (Stream remote = await _http.GetStreamAsync(asset.Url, ct))
+            await using (FileStream local = File.Create(path))
+            {
+                await remote.CopyToAsync(local, ct);
+            }
 
-    public async Task InstallModuleFromZipAsync(string zipPath, string moduleId, CancellationToken ct = default)
-    {
-        AppPaths.EnsureLayout();
-        var dest = Path.Combine(AppPaths.ModulesDirectory, moduleId);
-        if (Directory.Exists(dest))
-            Directory.Delete(dest, recursive: true);
+            if (!string.IsNullOrWhiteSpace(asset.Sha256))
+            {
+                string hash = await ComputeSha256Async(path, ct);
+                if (!hash.Equals(asset.Sha256, StringComparison.OrdinalIgnoreCase))
+                {
+                    File.Delete(path);
+                    throw new InvalidOperationException(
+                        $"SHA-256 mismatch for {name}. Expected {asset.Sha256}, got {hash}.");
+                }
+            }
 
-        await Task.Run(() => System.IO.Compression.ZipFile.ExtractToDirectory(zipPath, dest), ct);
+            return path;
+        }
 
-        var marker = new { Id = moduleId, InstalledUtc = DateTime.UtcNow };
-        await File.WriteAllTextAsync(
-            Path.Combine(dest, "module.json"),
-            JsonSerializer.Serialize(marker, new JsonSerializerOptions { WriteIndented = true }),
-            ct);
+        public static async Task<string> ComputeSha256Async(string filePath, CancellationToken ct = default)
+        {
+            await using FileStream stream = File.OpenRead(filePath);
+            byte[] hash = await SHA256.HashDataAsync(stream, ct);
+            return Convert.ToHexString(hash).ToLowerInvariant();
+        }
+
+        public async Task InstallModuleFromZipAsync(string zipPath, string moduleId, CancellationToken ct = default)
+        {
+            AppPaths.EnsureLayout();
+            string dest = Path.Combine(AppPaths.ModulesDirectory, moduleId);
+            if (Directory.Exists(dest))
+            {
+                Directory.Delete(dest, recursive: true);
+            }
+
+            await Task.Run(() => System.IO.Compression.ZipFile.ExtractToDirectory(zipPath, dest), ct);
+
+            var marker = new { Id = moduleId, InstalledUtc = DateTime.UtcNow };
+            await File.WriteAllTextAsync(
+                Path.Combine(dest, "module.json"),
+                JsonSerializer.Serialize(marker, new JsonSerializerOptions { WriteIndented = true }),
+                ct);
+        }
     }
 }

@@ -1,291 +1,353 @@
 using MosaicShell.Core.Services.WebNowPlaying;
 
-namespace MosaicShell.Core.Services;
-
-/// <summary>
-/// Merges Windows SMTC with WebNowPlaying. SMTC drives transport when present;
-/// WNP supplies album art for browser players (YouTube Music) where SMTC Thumbnail is null.
-/// </summary>
-public sealed class CompositeMediaSessionService : IMediaSessionService
+namespace MosaicShell.Core.Services
 {
-    private readonly IMediaSessionService _smtc;
-    private readonly IWebNowPlayingService _wnp;
-    private MediaSessionInfo? _current;
-
-    public CompositeMediaSessionService(IMediaSessionService smtc, IWebNowPlayingService wnp)
+    /// <summary>
+    /// Merges Windows SMTC with WebNowPlaying. SMTC drives transport when present;
+    /// WNP supplies album art for browser players (YouTube Music) where SMTC Thumbnail is null.
+    /// </summary>
+    public sealed class CompositeMediaSessionService : IMediaSessionService
     {
-        _smtc = smtc;
-        _wnp = wnp;
-        _smtc.Changed += OnSourceChanged;
-        _smtc.ProgressChanged += OnSmtcProgress;
-        _wnp.Changed += OnSourceChanged;
-        Rebuild(raiseProgress: false);
-    }
+        private readonly IMediaSessionService _smtc;
+        private readonly IWebNowPlayingService _wnp;
 
-    public MediaSessionInfo? Current => _current;
-    public event EventHandler? Changed;
-    public event EventHandler? ProgressChanged;
-
-    public void PumpTimeline()
-    {
-        _smtc.PumpTimeline();
-        // WNP position updates arrive via Changed; still refresh merge in case only SMTC moved
-        Rebuild(raiseProgress: true);
-    }
-
-    public Task PlayPauseAsync() => _smtc.PlayPauseAsync();
-    public Task NextAsync() => _smtc.NextAsync();
-    public Task PreviousAsync() => _smtc.PreviousAsync();
-    public Task SeekAsync(double positionSeconds) => _smtc.SeekAsync(positionSeconds);
-    public async Task ToggleShuffleAsync()
-    {
-        await _smtc.ToggleShuffleAsync();
-        if (_wnp is WebNowPlaying.WebNowPlayingReduxHost host)
-            await host.TryToggleShuffleAsync();
-    }
-    public async Task ToggleRepeatAsync()
-    {
-        await _smtc.ToggleRepeatAsync();
-        if (_wnp is WebNowPlaying.WebNowPlayingReduxHost host)
-            await host.TryToggleRepeatAsync();
-    }
-    public async Task ToggleLikeAsync(bool wantLiked)
-    {
-        await _smtc.ToggleLikeAsync(wantLiked);
-        if (_wnp is WebNowPlaying.WebNowPlayingReduxHost host)
-            await host.TrySetLikeAsync(wantLiked);
-    }
-
-    public async Task ToggleDislikeAsync(bool wantDisliked)
-    {
-        await _smtc.ToggleDislikeAsync(wantDisliked);
-        if (_wnp is WebNowPlaying.WebNowPlayingReduxHost host)
-            await host.TrySetDislikeAsync(wantDisliked);
-    }
-
-    public void Dispose()
-    {
-        _smtc.Changed -= OnSourceChanged;
-        _smtc.ProgressChanged -= OnSmtcProgress;
-        _wnp.Changed -= OnSourceChanged;
-        _smtc.Dispose();
-        _wnp.Dispose();
-    }
-
-    private void OnSourceChanged(object? sender, EventArgs e) => Rebuild(raiseProgress: false);
-
-    private void OnSmtcProgress(object? sender, EventArgs e) => Rebuild(raiseProgress: true);
-
-    private void Rebuild(bool raiseProgress)
-    {
-        var smtc = _smtc.Current;
-        var wnp = _wnp.Active;
-        var prev = _current;
-        var next = Merge(smtc, wnp);
-        _current = next;
-
-        if (prev is null && next is null) return;
-
-        var raiseChanged = false;
-
-        if (prev is not null && smtc is not null)
+        public CompositeMediaSessionService(IMediaSessionService smtc, IWebNowPlayingService wnp)
         {
-            if (!string.IsNullOrWhiteSpace(smtc.Title)
-                && !string.Equals(prev.Title, smtc.Title, StringComparison.Ordinal))
-                raiseChanged = true;
-
-            if (!raiseChanged
-                && MediaSessionChangePolicy.LooksLikeNewTrackPosition(
-                    prev.PositionSeconds, smtc.PositionSeconds))
-                raiseChanged = true;
+            _smtc = smtc;
+            _wnp = wnp;
+            _smtc.Changed += OnSourceChanged;
+            _smtc.ProgressChanged += OnSmtcProgress;
+            _wnp.Changed += OnSourceChanged;
+            Rebuild(raiseProgress: false);
         }
 
-        if (!raiseChanged
-            && prev is not null
-            && next is not null
-            && MediaSessionChangePolicy.LooksLikeNewTrackPosition(
-                prev.PositionSeconds, next.PositionSeconds))
-            raiseChanged = true;
+        public MediaSessionInfo? Current { get; private set; }
+        public event EventHandler? Changed;
+        public event EventHandler? ProgressChanged;
 
-        if (raiseChanged)
+        public void PumpTimeline()
         {
-            Changed?.Invoke(this, EventArgs.Empty);
-            return;
+            _smtc.PumpTimeline();
+            // WNP position updates arrive via Changed; still refresh merge in case only SMTC moved
+            Rebuild(raiseProgress: true);
         }
 
-        if (raiseProgress)
+        public Task PlayPauseAsync()
         {
-            if (prev is not null && next is not null
-                && string.Equals(prev.Title, next.Title, StringComparison.Ordinal)
-                && string.Equals(prev.Artist, next.Artist, StringComparison.Ordinal)
-                && ThumbEqual(prev.ThumbnailPng, next.ThumbnailPng)
-                && prev.IsPlaying == next.IsPlaying
-                && (Math.Abs(prev.PositionSeconds - next.PositionSeconds) >= 0.05
-                    || Math.Abs(prev.DurationSeconds - next.DurationSeconds) >= 0.5))
+            return _smtc.PlayPauseAsync();
+        }
+
+        public Task NextAsync()
+        {
+            return _smtc.NextAsync();
+        }
+
+        public Task PreviousAsync()
+        {
+            return _smtc.PreviousAsync();
+        }
+
+        public Task SeekAsync(double positionSeconds)
+        {
+            return _smtc.SeekAsync(positionSeconds);
+        }
+
+        public async Task ToggleShuffleAsync()
+        {
+            await _smtc.ToggleShuffleAsync();
+            if (_wnp is WebNowPlayingReduxHost host)
             {
-                ProgressChanged?.Invoke(this, EventArgs.Empty);
+                await host.TryToggleShuffleAsync();
+            }
+        }
+        public async Task ToggleRepeatAsync()
+        {
+            await _smtc.ToggleRepeatAsync();
+            if (_wnp is WebNowPlayingReduxHost host)
+            {
+                await host.TryToggleRepeatAsync();
+            }
+        }
+        public async Task ToggleLikeAsync(bool wantLiked)
+        {
+            await _smtc.ToggleLikeAsync(wantLiked);
+            if (_wnp is WebNowPlayingReduxHost host)
+            {
+                await host.TrySetLikeAsync(wantLiked);
+            }
+        }
+
+        public async Task ToggleDislikeAsync(bool wantDisliked)
+        {
+            await _smtc.ToggleDislikeAsync(wantDisliked);
+            if (_wnp is WebNowPlayingReduxHost host)
+            {
+                await host.TrySetDislikeAsync(wantDisliked);
+            }
+        }
+
+        public void Dispose()
+        {
+            _smtc.Changed -= OnSourceChanged;
+            _smtc.ProgressChanged -= OnSmtcProgress;
+            _wnp.Changed -= OnSourceChanged;
+            _smtc.Dispose();
+            _wnp.Dispose();
+        }
+
+        private void OnSourceChanged(object? sender, EventArgs e)
+        {
+            Rebuild(raiseProgress: false);
+        }
+
+        private void OnSmtcProgress(object? sender, EventArgs e)
+        {
+            Rebuild(raiseProgress: true);
+        }
+
+        private void Rebuild(bool raiseProgress)
+        {
+            MediaSessionInfo? smtc = _smtc.Current;
+            WnpPlayerSnapshot? wnp = _wnp.Active;
+            MediaSessionInfo? prev = Current;
+            MediaSessionInfo? next = Merge(smtc, wnp);
+            Current = next;
+
+            if (prev is null && next is null)
+            {
                 return;
             }
-        }
 
-        if (!SessionEqual(prev, next))
-            Changed?.Invoke(this, EventArgs.Empty);
-        else if (raiseProgress && prev is not null && next is not null
-                 && Math.Abs(prev.PositionSeconds - next.PositionSeconds) >= 0.05)
-            ProgressChanged?.Invoke(this, EventArgs.Empty);
-    }
+            bool raiseChanged = false;
 
-    internal static MediaSessionInfo? Merge(MediaSessionInfo? smtc, WnpPlayerSnapshot? wnp)
-    {
-        if (smtc is null && wnp is null) return null;
-
-        if (smtc is null)
-        {
-            return new MediaSessionInfo(
-                Title: NullIfEmpty(wnp!.Title),
-                Artist: NullIfEmpty(wnp.Artist),
-                AppId: NullIfEmpty(wnp.Name) ?? "WebNowPlaying",
-                IsPlaying: wnp.IsPlaying,
-                ThumbnailPng: wnp.CoverPng,
-                PositionSeconds: wnp.PositionSeconds,
-                DurationSeconds: wnp.DurationSeconds,
-                LikeRating: wnp.Rating);
-        }
-
-        // Prefer any WNP cover when SMTC has none (YTM PWA / browser)
-        var thumb = PickCover(smtc.ThumbnailPng, wnp?.CoverPng, smtc.Title, wnp?.Title, smtc.AppId);
-        var title = smtc.Title;
-        var artist = smtc.Artist;
-        if (wnp is not null && !string.IsNullOrWhiteSpace(wnp.Title)
-            && (LooksLikeBrowserSession(smtc.AppId)
-                || TitlesLooselyMatch(smtc.Title, wnp.Title)))
-        {
-            // Use WNP title/artist when SMTC is empty or still agrees with WNP.
-            // Do not keep a stale WNP title when SMTC already advanced to a new track;
-            // that swallowed Media.Changed and blocked Tessera media flyouts.
-            if (string.IsNullOrWhiteSpace(smtc.Title) || TitlesLooselyMatch(smtc.Title, wnp.Title))
+            if (prev is not null && smtc is not null)
             {
-                title = wnp.Title;
-                if (!string.IsNullOrWhiteSpace(wnp.Artist))
-                    artist = wnp.Artist;
+                if (!string.IsNullOrWhiteSpace(smtc.Title)
+                    && !string.Equals(prev.Title, smtc.Title, StringComparison.Ordinal))
+                {
+                    raiseChanged = true;
+                }
+
+                if (!raiseChanged
+                    && MediaSessionChangePolicy.LooksLikeNewTrackPosition(
+                        prev.PositionSeconds, smtc.PositionSeconds))
+                {
+                    raiseChanged = true;
+                }
             }
 
-            if (!IsUsableCover(thumb) && IsUsableCover(wnp.CoverPng))
-                thumb = wnp.CoverPng;
-        }
-
-        // Prefer WNP timeline when SMTC duration is missing / sticky
-        var pos = smtc.PositionSeconds;
-        var dur = smtc.DurationSeconds;
-        if (wnp is not null && wnp.DurationSeconds > 0
-            && (dur <= 0.5 || LooksLikeBrowserSession(smtc.AppId)))
-        {
-            // WNP position often lags a skip; do not mask SMTC restart edges.
-            if (!MediaSessionChangePolicy.LooksLikeNewTrackPosition(
-                    wnp.PositionSeconds, smtc.PositionSeconds))
+            if (!raiseChanged
+                && prev is not null
+                && next is not null
+                && MediaSessionChangePolicy.LooksLikeNewTrackPosition(
+                    prev.PositionSeconds, next.PositionSeconds))
             {
-                pos = MediaSessionChangePolicy.ResolvePlayingPosition(
-                    smtc.PositionSeconds,
-                    wnp.PositionSeconds,
-                    smtc.IsPlaying,
-                    incomingReportedChange: true);
-                dur = wnp.DurationSeconds;
+                raiseChanged = true;
+            }
+
+            if (raiseChanged)
+            {
+                Changed?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+
+            if (raiseProgress)
+            {
+                if (prev is not null && next is not null
+                    && string.Equals(prev.Title, next.Title, StringComparison.Ordinal)
+                    && string.Equals(prev.Artist, next.Artist, StringComparison.Ordinal)
+                    && ThumbEqual(prev.ThumbnailPng, next.ThumbnailPng)
+                    && prev.IsPlaying == next.IsPlaying
+                    && (Math.Abs(prev.PositionSeconds - next.PositionSeconds) >= 0.05
+                        || Math.Abs(prev.DurationSeconds - next.DurationSeconds) >= 0.5))
+                {
+                    ProgressChanged?.Invoke(this, EventArgs.Empty);
+                    return;
+                }
+            }
+
+            if (!SessionEqual(prev, next))
+            {
+                Changed?.Invoke(this, EventArgs.Empty);
+            }
+            else if (raiseProgress && prev is not null && next is not null
+                     && Math.Abs(prev.PositionSeconds - next.PositionSeconds) >= 0.05)
+            {
+                ProgressChanged?.Invoke(this, EventArgs.Empty);
             }
         }
 
-        return smtc with
+        internal static MediaSessionInfo? Merge(MediaSessionInfo? smtc, WnpPlayerSnapshot? wnp)
         {
-            Title = title,
-            Artist = artist,
-            ThumbnailPng = thumb,
-            PositionSeconds = pos,
-            DurationSeconds = dur,
-            LikeRating = ResolveLikeRating(smtc.AppId, wnp?.Rating),
-        };
-    }
+            if (smtc is null && wnp is null)
+            {
+                return null;
+            }
 
-    private static int? ResolveLikeRating(string? appId, int? wnpRating)
-    {
-        if (!LooksLikeBrowserSession(appId) || wnpRating is null)
-            return null;
-        return wnpRating.Value;
-    }
+            if (smtc is null)
+            {
+                return new MediaSessionInfo(
+                    Title: NullIfEmpty(wnp!.Title),
+                    Artist: NullIfEmpty(wnp.Artist),
+                    AppId: NullIfEmpty(wnp.Name) ?? "WebNowPlaying",
+                    IsPlaying: wnp.IsPlaying,
+                    ThumbnailPng: wnp.CoverPng,
+                    PositionSeconds: wnp.PositionSeconds,
+                    DurationSeconds: wnp.DurationSeconds,
+                    LikeRating: wnp.Rating);
+            }
 
-    private static bool LooksLikeBrowserSession(string? appId)
-    {
-        if (string.IsNullOrEmpty(appId)) return false;
-        return appId.Contains("youtube", StringComparison.OrdinalIgnoreCase)
-               || appId.Contains("chrome", StringComparison.OrdinalIgnoreCase)
-               || appId.Contains("msedge", StringComparison.OrdinalIgnoreCase)
-               || appId.Contains("firefox", StringComparison.OrdinalIgnoreCase)
-               || appId.Contains("music.youtube", StringComparison.OrdinalIgnoreCase)
-               || appId.Contains("brave", StringComparison.OrdinalIgnoreCase);
-    }
+            // Prefer any WNP cover when SMTC has none (YTM PWA / browser)
+            byte[]? thumb = PickCover(smtc.ThumbnailPng, wnp?.CoverPng, smtc.Title, wnp?.Title, smtc.AppId);
+            string? title = smtc.Title;
+            string? artist = smtc.Artist;
+            if (wnp is not null && !string.IsNullOrWhiteSpace(wnp.Title)
+                && (LooksLikeBrowserSession(smtc.AppId)
+                    || TitlesLooselyMatch(smtc.Title, wnp.Title)))
+            {
+                // Use WNP title/artist when SMTC is empty or still agrees with WNP.
+                // Do not keep a stale WNP title when SMTC already advanced to a new track;
+                // that swallowed Media.Changed and blocked Tessera media flyouts.
+                if (string.IsNullOrWhiteSpace(smtc.Title) || TitlesLooselyMatch(smtc.Title, wnp.Title))
+                {
+                    title = wnp.Title;
+                    if (!string.IsNullOrWhiteSpace(wnp.Artist))
+                    {
+                        artist = wnp.Artist;
+                    }
+                }
 
-    private static bool TitlesLooselyMatch(string? a, string? b)
-    {
-        if (string.IsNullOrWhiteSpace(a) || string.IsNullOrWhiteSpace(b)) return false;
-        static string Norm(string s)
-        {
-            var i = s.IndexOf('|');
-            if (i > 0) s = s[..i];
-            return s.Trim();
+                if (!IsUsableCover(thumb) && IsUsableCover(wnp.CoverPng))
+                {
+                    thumb = wnp.CoverPng;
+                }
+            }
+
+            // Prefer WNP timeline when SMTC duration is missing / sticky
+            double pos = smtc.PositionSeconds;
+            double dur = smtc.DurationSeconds;
+            if (wnp is not null && wnp.DurationSeconds > 0
+                && (dur <= 0.5 || LooksLikeBrowserSession(smtc.AppId)))
+            {
+                // WNP position often lags a skip; do not mask SMTC restart edges.
+                if (!MediaSessionChangePolicy.LooksLikeNewTrackPosition(
+                        wnp.PositionSeconds, smtc.PositionSeconds))
+                {
+                    pos = MediaSessionChangePolicy.ResolvePlayingPosition(
+                        smtc.PositionSeconds,
+                        wnp.PositionSeconds,
+                        smtc.IsPlaying,
+                        incomingReportedChange: true);
+                    dur = wnp.DurationSeconds;
+                }
+            }
+
+            return smtc with
+            {
+                Title = title,
+                Artist = artist,
+                ThumbnailPng = thumb,
+                PositionSeconds = pos,
+                DurationSeconds = dur,
+                LikeRating = ResolveLikeRating(smtc.AppId, wnp?.Rating),
+            };
         }
-        return string.Equals(Norm(a), Norm(b), StringComparison.OrdinalIgnoreCase);
+
+        private static int? ResolveLikeRating(string? appId, int? wnpRating)
+        {
+            return !LooksLikeBrowserSession(appId) || wnpRating is null ? null : wnpRating.Value;
+        }
+
+        private static bool LooksLikeBrowserSession(string? appId)
+        {
+            return !string.IsNullOrEmpty(appId) && (appId.Contains("youtube", StringComparison.OrdinalIgnoreCase)
+                   || appId.Contains("chrome", StringComparison.OrdinalIgnoreCase)
+                   || appId.Contains("msedge", StringComparison.OrdinalIgnoreCase)
+                   || appId.Contains("firefox", StringComparison.OrdinalIgnoreCase)
+                   || appId.Contains("music.youtube", StringComparison.OrdinalIgnoreCase)
+                   || appId.Contains("brave", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool TitlesLooselyMatch(string? a, string? b)
+        {
+            if (string.IsNullOrWhiteSpace(a) || string.IsNullOrWhiteSpace(b))
+            {
+                return false;
+            }
+
+            static string Norm(string s)
+            {
+                int i = s.IndexOf('|');
+                if (i > 0)
+                {
+                    s = s[..i];
+                }
+
+                return s.Trim();
+            }
+            return string.Equals(Norm(a), Norm(b), StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string? NullIfEmpty(string? s)
+        {
+            return string.IsNullOrWhiteSpace(s) ? null : s;
+        }
+
+        private static bool ThumbEqual(byte[]? a, byte[]? b)
+        {
+            return ReferenceEquals(a, b) ? true : a is not null && b is not null && a.Length == b.Length && a.AsSpan().SequenceEqual(b);
+        }
+
+        private static bool SessionEqual(MediaSessionInfo? a, MediaSessionInfo? b)
+        {
+            return ReferenceEquals(a, b) || (a is not null && b is not null && string.Equals(a.Title, b.Title, StringComparison.Ordinal)
+                   && string.Equals(a.Artist, b.Artist, StringComparison.Ordinal)
+                   && string.Equals(a.AppId, b.AppId, StringComparison.Ordinal)
+                   && a.IsPlaying == b.IsPlaying
+                   && ThumbEqual(a.ThumbnailPng, b.ThumbnailPng)
+                   && Math.Abs(a.DurationSeconds - b.DurationSeconds) < 0.5);
+        }
+
+        public static bool IsUsableCover(byte[]? bytes)
+        {
+            return bytes is not null && bytes.Length >= 32 && (LooksLikePng(bytes) || LooksLikeJpeg(bytes) || LooksLikeWebp(bytes) || bytes.Length >= 256);
+        }
+
+        internal static byte[]? PickCover(
+            byte[]? smtcThumb, byte[]? wnpCover, string? smtcTitle, string? wnpTitle, string? appId)
+        {
+            if (LooksLikeBrowserSession(appId) && IsUsableCover(wnpCover))
+            {
+                return wnpCover;
+            }
+
+            if (IsUsableCover(smtcThumb))
+            {
+                return smtcThumb;
+            }
+
+            return IsUsableCover(wnpCover)
+                ? wnpCover
+                : WebNowPlayingReduxHost.TryGetCachedCover(smtcTitle, out byte[]? png) && IsUsableCover(png)
+                ? png
+                : WebNowPlayingReduxHost.TryGetCachedCover(wnpTitle, out byte[]? png2) && IsUsableCover(png2)
+                ? png2
+                : IsUsableCover(smtcThumb) ? smtcThumb : null;
+        }
+
+        private static bool LooksLikePng(byte[] b)
+        {
+            return b.Length > 8 && b[0] == 137 && b[1] == 80 && b[2] == 78 && b[3] == 71;
+        }
+
+        private static bool LooksLikeJpeg(byte[] b)
+        {
+            return b.Length > 3 && b[0] == 255 && b[1] == 216 && b[2] == 255;
+        }
+
+        private static bool LooksLikeWebp(byte[] b)
+        {
+            return b.Length > 12 && b[0] == 82 && b[1] == 73 && b[2] == 70 && b[3] == 70;
+        }
     }
-
-    private static string? NullIfEmpty(string? s) =>
-        string.IsNullOrWhiteSpace(s) ? null : s;
-
-    private static bool ThumbEqual(byte[]? a, byte[]? b)
-    {
-        if (ReferenceEquals(a, b)) return true;
-        if (a is null || b is null) return false;
-        if (a.Length != b.Length) return false;
-        return a.AsSpan().SequenceEqual(b);
-    }
-
-    private static bool SessionEqual(MediaSessionInfo? a, MediaSessionInfo? b)
-    {
-        if (ReferenceEquals(a, b)) return true;
-        if (a is null || b is null) return false;
-        return string.Equals(a.Title, b.Title, StringComparison.Ordinal)
-               && string.Equals(a.Artist, b.Artist, StringComparison.Ordinal)
-               && string.Equals(a.AppId, b.AppId, StringComparison.Ordinal)
-               && a.IsPlaying == b.IsPlaying
-               && ThumbEqual(a.ThumbnailPng, b.ThumbnailPng)
-               && Math.Abs(a.DurationSeconds - b.DurationSeconds) < 0.5;
-    }
-
-    public static bool IsUsableCover(byte[]? bytes)
-    {
-        if (bytes is null || bytes.Length < 32) return false;
-        if (LooksLikePng(bytes) || LooksLikeJpeg(bytes) || LooksLikeWebp(bytes)) return true;
-        return bytes.Length >= 256;
-    }
-
-    internal static byte[]? PickCover(
-        byte[]? smtcThumb, byte[]? wnpCover, string? smtcTitle, string? wnpTitle, string? appId)
-    {
-        if (LooksLikeBrowserSession(appId) && IsUsableCover(wnpCover))
-            return wnpCover;
-        if (IsUsableCover(smtcThumb))
-            return smtcThumb;
-        if (IsUsableCover(wnpCover))
-            return wnpCover;
-        if (WebNowPlaying.WebNowPlayingReduxHost.TryGetCachedCover(smtcTitle, out var png) && IsUsableCover(png))
-            return png;
-        if (WebNowPlaying.WebNowPlayingReduxHost.TryGetCachedCover(wnpTitle, out var png2) && IsUsableCover(png2))
-            return png2;
-        return IsUsableCover(smtcThumb) ? smtcThumb : null;
-    }
-
-    private static bool LooksLikePng(byte[] b) =>
-        b.Length > 8 && b[0] == 137 && b[1] == 80 && b[2] == 78 && b[3] == 71;
-
-    private static bool LooksLikeJpeg(byte[] b) =>
-        b.Length > 3 && b[0] == 255 && b[1] == 216 && b[2] == 255;
-
-    private static bool LooksLikeWebp(byte[] b) =>
-        b.Length > 12 && b[0] == 82 && b[1] == 73 && b[2] == 70 && b[3] == 70;
 }

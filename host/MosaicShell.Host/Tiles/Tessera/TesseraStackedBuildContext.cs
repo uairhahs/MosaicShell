@@ -1,48 +1,50 @@
 using Avalonia.Controls;
 using MosaicShell.Core.Modules.Tessera;
 
-namespace MosaicShell.Host.Tiles.Tessera;
-
-/// <summary>Ambient context while building one stacked acrylic panel (H3).</summary>
-internal static class TesseraStackedBuildContext
+namespace MosaicShell.Host.Tiles.Tessera
 {
-    [ThreadStatic] private static TesseraStackedPanelRole? _role;
-    [ThreadStatic] private static TesseraLiveBindings? _bindings;
-
-    public static TesseraStackedPanelRole? Role => _role;
-    public static bool IsActive => _role is not null;
-    public static TesseraLiveBindings? Bindings => _bindings;
-
-    public static IDisposable Begin(TesseraStackedPanelRole role, TesseraLiveBindings bindings)
+    /// <summary>Ambient context while building one stacked acrylic panel (H3).</summary>
+    internal static class TesseraStackedBuildContext
     {
-        _role = role;
-        _bindings = bindings;
-        return new Scope();
-    }
+        [field: ThreadStatic]
+        public static TesseraStackedPanelRole? Role { get; private set; }
+        public static bool IsActive => Role is not null;
+        [field: ThreadStatic]
+        public static TesseraLiveBindings? Bindings { get; private set; }
 
-    public static Control? TryCreatePanel(
-        TesseraFlyoutViewModel vm,
-        Func<TesseraFlyoutViewModel, Control> buildVolume,
-        Func<TesseraFlyoutViewModel, Control> buildMedia,
-        Func<Control, Control>? wrapVolume = null,
-        Func<Control, Control>? wrapMedia = null)
-    {
-        if (_role is not { } role)
-            return null;
-
-        var panel = role == TesseraStackedPanelRole.Volume
-            ? buildVolume(vm)
-            : buildMedia(vm);
-        var wrap = role == TesseraStackedPanelRole.Volume ? wrapVolume : wrapMedia;
-        return wrap is not null ? wrap(panel) : panel;
-    }
-
-    private sealed class Scope : IDisposable
-    {
-        public void Dispose()
+        public static IDisposable Begin(TesseraStackedPanelRole role, TesseraLiveBindings bindings)
         {
-            _role = null;
-            _bindings = null;
+            Role = role;
+            Bindings = bindings;
+            return new Scope();
+        }
+
+        public static Control? TryCreatePanel(
+            TesseraFlyoutViewModel vm,
+            Func<TesseraFlyoutViewModel, Control> buildVolume,
+            Func<TesseraFlyoutViewModel, Control> buildMedia,
+            Func<Control, Control>? wrapVolume = null,
+            Func<Control, Control>? wrapMedia = null)
+        {
+            if (Role is not { } role)
+            {
+                return null;
+            }
+
+            Control panel = role == TesseraStackedPanelRole.Volume
+                ? buildVolume(vm)
+                : buildMedia(vm);
+            Func<Control, Control>? wrap = role == TesseraStackedPanelRole.Volume ? wrapVolume : wrapMedia;
+            return wrap is not null ? wrap(panel) : panel;
+        }
+
+        private sealed class Scope : IDisposable
+        {
+            public void Dispose()
+            {
+                Role = null;
+                Bindings = null;
+            }
         }
     }
 }

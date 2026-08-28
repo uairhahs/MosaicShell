@@ -1,140 +1,141 @@
 using MosaicShell.Core.Modules.Tessera;
 
-namespace MosaicShell.Core.Settings;
-
-public sealed class ChronoSettings
+namespace MosaicShell.Core.Settings
 {
-    public string Style { get; set; } = "Square";
-    public bool TwentyFourHour { get; set; } = true;
-    public bool ShowSeconds { get; set; } = true;
-}
-
-public sealed class CanvasSettings
-{
-    public string Style { get; set; } = "DEFAULT";
-    public bool ShowCpu { get; set; } = true;
-    public bool ShowRam { get; set; } = true;
-    public bool ShowDisk { get; set; } = true;
-    public bool ShowHost { get; set; } = true;
-}
-
-public sealed class PhonoSettings
-{
-    public string Style { get; set; } = "Compact";
-    public bool ShowArtist { get; set; } = true;
-}
-
-public sealed class PulseSettings
-{
-    public string Style { get; set; } = "Regular";
-    public string VisualizerType { get; set; } = "Bar";
-}
-
-public sealed class TesseraSettings
-{
-    public string Style { get; set; } = "Fluent";
-    /// <summary>Nine-point anchor: TL/TC/TR/CL/CC/CR/BL/BC/BR (JaxCore default TL)</summary>
-    public string Position { get; set; } = "TL";
-    public int MonitorIndex { get; set; } = 1;
-    public int XPad { get; set; } = 20;
-    public int YPad { get; set; } = 20;
-    public int AutoDismissMs { get; set; } = 2000;
-    /// <summary>0 = fade, 1 = fast slide+fade, 2 = fancy slide+fade</summary>
-    public int Ani { get; set; } = 2;
-    /// <summary>Left/Right/Top/Bottom</summary>
-    public string AniDir { get; set; } = "Left";
-    /// <summary>Linear, InCubic, OutCubic, InOutCubic, InQuart, OutQuart, InOutQuart (YourFlyouts Easetype).</summary>
-    public string AniEase { get; set; } = TesseraFlyoutAnimationPolicy.DefaultEase;
-    /// <summary>YourFlyouts AniSteps (10..40).</summary>
-    public int AniSteps { get; set; } = TesseraFlyoutAnimationPolicy.DefaultAniSteps;
-    /// <summary>YourFlyouts AnimationDisplacement in physical pixels (10..200).</summary>
-    public int AnimationDisplacement { get; set; } = TesseraFlyoutAnimationPolicy.DefaultDisplacementPx;
-    /// <summary>Default on - Win11 volume notifications are often unreliable (JaxCore guidance).</summary>
-    public bool UseLegacyVolumeHooks { get; set; } = true;
-    public double LegacyVolumeStep { get; set; } = 0.02;
-    public bool EnableMediaFlyouts { get; set; } = true;
-    public bool EnableLockFlyouts { get; set; } = true;
-    public bool EnableFlightFlyouts { get; set; } = true;
-    public bool ShowMediaStripOnVolume { get; set; } = true;
-    /// <summary>Soft frost tint on flyout shell (not OS acrylic).</summary>
-    public bool UseAcrylicBackdrop { get; set; } = true;
-    /// <summary>
-    /// Win11 OS AcrylicBlur on eligible Tessera flyouts. Honored only after Win11 eval sign-off; default off.
-    /// </summary>
-    public bool UseOsAcrylic { get; set; }
-    /// <summary>Subtle click-through desktop dim behind flyout.</summary>
-    public bool UseFocusDim { get; set; } = true;
-    /// <summary>Flyout size multiplier percent (50-150). Default 100.</summary>
-    public int FlyoutScalePercent { get; set; } = 100;
-    /// <summary>Skia live backdrop blur on Tessera glass.</summary>
-    public bool UseBackdropBlur { get; set; } = true;
-
-    /// <summary>Legacy JSON key; mirrors <see cref="UseBackdropBlur"/>.</summary>
-    public bool UseBakedFrost
+    public sealed class ChronoSettings
     {
-        get => UseBackdropBlur;
-        set => UseBackdropBlur = value;
+        public string Style { get; set; } = "Square";
+        public bool TwentyFourHour { get; set; } = true;
+        public bool ShowSeconds { get; set; } = true;
     }
-    /// <summary>Custom flyout accent (#RRGGBB). Empty = Windows system accent.</summary>
-    public string AccentColor { get; set; } = "";
-}
 
-public sealed class MixdeckSettings
-{
-    public string Style { get; set; } = "Fluent";
-    /// <summary>YourMixer-inspired palette (Default, Dark, Light, Accent, Frost, Midnight, Sunset).</summary>
-    public string ColorScheme { get; set; } = "Default";
-    public string HotkeyGesture { get; set; } = "Ctrl+Alt+M";
-    public bool CloseOnEscape { get; set; } = true;
-}
+    public sealed class CanvasSettings
+    {
+        public string Style { get; set; } = "DEFAULT";
+        public bool ShowCpu { get; set; } = true;
+        public bool ShowRam { get; set; } = true;
+        public bool ShowDisk { get; set; } = true;
+        public bool ShowHost { get; set; } = true;
+    }
 
-public sealed class InlaySettings
-{
-    public string Style { get; set; } = "Windows11";
-    public string HotkeyGesture { get; set; } = "Ctrl+Alt+I";
-    public bool CloseOnEscape { get; set; } = true;
-    public List<string> Pins { get; set; } = ["notepad", "calc"];
-}
+    public sealed class PhonoSettings
+    {
+        public string Style { get; set; } = "Compact";
+        public bool ShowArtist { get; set; } = true;
+    }
 
-public sealed class ChordSettings
-{
-    public string Style { get; set; } = "Square";
-    public string HotkeyGesture { get; set; } = "Ctrl+Alt+K";
-    public bool CloseOnEscape { get; set; } = true;
-    public List<ChordAction> Actions { get; set; } =
-    [
-        new() { Name = "Notepad", Target = "notepad" },
-        new() { Name = "Calculator", Target = "calc" },
-        new() { Name = "Settings", Target = "ms-settings:" }
-    ];
-}
+    public sealed class PulseSettings
+    {
+        public string Style { get; set; } = "Regular";
+        public string VisualizerType { get; set; } = "Bar";
+    }
 
-public sealed class ChordAction
-{
-    public string Name { get; set; } = "";
-    public string Target { get; set; } = "";
-}
+    public sealed class TesseraSettings
+    {
+        public string Style { get; set; } = "Fluent";
+        /// <summary>Nine-point anchor: TL/TC/TR/CL/CC/CR/BL/BC/BR (JaxCore default TL)</summary>
+        public string Position { get; set; } = "TL";
+        public int MonitorIndex { get; set; } = 1;
+        public int XPad { get; set; } = 20;
+        public int YPad { get; set; } = 20;
+        public int AutoDismissMs { get; set; } = 2000;
+        /// <summary>0 = fade, 1 = fast slide+fade, 2 = fancy slide+fade</summary>
+        public int Ani { get; set; } = 2;
+        /// <summary>Left/Right/Top/Bottom</summary>
+        public string AniDir { get; set; } = "Left";
+        /// <summary>Linear, InCubic, OutCubic, InOutCubic, InQuart, OutQuart, InOutQuart (YourFlyouts Easetype).</summary>
+        public string AniEase { get; set; } = TesseraFlyoutAnimationPolicy.DefaultEase;
+        /// <summary>YourFlyouts AniSteps (10..40).</summary>
+        public int AniSteps { get; set; } = TesseraFlyoutAnimationPolicy.DefaultAniSteps;
+        /// <summary>YourFlyouts AnimationDisplacement in physical pixels (10..200).</summary>
+        public int AnimationDisplacement { get; set; } = TesseraFlyoutAnimationPolicy.DefaultDisplacementPx;
+        /// <summary>Default on - Win11 volume notifications are often unreliable (JaxCore guidance).</summary>
+        public bool UseLegacyVolumeHooks { get; set; } = true;
+        public double LegacyVolumeStep { get; set; } = 0.02;
+        public bool EnableMediaFlyouts { get; set; } = true;
+        public bool EnableLockFlyouts { get; set; } = true;
+        public bool EnableFlightFlyouts { get; set; } = true;
+        public bool ShowMediaStripOnVolume { get; set; } = true;
+        /// <summary>Soft frost tint on flyout shell (not OS acrylic).</summary>
+        public bool UseAcrylicBackdrop { get; set; } = true;
+        /// <summary>
+        /// Win11 OS AcrylicBlur on eligible Tessera flyouts. Honored only after Win11 eval sign-off; default off.
+        /// </summary>
+        public bool UseOsAcrylic { get; set; }
+        /// <summary>Subtle click-through desktop dim behind flyout.</summary>
+        public bool UseFocusDim { get; set; } = true;
+        /// <summary>Flyout size multiplier percent (50-150). Default 100.</summary>
+        public int FlyoutScalePercent { get; set; } = 100;
+        /// <summary>Skia live backdrop blur on Tessera glass.</summary>
+        public bool UseBackdropBlur { get; set; } = true;
 
-public sealed class SubstrateSettings
-{
-    public string Style { get; set; } = "DEFAULT";
-    public string HotkeyGesture { get; set; } = "Ctrl+Alt+Q";
-    public bool ShowMute { get; set; } = true;
-    public bool CloseOnEscape { get; set; } = true;
-}
+        /// <summary>Legacy JSON key; mirrors <see cref="UseBackdropBlur"/>.</summary>
+        public bool UseBakedFrost
+        {
+            get => UseBackdropBlur;
+            set => UseBackdropBlur = value;
+        }
+        /// <summary>Custom flyout accent (#RRGGBB). Empty = Windows system accent.</summary>
+        public string AccentColor { get; set; } = "";
+    }
 
-public sealed class SlateSettings
-{
-    public string Style { get; set; } = "Square";
-    public bool HideOnFullscreen { get; set; } = true;
-    public int IdleSeconds { get; set; } = 300;
-}
+    public sealed class MixdeckSettings
+    {
+        public string Style { get; set; } = "Fluent";
+        /// <summary>YourMixer-inspired palette (Default, Dark, Light, Accent, Frost, Midnight, Sunset).</summary>
+        public string ColorScheme { get; set; } = "Default";
+        public string HotkeyGesture { get; set; } = "Ctrl+Alt+M";
+        public bool CloseOnEscape { get; set; } = true;
+    }
 
-public sealed class HubSettings
-{
-    public bool WelcomeCompleted { get; set; }
-    public bool AutostartHost { get; set; }
-    /// <summary>When true, window close hides to tray; when false, close exits the host.</summary>
-    public bool CloseMinimizesToTray { get; set; } = true;
-    public List<string> BatchInstallSelection { get; set; } = [];
+    public sealed class InlaySettings
+    {
+        public string Style { get; set; } = "Windows11";
+        public string HotkeyGesture { get; set; } = "Ctrl+Alt+I";
+        public bool CloseOnEscape { get; set; } = true;
+        public List<string> Pins { get; set; } = ["notepad", "calc"];
+    }
+
+    public sealed class ChordSettings
+    {
+        public string Style { get; set; } = "Square";
+        public string HotkeyGesture { get; set; } = "Ctrl+Alt+K";
+        public bool CloseOnEscape { get; set; } = true;
+        public List<ChordAction> Actions { get; set; } =
+        [
+            new() { Name = "Notepad", Target = "notepad" },
+            new() { Name = "Calculator", Target = "calc" },
+            new() { Name = "Settings", Target = "ms-settings:" }
+        ];
+    }
+
+    public sealed class ChordAction
+    {
+        public string Name { get; set; } = "";
+        public string Target { get; set; } = "";
+    }
+
+    public sealed class SubstrateSettings
+    {
+        public string Style { get; set; } = "DEFAULT";
+        public string HotkeyGesture { get; set; } = "Ctrl+Alt+Q";
+        public bool ShowMute { get; set; } = true;
+        public bool CloseOnEscape { get; set; } = true;
+    }
+
+    public sealed class SlateSettings
+    {
+        public string Style { get; set; } = "Square";
+        public bool HideOnFullscreen { get; set; } = true;
+        public int IdleSeconds { get; set; } = 300;
+    }
+
+    public sealed class HubSettings
+    {
+        public bool WelcomeCompleted { get; set; }
+        public bool AutostartHost { get; set; }
+        /// <summary>When true, window close hides to tray; when false, close exits the host.</summary>
+        public bool CloseMinimizesToTray { get; set; } = true;
+        public List<string> BatchInstallSelection { get; set; } = [];
+    }
 }

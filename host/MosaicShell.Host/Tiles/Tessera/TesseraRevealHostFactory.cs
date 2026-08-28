@@ -1,34 +1,32 @@
 using Avalonia.Controls;
 using MosaicShell.Core.Modules.Tessera;
 
-namespace MosaicShell.Host.Tiles.Tessera;
-
-/// <summary>
-/// Catalog-driven reveal wrap. Layout formulas stay in TesseraLayouts; Host picks
-/// rest sizes and wrap kind from <see cref="TesseraFlyoutTweenTargetCatalog"/>.
-/// </summary>
-internal static class TesseraRevealHostFactory
+namespace MosaicShell.Host.Tiles.Tessera
 {
-    public static Control FromCatalog(
-        TesseraFlyoutViewModel vm,
-        TesseraStackedPanelRole role,
-        Control panel)
+    /// <summary>
+    /// Catalog-driven reveal wrap. Layout formulas stay in TesseraLayouts; Host picks
+    /// rest sizes and wrap kind from <see cref="TesseraFlyoutTweenTargetCatalog"/>.
+    /// </summary>
+    internal static class TesseraRevealHostFactory
     {
-        if (role != TesseraStackedPanelRole.Media || panel is TesseraRevealHost)
-            return panel;
-        if (!vm.ShowMediaStrip || !TesseraFlyoutRevealSpec.StyleSupportsPhase2(vm.StyleId))
-            return panel;
+        public static Control FromCatalog(
+            TesseraFlyoutViewModel vm,
+            TesseraStackedPanelRole role,
+            Control panel)
+        {
+            return role != TesseraStackedPanelRole.Media || panel is TesseraRevealHost
+                ? panel
+                : !vm.ShowMediaStrip || !TesseraFlyoutRevealSpec.StyleSupportsPhase2(vm.StyleId) ? panel : WrapMediaFromCatalog(vm, panel);
+        }
 
-        return WrapMediaFromCatalog(vm, panel);
-    }
-
-    public static TesseraRevealHost WrapMediaFromCatalog(TesseraFlyoutViewModel vm, Control media)
-    {
-        var profile = TesseraFlyoutTweenTargetCatalog.ResolveProfile(vm.StyleId);
-        return TesseraRevealHost.WrapMedia(
-            vm,
-            media,
-            fullMediaWidth: profile.MediaWidthDip,
-            fullMediaHeight: profile.MediaHeightDip);
+        public static TesseraRevealHost WrapMediaFromCatalog(TesseraFlyoutViewModel vm, Control media)
+        {
+            TesseraFlyoutStyleProfile profile = TesseraFlyoutTweenTargetCatalog.ResolveProfile(vm.StyleId);
+            return TesseraRevealHost.WrapMedia(
+                vm,
+                media,
+                fullMediaWidth: profile.MediaWidthDip,
+                fullMediaHeight: profile.MediaHeightDip);
+        }
     }
 }

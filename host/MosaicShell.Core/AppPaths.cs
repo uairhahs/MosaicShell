@@ -1,32 +1,41 @@
-namespace MosaicShell.Core;
+using System.Diagnostics.CodeAnalysis;
 
-public static class AppPaths
+namespace MosaicShell.Core
 {
-    private static string? _rootOverride;
-
-    /// <summary>Optional override for tests / portable installs. Cleared with <see cref="ClearRootOverride"/>.</summary>
-    public static void SetRootOverride(string? root)
+    public static class AppPaths
     {
-        _rootOverride = string.IsNullOrWhiteSpace(root) ? null : Path.GetFullPath(root);
-    }
 
-    public static void ClearRootOverride() => _rootOverride = null;
+        /// <summary>Optional override for tests / portable installs. Cleared with <see cref="ClearRootOverride"/>.</summary>
+        public static void SetRootOverride(string? root)
+        {
+            RootDirectory = string.IsNullOrWhiteSpace(root) ? null : Path.GetFullPath(root);
+        }
 
-    public static string RootDirectory =>
-        _rootOverride
-        ?? Environment.GetEnvironmentVariable("MOSAICSHELL_HOME")
-        ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "MosaicShell");
+        public static void ClearRootOverride()
+        {
+            RootDirectory = null;
+        }
 
-    public static string ConfigDirectory => Path.Combine(RootDirectory, "Config");
-    public static string ModulesDirectory => Path.Combine(RootDirectory, "Modules");
-    public static string CacheDirectory => Path.Combine(RootDirectory, "Cache");
+        [AllowNull]
+        public static string RootDirectory
+        {
+            get =>
+            field
+            ?? Environment.GetEnvironmentVariable("MOSAICSHELL_HOME")
+            ?? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "MosaicShell"); private set;
+        }
 
-    public static void EnsureLayout()
-    {
-        Directory.CreateDirectory(ConfigDirectory);
-        Directory.CreateDirectory(ModulesDirectory);
-        Directory.CreateDirectory(CacheDirectory);
+        public static string ConfigDirectory => Path.Combine(RootDirectory, "Config");
+        public static string ModulesDirectory => Path.Combine(RootDirectory, "Modules");
+        public static string CacheDirectory => Path.Combine(RootDirectory, "Cache");
+
+        public static void EnsureLayout()
+        {
+            _ = Directory.CreateDirectory(ConfigDirectory);
+            _ = Directory.CreateDirectory(ModulesDirectory);
+            _ = Directory.CreateDirectory(CacheDirectory);
+        }
     }
 }

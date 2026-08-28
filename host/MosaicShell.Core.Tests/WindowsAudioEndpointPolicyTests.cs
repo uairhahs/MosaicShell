@@ -1,12 +1,13 @@
 using MosaicShell.Core.HostPlatform;
 
-namespace MosaicShell.Core.Tests;
-
-public class WindowsAudioEndpointPolicyTests
+namespace MosaicShell.Core.Tests
 {
-    [Fact]
-    public void HasDefaultRenderEndpoint_does_not_throw()
+    public class WindowsAudioEndpointPolicyTests
     {
-        var _ = WindowsAudioEndpointPolicy.HasDefaultRenderEndpoint;
+        [Fact]
+        public void HasDefaultRenderEndpoint_does_not_throw()
+        {
+            bool _ = WindowsAudioEndpointPolicy.HasDefaultRenderEndpoint;
+        }
     }
 }

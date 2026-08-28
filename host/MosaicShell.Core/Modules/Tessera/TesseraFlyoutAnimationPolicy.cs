@@ -1,782 +1,851 @@
-namespace MosaicShell.Core.Modules.Tessera;
-
-/// <summary>
-/// Tessera flyout entrance/exit motion. Parity with JaxCore YourFlyouts
-/// (<c>@Resources/Vars.inc</c>, <c>Func.lua</c> tweenAnimation / tweenAnimation2).
-/// </summary>
-public static class TesseraFlyoutAnimationPolicy
+namespace MosaicShell.Core.Modules.Tessera
 {
-    public const string EaseLinear = "Linear";
-
-    public const string EaseInSine = "InSine";
-    public const string EaseOutSine = "OutSine";
-    public const string EaseInOutSine = "InOutSine";
-
-    public const string EaseInQuad = "InQuad";
-    public const string EaseOutQuad = "OutQuad";
-    public const string EaseInOutQuad = "InOutQuad";
-
-    public const string EaseInCubic = "InCubic";
-    public const string EaseOutCubic = "OutCubic";
-    public const string EaseInOutCubic = "InOutCubic";
-
-    public const string EaseInQuart = "InQuart";
-    public const string EaseOutQuart = "OutQuart";
-    public const string EaseInOutQuart = "InOutQuart";
-
-    public const string EaseInQuint = "InQuint";
-    public const string EaseOutQuint = "OutQuint";
-    public const string EaseInOutQuint = "InOutQuint";
-
-    public const string EaseInExpo = "InExpo";
-    public const string EaseOutExpo = "OutExpo";
-    public const string EaseInOutExpo = "InOutExpo";
-
-    public const string EaseInCirc = "InCirc";
-    public const string EaseOutCirc = "OutCirc";
-    public const string EaseInOutCirc = "InOutCirc";
-
-    public const string EaseInBack = "InBack";
-    public const string EaseOutBack = "OutBack";
-    public const string EaseInOutBack = "InOutBack";
-
-    public const string EaseInElastic = "InElastic";
-    public const string EaseOutElastic = "OutElastic";
-    public const string EaseInOutElastic = "InOutElastic";
-
-    public const string EaseInBounce = "InBounce";
-    public const string EaseOutBounce = "OutBounce";
-    public const string EaseInOutBounce = "InOutBounce";
-
-    /// <summary>YourFlyouts default (<c>Easetype=OutQuart</c>).</summary>
-    public const string DefaultEase = EaseOutQuart;
-
-    /// <summary>YourFlyouts <c>AniSteps=20</c>.</summary>
-    public const int DefaultAniSteps = 20;
-
-    /// <summary>ActionTimer Repeat delay in Ani1/Ani2.inc (below a 60 Hz frame).</summary>
-    public const int EncodedActionTimerIntervalMs = 2;
-
     /// <summary>
-    /// Wall-clock per tween tick. One 60 Hz frame so 20 steps present 20 distinct
-    /// eased samples. Encoding steps * EncodedActionTimerIntervalMs is 40 ms and
-    /// every easing family looks like a pop.
+    /// Tessera flyout entrance/exit motion. Parity with JaxCore YourFlyouts
+    /// (<c>@Resources/Vars.inc</c>, <c>Func.lua</c> tweenAnimation / tweenAnimation2).
     /// </summary>
-    public const int StepPresentationIntervalMs = 16;
-
-    /// <summary>Below this, In vs Out and Bounce vs Linear are not readable on a 60 Hz display.</summary>
-    public const int MinPerceptiblePhaseDurationMs = 200;
-
-    /// <summary>Ani2 Fancy pause between phase 1 and phase 2 (Ani2.inc Wait 100).</summary>
-    public const int FancyPauseMs = 100;
-
-    /// <summary>YourFlyouts <c>AnimationDisplacement=30</c> (physical pixels).</summary>
-    public const int DefaultDisplacementPx = 30;
-
-    public const int MinAniSteps = 10;
-    public const int MaxAniSteps = 40;
-    public const int MinDisplacementPx = 10;
-    public const int MaxDisplacementPx = 200;
-
-    /// <summary>Ani0 uses built-in fade instead of slide tween.</summary>
-    public const bool AniNoneUsesBuiltInFade = true;
-
-    /// <summary>
-    /// YourFlyouts Ani0.inc Showfade ignores AniSteps. Rainmeter default FadeDuration is 250 ms.
-    /// </summary>
-    public const bool AniNoneIgnoresAniSteps = true;
-
-    /// <summary>Rainmeter default <c>FadeDuration</c> (Main.ini does not override).</summary>
-    public const int FadeDurationMs = 250;
-
-    /// <summary>
-    /// Ani0 fade keyframe count. Two samples would lerp linearly and hide In vs Out.
-    /// </summary>
-    public static int ResolveFadeSampleCount() =>
-        Math.Max(MinAniSteps, FadeDurationMs / StepPresentationIntervalMs);
-
-    /// <summary>
-    /// YourFlyouts TweenNode1 is skin-wide (Ani2 In2). Stacked Host must not restrict
-    /// phase 2 to the Media HWND.
-    /// </summary>
-    public const bool StackedPhase2MustNotBeMediaSlotOnly = true;
-
-    /// <summary>
-    /// Rainmeter YourFlyouts moves the skin HWND. Avalonia SoftFrost/OS acrylic repaints every
-    /// <c>Position</c> step and reads clunky; Host slides via <see cref="MustAnimateRenderTransform"/>.
-    /// </summary>
-    public const bool Phase1MustUseWindowPosition = true;
-
-    public const bool MustAnimateWindowPosition = false;
-
-    /// <summary>Translate the whole flyout surface at a fixed anchor (GPU-friendly).</summary>
-    public const bool MustAnimateRenderTransform = true;
-
-    /// <summary>Host must not relayout mid-motion (prevents anchor snap).</summary>
-    public const bool RelayoutMustDeferDuringMotion = true;
-
-    /// <summary>
-    /// Phase-2 HWND resize was tried so the Win11 card could grow. SoftFrost Transparent
-    /// swapchain clears to black on each SetWindowPos. Host pre-sizes to rest bounds and clips.
-    /// </summary>
-    public const bool RelayoutAllowedDuringPhase2 = false;
-
-    /// <summary>Phase 2 must clip in-place; do not SizeToContent / SetWindowPos per tween step.</summary>
-    public const bool Phase2MustNotResizeHwnd = true;
-
-    /// <summary>
-    /// Fancy binders must not change DesiredSize (Width/Height/TrackThickness).
-    /// Clip and RenderTransform follow TweenNode1; measure stays rest (YourFlyouts skin size).
-    /// </summary>
-    public const bool Phase2MustNotMutateLayoutMeasure = true;
-
-    /// <summary>Aborted Fancy entrance on the owning generation must snap TweenNode1 to rest.</summary>
-    public const bool CancelledEntranceMustSnapToRest = true;
-
-    /// <summary>
-    /// A visible session that is not running motion must keep TweenNode1 and the HWND
-    /// region at rest. Cancelled/superseded Fancy must not leave a partial media clip
-    /// (art column only, jumping scrubber).
-    /// </summary>
-    public const bool IdleShowingSessionMustSnapRevealToRest = true;
-
-    /// <summary>ApplyRequest supersedes in-flight motion and must clear the Host motion flag.</summary>
-    public const bool MotionAnimatingMustClearOnSupersede = true;
-
-    /// <summary>
-    /// Hide tweens must be cancelled when a show supersedes. Leaving them running
-    /// writes TweenNode1 back to 0 after fade-in (empty media bay, jumping scrubber).
-    /// </summary>
-    public const bool SupersededMotionMustCancelInFlightTweens = true;
-
-    public static bool ShouldDeferRelayoutDuringMotion(bool motionAnimating, bool phase2Animating)
+    public static class TesseraFlyoutAnimationPolicy
     {
-        _ = phase2Animating;
-        return motionAnimating && RelayoutMustDeferDuringMotion;
-    }
+        public const string EaseLinear = "Linear";
 
-    public static readonly IReadOnlyList<string> AllEaseTypes =
-    [
-        EaseLinear,
-        EaseInSine, EaseOutSine, EaseInOutSine,
-        EaseInQuad, EaseOutQuad, EaseInOutQuad,
-        EaseInCubic, EaseOutCubic, EaseInOutCubic,
-        EaseInQuart, EaseOutQuart, EaseInOutQuart,
-        EaseInQuint, EaseOutQuint, EaseInOutQuint,
-        EaseInExpo, EaseOutExpo, EaseInOutExpo,
-        EaseInCirc, EaseOutCirc, EaseInOutCirc,
-        EaseInBack, EaseOutBack, EaseInOutBack,
-        EaseInElastic, EaseOutElastic, EaseInOutElastic,
-        EaseInBounce, EaseOutBounce, EaseInOutBounce,
-    ];
+        public const string EaseInSine = "InSine";
+        public const string EaseOutSine = "OutSine";
+        public const string EaseInOutSine = "InOutSine";
 
-    /// <summary>Easing families for Hub Motion UI (matches JaxCore Ease.inc grouping).</summary>
-    public static readonly IReadOnlyList<string> EaseFamilies =
-    [
-        "Linear", "Sine", "Quad", "Cubic", "Quart", "Quint",
-        "Expo", "Circ", "Back", "Elastic", "Bounce",
-    ];
+        public const string EaseInQuad = "InQuad";
+        public const string EaseOutQuad = "OutQuad";
+        public const string EaseInOutQuad = "InOutQuad";
 
-    public static readonly IReadOnlyList<string> EaseVariants = ["In", "Out", "InOut"];
+        public const string EaseInCubic = "InCubic";
+        public const string EaseOutCubic = "OutCubic";
+        public const string EaseInOutCubic = "InOutCubic";
 
-    public const string DefaultEaseFamily = "Quart";
-    public const string DefaultEaseVariant = "Out";
+        public const string EaseInQuart = "InQuart";
+        public const string EaseOutQuart = "OutQuart";
+        public const string EaseInOutQuart = "InOutQuart";
 
-    public static bool ShouldSlide(int ani) => ani >= 1;
+        public const string EaseInQuint = "InQuint";
+        public const string EaseOutQuint = "OutQuint";
+        public const string EaseInOutQuint = "InOutQuint";
 
-    public static bool ShouldAnimateOpacity(int ani) => ani >= 0;
+        public const string EaseInExpo = "InExpo";
+        public const string EaseOutExpo = "OutExpo";
+        public const string EaseInOutExpo = "InOutExpo";
 
-    public static bool RequiresPhase2(int ani, bool showMediaStrip) =>
-        ani >= 2 && showMediaStrip;
+        public const string EaseInCirc = "InCirc";
+        public const string EaseOutCirc = "OutCirc";
+        public const string EaseInOutCirc = "InOutCirc";
 
-    public static int NormalizeAniSteps(int steps) =>
-        Math.Clamp(steps, MinAniSteps, MaxAniSteps);
+        public const string EaseInBack = "InBack";
+        public const string EaseOutBack = "OutBack";
+        public const string EaseInOutBack = "InOutBack";
 
-    public static int NormalizeDisplacementPx(int px) =>
-        Math.Clamp(px, MinDisplacementPx, MaxDisplacementPx);
+        public const string EaseInElastic = "InElastic";
+        public const string EaseOutElastic = "OutElastic";
+        public const string EaseInOutElastic = "InOutElastic";
 
-    public static int ResolveDurationMs(int ani, int aniSteps)
-    {
-        if (ani <= 0)
-            return FadeDurationMs;
+        public const string EaseInBounce = "InBounce";
+        public const string EaseOutBounce = "OutBounce";
+        public const string EaseInOutBounce = "InOutBounce";
 
-        return NormalizeAniSteps(aniSteps) * StepPresentationIntervalMs;
-    }
+        /// <summary>YourFlyouts default (<c>Easetype=OutQuart</c>).</summary>
+        public const string DefaultEase = EaseOutQuart;
 
-    public static int ResolveSlideDistancePx(int displacementPx) =>
-        NormalizeDisplacementPx(displacementPx);
+        /// <summary>YourFlyouts <c>AniSteps=20</c>.</summary>
+        public const int DefaultAniSteps = 20;
 
-    public static string NormalizeEase(string? ease)
-    {
-        if (string.IsNullOrWhiteSpace(ease))
-            return DefaultEase;
+        /// <summary>ActionTimer Repeat delay in Ani1/Ani2.inc (below a 60 Hz frame).</summary>
+        public const int EncodedActionTimerIntervalMs = 2;
 
-        var id = ease.Trim();
-        foreach (var known in AllEaseTypes)
+        /// <summary>
+        /// Wall-clock per tween tick. One 60 Hz frame so 20 steps present 20 distinct
+        /// eased samples. Encoding steps * EncodedActionTimerIntervalMs is 40 ms and
+        /// every easing family looks like a pop.
+        /// </summary>
+        public const int StepPresentationIntervalMs = 16;
+
+        /// <summary>Below this, In vs Out and Bounce vs Linear are not readable on a 60 Hz display.</summary>
+        public const int MinPerceptiblePhaseDurationMs = 200;
+
+        /// <summary>Ani2 Fancy pause between phase 1 and phase 2 (Ani2.inc Wait 100).</summary>
+        public const int FancyPauseMs = 100;
+
+        /// <summary>YourFlyouts <c>AnimationDisplacement=30</c> (physical pixels).</summary>
+        public const int DefaultDisplacementPx = 30;
+
+        public const int MinAniSteps = 10;
+        public const int MaxAniSteps = 40;
+        public const int MinDisplacementPx = 10;
+        public const int MaxDisplacementPx = 200;
+
+        /// <summary>Ani0 uses built-in fade instead of slide tween.</summary>
+        public const bool AniNoneUsesBuiltInFade = true;
+
+        /// <summary>
+        /// YourFlyouts Ani0.inc Showfade ignores AniSteps. Rainmeter default FadeDuration is 250 ms.
+        /// </summary>
+        public const bool AniNoneIgnoresAniSteps = true;
+
+        /// <summary>Rainmeter default <c>FadeDuration</c> (Main.ini does not override).</summary>
+        public const int FadeDurationMs = 250;
+
+        /// <summary>
+        /// Ani0 fade keyframe count. Two samples would lerp linearly and hide In vs Out.
+        /// </summary>
+        public static int ResolveFadeSampleCount()
         {
-            if (id.Equals(known, StringComparison.OrdinalIgnoreCase))
-                return known;
+            return Math.Max(MinAniSteps, FadeDurationMs / StepPresentationIntervalMs);
         }
 
-        // Legacy aliases from earlier Tessera builds and JaxCore Cubic* naming.
-        return id.ToLowerInvariant() switch
-        {
-            "cubicin" => EaseInCubic,
-            "cubicout" => EaseOutCubic,
-            "cubicinout" => EaseInOutCubic,
-            "incubic" => EaseInCubic,
-            "outcubic" => EaseOutCubic,
-            "inoutcubic" => EaseInOutCubic,
-            "inquart" => EaseInQuart,
-            "outquart" => EaseOutQuart,
-            "inoutquart" => EaseInOutQuart,
-            _ => DefaultEase,
-        };
-    }
+        /// <summary>
+        /// YourFlyouts TweenNode1 is skin-wide (Ani2 In2). Stacked Host must not restrict
+        /// phase 2 to the Media HWND.
+        /// </summary>
+        public const bool StackedPhase2MustNotBeMediaSlotOnly = true;
 
-    /// <summary>Split normalized ease id into Hub family + variant pickers.</summary>
-    public static (string Family, string Variant) SplitEase(string? ease)
-    {
-        var id = NormalizeEase(ease);
-        if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
-            return ("Linear", DefaultEaseVariant);
+        /// <summary>
+        /// Rainmeter YourFlyouts moves the skin HWND. Avalonia SoftFrost/OS acrylic repaints every
+        /// <c>Position</c> step and reads clunky; Host slides via <see cref="MustAnimateRenderTransform"/>.
+        /// </summary>
+        public const bool Phase1MustUseWindowPosition = true;
 
-        foreach (var variant in EaseVariants.OrderByDescending(v => v.Length))
+        public const bool MustAnimateWindowPosition = false;
+
+        /// <summary>Translate the whole flyout surface at a fixed anchor (GPU-friendly).</summary>
+        public const bool MustAnimateRenderTransform = true;
+
+        /// <summary>Host must not relayout mid-motion (prevents anchor snap).</summary>
+        public const bool RelayoutMustDeferDuringMotion = true;
+
+        /// <summary>
+        /// Phase-2 HWND resize was tried so the Win11 card could grow. SoftFrost Transparent
+        /// swapchain clears to black on each SetWindowPos. Host pre-sizes to rest bounds and clips.
+        /// </summary>
+        public const bool RelayoutAllowedDuringPhase2 = false;
+
+        /// <summary>Phase 2 must clip in-place; do not SizeToContent / SetWindowPos per tween step.</summary>
+        public const bool Phase2MustNotResizeHwnd = true;
+
+        /// <summary>
+        /// Fancy binders must not change DesiredSize (Width/Height/TrackThickness).
+        /// Clip and RenderTransform follow TweenNode1; measure stays rest (YourFlyouts skin size).
+        /// </summary>
+        public const bool Phase2MustNotMutateLayoutMeasure = true;
+
+        /// <summary>Aborted Fancy entrance on the owning generation must snap TweenNode1 to rest.</summary>
+        public const bool CancelledEntranceMustSnapToRest = true;
+
+        /// <summary>
+        /// A visible session that is not running motion must keep TweenNode1 and the HWND
+        /// region at rest. Cancelled/superseded Fancy must not leave a partial media clip
+        /// (art column only, jumping scrubber).
+        /// </summary>
+        public const bool IdleShowingSessionMustSnapRevealToRest = true;
+
+        /// <summary>ApplyRequest supersedes in-flight motion and must clear the Host motion flag.</summary>
+        public const bool MotionAnimatingMustClearOnSupersede = true;
+
+        /// <summary>
+        /// Hide tweens must be cancelled when a show supersedes. Leaving them running
+        /// writes TweenNode1 back to 0 after fade-in (empty media bay, jumping scrubber).
+        /// </summary>
+        public const bool SupersededMotionMustCancelInFlightTweens = true;
+
+        public static bool ShouldDeferRelayoutDuringMotion(bool motionAnimating, bool phase2Animating)
         {
-            if (!id.StartsWith(variant, StringComparison.OrdinalIgnoreCase))
-                continue;
-            var family = id[variant.Length..];
-            if (EaseFamilies.Contains(family, StringComparer.OrdinalIgnoreCase))
-                return (EaseFamilies.First(f => f.Equals(family, StringComparison.OrdinalIgnoreCase)), variant);
+            _ = phase2Animating;
+            return motionAnimating && RelayoutMustDeferDuringMotion;
         }
 
-        return (DefaultEaseFamily, DefaultEaseVariant);
-    }
+        public static readonly IReadOnlyList<string> AllEaseTypes =
+        [
+            EaseLinear,
+            EaseInSine, EaseOutSine, EaseInOutSine,
+            EaseInQuad, EaseOutQuad, EaseInOutQuad,
+            EaseInCubic, EaseOutCubic, EaseInOutCubic,
+            EaseInQuart, EaseOutQuart, EaseInOutQuart,
+            EaseInQuint, EaseOutQuint, EaseInOutQuint,
+            EaseInExpo, EaseOutExpo, EaseInOutExpo,
+            EaseInCirc, EaseOutCirc, EaseInOutCirc,
+            EaseInBack, EaseOutBack, EaseInOutBack,
+            EaseInElastic, EaseOutElastic, EaseInOutElastic,
+            EaseInBounce, EaseOutBounce, EaseInOutBounce,
+        ];
 
-    /// <summary>
-    /// InOut of the selected family. Linear is unchanged. Entrance uses this so the
-    /// first quarter stays near the hide pose and the last quarter settles into rest.
-    /// Pure In* dumps the remaining travel into the final frames.
-    /// </summary>
-    public static string ResolveInOutEase(string? ease)
-    {
-        var id = NormalizeEase(ease);
-        if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
-            return EaseLinear;
+        /// <summary>Easing families for Hub Motion UI (matches JaxCore Ease.inc grouping).</summary>
+        public static readonly IReadOnlyList<string> EaseFamilies =
+        [
+            "Linear", "Sine", "Quad", "Cubic", "Quart", "Quint",
+            "Expo", "Circ", "Back", "Elastic", "Bounce",
+        ];
 
-        var (family, _) = SplitEase(id);
-        return ComposeEase(family, "InOut");
-    }
+        public static readonly IReadOnlyList<string> EaseVariants = ["In", "Out", "InOut"];
 
-    /// <summary>
-    /// Out of the selected family. Linear is unchanged. Hide uses this so In* never
-    /// runs on the reverse clock (end-slam of a card already on screen).
-    /// </summary>
-    public static string ResolveOutEase(string? ease)
-    {
-        var id = NormalizeEase(ease);
-        if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
-            return EaseLinear;
+        public const string DefaultEaseFamily = "Quart";
+        public const string DefaultEaseVariant = "Out";
 
-        var (family, _) = SplitEase(id);
-        return ComposeEase(family, "Out");
-    }
-
-    /// <summary>
-    /// Time-reverse of a selected ease. OutQuart hide lingers then leaves; show uses InQuart
-    /// so it stays offscreen/dim then arrives. InOut and Linear are their own inverses.
-    /// </summary>
-    public static string InvertEaseVariant(string? ease)
-    {
-        var id = NormalizeEase(ease);
-        if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
-            return EaseLinear;
-
-        var (family, variant) = SplitEase(id);
-        var inverted = variant.Equals("In", StringComparison.OrdinalIgnoreCase)
-            ? "Out"
-            : variant.Equals("Out", StringComparison.OrdinalIgnoreCase)
-                ? "In"
-                : variant;
-        return ComposeEase(family, inverted);
-    }
-
-    /// <summary>Compose Hub family + variant into canonical ease id.</summary>
-    public static string ComposeEase(string? family, string? variant)
-    {
-        if (string.IsNullOrWhiteSpace(family)
-            || family.Equals("Linear", StringComparison.OrdinalIgnoreCase))
-            return EaseLinear;
-
-        var v = string.IsNullOrWhiteSpace(variant) ? DefaultEaseVariant : variant.Trim();
-        if (!EaseVariants.Contains(v, StringComparer.OrdinalIgnoreCase))
-            v = DefaultEaseVariant;
-        return NormalizeEase($"{v}{family.Trim()}");
-    }
-
-    /// <summary>Human-readable phase duration from step count.</summary>
-    public static int ResolvePhaseDurationMs(int aniSteps) =>
-        NormalizeAniSteps(aniSteps) * StepPresentationIntervalMs;
-
-    /// <summary>Fancy entrance total when media strip is shown (phase overlap, no show pause).</summary>
-    public static int ResolveFancyEntranceDurationMs(int aniSteps, string? ease = null)
-    {
-        var phase = ResolvePhaseDurationMs(aniSteps);
-        var wait = ResolveInterPhaseWaitMs(entrance: true);
-        var overlap = ResolvePhase2ShowOverlapMs(ease ?? DefaultEase, aniSteps);
-        return phase + wait + Math.Max(0, phase - overlap);
-    }
-
-    /// <summary>Normalized 0..1 TweenNode progress for stepped motion keyframes.</summary>
-    public static double ResolveNormalizedTweenProgress(int step, int aniSteps, string? ease, bool entrance) =>
-        ResolveTweenNode(step, aniSteps, ease, entrance) / 100.0;
-
-    /// <summary>
-    /// Forward clock only. Fade in is fade out with endpoints swapped
-    /// (<see cref="FadeInMustInverseFadeOut"/>).
-    /// </summary>
-    public static double InterpolateForward(double from, double to, int step, int aniSteps, string? ease)
-    {
-        var tn = ResolveNormalizedTweenProgress(step, aniSteps, ease, entrance: true);
-        return from + (to - from) * tn;
-    }
-
-    /// <summary>Interpolate between <paramref name="from"/> and <paramref name="to"/> using stepped TweenNode progress.</summary>
-    public static double InterpolateStepped(double from, double to, int step, int aniSteps, string? ease, bool entrance)
-    {
-        var tn = ResolveNormalizedTweenProgress(step, aniSteps, ease, entrance);
-        var blend = entrance ? tn : 1 - tn;
-        return from + (to - from) * blend;
-    }
-
-    /// <summary>Continuous easing sample (0..1) for Avalonia keyframe generation.</summary>
-    public static double SampleEaseContinuous(double t, string? ease)
-    {
-        t = Math.Clamp(t, 0, 1);
-        var fn = TesseraFlyoutTweenEngine.ResolveEasingFunction(NormalizeEase(ease));
-        return Math.Clamp(fn(t, 0, 1, 1), 0, 1);
-    }
-
-    /// <summary>Penner-style easing sample. <paramref name="t"/> is 0..1 linear progress.</summary>
-    public static double SampleEase(double t, string? ease)
-    {
-        t = Math.Clamp(t, 0, 1);
-        var steps = DefaultAniSteps;
-        var clock = (int)Math.Round(t * steps);
-        return TesseraFlyoutTweenEngine.SampleNormalized(clock, steps, ease, entrance: true);
-    }
-
-    /// <summary>Resolve eased TweenNode after <paramref name="step"/> ticks (0..steps).</summary>
-    public static double ResolveTweenNode(int step, int aniSteps, string? ease, bool entrance)
-    {
-        var steps = Math.Max(1, aniSteps);
-        step = Math.Clamp(step, 0, steps);
-        var tween = new TesseraFlyoutStepTween(steps, 0, 100, ease);
-        if (!entrance)
+        public static bool ShouldSlide(int ani)
         {
-            tween.Advance(steps);
-            for (var i = 0; i < step; i++)
-                tween.Advance(-1);
-        }
-        else if (step > 0)
-        {
-            for (var i = 0; i < step; i++)
-                tween.Advance(1);
+            return ani >= 1;
         }
 
-        return tween.Value;
-    }
-
-    /// <summary>Opacity from TweenNode (YourFlyouts SetTransparency TweenNode/100*255).</summary>
-    public static double ResolveOpacityFromTweenNode(double tweenNode) =>
-        Math.Clamp(tweenNode / 100.0, 0, 1);
-
-    /// <summary>
-    /// Slide factor from TweenNode for entrance (0 = full offset, 1 = rest).
-    /// Matches Func.lua Left: (TN/100 - 1), Right: (1 - TN/100).
-    /// </summary>
-    public static double ResolveSlideFactor(string? aniDir, double tweenNode, bool entrance)
-    {
-        var tn = Math.Clamp(tweenNode, 0, 100) / 100.0;
-        if (!entrance)
-            tn = 1 - tn;
-
-        return (aniDir ?? "Left").ToLowerInvariant() switch
+        public static bool ShouldAnimateOpacity(int ani)
         {
-            "right" => 1 - tn,
-            "bottom" => 1 - tn,
-            _ => tn - 1,
-        };
-    }
+            return ani >= 0;
+        }
 
-    /// <summary>Slide offset in physical pixels at a TweenNode sample.</summary>
-    public static (int Dx, int Dy) ResolveSlideOffsetPxAtTweenNode(
-        string? aniDir,
-        int displacementPx,
-        double tweenNode,
-        bool entrance)
-    {
-        var dist = ResolveSlideDistancePx(displacementPx);
-        var factor = ResolveSlideFactor(aniDir, tweenNode, entrance);
-        return (aniDir ?? "Left").ToLowerInvariant() switch
+        public static bool RequiresPhase2(int ani, bool showMediaStrip)
         {
-            "right" => ((int)Math.Round(dist * factor), 0),
-            "top" => (0, (int)Math.Round(dist * factor)),
-            "bottom" => (0, (int)Math.Round(dist * factor)),
-            _ => ((int)Math.Round(dist * factor), 0),
-        };
-    }
+            return ani >= 2 && showMediaStrip;
+        }
 
-    /// <summary>Slide offset px at entrance start / exit end.</summary>
-    public static (int Dx, int Dy) ResolveSlideOffsetPx(string? aniDir, int displacementPx)
-    {
-        var dist = ResolveSlideDistancePx(displacementPx);
-        return (aniDir ?? "Left").ToLowerInvariant() switch
+        public static int NormalizeAniSteps(int steps)
         {
-            "right" => (dist, 0),
-            "top" => (0, -dist),
-            "bottom" => (0, dist),
-            _ => (-dist, 0),
-        };
-    }
+            return Math.Clamp(steps, MinAniSteps, MaxAniSteps);
+        }
 
-    /// <summary>TranslateTransform offset in DIP from physical pixel displacement.</summary>
-    public static (double Dx, double Dy) ResolveSlideOffsetDip(
-        double monitorScale,
-        string? aniDir,
-        int displacementPx,
-        double tweenNode,
-        bool entrance)
-    {
-        var scale = monitorScale > 0.1 ? monitorScale : 1.0;
-        var (px, py) = ResolveSlideOffsetPxAtTweenNode(aniDir, displacementPx, tweenNode, entrance);
-        return (px / scale, py / scale);
-    }
+        public static int NormalizeDisplacementPx(int px)
+        {
+            return Math.Clamp(px, MinDisplacementPx, MaxDisplacementPx);
+        }
 
-    public static (double Dx, double Dy) ResolveSlideOffsetDip(
-        double monitorScale,
-        string? aniDir,
-        int displacementPx)
-    {
-        var scale = monitorScale > 0.1 ? monitorScale : 1.0;
-        var (px, py) = ResolveSlideOffsetPx(aniDir, displacementPx);
-        return (px / scale, py / scale);
-    }
+        public static int ResolveDurationMs(int ani, int aniSteps)
+        {
+            return ani <= 0 ? FadeDurationMs : NormalizeAniSteps(aniSteps) * StepPresentationIntervalMs;
+        }
 
-    public enum FlyoutAnimationPhaseKind
-    {
-        Show,
-        Phase1In,
-        Phase1Out,
-        Wait,
-        Phase2In,
-        Phase2Out,
-        Hide,
-    }
+        public static int ResolveSlideDistancePx(int displacementPx)
+        {
+            return NormalizeDisplacementPx(displacementPx);
+        }
 
-    public sealed record FlyoutAnimationPhase(FlyoutAnimationPhaseKind Kind, int StepCount = 0, int WaitMs = 0);
+        public static string NormalizeEase(string? ease)
+        {
+            if (string.IsNullOrWhiteSpace(ease))
+            {
+                return DefaultEase;
+            }
 
-    /// <summary>ActionTimer sequence from Ani0/Ani1/Ani2.inc.</summary>
-    public static IReadOnlyList<FlyoutAnimationPhase> ResolveEntranceSequence(int ani, bool showMediaStrip)
-    {
-        if (ani <= 0)
-            return [new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Show)];
+            string id = ease.Trim();
+            foreach (string known in AllEaseTypes)
+            {
+                if (id.Equals(known, StringComparison.OrdinalIgnoreCase))
+                {
+                    return known;
+                }
+            }
 
-        var steps = DefaultAniSteps;
-        if (ani == 1)
-            return
+            // Legacy aliases from earlier Tessera builds and JaxCore Cubic* naming.
+            return id.ToLowerInvariant() switch
+            {
+                "cubicin" => EaseInCubic,
+                "cubicout" => EaseOutCubic,
+                "cubicinout" => EaseInOutCubic,
+                "incubic" => EaseInCubic,
+                "outcubic" => EaseOutCubic,
+                "inoutcubic" => EaseInOutCubic,
+                "inquart" => EaseInQuart,
+                "outquart" => EaseOutQuart,
+                "inoutquart" => EaseInOutQuart,
+                _ => DefaultEase,
+            };
+        }
+
+        /// <summary>Split normalized ease id into Hub family + variant pickers.</summary>
+        public static (string Family, string Variant) SplitEase(string? ease)
+        {
+            string id = NormalizeEase(ease);
+            if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
+            {
+                return ("Linear", DefaultEaseVariant);
+            }
+
+            foreach (string? variant in EaseVariants.OrderByDescending(v => v.Length))
+            {
+                if (!id.StartsWith(variant, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                string family = id[variant.Length..];
+                if (EaseFamilies.Contains(family, StringComparer.OrdinalIgnoreCase))
+                {
+                    return (EaseFamilies.First(f => f.Equals(family, StringComparison.OrdinalIgnoreCase)), variant);
+                }
+            }
+
+            return (DefaultEaseFamily, DefaultEaseVariant);
+        }
+
+        /// <summary>
+        /// InOut of the selected family. Linear is unchanged. Entrance uses this so the
+        /// first quarter stays near the hide pose and the last quarter settles into rest.
+        /// Pure In* dumps the remaining travel into the final frames.
+        /// </summary>
+        public static string ResolveInOutEase(string? ease)
+        {
+            string id = NormalizeEase(ease);
+            if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
+            {
+                return EaseLinear;
+            }
+
+            (string? family, string _) = SplitEase(id);
+            return ComposeEase(family, "InOut");
+        }
+
+        /// <summary>
+        /// Out of the selected family. Linear is unchanged. Hide uses this so In* never
+        /// runs on the reverse clock (end-slam of a card already on screen).
+        /// </summary>
+        public static string ResolveOutEase(string? ease)
+        {
+            string id = NormalizeEase(ease);
+            if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
+            {
+                return EaseLinear;
+            }
+
+            (string? family, string _) = SplitEase(id);
+            return ComposeEase(family, "Out");
+        }
+
+        /// <summary>
+        /// Time-reverse of a selected ease. OutQuart hide lingers then leaves; show uses InQuart
+        /// so it stays offscreen/dim then arrives. InOut and Linear are their own inverses.
+        /// </summary>
+        public static string InvertEaseVariant(string? ease)
+        {
+            string id = NormalizeEase(ease);
+            if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
+            {
+                return EaseLinear;
+            }
+
+            (string? family, string? variant) = SplitEase(id);
+            string inverted = variant.Equals("In", StringComparison.OrdinalIgnoreCase)
+                ? "Out"
+                : variant.Equals("Out", StringComparison.OrdinalIgnoreCase)
+                    ? "In"
+                    : variant;
+            return ComposeEase(family, inverted);
+        }
+
+        /// <summary>Compose Hub family + variant into canonical ease id.</summary>
+        public static string ComposeEase(string? family, string? variant)
+        {
+            if (string.IsNullOrWhiteSpace(family)
+                || family.Equals("Linear", StringComparison.OrdinalIgnoreCase))
+            {
+                return EaseLinear;
+            }
+
+            string v = string.IsNullOrWhiteSpace(variant) ? DefaultEaseVariant : variant.Trim();
+            if (!EaseVariants.Contains(v, StringComparer.OrdinalIgnoreCase))
+            {
+                v = DefaultEaseVariant;
+            }
+
+            return NormalizeEase($"{v}{family.Trim()}");
+        }
+
+        /// <summary>Human-readable phase duration from step count.</summary>
+        public static int ResolvePhaseDurationMs(int aniSteps)
+        {
+            return NormalizeAniSteps(aniSteps) * StepPresentationIntervalMs;
+        }
+
+        /// <summary>Fancy entrance total when media strip is shown (phase overlap, no show pause).</summary>
+        public static int ResolveFancyEntranceDurationMs(int aniSteps, string? ease = null)
+        {
+            int phase = ResolvePhaseDurationMs(aniSteps);
+            int wait = ResolveInterPhaseWaitMs(entrance: true);
+            int overlap = ResolvePhase2ShowOverlapMs(ease ?? DefaultEase, aniSteps);
+            return phase + wait + Math.Max(0, phase - overlap);
+        }
+
+        /// <summary>Normalized 0..1 TweenNode progress for stepped motion keyframes.</summary>
+        public static double ResolveNormalizedTweenProgress(int step, int aniSteps, string? ease, bool entrance)
+        {
+            return ResolveTweenNode(step, aniSteps, ease, entrance) / 100.0;
+        }
+
+        /// <summary>
+        /// Forward clock only. Fade in is fade out with endpoints swapped
+        /// (<see cref="FadeInMustInverseFadeOut"/>).
+        /// </summary>
+        public static double InterpolateForward(double from, double to, int step, int aniSteps, string? ease)
+        {
+            double tn = ResolveNormalizedTweenProgress(step, aniSteps, ease, entrance: true);
+            return from + ((to - from) * tn);
+        }
+
+        /// <summary>Interpolate between <paramref name="from"/> and <paramref name="to"/> using stepped TweenNode progress.</summary>
+        public static double InterpolateStepped(double from, double to, int step, int aniSteps, string? ease, bool entrance)
+        {
+            double tn = ResolveNormalizedTweenProgress(step, aniSteps, ease, entrance);
+            double blend = entrance ? tn : 1 - tn;
+            return from + ((to - from) * blend);
+        }
+
+        /// <summary>Continuous easing sample (0..1) for Avalonia keyframe generation.</summary>
+        public static double SampleEaseContinuous(double t, string? ease)
+        {
+            t = Math.Clamp(t, 0, 1);
+            Func<double, double, double, double, double> fn = TesseraFlyoutTweenEngine.ResolveEasingFunction(NormalizeEase(ease));
+            return Math.Clamp(fn(t, 0, 1, 1), 0, 1);
+        }
+
+        /// <summary>Penner-style easing sample. <paramref name="t"/> is 0..1 linear progress.</summary>
+        public static double SampleEase(double t, string? ease)
+        {
+            t = Math.Clamp(t, 0, 1);
+            int steps = DefaultAniSteps;
+            int clock = (int)Math.Round(t * steps);
+            return TesseraFlyoutTweenEngine.SampleNormalized(clock, steps, ease, entrance: true);
+        }
+
+        /// <summary>Resolve eased TweenNode after <paramref name="step"/> ticks (0..steps).</summary>
+        public static double ResolveTweenNode(int step, int aniSteps, string? ease, bool entrance)
+        {
+            int steps = Math.Max(1, aniSteps);
+            step = Math.Clamp(step, 0, steps);
+            TesseraFlyoutStepTween tween = new(steps, 0, 100, ease);
+            if (!entrance)
+            {
+                _ = tween.Advance(steps);
+                for (int i = 0; i < step; i++)
+                {
+                    _ = tween.Advance(-1);
+                }
+            }
+            else if (step > 0)
+            {
+                for (int i = 0; i < step; i++)
+                {
+                    _ = tween.Advance(1);
+                }
+            }
+
+            return tween.Value;
+        }
+
+        /// <summary>Opacity from TweenNode (YourFlyouts SetTransparency TweenNode/100*255).</summary>
+        public static double ResolveOpacityFromTweenNode(double tweenNode)
+        {
+            return Math.Clamp(tweenNode / 100.0, 0, 1);
+        }
+
+        /// <summary>
+        /// Slide factor from TweenNode for entrance (0 = full offset, 1 = rest).
+        /// Matches Func.lua Left: (TN/100 - 1), Right: (1 - TN/100).
+        /// </summary>
+        public static double ResolveSlideFactor(string? aniDir, double tweenNode, bool entrance)
+        {
+            double tn = Math.Clamp(tweenNode, 0, 100) / 100.0;
+            if (!entrance)
+            {
+                tn = 1 - tn;
+            }
+
+            return (aniDir ?? "Left").ToLowerInvariant() switch
+            {
+                "right" => 1 - tn,
+                "bottom" => 1 - tn,
+                _ => tn - 1,
+            };
+        }
+
+        /// <summary>Slide offset in physical pixels at a TweenNode sample.</summary>
+        public static (int Dx, int Dy) ResolveSlideOffsetPxAtTweenNode(
+            string? aniDir,
+            int displacementPx,
+            double tweenNode,
+            bool entrance)
+        {
+            int dist = ResolveSlideDistancePx(displacementPx);
+            double factor = ResolveSlideFactor(aniDir, tweenNode, entrance);
+            return (aniDir ?? "Left").ToLowerInvariant() switch
+            {
+                "right" => ((int)Math.Round(dist * factor), 0),
+                "top" => (0, (int)Math.Round(dist * factor)),
+                "bottom" => (0, (int)Math.Round(dist * factor)),
+                _ => ((int)Math.Round(dist * factor), 0),
+            };
+        }
+
+        /// <summary>Slide offset px at entrance start / exit end.</summary>
+        public static (int Dx, int Dy) ResolveSlideOffsetPx(string? aniDir, int displacementPx)
+        {
+            int dist = ResolveSlideDistancePx(displacementPx);
+            return (aniDir ?? "Left").ToLowerInvariant() switch
+            {
+                "right" => (dist, 0),
+                "top" => (0, -dist),
+                "bottom" => (0, dist),
+                _ => (-dist, 0),
+            };
+        }
+
+        /// <summary>TranslateTransform offset in DIP from physical pixel displacement.</summary>
+        public static (double Dx, double Dy) ResolveSlideOffsetDip(
+            double monitorScale,
+            string? aniDir,
+            int displacementPx,
+            double tweenNode,
+            bool entrance)
+        {
+            double scale = monitorScale > 0.1 ? monitorScale : 1.0;
+            (int px, int py) = ResolveSlideOffsetPxAtTweenNode(aniDir, displacementPx, tweenNode, entrance);
+            return (px / scale, py / scale);
+        }
+
+        public static (double Dx, double Dy) ResolveSlideOffsetDip(
+            double monitorScale,
+            string? aniDir,
+            int displacementPx)
+        {
+            double scale = monitorScale > 0.1 ? monitorScale : 1.0;
+            (int px, int py) = ResolveSlideOffsetPx(aniDir, displacementPx);
+            return (px / scale, py / scale);
+        }
+
+        public enum FlyoutAnimationPhaseKind
+        {
+            Show,
+            Phase1In,
+            Phase1Out,
+            Wait,
+            Phase2In,
+            Phase2Out,
+            Hide,
+        }
+
+        public sealed record FlyoutAnimationPhase(FlyoutAnimationPhaseKind Kind, int StepCount = 0, int WaitMs = 0);
+
+        /// <summary>ActionTimer sequence from Ani0/Ani1/Ani2.inc.</summary>
+        public static IReadOnlyList<FlyoutAnimationPhase> ResolveEntranceSequence(int ani, bool showMediaStrip)
+        {
+            if (ani <= 0)
+            {
+                return [new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Show)];
+            }
+
+            int steps = DefaultAniSteps;
+            if (ani == 1)
+            {
+                return
+                [
+                    new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Show),
+                    new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Phase1In, steps),
+                ];
+            }
+
+            List<FlyoutAnimationPhase> seq =
             [
-                new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Show),
-                new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Phase1In, steps),
+                new(FlyoutAnimationPhaseKind.Show),
+                new(FlyoutAnimationPhaseKind.Phase1In, steps),
             ];
-
-        var seq = new List<FlyoutAnimationPhase>
-        {
-            new(FlyoutAnimationPhaseKind.Show),
-            new(FlyoutAnimationPhaseKind.Phase1In, steps),
-        };
-        if (RequiresPhase2(ani, showMediaStrip))
-        {
-            seq.Add(new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Wait, WaitMs: FancyPauseMs));
-            seq.Add(new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Phase2In, steps));
-        }
-        return seq;
-    }
-
-    public static IReadOnlyList<FlyoutAnimationPhase> ResolveExitSequence(int ani, bool showMediaStrip)
-    {
-        if (ani <= 0)
-            return [new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Hide)];
-
-        var steps = DefaultAniSteps;
-        if (ani == 1)
-            return [new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Phase1Out, steps)];
-
-        var seq = new List<FlyoutAnimationPhase>();
-        if (RequiresPhase2(ani, showMediaStrip))
-            seq.Add(new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Phase2Out, steps));
-        if (RequiresPhase2(ani, showMediaStrip))
-            seq.Add(new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Wait, WaitMs: FancyPauseMs));
-        seq.Add(new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Phase1Out, steps));
-        return seq;
-    }
-
-    /// <summary>Keyframe values are already eased; Avalonia must lerp linearly between them.</summary>
-    public const bool SteppedKeyframesMustUseLinearInterpolation = true;
-
-    /// <summary>
-    /// Hide keeps the selected ease on the reverse clock. Show uses InOut of that family
-    /// so arrival settles instead of slamming. Linear fade-in/out remains a numeric inverse.
-    /// </summary>
-    public const bool FadeInMustInverseFadeOut = true;
-
-    /// <summary>Entrance uses InOut of the selected family, not a pure In* slam.</summary>
-    public const bool Phase1EntranceMustUseInOutFamily = true;
-
-    public const bool EntranceOpacityMustStayVisibleDuringInEase = true;
-
-    public static string ResolvePhase1MotionEase(string? ease, bool entrance)
-    {
-        var id = NormalizeEase(ease);
-        if (entrance && Phase1EntranceMustUseInOutFamily)
-            return ResolveInOutEase(id);
-        return id;
-    }
-
-    public static string ResolvePhase1OpacityEase(string? ease, bool entrance) =>
-        ResolvePhase1MotionEase(ease, entrance);
-
-    /// <summary>
-    /// Show may run In* or InOut* of the selected family. Out* forward is a start-slam
-    /// after volume has sat; remap it to InOut* (mid-band), never InvertEaseVariant (In*).
-    /// </summary>
-    public const bool Phase2ShowMustUseInOrInOutFamily = true;
-
-    /// <summary>
-    /// Hide may run Out* or InOut* of the selected family. In* on hide dumps travel
-    /// into the last frames of a card already on screen.
-    /// </summary>
-    public const bool Phase2HideMustUseOutOrInOutFamily = true;
-
-    /// <summary>
-    /// InQuart show dumps remaining travel into the last frames (volume sits, rest pops).
-    /// Phase 2 must not invert Out* to In* to "complement" hide.
-    /// </summary>
-    public const bool Phase2ShowMustNotInvertToInEase = true;
-
-    /// <summary>Show progress band that must be occupied for a fraction of phase 2.</summary>
-    public const double Phase2ShowMidBandMin = 0.15;
-
-    public const double Phase2ShowMidBandMax = 0.85;
-
-    /// <summary>Minimum share of 0..AniSteps samples that must sit in the mid band.</summary>
-    public const double Phase2ShowMidBandMinDurationFraction = 0.18;
-
-    /// <summary>
-    /// Show InOut sits near 0 for a long time. Stacking FancyPause on top of that is the
-    /// empty gap after volume rests. Hide keeps the pause after the dissolve.
-    /// </summary>
-    public const bool ShowMustSkipFancyPauseBeforePhase2 = true;
-
-    /// <summary>
-    /// Start show phase 2 early enough that clip reaches <see cref="Phase2ShowMidBandMin"/>
-    /// as phase 1 finishes. Otherwise InOutQuint is still ~0.005 after 80 ms of phase 2.
-    /// </summary>
-    public const bool ShowPhase2MustOverlapUntilMidBand = true;
-
-    public static int ResolveInterPhaseWaitMs(bool entrance) =>
-        entrance && ShowMustSkipFancyPauseBeforePhase2 ? 0 : FancyPauseMs;
-
-    public static int ResolvePhase2ShowOverlapMs(string? ease, int aniSteps)
-    {
-        var steps = NormalizeAniSteps(aniSteps);
-        var showEase = ResolvePhase2MotionEase(ease, entrance: true);
-        for (var s = 0; s <= steps; s++)
-        {
-            var p = ResolvePhase2RevealProgress(true, s, steps, showEase);
-            if (p >= Phase2ShowMidBandMin)
-                return s * StepPresentationIntervalMs;
+            if (RequiresPhase2(ani, showMediaStrip))
+            {
+                seq.Add(new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Wait, WaitMs: FancyPauseMs));
+                seq.Add(new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Phase2In, steps));
+            }
+            return seq;
         }
 
-        return 0;
-    }
-
-    public static int ResolveShowPhase2LeadDelayMs(string? ease, int aniSteps)
-    {
-        var phaseMs = ResolvePhaseDurationMs(aniSteps);
-        var overlap = ResolvePhase2ShowOverlapMs(ease, aniSteps);
-        return Math.Max(0, phaseMs - overlap);
-    }
-
-    /// <summary>
-    /// Stacked volume divider and media clip/region must sample the same vsync p.
-    /// Independent per-HWND pumps plus HRGN-only media wipe are two clocks.
-    /// </summary>
-    public const bool Phase2MustShareOneVsyncProgressAcrossStackedSlots = true;
-
-    /// <summary>
-    /// Stacked Host splits YourFlyouts' one skin into Volume/Media HWNDs. Show phase 1
-    /// is the volume card only; media stays fully hidden until TweenNode1 (phase 2).
-    /// Hide still fades every slot after the dissolve (YourFlyouts phase 1 out).
-    /// </summary>
-    public const bool StackedMediaMustSkipPhase1OnShow = true;
-
-    /// <summary>
-    /// Skip-phase-1 leaves stacked media at Opacity 0. Host must unhide that HWND
-    /// in the collapsed pose (clip 0 / 1px region) before phase 2. If it stays
-    /// invisible, TweenNode1 never paints and CompleteMotion is a rest-frame pop.
-    /// </summary>
-    public const bool PreparePhase2ShowMustUnhideStackedMedia = true;
-
-    /// <summary>
-    /// Cluster show must not WhenAll each HWND through phase 1 then phase 2 independently:
-    /// media phase 2 would start during the 100 ms pause while volume is still arriving,
-    /// or worse, media would fade in as a finished card in phase 1.
-    /// </summary>
-    public const bool StackedShowMustFinishVolumePhase1BeforeMediaPhase2 = true;
-
-    /// <summary>
-    /// Cluster hide must not WhenAll each HWND through the full exit. A volume slot
-    /// without a phase-2 host would start sliding while media is still dissolving.
-    /// Reverse of show: all phase 2, then pause, then all phase 1.
-    /// </summary>
-    public const bool StackedHideMustFinishPhase2BeforeAnySlotPhase1 = true;
-
-    /// <summary>
-    /// Show and hide must SyncRevealRegion before TweenNode1 ticks. Skipping it on
-    /// hide leaves a stale clip while phase 2 starts from rest progress.
-    /// </summary>
-    public const bool Phase2MustSyncRevealRegionBeforeTweenBothWays = true;
-
-    /// <summary>
-    /// Hide phase 2 must start at rest reveal (progress 1). Show starts at 0.
-    /// A stuck partial clip would otherwise dissolve from the wrong width.
-    /// </summary>
-    public const bool Phase2HideMustStartFromRestReveal = true;
-
-    /// <summary>
-    /// A slot with no TesseraRevealHost (volume without a meter) must not snap
-    /// TweenNode1 to rest on hide. That would pop media back open while it dissolves.
-    /// </summary>
-    public const bool Phase2HideMustNotSnapMissingHostsToRest = true;
-
-    /// <summary>
-    /// Show must not snap missing hosts to rest either. That is the first painted
-    /// frame becoming TweenNode1=1 (divider and media pop, no wipe).
-    /// </summary>
-    public const bool Phase2ShowMustNotSnapMissingHostsToRest = true;
-
-    /// <summary>
-    /// Hide paints because the HWND is already at rest. Show feeds 0 to 1 into
-    /// Avalonia Animation.RunAsync on a collapsed HWND; those keyframes coalesce
-    /// into one frame. Host must apply each AniStep on the dispatcher and wait
-    /// <see cref="StepPresentationIntervalMs"/> so every tick can paint.
-    /// </summary>
-    public const bool Phase2MustPumpEachAniStepOnDispatcher = true;
-
-    /// <summary>
-    /// Unhiding collapsed media must reach the compositor before phase 2 ticks.
-    /// Applying Opacity 1 and TweenNode1 0 in the same turn as the first rest
-    /// frame still pops.
-    /// </summary>
-    public const bool PreparePhase2ShowMustYieldForRender = true;
-
-    /// <summary>
-    /// Stacked media must compose at rest (opacity 0 is OK) before the HRGN wipe
-    /// arms. Clipping first leaves WM_PAINT with nothing to reveal.
-    /// </summary>
-    public const bool PreparePhase2ShowMustPaintRestClientBeforeWipe = true;
-
-    public static bool ShouldSnapMissingPhase2HostsToRest(bool entrance)
-    {
-        if (entrance)
-            return !Phase2ShowMustNotSnapMissingHostsToRest;
-        return !Phase2HideMustNotSnapMissingHostsToRest;
-    }
-
-    public static double ResolvePhase2RevealProgress(
-        bool entrance,
-        int step,
-        int aniSteps,
-        string? ease)
-    {
-        var from = entrance ? 0d : 1d;
-        var to = entrance ? 1d : 0d;
-        return InterpolateStepped(from, to, step, aniSteps, ease, entrance);
-    }
-
-    public static string ResolvePhase2MotionEase(string? ease, bool entrance)
-    {
-        var id = NormalizeEase(ease);
-        if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
-            return EaseLinear;
-
-        var (_, variant) = SplitEase(id);
-        if (entrance)
+        public static IReadOnlyList<FlyoutAnimationPhase> ResolveExitSequence(int ani, bool showMediaStrip)
         {
-            if (Phase2ShowMustUseInOrInOutFamily
-                && variant.Equals("Out", StringComparison.OrdinalIgnoreCase))
-                return ResolveInOutEase(id);
-            return id;
+            if (ani <= 0)
+            {
+                return [new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Hide)];
+            }
+
+            int steps = DefaultAniSteps;
+            if (ani == 1)
+            {
+                return [new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Phase1Out, steps)];
+            }
+
+            List<FlyoutAnimationPhase> seq = [];
+            if (RequiresPhase2(ani, showMediaStrip))
+            {
+                seq.Add(new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Phase2Out, steps));
+            }
+
+            if (RequiresPhase2(ani, showMediaStrip))
+            {
+                seq.Add(new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Wait, WaitMs: FancyPauseMs));
+            }
+
+            seq.Add(new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Phase1Out, steps));
+            return seq;
         }
 
-        if (Phase2HideMustUseOutOrInOutFamily
-            && variant.Equals("In", StringComparison.OrdinalIgnoreCase))
-            return ResolveOutEase(id);
-        return id;
-    }
+        /// <summary>Keyframe values are already eased; Avalonia must lerp linearly between them.</summary>
+        public const bool SteppedKeyframesMustUseLinearInterpolation = true;
 
-    public static bool Phase2RequiresAnimatedLayout(int ani, string? styleId, bool showMediaStrip)
-    {
-        if (ani < 2)
-            return false;
-        if (!TesseraFlyoutRevealSpec.StyleSupportsPhase2(styleId))
-            return false;
-        if (TesseraFlyoutRevealSpec.StylePhase2WithoutMediaStrip(styleId))
+        /// <summary>
+        /// Hide keeps the selected ease on the reverse clock. Show uses InOut of that family
+        /// so arrival settles instead of slamming. Linear fade-in/out remains a numeric inverse.
+        /// </summary>
+        public const bool FadeInMustInverseFadeOut = true;
+
+        /// <summary>Entrance uses InOut of the selected family, not a pure In* slam.</summary>
+        public const bool Phase1EntranceMustUseInOutFamily = true;
+
+        public const bool EntranceOpacityMustStayVisibleDuringInEase = true;
+
+        public static string ResolvePhase1MotionEase(string? ease, bool entrance)
+        {
+            string id = NormalizeEase(ease);
+            return entrance && Phase1EntranceMustUseInOutFamily ? ResolveInOutEase(id) : id;
+        }
+
+        public static string ResolvePhase1OpacityEase(string? ease, bool entrance)
+        {
+            return ResolvePhase1MotionEase(ease, entrance);
+        }
+
+        /// <summary>
+        /// Show may run In* or InOut* of the selected family. Out* forward is a start-slam
+        /// after volume has sat; remap it to InOut* (mid-band), never InvertEaseVariant (In*).
+        /// </summary>
+        public const bool Phase2ShowMustUseInOrInOutFamily = true;
+
+        /// <summary>
+        /// Hide may run Out* or InOut* of the selected family. In* on hide dumps travel
+        /// into the last frames of a card already on screen.
+        /// </summary>
+        public const bool Phase2HideMustUseOutOrInOutFamily = true;
+
+        /// <summary>
+        /// InQuart show dumps remaining travel into the last frames (volume sits, rest pops).
+        /// Phase 2 must not invert Out* to In* to "complement" hide.
+        /// </summary>
+        public const bool Phase2ShowMustNotInvertToInEase = true;
+
+        /// <summary>Show progress band that must be occupied for a fraction of phase 2.</summary>
+        public const double Phase2ShowMidBandMin = 0.15;
+
+        public const double Phase2ShowMidBandMax = 0.85;
+
+        /// <summary>Minimum share of 0..AniSteps samples that must sit in the mid band.</summary>
+        public const double Phase2ShowMidBandMinDurationFraction = 0.18;
+
+        /// <summary>
+        /// Show InOut sits near 0 for a long time. Stacking FancyPause on top of that is the
+        /// empty gap after volume rests. Hide keeps the pause after the dissolve.
+        /// </summary>
+        public const bool ShowMustSkipFancyPauseBeforePhase2 = true;
+
+        /// <summary>
+        /// Start show phase 2 early enough that clip reaches <see cref="Phase2ShowMidBandMin"/>
+        /// as phase 1 finishes. Otherwise InOutQuint is still ~0.005 after 80 ms of phase 2.
+        /// </summary>
+        public const bool ShowPhase2MustOverlapUntilMidBand = true;
+
+        public static int ResolveInterPhaseWaitMs(bool entrance)
+        {
+            return entrance && ShowMustSkipFancyPauseBeforePhase2 ? 0 : FancyPauseMs;
+        }
+
+        public static int ResolvePhase2ShowOverlapMs(string? ease, int aniSteps)
+        {
+            int steps = NormalizeAniSteps(aniSteps);
+            string showEase = ResolvePhase2MotionEase(ease, entrance: true);
+            for (int s = 0; s <= steps; s++)
+            {
+                double p = ResolvePhase2RevealProgress(true, s, steps, showEase);
+                if (p >= Phase2ShowMidBandMin)
+                {
+                    return s * StepPresentationIntervalMs;
+                }
+            }
+
+            return 0;
+        }
+
+        public static int ResolveShowPhase2LeadDelayMs(string? ease, int aniSteps)
+        {
+            int phaseMs = ResolvePhaseDurationMs(aniSteps);
+            int overlap = ResolvePhase2ShowOverlapMs(ease, aniSteps);
+            return Math.Max(0, phaseMs - overlap);
+        }
+
+        /// <summary>
+        /// Stacked volume divider and media clip/region must sample the same vsync p.
+        /// Independent per-HWND pumps plus HRGN-only media wipe are two clocks.
+        /// </summary>
+        public const bool Phase2MustShareOneVsyncProgressAcrossStackedSlots = true;
+
+        /// <summary>
+        /// Stacked Host splits YourFlyouts' one skin into Volume/Media HWNDs. Show phase 1
+        /// is the volume card only; media stays fully hidden until TweenNode1 (phase 2).
+        /// Hide still fades every slot after the dissolve (YourFlyouts phase 1 out).
+        /// </summary>
+        public const bool StackedMediaMustSkipPhase1OnShow = true;
+
+        /// <summary>
+        /// Skip-phase-1 leaves stacked media at Opacity 0. Host must unhide that HWND
+        /// in the collapsed pose (clip 0 / 1px region) before phase 2. If it stays
+        /// invisible, TweenNode1 never paints and CompleteMotion is a rest-frame pop.
+        /// </summary>
+        public const bool PreparePhase2ShowMustUnhideStackedMedia = true;
+
+        /// <summary>
+        /// Cluster show must not WhenAll each HWND through phase 1 then phase 2 independently:
+        /// media phase 2 would start during the 100 ms pause while volume is still arriving,
+        /// or worse, media would fade in as a finished card in phase 1.
+        /// </summary>
+        public const bool StackedShowMustFinishVolumePhase1BeforeMediaPhase2 = true;
+
+        /// <summary>
+        /// Cluster hide must not WhenAll each HWND through the full exit. A volume slot
+        /// without a phase-2 host would start sliding while media is still dissolving.
+        /// Reverse of show: all phase 2, then pause, then all phase 1.
+        /// </summary>
+        public const bool StackedHideMustFinishPhase2BeforeAnySlotPhase1 = true;
+
+        /// <summary>
+        /// Show and hide must SyncRevealRegion before TweenNode1 ticks. Skipping it on
+        /// hide leaves a stale clip while phase 2 starts from rest progress.
+        /// </summary>
+        public const bool Phase2MustSyncRevealRegionBeforeTweenBothWays = true;
+
+        /// <summary>
+        /// Hide phase 2 must start at rest reveal (progress 1). Show starts at 0.
+        /// A stuck partial clip would otherwise dissolve from the wrong width.
+        /// </summary>
+        public const bool Phase2HideMustStartFromRestReveal = true;
+
+        /// <summary>
+        /// A slot with no TesseraRevealHost (volume without a meter) must not snap
+        /// TweenNode1 to rest on hide. That would pop media back open while it dissolves.
+        /// </summary>
+        public const bool Phase2HideMustNotSnapMissingHostsToRest = true;
+
+        /// <summary>
+        /// Show must not snap missing hosts to rest either. That is the first painted
+        /// frame becoming TweenNode1=1 (divider and media pop, no wipe).
+        /// </summary>
+        public const bool Phase2ShowMustNotSnapMissingHostsToRest = true;
+
+        /// <summary>
+        /// Hide paints because the HWND is already at rest. Show feeds 0 to 1 into
+        /// Avalonia Animation.RunAsync on a collapsed HWND; those keyframes coalesce
+        /// into one frame. Host must apply each AniStep on the dispatcher and wait
+        /// <see cref="StepPresentationIntervalMs"/> so every tick can paint.
+        /// </summary>
+        public const bool Phase2MustPumpEachAniStepOnDispatcher = true;
+
+        /// <summary>
+        /// Unhiding collapsed media must reach the compositor before phase 2 ticks.
+        /// Applying Opacity 1 and TweenNode1 0 in the same turn as the first rest
+        /// frame still pops.
+        /// </summary>
+        public const bool PreparePhase2ShowMustYieldForRender = true;
+
+        /// <summary>
+        /// Stacked media must compose at rest (opacity 0 is OK) before the HRGN wipe
+        /// arms. Clipping first leaves WM_PAINT with nothing to reveal.
+        /// </summary>
+        public const bool PreparePhase2ShowMustPaintRestClientBeforeWipe = true;
+
+        public static bool ShouldSnapMissingPhase2HostsToRest(bool entrance)
+        {
+            return entrance && !Phase2HideMustNotSnapMissingHostsToRest;
+        }
+
+        public static double ResolvePhase2RevealProgress(
+            bool entrance,
+            int step,
+            int aniSteps,
+            string? ease)
+        {
+            double from = entrance ? 0d : 1d;
+            double to = entrance ? 1d : 0d;
+            return InterpolateStepped(from, to, step, aniSteps, ease, entrance);
+        }
+
+        public static string ResolvePhase2MotionEase(string? ease, bool entrance)
+        {
+            string id = NormalizeEase(ease);
+            if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
+            {
+                return EaseLinear;
+            }
+
+            (string _, string? variant) = SplitEase(id);
+            return entrance
+                ? Phase2ShowMustUseInOrInOutFamily
+                    && variant.Equals("Out", StringComparison.OrdinalIgnoreCase)
+                    ? ResolveInOutEase(id)
+                    : id
+                : Phase2HideMustUseOutOrInOutFamily
+                && variant.Equals("In", StringComparison.OrdinalIgnoreCase)
+                ? ResolveOutEase(id)
+                : id;
+        }
+
+        public static bool Phase2RequiresAnimatedLayout(int ani, string? styleId, bool showMediaStrip)
+        {
+            return ani < 2
+                ? false
+                : TesseraFlyoutRevealSpec.StyleSupportsPhase2(styleId) && (TesseraFlyoutRevealSpec.StylePhase2WithoutMediaStrip(styleId) || showMediaStrip);
+        }
+
+        /// <summary>
+        /// Fancy phase 2 for a Host slot. YourFlyouts runs In2 on the whole skin;
+        /// stacked Volume/Device panels must still animate Animated meters.
+        /// </summary>
+        public static bool ShouldRunPhase2Reveal(
+            int ani,
+            string? styleId,
+            bool showMediaStrip,
+            TesseraStackedPanelRole? stackedRole)
+        {
+            if (!Phase2RequiresAnimatedLayout(ani, styleId, showMediaStrip))
+            {
+                return false;
+            }
+
+            // MaterialYou uses in-layout media (single HWND), so skip the separate media slot
+            if (TesseraFlyoutTweenTargetCatalog.StylePhase2UsesInLayoutMedia(styleId)
+                && stackedRole == TesseraStackedPanelRole.Media)
+            {
+                return false;
+            }
+
+            // For stacked styles, all slots with animated targets run phase 2
             return true;
-        return showMediaStrip;
+        }
+
+        /// <summary>
+        /// Phase 1 (slide + surface fade). Stacked media skips this on show so the rest
+        /// is not faded in as a second finished acrylic card before TweenNode1.
+        /// </summary>
+        public static bool ShouldRunPhase1(
+            int ani,
+            string? styleId,
+            bool showMediaStrip,
+            TesseraStackedPanelRole? stackedRole,
+            bool entrance)
+        {
+            return ShouldAnimateOpacity(ani) && (!entrance
+                || stackedRole != TesseraStackedPanelRole.Media
+                || !StackedMediaMustSkipPhase1OnShow || !Phase2RequiresAnimatedLayout(ani, styleId, showMediaStrip));
+        }
+
+        public static bool ShouldHoldStackedMediaHiddenThroughShowPhase1(
+            int ani,
+            string? styleId,
+            bool showMediaStrip,
+            TesseraStackedPanelRole? stackedRole)
+        {
+            return !ShouldRunPhase1(ani, styleId, showMediaStrip, stackedRole, entrance: true);
+        }
+
+        public static bool ExitMustMirrorEntrance => true;
     }
-
-    /// <summary>
-    /// Fancy phase 2 for a Host slot. YourFlyouts runs In2 on the whole skin;
-    /// stacked Volume/Device panels must still animate Animated meters.
-    /// </summary>
-    public static bool ShouldRunPhase2Reveal(
-        int ani,
-        string? styleId,
-        bool showMediaStrip,
-        TesseraStackedPanelRole? stackedRole)
-    {
-        _ = stackedRole;
-        return Phase2RequiresAnimatedLayout(ani, styleId, showMediaStrip);
-    }
-
-    /// <summary>
-    /// Phase 1 (slide + surface fade). Stacked media skips this on show so the rest
-    /// is not faded in as a second finished acrylic card before TweenNode1.
-    /// </summary>
-    public static bool ShouldRunPhase1(
-        int ani,
-        string? styleId,
-        bool showMediaStrip,
-        TesseraStackedPanelRole? stackedRole,
-        bool entrance)
-    {
-        if (!ShouldAnimateOpacity(ani))
-            return false;
-        if (!entrance
-            || stackedRole != TesseraStackedPanelRole.Media
-            || !StackedMediaMustSkipPhase1OnShow)
-            return true;
-        return !Phase2RequiresAnimatedLayout(ani, styleId, showMediaStrip);
-    }
-
-    public static bool ShouldHoldStackedMediaHiddenThroughShowPhase1(
-        int ani,
-        string? styleId,
-        bool showMediaStrip,
-        TesseraStackedPanelRole? stackedRole) =>
-        !ShouldRunPhase1(ani, styleId, showMediaStrip, stackedRole, entrance: true);
-
-    public static bool ExitMustMirrorEntrance => true;
 }
