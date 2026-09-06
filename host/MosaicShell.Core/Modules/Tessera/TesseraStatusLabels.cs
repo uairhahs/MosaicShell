@@ -1,16 +1,20 @@
 using MosaicShell.Core.Capabilities;
 
-namespace MosaicShell.Core.Modules.Tessera;
-
-/// <summary>Status chip text for locks / flight flyouts.</summary>
-public static class TesseraStatusLabels
+namespace MosaicShell.Core.Modules.Tessera
 {
-    public static string Format(FlyoutRequest request)
+    /// <summary>Status chip text for locks / flight flyouts.</summary>
+    public static class TesseraStatusLabels
     {
-        var on = request.Payload?.GetValueOrDefault("on") == "1";
-        if (request.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase))
-            return on ? "Airplane mode On" : "Airplane mode Off";
-        var lockName = request.Payload?.GetValueOrDefault("lock") ?? "CapsLock";
-        return on ? $"{lockName} On" : $"{lockName} Off";
+        public static string Format(FlyoutRequest request)
+        {
+            bool on = request.Payload?.GetValueOrDefault("on") == "1";
+            if (request.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase))
+            {
+                return on ? "Airplane mode On" : "Airplane mode Off";
+            }
+
+            string lockName = request.Payload?.GetValueOrDefault("lock") ?? "CapsLock";
+            return on ? $"{lockName} On" : $"{lockName} Off";
+        }
     }
 }

@@ -1,0 +1,5 @@
+# Build outputs (local and CI staging)
+stage/
+output/
+*.exe
+!README.md

@@ -1,83 +1,103 @@
 using Avalonia.Controls;
-using MosaicShell.Core.Services;
 
-namespace MosaicShell.Host.Tiles.Tessera;
-
-/// <summary>Ambient bindings while a flyout tree is being built (thread-static).</summary>
-internal static class TesseraLiveAmbient
+namespace MosaicShell.Host.Tiles.Tessera
 {
-    [ThreadStatic] private static TesseraLiveBindings? _current;
-    public static TesseraLiveBindings? Current
+    /// <summary>Ambient bindings while a flyout tree is being built (thread-static).</summary>
+    internal static class TesseraLiveAmbient
     {
-        get => _current;
-        set => _current = value;
-    }
+        [field: ThreadStatic]
+        public static TesseraLiveBindings? Current { get; set; }
 
-    public static void RegisterVolume(
-        TesseraTrack track,
-        TextBlock? percent,
-        Material.Icons.Avalonia.MaterialIcon? glyph,
-        bool pixelVolumeGlyph = false,
-        bool percentOnAdjustOnly = false)
-    {
-        if (_current is null) return;
-        _current.VolumeRing = null;
-        _current.VolumeTrack = track;
-        _current.Percent = percent;
-        _current.Glyph = glyph;
-        _current.MaterialYouVolumeGlyph = pixelVolumeGlyph;
-        _current.PercentOnAdjustOnly = percentOnAdjustOnly;
-    }
+        public static void RegisterVolume(
+            TesseraTrack track,
+            TextBlock? percent,
+            Material.Icons.Avalonia.MaterialIcon? glyph,
+            bool pixelVolumeGlyph = false,
+            bool percentOnAdjustOnly = false)
+        {
+            if (Current is null)
+            {
+                return;
+            }
 
-    public static void RegisterRing(TesseraRingVolume ring)
-    {
-        if (_current is null) return;
-        _current.VolumeTrack = null;
-        _current.VolumeRing = ring;
-        _current.Percent = ring.PercentLabel;
-    }
+            Current.VolumeRing = null;
+            Current.VolumeTrack = track;
+            Current.Percent = percent;
+            Current.Glyph = glyph;
+            Current.MaterialYouVolumeGlyph = pixelVolumeGlyph;
+            Current.PercentOnAdjustOnly = percentOnAdjustOnly;
+        }
 
-    public static void RegisterSlash(TextBlock slash) 
-    {
-        if (_current is null) return;
-        _current.SlashMeter = slash;
-    }
+        public static void RegisterRing(TesseraRingVolume ring)
+        {
+            if (Current is null)
+            {
+                return;
+            }
 
-    public static void RegisterMedia(
-        Border art,
-        TextBlock title,
-        TextBlock artist,
-        TesseraTrack? scrub,
-        TextBlock? pos,
-        TextBlock? dur,
-        Material.Icons.Avalonia.MaterialIcon? play,
-        Material.Icons.Avalonia.MaterialIcon? like = null,
-        Material.Icons.Avalonia.MaterialIcon? dislike = null)
-    {
-        if (_current is null) return;
-        _current.MediaArt = art;
-        _current.MediaTitle = title;
-        _current.MediaArtist = artist;
-        _current.MediaScrub = scrub;
-        _current.MediaPos = pos;
-        _current.MediaDur = dur;
-        _current.PlayPauseIcon = play;
-        _current.LikeIcon = like;
-        _current.DislikeIcon = dislike;
-    }
+            Current.VolumeTrack = null;
+            Current.VolumeRing = ring;
+            Current.Percent = ring.PercentLabel;
+        }
 
-    public static void RegisterPlainTextMedia(TextBlock titleState, TextBlock artist, TextBlock progressLine)
-    {
-        if (_current is null) return;
-        _current.PlainTextMedia = true;
-        _current.MediaTitle = titleState;
-        _current.MediaArtist = artist;
-        _current.MediaPos = progressLine;
-    }
+        public static void RegisterSlash(TextBlock slash)
+        {
+            if (Current is null)
+            {
+                return;
+            }
 
-    public static void RegisterStatus(TextBlock label)
-    {
-        if (_current is null) return;
-        _current.StatusLabel = label;
+            Current.SlashMeter = slash;
+        }
+
+        public static void RegisterMedia(
+            Border art,
+            TextBlock title,
+            TextBlock artist,
+            TesseraTrack? scrub,
+            TextBlock? pos,
+            TextBlock? dur,
+            Material.Icons.Avalonia.MaterialIcon? play,
+            Material.Icons.Avalonia.MaterialIcon? like = null,
+            Material.Icons.Avalonia.MaterialIcon? dislike = null)
+        {
+            if (Current is null)
+            {
+                return;
+            }
+
+            Current.MediaArt = art;
+            Current.MediaTitle = title;
+            Current.MediaArtist = artist;
+            Current.MediaScrub = scrub;
+            Current.MediaPos = pos;
+            Current.MediaDur = dur;
+            Current.PlayPauseIcon = play;
+            Current.LikeIcon = like;
+            Current.DislikeIcon = dislike;
+        }
+
+        public static void RegisterPlainTextMedia(TextBlock titleState, TextBlock artist, TextBlock progressLine)
+        {
+            if (Current is null)
+            {
+                return;
+            }
+
+            Current.PlainTextMedia = true;
+            Current.MediaTitle = titleState;
+            Current.MediaArtist = artist;
+            Current.MediaPos = progressLine;
+        }
+
+        public static void RegisterStatus(TextBlock label)
+        {
+            if (Current is null)
+            {
+                return;
+            }
+
+            Current.StatusLabel = label;
+        }
     }
 }

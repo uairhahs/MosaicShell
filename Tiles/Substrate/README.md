@@ -1,12 +1,11 @@
 # Substrate (native-only)
 
-Substrate runs as an **Avalonia capability** inside `MosaicShell.Host` - not as a Rainmeter skin.
+Substrate runs as an **Avalonia capability** inside `MosaicShell.Host`.
 
-| Path | Role |
-|------|------|
+| Path                                          | Role                              |
+| --------------------------------------------- | --------------------------------- |
 | `host/MosaicShell.Core/Capabilities/BuiltIn/` | Arm / hotkey (default Ctrl+Alt+Q) |
-| `host/MosaicShell.Host/Tiles/Surfaces/` | Quick-settings shade overlay |
-| This folder | Install stub so `install-module Substrate` creates `Modules/Substrate` |
+| `host/MosaicShell.Host/Tiles/Surfaces/`       | Quick-settings shade overlay      |
 
 ## Install / arm
 
@@ -16,6 +15,6 @@ dotnet run --project Mosaicist -- install-module Substrate
 dotnet run --project MosaicShell.Host
 ```
 
-In Host: Library → Substrate → Arm, then press the configured hotkey.
+Host: Library → Substrate → Arm.
 
-Promised Rainmeter-era behavior: [`.cursor/docs/legacy/substrate.md`](../../.cursor/docs/legacy/substrate.md).
+Promised Rainmeter-era behavior: [`docs/legacy/substrate.md`](../../docs/legacy/substrate.md).

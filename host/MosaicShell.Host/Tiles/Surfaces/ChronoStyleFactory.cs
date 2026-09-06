@@ -1,4 +1,3 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Layout;
@@ -6,121 +5,126 @@ using Avalonia.Media;
 using MosaicShell.Core.Settings;
 using MosaicShell.Core.Styles;
 
-namespace MosaicShell.Host.Tiles.Surfaces;
-
-internal static class ChronoStyleFactory
+namespace MosaicShell.Host.Tiles.Surfaces
 {
-    public static Control Create(ChronoSettings settings, TextBlock time, TextBlock date)
+    internal static class ChronoStyleFactory
     {
-        ApplyTypography(settings, time, date);
-        var style = StyleIds.Normalize(settings.Style);
-        if (style.Equals(StyleIds.Square, StringComparison.OrdinalIgnoreCase))
-            return CreateSquare(time, date);
-        if (style.Equals("Text", StringComparison.OrdinalIgnoreCase)
-            || style.Equals("Minimal", StringComparison.OrdinalIgnoreCase))
-            return CreateText(time, date);
-        if (style.Equals("Tech", StringComparison.OrdinalIgnoreCase)
-            || style.Equals("CircTech", StringComparison.OrdinalIgnoreCase))
-            return CreateTech(time, date);
-        if (style.Equals("Light", StringComparison.OrdinalIgnoreCase))
-            return CreateLight(time, date);
-        return CreateDefault(time, date);
-    }
-
-    private static Control CreateSquare(TextBlock time, TextBlock date)
-    {
-        time.HorizontalAlignment = HorizontalAlignment.Center;
-        date.HorizontalAlignment = HorizontalAlignment.Center;
-        var arc = new Ellipse
+        public static Control Create(ChronoSettings settings, TextBlock time, TextBlock date)
         {
-            Width = 220,
-            Height = 110,
-            Stroke = WidgetChrome.Brush("#45475a"),
-            StrokeThickness = 2,
-            Fill = Brushes.Transparent,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Avalonia.Thickness(0, 0, 0, -48)
-        };
-        var stack = new StackPanel
-        {
-            VerticalAlignment = VerticalAlignment.Center,
-            Spacing = 4,
-            Children = { arc, time, date }
-        };
-        return WidgetChrome.Wrap(stack, minWidth: 300);
-    }
-
-    private static Control CreateText(TextBlock time, TextBlock date) =>
-        WidgetChrome.Wrap(new StackPanel
-        {
-            VerticalAlignment = VerticalAlignment.Center,
-            Children = { time, date }
-        }, minWidth: 260);
-
-    private static Control CreateTech(TextBlock time, TextBlock date) =>
-        WidgetChrome.Wrap(new StackPanel
-        {
-            VerticalAlignment = VerticalAlignment.Center,
-            Children = { time, date }
-        }, minWidth: 300);
-
-    private static Control CreateLight(TextBlock time, TextBlock date)
-    {
-        time.Foreground = WidgetChrome.Brush("#1e1e2e");
-        date.Foreground = WidgetChrome.Brush("#45475a");
-        return WidgetChrome.Wrap(new Border
-        {
-            Background = WidgetChrome.Brush("#f5f5f7"),
-            CornerRadius = new Avalonia.CornerRadius(12),
-            Padding = new Avalonia.Thickness(20, 16),
-            Child = new StackPanel { Children = { time, date } }
-        }, minWidth: 280);
-    }
-
-    private static Control CreateDefault(TextBlock time, TextBlock date) =>
-        WidgetChrome.Wrap(new StackPanel
-        {
-            VerticalAlignment = VerticalAlignment.Center,
-            Children = { time, date }
-        }, minWidth: 280);
-
-    private static void ApplyTypography(ChronoSettings settings, TextBlock time, TextBlock date)
-    {
-        time.Foreground = WidgetChrome.Brush("#cdd6f4");
-        date.Foreground = WidgetChrome.Brush("#a6adc8");
-        var style = StyleIds.Normalize(settings.Style);
-        if (style.Equals("Text", StringComparison.OrdinalIgnoreCase)
-            || style.Equals("Minimal", StringComparison.OrdinalIgnoreCase))
-        {
-            time.FontSize = 36;
-            time.FontWeight = FontWeight.SemiBold;
-            date.FontSize = 12;
+            ApplyTypography(settings, time, date);
+            string style = StyleIds.Normalize(settings.Style);
+            return style.Equals(StyleIds.Square, StringComparison.OrdinalIgnoreCase)
+                ? CreateSquare(time, date)
+                : style.Equals("Text", StringComparison.OrdinalIgnoreCase)
+                || style.Equals("Minimal", StringComparison.OrdinalIgnoreCase)
+                ? CreateText(time, date)
+                : style.Equals("Tech", StringComparison.OrdinalIgnoreCase)
+                || style.Equals("CircTech", StringComparison.OrdinalIgnoreCase)
+                ? CreateTech(time, date)
+                : style.Equals("Light", StringComparison.OrdinalIgnoreCase) ? CreateLight(time, date) : CreateDefault(time, date);
         }
-        else if (style.Equals("Tech", StringComparison.OrdinalIgnoreCase)
-                 || style.Equals("CircTech", StringComparison.OrdinalIgnoreCase))
+
+        private static Control CreateSquare(TextBlock time, TextBlock date)
         {
-            time.FontSize = 44;
-            time.FontFamily = new FontFamily("Consolas, Cascadia Mono, monospace");
-            date.FontSize = 13;
-            date.FontFamily = time.FontFamily;
+            time.HorizontalAlignment = HorizontalAlignment.Center;
+            date.HorizontalAlignment = HorizontalAlignment.Center;
+            Ellipse arc = new()
+            {
+                Width = 220,
+                Height = 110,
+                Stroke = WidgetChrome.Brush("#45475a"),
+                StrokeThickness = 2,
+                Fill = Brushes.Transparent,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Avalonia.Thickness(0, 0, 0, -48)
+            };
+            StackPanel stack = new()
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                Spacing = 4,
+                Children = { arc, time, date }
+            };
+            return WidgetChrome.Wrap(stack, minWidth: 300);
         }
-        else if (style.Equals(StyleIds.Square, StringComparison.OrdinalIgnoreCase))
+
+        private static Control CreateText(TextBlock time, TextBlock date)
         {
-            time.FontSize = 52;
-            time.FontWeight = FontWeight.Light;
-            date.FontSize = 15;
-            date.Margin = new Avalonia.Thickness(0, 10, 0, 0);
+            return WidgetChrome.Wrap(new StackPanel
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                Children = { time, date }
+            }, minWidth: 260);
         }
-        else if (style.Equals("Light", StringComparison.OrdinalIgnoreCase))
+
+        private static Control CreateTech(TextBlock time, TextBlock date)
         {
-            time.FontSize = 52;
-            time.FontWeight = FontWeight.Thin;
-            date.FontSize = 14;
+            return WidgetChrome.Wrap(new StackPanel
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                Children = { time, date }
+            }, minWidth: 300);
         }
-        else
+
+        private static Control CreateLight(TextBlock time, TextBlock date)
         {
-            time.FontSize = 48;
-            date.FontSize = 14;
+            time.Foreground = WidgetChrome.Brush("#1e1e2e");
+            date.Foreground = WidgetChrome.Brush("#45475a");
+            return WidgetChrome.Wrap(new Border
+            {
+                Background = WidgetChrome.Brush("#f5f5f7"),
+                CornerRadius = new Avalonia.CornerRadius(12),
+                Padding = new Avalonia.Thickness(20, 16),
+                Child = new StackPanel { Children = { time, date } }
+            }, minWidth: 280);
+        }
+
+        private static Control CreateDefault(TextBlock time, TextBlock date)
+        {
+            return WidgetChrome.Wrap(new StackPanel
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                Children = { time, date }
+            }, minWidth: 280);
+        }
+
+        private static void ApplyTypography(ChronoSettings settings, TextBlock time, TextBlock date)
+        {
+            time.Foreground = WidgetChrome.Brush("#cdd6f4");
+            date.Foreground = WidgetChrome.Brush("#a6adc8");
+            string style = StyleIds.Normalize(settings.Style);
+            if (style.Equals("Text", StringComparison.OrdinalIgnoreCase)
+                || style.Equals("Minimal", StringComparison.OrdinalIgnoreCase))
+            {
+                time.FontSize = 36;
+                time.FontWeight = FontWeight.SemiBold;
+                date.FontSize = 12;
+            }
+            else if (style.Equals("Tech", StringComparison.OrdinalIgnoreCase)
+                     || style.Equals("CircTech", StringComparison.OrdinalIgnoreCase))
+            {
+                time.FontSize = 44;
+                time.FontFamily = new FontFamily("Consolas, Cascadia Mono, monospace");
+                date.FontSize = 13;
+                date.FontFamily = time.FontFamily;
+            }
+            else if (style.Equals(StyleIds.Square, StringComparison.OrdinalIgnoreCase))
+            {
+                time.FontSize = 52;
+                time.FontWeight = FontWeight.Light;
+                date.FontSize = 15;
+                date.Margin = new Avalonia.Thickness(0, 10, 0, 0);
+            }
+            else if (style.Equals("Light", StringComparison.OrdinalIgnoreCase))
+            {
+                time.FontSize = 52;
+                time.FontWeight = FontWeight.Thin;
+                date.FontSize = 14;
+            }
+            else
+            {
+                time.FontSize = 48;
+                date.FontSize = 14;
+            }
         }
     }
 }

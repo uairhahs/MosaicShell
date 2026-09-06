@@ -2,6 +2,7 @@ name: Release
 
 permissions:
   contents: write
+  id-token: write
 
 on:
   push:
@@ -15,7 +16,7 @@ defaults:
 
 jobs:
   build-and-release:
-    name: Build Host zip and publish release
+    name: Build Setup.exe and publish release
     runs-on: windows-latest
 
     steps:
@@ -23,13 +24,14 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: "10.0.x"
+          dotnet-version: 10.0.x
 
-      - name: Resolve version
+      - name: Resolve date-build version
         id: tag
         run: |
+          # Date-build (not semver): yyyy.M.d-b{run_number}
           $name = (Get-Date -AsUTC).ToString("yyyy.M.d") + "-b${{ github.run_number }}"
           "name=$name" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           Write-Host "Release tag: $name"
@@ -38,63 +40,181 @@ jobs:
         working-directory: host
         run: dotnet test MosaicShell.Core.Tests --configuration Release --nologo
 
-      - name: Publish Host + Mosaicist
-        working-directory: host
+      - name: Install Inno Setup 7.1
+        run: |
+          # Chocolatey `innosetup` is still 6.x only. Pin 7.1.0 from upstream (same URL winget uses).
+          $url = "https://github.com/jrsoftware/issrc/releases/download/is-7_1_0/innosetup-7.1.0-x64.exe"
+          $sha = "0362a383ed217d4c4239b5933866dd96d3eb2102737da92f80f6057a4b40df2f"
+          $installer = Join-Path $env:RUNNER_TEMP "innosetup-7.1.0-x64.exe"
+          Invoke-WebRequest -Uri $url -OutFile $installer -UseBasicParsing
+          $actual = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $sha) { throw "Inno Setup hash mismatch: $actual" }
+          Start-Process -FilePath $installer -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/SP-" -Wait
+          $iscc = @(
+            "${env:ProgramFiles}\Inno Setup 7\ISCC.exe",
+            "${env:ProgramFiles(x86)}\Inno Setup 7\ISCC.exe",
+            "$env:LOCALAPPDATA\Programs\Inno Setup 7\ISCC.exe"
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $iscc) { throw "ISCC.exe not found after Inno Setup 7.1 install" }
+          Write-Host "ISCC: $iscc"
+
+      - name: Publish stage (Host + Mosaicist + Tiles)
         env:
           BUILD_VERSION: ${{ steps.tag.outputs.name }}
         run: |
-          $out = Join-Path $env:GITHUB_WORKSPACE "artifacts"
-          New-Item -ItemType Directory -Force -Path $out | Out-Null
           $version = $env:BUILD_VERSION
-          Write-Host "Stamping version: $version"
+          & "$env:GITHUB_WORKSPACE\packaging\build-setup.ps1" -Version $version -SkipInno
+          $hostExe = Join-Path $env:GITHUB_WORKSPACE "packaging\stage\Host\MosaicShell.Host.exe"
+          $mosaicistExe = Join-Path $env:GITHUB_WORKSPACE "packaging\stage\Mosaicist\Mosaicist.exe"
+          if (-not (Test-Path $hostExe)) { throw "Missing $hostExe" }
+          if (-not (Test-Path $mosaicistExe)) { throw "Missing $mosaicistExe" }
 
-          dotnet publish MosaicShell.Host `
-            -c Release -r win-x64 --self-contained false `
-            -p:Version=$version `
-            -o (Join-Path $out "Host")
-
-          dotnet publish Mosaicist `
-            -c Release -r win-x64 --self-contained false `
-            -p:Version=$version `
-            -o (Join-Path $out "Mosaicist")
-
-          Copy-Item -Recurse -Force `
-            (Join-Path $env:GITHUB_WORKSPACE "Tiles") `
-            (Join-Path $out "Tiles")
-
-          Set-Content -Path (Join-Path $out "VERSION.txt") -Value $version -Encoding utf8
-
-          @"
-          MosaicShell Host release $version
-
-          Requires .NET 10 runtime (Windows x64).
-
-          1. Extract this zip.
-          2. From Mosaicist\:  .\Mosaicist.exe install-module Tessera
-             (repeat for other module ids as needed; stubs are under Tiles\).
-          3. Run Host\MosaicShell.Host.exe
-
-          Docs: https://github.com/${{ github.repository }}/blob/main/.github/docs/README.md
-          "@.Trim() | Set-Content -Path (Join-Path $out "README.txt") -Encoding utf8
-
-      - name: Zip release
-        id: zip
+      - name: Detect Trusted Signing configuration
+        id: signing
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          TRUSTED_SIGNING_ACCOUNT: ${{ vars.TRUSTED_SIGNING_ACCOUNT }}
+          TRUSTED_SIGNING_CERT_PROFILE: ${{ vars.TRUSTED_SIGNING_CERT_PROFILE }}
+          TRUSTED_SIGNING_ENDPOINT: ${{ vars.TRUSTED_SIGNING_ENDPOINT }}
         run: |
-          $name = "${{ steps.tag.outputs.name }}"
-          $zip = Join-Path $env:GITHUB_WORKSPACE "MosaicShell-Host-$name.zip"
+          $missing = @()
+          foreach ($pair in @(
+            @{ N = 'AZURE_CLIENT_ID'; V = $env:AZURE_CLIENT_ID },
+            @{ N = 'AZURE_TENANT_ID'; V = $env:AZURE_TENANT_ID },
+            @{ N = 'AZURE_SUBSCRIPTION_ID'; V = $env:AZURE_SUBSCRIPTION_ID },
+            @{ N = 'TRUSTED_SIGNING_ACCOUNT'; V = $env:TRUSTED_SIGNING_ACCOUNT },
+            @{ N = 'TRUSTED_SIGNING_CERT_PROFILE'; V = $env:TRUSTED_SIGNING_CERT_PROFILE },
+            @{ N = 'TRUSTED_SIGNING_ENDPOINT'; V = $env:TRUSTED_SIGNING_ENDPOINT }
+          )) {
+            if ([string]::IsNullOrWhiteSpace($pair.V)) { $missing += $pair.N }
+          }
+          if ($missing.Count -gt 0) {
+            Write-Host "Signing deferred (unsigned release). Missing: $($missing -join ', '). See .github/docs/release-signing.md"
+            "enabled=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          }
+          else {
+            Write-Host "Trusted Signing config present; will sign Host, Mosaicist, and Setup."
+            "enabled=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          }
+
+      - name: Azure login (OIDC)
+        if: steps.signing.outputs.enabled == 'true'
+        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sign Host and Mosaicist
+        if: steps.signing.outputs.enabled == 'true'
+        uses: azure/trusted-signing-action@0d74250c661747df006298d0fb49944c10f16e03 # v0.5.1
+        with:
+          endpoint: ${{ vars.TRUSTED_SIGNING_ENDPOINT }}
+          trusted-signing-account-name: ${{ vars.TRUSTED_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ vars.TRUSTED_SIGNING_CERT_PROFILE }}
+          files: |
+            ${{ github.workspace }}\packaging\stage\Host\MosaicShell.Host.exe
+            ${{ github.workspace }}\packaging\stage\Mosaicist\Mosaicist.exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+
+      - name: Build Setup.exe
+        id: setup
+        env:
+          BUILD_VERSION: ${{ steps.tag.outputs.name }}
+        run: |
+          $version = $env:BUILD_VERSION
+          & "$env:GITHUB_WORKSPACE\packaging\build-setup.ps1" -Version $version -SkipPublish
+          $setup = Get-ChildItem "$env:GITHUB_WORKSPACE\packaging\output" -Filter "MosaicShell-Setup-*.exe" |
+            Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $setup) { throw "Setup.exe missing" }
+          "setup=$($setup.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Setup: $($setup.FullName)"
+
+      - name: Sign Setup.exe
+        if: steps.signing.outputs.enabled == 'true'
+        uses: azure/trusted-signing-action@0d74250c661747df006298d0fb49944c10f16e03 # v0.5.1
+        with:
+          endpoint: ${{ vars.TRUSTED_SIGNING_ENDPOINT }}
+          trusted-signing-account-name: ${{ vars.TRUSTED_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ vars.TRUSTED_SIGNING_CERT_PROFILE }}
+          files: ${{ steps.setup.outputs.setup }}
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+
+      - name: Verify signatures
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          SETUP_PATH: ${{ steps.setup.outputs.setup }}
+        run: |
+          $signtool = "${env:ProgramFiles(x86)}\Windows Kits\10\bin\x64\signtool.exe"
+          if (-not (Test-Path $signtool)) {
+            $found = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
+              Where-Object { $_.DirectoryName -match '\\x64$' } |
+              Sort-Object FullName -Descending |
+              Select-Object -First 1
+            if ($found) { $signtool = $found.FullName }
+          }
+          if (-not (Test-Path $signtool)) { throw "signtool.exe not found on runner" }
+
+          $targets = @(
+            (Join-Path $env:GITHUB_WORKSPACE "packaging\stage\Host\MosaicShell.Host.exe"),
+            (Join-Path $env:GITHUB_WORKSPACE "packaging\stage\Mosaicist\Mosaicist.exe"),
+            $env:SETUP_PATH
+          )
+          foreach ($path in $targets) {
+            Write-Host "Verifying $path"
+            & $signtool verify /pa /v $path
+            if ($LASTEXITCODE -ne 0) { throw "Signature verify failed: $path" }
+          }
+
+      - name: Build portable zip
+        id: zip
+        env:
+          BUILD_VERSION: ${{ steps.tag.outputs.name }}
+        run: |
+          $version = $env:BUILD_VERSION
+          $stage = Join-Path $env:GITHUB_WORKSPACE "packaging\stage"
+          $zip = Join-Path $env:GITHUB_WORKSPACE "MosaicShell-Portable-$version.zip"
           if (Test-Path $zip) { Remove-Item $zip -Force }
-          Compress-Archive -Path (Join-Path $env:GITHUB_WORKSPACE "artifacts\*") -DestinationPath $zip
+          Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip
           "path=$zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-          Write-Host "Created $zip"
+          Write-Host "Portable: $zip"
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SIGNING_ENABLED: ${{ steps.signing.outputs.enabled }}
         run: |
           $name = "${{ steps.tag.outputs.name }}"
+          $setup = "${{ steps.setup.outputs.setup }}"
           $zip = "${{ steps.zip.outputs.path }}"
-          gh release create $name $zip `
+          $alias = Join-Path $env:GITHUB_WORKSPACE "MosaicShell-Setup.exe"
+          Copy-Item -Force $setup $alias
+
+          $signNote = if ($env:SIGNING_ENABLED -eq 'true') {
+            "- Release binaries are Authenticode-signed via Azure Trusted Signing."
+          } else {
+            "- Builds are currently **unsigned** (SmartScreen may warn). Signing is deferred; see [.github/docs/release-signing.md](https://github.com/uairhahs/MosaicShell/blob/main/.github/docs/release-signing.md) when ready."
+          }
+
+          gh release create $name $setup $alias $zip `
             --title "MosaicShell $name" `
-            --generate-notes `
+            --notes @"
+          ## Install
+          Download **MosaicShell-Setup-$name.exe** and run it (per-user, no admin required).
+
+          - Includes self-contained Host (no separate .NET Desktop Runtime install).
+          - Installs Tessera and Mixdeck module stubs by default.
+          - Optional: **MosaicShell-Portable-$name.zip** for a folder-based layout.
+          $signNote
+
+          ## Update
+          In Host: Settings / Check updates downloads the latest Setup and runs it silently.
+          "@ `
             --prerelease `
             --target "${{ github.sha }}"

@@ -10,28 +10,28 @@ Install stubs remain at `Tiles/{Id}/` (`module.native.json` + README) so Mosaici
 
 ## Archives
 
-| Source | Notes |
-|--------|--------|
-| [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore) | Upstream hub (archived November 2024) |
-| Git history of this repo | Pre-Avalonia Rainmeter trees lived here before B5; recover via `git log` / `git show <rev>:path` |
-| Archived remotes / mirrors | *(placeholder — add concrete URLs when published)* |
+| Source                                                  | Notes                                                                                            |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore) | Upstream hub (archived November 2024)                                                            |
+| Git history of this repo                                | Pre-Avalonia Rainmeter trees lived here before B5; recover via `git log` / `git show <rev>:path` |
+| Archived remotes / mirrors                              | _(placeholder for now, add concrete URLs when published)_                                        |
 
 ## Per-module promised functionality
 
-| Module | Page |
-|--------|------|
-| Tessera | [tessera.md](tessera.md) |
-| Mixdeck | [mixdeck.md](mixdeck.md) |
-| Inlay | [inlay.md](inlay.md) |
-| Chord | [chord.md](chord.md) |
+| Module    | Page                         |
+| --------- | ---------------------------- |
+| Tessera   | [tessera.md](tessera.md)     |
+| Mixdeck   | [mixdeck.md](mixdeck.md)     |
+| Inlay     | [inlay.md](inlay.md)         |
+| Chord     | [chord.md](chord.md)         |
 | Substrate | [substrate.md](substrate.md) |
-| Slate | [slate.md](slate.md) |
-| Chrono | [chrono.md](chrono.md) |
-| Phono | [phono.md](phono.md) |
-| Pulse | [pulse.md](pulse.md) |
-| Canvas | [canvas.md](canvas.md) |
+| Slate     | [slate.md](slate.md)         |
+| Chrono    | [chrono.md](chrono.md)       |
+| Phono     | [phono.md](phono.md)         |
+| Pulse     | [pulse.md](pulse.md)         |
+| Canvas    | [canvas.md](canvas.md)       |
 
-Host fidelity and honesty flags: [`docs/native-rewrite.md`](../native-rewrite.md), [`docs/parity/README.md`](../parity/README.md).
+Host fidelity and honesty flags: [`docs/architecture.md`](../architecture.md), [`docs/parity/README.md`](../parity/README.md).
 
 ## Historical plugin credits
 

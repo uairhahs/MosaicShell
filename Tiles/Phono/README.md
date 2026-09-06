@@ -2,11 +2,10 @@
 
 Phono runs as an Avalonia **widget** via `TileRuntime`.
 
-| Path | Role |
-|------|------|
+| Path                                                                   | Role                   |
+| ---------------------------------------------------------------------- | ---------------------- |
 | `host/MosaicShell.Host/Tiles/Surfaces/LiveTilesA.cs` (`PhonoTileView`) | SMTC media + transport |
-| `host/MosaicShell.Core/Settings/ModuleSettings.cs` (`PhonoSettings`) | Style / show artist |
-| This folder | Install stub for `install-module Phono` |
+| `host/MosaicShell.Core/Settings/ModuleSettings.cs` (`PhonoSettings`)   | Style / show artist    |
 
 Media is **SMTC only** on the Host path (WebNowPlaying covers are Tessera-side).
 
@@ -18,6 +17,6 @@ dotnet run --project Mosaicist -- install-module Phono
 dotnet run --project MosaicShell.Host
 ```
 
-In Host: Library → Phono → Start.
+Host: Library → Phono → Start.
 
-Promised Rainmeter-era behavior: [`.cursor/docs/legacy/phono.md`](../../.cursor/docs/legacy/phono.md).
+Promised Rainmeter-era behavior: [`docs/legacy/phono.md`](../../docs/legacy/phono.md).

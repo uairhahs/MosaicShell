@@ -1,42 +1,47 @@
 using Avalonia.Controls;
 using MosaicShell.Core.Modules.Tessera;
 
-namespace MosaicShell.Host.Tiles.Tessera;
-
-internal static class TesseraStackedPanelFactory
+namespace MosaicShell.Host.Tiles.Tessera
 {
-    public static Control CreatePanel(
-        string styleId,
-        TesseraFlyoutViewModel vm,
-        TesseraStackedPanelRole role,
-        TesseraLiveBindings bindings,
-        string? accentColor,
-        bool embeddedPreview = false)
+    internal static class TesseraStackedPanelFactory
     {
-        using var _ = TesseraStackedBuildContext.Begin(role, bindings);
-        TesseraPalette.ApplyAccentFromSettings(accentColor);
-        TesseraLiveAmbient.Current = bindings;
-        if (embeddedPreview)
-            TesseraGlass.EmbeddedPreviewBuild = true;
-        try
+        public static Control CreatePanel(
+            string styleId,
+            TesseraFlyoutViewModel vm,
+            TesseraStackedPanelRole role,
+            TesseraLiveBindings bindings,
+            string? accentColor,
+            bool embeddedPreview = false,
+            bool sessionAlreadyShowing = false)
         {
-            var panel = TesseraStyleFactory.CreateLayoutPanel(styleId, vm);
-            if (role == TesseraStackedPanelRole.Volume)
+            using IDisposable _ = TesseraStackedBuildContext.Begin(role, bindings);
+            using IDisposable revealCtx = TesseraRevealBuildContext.Begin(embeddedPreview, vm.Ani, sessionAlreadyShowing);
+            TesseraPalette.ApplyAccentFromSettings(accentColor);
+            TesseraLiveAmbient.Current = bindings;
+            if (embeddedPreview)
             {
-                return new TesseraLiveHost(bindings)
-                {
-                    IsEmbeddedPreview = embeddedPreview,
-                    Content = panel
-                };
+                TesseraGlass.EmbeddedPreviewBuild = true;
             }
 
-            return panel;
-        }
-        finally
-        {
-            TesseraLiveAmbient.Current = null;
-            if (embeddedPreview)
-                TesseraGlass.EmbeddedPreviewBuild = false;
+            try
+            {
+                Control panel = TesseraStyleFactory.CreateLayoutPanel(styleId, vm);
+                return role == TesseraStackedPanelRole.Volume
+                    ? new TesseraLiveHost(bindings)
+                    {
+                        IsEmbeddedPreview = embeddedPreview,
+                        Content = panel
+                    }
+                    : TesseraRevealHostFactory.FromCatalog(vm, role, panel);
+            }
+            finally
+            {
+                TesseraLiveAmbient.Current = null;
+                if (embeddedPreview)
+                {
+                    TesseraGlass.EmbeddedPreviewBuild = false;
+                }
+            }
         }
     }
 }

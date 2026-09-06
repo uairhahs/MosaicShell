@@ -1,15 +1,7 @@
 {
-    "Lua.diagnostics.globals": [
-        "SKIN",
-        "SELF"
-    ],
-    "Lua.diagnostics.disable": [
-        "lowercase-global"
-    ],
-    "sarif-viewer.connectToGithubCodeScanning": "off",
-    "csharp-dev-tools.solutionViewer.selectedWorkspaceSolutions": [
-        "host/MosaicShell.sln"
-    ],
-    "csharp-dev-tools.build.configuration": "Debug",
-    "dotnet.defaultSolution": "host/MosaicShell.App.sln"
+  "csharp-dev-tools.solutionViewer.selectedWorkspaceSolutions": [
+    "host/MosaicShell.sln"
+  ],
+  "csharp-dev-tools.build.configuration": "Debug",
+  "dotnet.defaultSolution": "host/MosaicShell.App.sln"
 }

@@ -1,7 +1,8 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace MosaicShell.Host.ViewModels;
-
-public abstract class ViewModelBase : ObservableObject
+namespace MosaicShell.Host.ViewModels
 {
+    public abstract class ViewModelBase : ObservableObject
+    {
+    }
 }
