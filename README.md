@@ -25,13 +25,29 @@ It continues the JaxCore idea of a modular desktop (forked from [Jax-Core/JaxCor
 
 ## Prerequisites
 
-| Requirement | Minimum |
-|-------------|---------|
-| OS | Windows 10 x64 or later |
-| .NET SDK | 10.0 |
-| RAM | 6 GB |
+| Requirement | Minimum                                                                                                                           |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| OS          | Windows 10 x64 or later                                                                                                           |
+| .NET        | Not required for the release Setup (self-contained Host). Desktop Runtime 10.0 only if you build framework-dependent from source. |
+| RAM         | 6 GB                                                                                                                              |
 
-## Install (Host)
+## Install
+
+### Setup.exe (recommended)
+
+1. Download `MosaicShell-Setup-*.exe` from [Releases](https://github.com/uairhahs/MosaicShell/releases).
+2. Run the installer (per-user under `%LocalAppData%\Programs\MosaicShell`).
+3. Launch MosaicShell from the Start Menu. Default modules (Tessera, Mixdeck) are offered during setup.
+
+In-app **Check Updates** downloads the latest Setup and runs a silent upgrade.
+
+Release tags use date-build (`yyyy.M.d-bN`, e.g. `2026.8.23-b1`), not semver.
+
+### Portable zip (advanced)
+
+Download `MosaicShell-Portable-*.zip`, extract, and run `Host\MosaicShell.Host.exe`. Use `Mosaicist\` next to Host to install modules from the bundled `Tiles\` folder.
+
+### From source (developers)
 
 ```powershell
 cd host
@@ -41,9 +57,11 @@ dotnet run --project Mosaicist -- install-module Mixdeck
 dotnet run --project MosaicShell.Host
 ```
 
+Local Setup builds: [packaging/README.md](packaging/README.md).
+
 See [host/README.md](host/README.md) and [`.github/docs/parity.md`](.github/docs/parity.md).
 
-**Honest MVP vs fidelity:** `tile_*_mvp` flags mean wiring, settings, and flagship behavior slices are in place, not full Jax-Core visual parity. Tessera layout is signed off (`tessera_layout_fidelity`; proofs in [`.github/res/Tessera/`](.github/res/Tessera/)). Other `*_layout_fidelity` flags stay false until in-repo screenshot proofs exist (see [`.github/docs/parity.md`](.github/docs/parity.md)). Install modules from the bundled `Tiles/{Id}/` stub via `Mosaicist install-module <id>`.
+**Honest MVP vs fidelity:** `tile_*_mvp` flags mean wiring, settings, and flagship behavior slices are in place, not full Jax-Core visual parity. Tessera layout is signed off (`tessera_layout_fidelity`; proofs in [`.github/res/Tessera/`](.github/res/Tessera/)). Other `*_layout_fidelity` flags stay false until in-repo screenshot proofs exist (see [`.github/docs/parity.md`](.github/docs/parity.md)). Install modules from the bundled `Tiles/{Id}/` stub via `Mosaicist install-module <id>` or the Setup post-install step.
 
 ---
 
@@ -51,18 +69,18 @@ See [host/README.md](host/README.md) and [`.github/docs/parity.md`](.github/docs
 
 Every catalog module ships as a thin `Tiles/{Id}` install stub (`module.native.json` + README). Runtime code lives under `host/`.
 
-| Tile | Description | License |
-|------|-------------|---------|
-| Tessera | Volume / brightness / media flyouts (armed capability) | MPL-2.0 |
-| Mixdeck | Per-app audio mixer overlay | MPL-2.0 |
-| Inlay | Start-menu launcher (pins + search) | MPL-2.0 |
-| Slate | Idle clock overlay | MPL-2.0 |
-| Chord | Macro app launcher | MPL-2.0 |
-| Substrate | Quick-settings shade | MPL-2.0 |
-| Pulse | Audio visualizer widget | MIT |
-| Chrono | Clock widget | MIT |
-| Phono | SMTC media widget | MIT |
-| Canvas | System-metrics text widget | MIT |
+| Tile      | Description                                            | License |
+| --------- | ------------------------------------------------------ | ------- |
+| Tessera   | Volume / brightness / media flyouts (armed capability) | MPL-2.0 |
+| Mixdeck   | Per-app audio mixer overlay                            | MPL-2.0 |
+| Inlay     | Start-menu launcher (pins + search)                    | MPL-2.0 |
+| Slate     | Idle clock overlay                                     | MPL-2.0 |
+| Chord     | Macro app launcher                                     | MPL-2.0 |
+| Substrate | Quick-settings shade                                   | MPL-2.0 |
+| Pulse     | Audio visualizer widget                                | MIT     |
+| Chrono    | Clock widget                                           | MIT     |
+| Phono     | SMTC media widget                                      | MIT     |
+| Canvas    | System-metrics text widget                             | MIT     |
 
 ---
 
@@ -78,7 +96,7 @@ MosaicShell is a fork of [JaxCore](https://github.com/Jax-Core/JaxCore) by [@Enh
 
 Issues and pull requests are welcome. If you are building a module or widget compatible with MosaicShell, open an issue to discuss integration.
 
-**Development:** [`.github/docs/`](.github/docs/) (testing, parity honesty, scaling).
+**Development:** [`.github/docs/`](.github/docs/) (testing, parity honesty, scaling), [`docs/architecture.md`](docs/architecture.md) (how the repo is put together), [`docs/parity/README.md`](docs/parity/README.md) (per-module MVP bars), [`docs/legacy/`](docs/legacy/) (what the Rainmeter-era modules promised).
 
 ---
 

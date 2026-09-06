@@ -1,16 +1,28 @@
-# MosaicShell native host (spike)
+# MosaicShell Host
 
-Avalonia hub + `Mosaicist` installer. See [`.cursor/docs/architecture-native.md`](../.cursor/docs/architecture-native.md).
+Avalonia hub and `Mosaicist` CLI. See [`docs/architecture.md`](../docs/architecture.md).
+
+## Dev loop
 
 ```powershell
-dotnet build MosaicShell.sln
 dotnet test MosaicShell.Core.Tests
-dotnet run --project MosaicShell.Host
-dotnet run --project Mosaicist -- list
 dotnet run --project Mosaicist -- install-module Tessera
-dotnet run --project Mosaicist -- install-module Canvas
+dotnet run --project MosaicShell.Host
 ```
 
-Tessera and widgets (Chrono / Phono / Pulse / Canvas) are **native-only** (`Tiles/{Id}` = install stubs). Mixdeck hotkey/Material You open the **native overlay** (MVP bar in `.cursor/docs/parity`). Layout/OSD: [YourFlyouts](https://github.com/Jax-Core/YourFlyouts), [ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts). Honesty flags: [`.cursor/docs/parity/README.md`](../.cursor/docs/parity/README.md). Roadmap: [`.cursor/docs/native-rewrite.md`](../.cursor/docs/native-rewrite.md).
+## Releases
 
-Parity is driven by tests - see [`.cursor/docs/parity/README.md`](../.cursor/docs/parity/README.md).
+End users install via **Inno Setup** (`MosaicShell-Setup-*.exe`). See [packaging/README.md](../packaging/README.md).
+
+Version tags are **date-build** (`yyyy.M.d-bN`), not semver.
+
+Portable layout (also inside the Setup staging folder):
+
+```text
+Host/MosaicShell.Host.exe   (self-contained win-x64)
+Mosaicist/Mosaicist.exe
+Tiles/{Id}/...
+VERSION.txt
+```
+
+Mosaicist installs modules into `%LocalAppData%\MosaicShell\Modules` from the release `Tiles/` tree next to Host.

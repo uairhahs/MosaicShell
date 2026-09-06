@@ -1,12 +1,11 @@
 # Chord (native-only)
 
-Chord runs as an **Avalonia capability** inside `MosaicShell.Host` - not as a Rainmeter skin.
+Chord runs as an **Avalonia capability** inside `MosaicShell.Host`.
 
-| Path | Role |
-|------|------|
+| Path                                          | Role                              |
+| --------------------------------------------- | --------------------------------- |
 | `host/MosaicShell.Core/Capabilities/BuiltIn/` | Arm / hotkey (default Ctrl+Alt+K) |
-| `host/MosaicShell.Host/Tiles/Surfaces/` | Named macro actions overlay |
-| This folder | Install stub so `install-module Chord` creates `Modules/Chord` |
+| `host/MosaicShell.Host/Tiles/Surfaces/`       | Named macro actions overlay       |
 
 ## Install / arm
 
@@ -16,6 +15,6 @@ dotnet run --project Mosaicist -- install-module Chord
 dotnet run --project MosaicShell.Host
 ```
 
-In Host: Library → Chord → Arm, then press the configured hotkey.
+Host: Library → Chord → Arm.
 
-Promised Rainmeter-era behavior: [`.cursor/docs/legacy/chord.md`](../../.cursor/docs/legacy/chord.md).
+Promised Rainmeter-era behavior: [`docs/legacy/chord.md`](../../docs/legacy/chord.md).

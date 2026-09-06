@@ -1,0 +1,36 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{cs,csproj,sln}]
+indent_size = 4
+
+[*.{json,yaml,yml,js,ts,toml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.cs]
+dotnet_sort_system_directives_first = true
+
+# Promote code-style analyzers (dotnet_style_*, csharp_style_*, IDE0xxx) from their default
+# "suggestion" severity to "warning" so EnforceCodeStyleInBuild actually surfaces them at
+# build time instead of only in the IDE.
+dotnet_analyzer_diagnostic.category-Style.severity = warning
+
+# IDE0072 ("Populate switch", switch expressions) and IDE0010 ("Populate switch", switch
+# statements) are excluded: both fixers complete a switch by adding an explicit arm per enum
+# member - IDE0072 defaults each new arm to `throw new NotImplementedException()`, IDE0010 to a
+# bare `break;`. Several switches in this codebase intentionally rely on a `_`/`default` discard
+# as the real fallback for unhandled members; running dotnet format with either rule enabled
+# silently replaced that working fallback with a crash or a silent no-op. Never enable either at
+# warning+.
+dotnet_diagnostic.IDE0072.severity = suggestion
+dotnet_diagnostic.IDE0010.severity = suggestion

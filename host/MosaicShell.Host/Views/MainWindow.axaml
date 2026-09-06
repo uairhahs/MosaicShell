@@ -13,7 +13,7 @@
         MinWidth="780" MinHeight="560"
         Background="#11111b"
         ExtendClientAreaToDecorationsHint="True"
-        Icon="/Assets/mosaicshell.ico"
+        Icon="avares://MosaicShell.Host/Assets/mosaicshell.ico"
         Title="MosaicShell">
 
   <Design.DataContext>
@@ -195,7 +195,7 @@
             BorderBrush="#313244" BorderThickness="0,1,0,0">
       <Grid ColumnDefinitions="Auto,*,Auto">
         <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-          <Image Source="/Assets/MosaicShell.png" Width="28" Height="28"
+          <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="28" Height="28"
                  RenderOptions.BitmapInterpolationMode="HighQuality" />
           <TextBlock Text="MosaicShell" FontWeight="SemiBold" FontSize="14"
                      Foreground="#cdd6f4" VerticalAlignment="Center" />
@@ -221,7 +221,7 @@
           <DockPanel IsVisible="{Binding IsHome}">
             <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
               <StackPanel Orientation="Horizontal" Spacing="14">
-                <Image Source="/Assets/MosaicShell.png" Width="48" Height="48"
+                <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="48" Height="48"
                        RenderOptions.BitmapInterpolationMode="HighQuality" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock Text="Home" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
@@ -484,20 +484,86 @@
                   </Border>
 
                   <Border Classes="section">
-                    <StackPanel Spacing="12">
-                      <TextBlock Classes="sectionTitle" Text="Motion" />
-                      <TextBlock Classes="sectionHint" Text="Entrance animation when the flyout appears." />
-                      <StackPanel Orientation="Horizontal" Spacing="16">
+                    <StackPanel Spacing="16">
+                      <StackPanel Spacing="4">
+                        <TextBlock Classes="sectionTitle" Text="Motion" />
+                        <TextBlock Classes="sectionHint" Text="{Binding TesseraAniStyleDescription}" />
+                      </StackPanel>
+
+                      <StackPanel Spacing="4">
+                        <TextBlock Text="Animation" Foreground="#a6adc8" FontSize="12" />
+                        <ComboBox HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding TesseraAniChoices}"
+                                  SelectedItem="{Binding SelectedTesseraAni}"
+                                  ToolTip.Tip="None: fade only. Fast: whole flyout slides in. Fancy: slide first, then media chrome grows in." />
+                      </StackPanel>
+
+                      <StackPanel Spacing="12" IsVisible="{Binding TesseraAniDirEnabled}">
+                        <TextBlock Text="Slide" FontSize="13" FontWeight="SemiBold" Foreground="#bac2de" />
+                        <Grid ColumnDefinitions="*,*">
+                          <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,8,0">
+                            <TextBlock Text="From edge" Foreground="#a6adc8" FontSize="12" />
+                            <ComboBox HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding TesseraAniDirOptions}"
+                                      SelectedItem="{Binding SelectedTesseraAniDir}"
+                                      ToolTip.Tip="Which screen edge the flyout travels from when it appears" />
+                          </StackPanel>
+                          <StackPanel Grid.Column="1" Spacing="4" Margin="8,0,0,0">
+                            <TextBlock Text="Travel distance" Foreground="#a6adc8" FontSize="12" />
+                            <NumericUpDown Classes="config" HorizontalAlignment="Stretch"
+                                           Minimum="10" Maximum="200" Increment="5"
+                                           FormatString="0"
+                                           Value="{Binding TesseraAnimationDisplacement}"
+                                           ToolTip.Tip="Slide distance in physical pixels (YourFlyouts default: 30)" />
+                            <TextBlock Text="pixels" FontSize="11" Foreground="#6c7086" />
+                          </StackPanel>
+                        </Grid>
+                      </StackPanel>
+
+                      <StackPanel Spacing="12" IsVisible="{Binding TesseraAniDirEnabled}">
+                        <TextBlock Text="Timing and easing" FontSize="13" FontWeight="SemiBold" Foreground="#bac2de" />
+                        <Grid ColumnDefinitions="*,*">
+                          <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,8,0">
+                            <TextBlock Text="Steps" Foreground="#a6adc8" FontSize="12" />
+                            <NumericUpDown Classes="config" HorizontalAlignment="Stretch"
+                                           Minimum="10" Maximum="40" Increment="1"
+                                           FormatString="0"
+                                           Value="{Binding TesseraAniSteps}"
+                                           ToolTip.Tip="Tween samples. Each step is one display frame (YourFlyouts default: 20)." />
+                            <TextBlock Text="{Binding TesseraAniPhaseDurationLabel}"
+                                       FontSize="11" Foreground="#6c7086" TextWrapping="Wrap" />
+                          </StackPanel>
+                          <StackPanel Grid.Column="1" Spacing="4" Margin="8,0,0,0">
+                            <TextBlock Text="Easing family" Foreground="#a6adc8" FontSize="12" />
+                            <ComboBox HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding TesseraEaseFamilies}"
+                                      SelectedItem="{Binding TesseraEaseFamily}"
+                                      ToolTip.Tip="Curve shape (Quart matches YourFlyouts default)" />
+                          </StackPanel>
+                        </Grid>
+                        <Grid ColumnDefinitions="*,*" IsVisible="{Binding TesseraEaseVariantEnabled}">
+                          <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,8,0">
+                            <TextBlock Text="Easing curve" Foreground="#a6adc8" FontSize="12" />
+                            <ComboBox HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding TesseraEaseVariants}"
+                                      SelectedItem="{Binding TesseraEaseVariant}"
+                                      ToolTip.Tip="In: slow start. Out: slow finish (YourFlyouts default). InOut: both." />
+                          </StackPanel>
+                          <StackPanel Grid.Column="1" Spacing="4" Margin="8,0,0,0" VerticalAlignment="Bottom">
+                            <TextBlock Text="Curve id" Foreground="#a6adc8" FontSize="12" />
+                            <TextBlock Text="{Binding TesseraAniEase}" FontSize="13" Foreground="#cdd6f4" />
+                          </StackPanel>
+                        </Grid>
                         <StackPanel Spacing="4">
-                          <TextBlock Text="Style" Foreground="#a6adc8" FontSize="12" />
-                          <ComboBox MinWidth="180" ItemsSource="{Binding TesseraAniChoices}"
-                                    SelectedItem="{Binding SelectedTesseraAni}" />
+                          <TextBlock Text="Easing preview" Foreground="#a6adc8" FontSize="12" />
+                          <TextBlock Text="{Binding TesseraAniEase}" FontSize="13" Foreground="#cdd6f4" />
+                          <tessera:TesseraEasePreview AniEase="{Binding TesseraAniEase}"
+                                                      AniSteps="{Binding TesseraAniSteps}"
+                                                      HorizontalAlignment="Stretch" />
                         </StackPanel>
-                        <StackPanel Spacing="4" IsEnabled="{Binding TesseraAniDirEnabled}">
-                          <TextBlock Text="Slide from" Foreground="#a6adc8" FontSize="12" />
-                          <ComboBox Width="120" ItemsSource="{Binding TesseraAniDirOptions}"
-                                    SelectedItem="{Binding TesseraAniDir}" />
-                        </StackPanel>
+                        <TextBlock Text="{Binding TesseraAniFancyDurationLabel}"
+                                   IsVisible="{Binding TesseraMotionFancyEnabled}"
+                                   FontSize="11" Foreground="#6c7086" TextWrapping="Wrap" />
                       </StackPanel>
                     </StackPanel>
                   </Border>
@@ -778,7 +844,7 @@
               <TextBlock Text="Back" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
-          <Image Source="/Assets/MosaicShell.png" MaxWidth="280" HorizontalAlignment="Left"
+          <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" MaxWidth="280" HorizontalAlignment="Left"
                  RenderOptions.BitmapInterpolationMode="HighQuality" />
           <TextBlock Text="Welcome" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
           <TextBlock Text="Your desktop, composed." Foreground="#89dceb" FontSize="14" />
@@ -802,7 +868,7 @@
             </StackPanel>
           </Button>
           <StackPanel Orientation="Horizontal" Spacing="16">
-            <Image Source="/Assets/MosaicShell.png" Width="72" Height="72"
+            <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="72" Height="72"
                    RenderOptions.BitmapInterpolationMode="HighQuality" />
             <StackPanel VerticalAlignment="Center">
               <TextBlock Text="MosaicShell" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
@@ -824,7 +890,7 @@
 
       <DockPanel IsVisible="{Binding IsSettings}" Margin="0,12,0,0">
       <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="12" Margin="40,8,40,16">
-        <Image Source="/Assets/MosaicShell.png" Width="40" Height="40"
+        <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="40" Height="40"
                RenderOptions.BitmapInterpolationMode="HighQuality" />
         <TextBlock Text="Settings" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4"
                    VerticalAlignment="Center" />

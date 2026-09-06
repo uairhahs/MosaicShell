@@ -2,11 +2,10 @@
 
 Chrono runs as an Avalonia **widget** via `TileRuntime`.
 
-| Path | Role |
-|------|------|
-| `host/MosaicShell.Host/Tiles/Surfaces/LiveTilesA.cs` (`ChronoTileView`) | Clock + date overlay |
-| `host/MosaicShell.Core/Settings/ModuleSettings.cs` (`ChronoSettings`) | Style / 24h / seconds |
-| This folder | Install stub so `install-module Chrono` creates `Modules/Chrono` |
+| Path                                                                    | Role                  |
+| ----------------------------------------------------------------------- | --------------------- |
+| `host/MosaicShell.Host/Tiles/Surfaces/LiveTilesA.cs` (`ChronoTileView`) | Clock + date overlay  |
+| `host/MosaicShell.Core/Settings/ModuleSettings.cs` (`ChronoSettings`)   | Style / 24h / seconds |
 
 Style ids live in `StyleCatalog` (JaxCore names). Chrome variants are MVP approximations.
 
@@ -18,6 +17,6 @@ dotnet run --project Mosaicist -- install-module Chrono
 dotnet run --project MosaicShell.Host
 ```
 
-In Host: Library → Chrono → Start.
+Host: Library → Chrono → Start.
 
-Promised Rainmeter-era behavior: [`.cursor/docs/legacy/chrono.md`](../../.cursor/docs/legacy/chrono.md).
+Promised Rainmeter-era behavior: [`docs/legacy/chrono.md`](../../docs/legacy/chrono.md).

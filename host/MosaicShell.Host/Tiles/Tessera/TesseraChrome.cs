@@ -1,612 +1,684 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Media.Imaging;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 
-namespace MosaicShell.Host.Tiles.Tessera;
-
-[Flags]
-internal enum TesseraShellOptions
+namespace MosaicShell.Host.Tiles.Tessera
 {
-    None = 0,
-    Tinted = 1 << 0,
-    Solid = 1 << 1,
-    InsetMargin = 1 << 2,
-    SharedBackdrop = 1 << 3,
-    LightTintOnly = 1 << 4,
-}
-
-/// <summary>Shared high-fidelity chrome pieces for Tessera style layouts.</summary>
-internal static class TesseraChrome
-{
-    // Catppuccin Mocha crust #11111b - translucent (ClipToBounds off on stroke shell so outline reaches corners)
-    public static IBrush DarkSolid => new SolidColorBrush(TesseraPalette.PrimarySolid);
-    public static IBrush SoftStroke => new SolidColorBrush(Color.FromArgb(
-        (byte)(TesseraPalette.UseEdgeBlend ? 55 : 80), 255, 255, 255));
-    public static IBrush ArtDim => new SolidColorBrush(Color.FromArgb(
-        (byte)Math.Clamp(TesseraPalette.ShellAlpha - 20, 80, 200), 0x11, 0x11, 0x1b));
-    public static IBrush TileFace => new SolidColorBrush(Color.FromArgb(
-        (byte)Math.Clamp(TesseraPalette.ShellAlpha + 10, 100, 230), 0x11, 0x11, 0x1b));
-    public static IBrush TileFaceHi => new SolidColorBrush(Color.FromArgb(
-        (byte)Math.Clamp(TesseraPalette.ShellAlpha + 25, 120, 240), 0x18, 0x18, 0x25));
-
-    /// <summary>Unified shell entry, glass, tinted glass, solid pill, or inset-margin wrapper.</summary>
-    internal static Control Shell(
-        Control child,
-        double radius,
-        TesseraShellOptions options = TesseraShellOptions.None,
-        IBrush? background = null,
-        Thickness? pad = null,
-        double? w = null,
-        double? h = null,
-        double? minWidth = null,
-        double? maxWidth = null,
-        double? maxHeight = null)
+    [Flags]
+    internal enum TesseraShellOptions
     {
-        Control result;
-        if (options.HasFlag(TesseraShellOptions.Solid))
-        {
-            result = new Border
-            {
-                Width = w ?? double.NaN,
-                Height = h ?? double.NaN,
-                MinWidth = w ?? double.NaN,
-                MaxWidth = w ?? double.NaN,
-                MinHeight = h ?? double.NaN,
-                MaxHeight = h ?? double.NaN,
-                Background = background ?? DarkSolid,
-                CornerRadius = new CornerRadius(radius),
-                ClipToBounds = true,
-                Padding = pad ?? new Thickness(0),
-                Child = child
-            };
-        }
-        else
-        {
-            Color tint;
-            if (options.HasFlag(TesseraShellOptions.Tinted))
-                tint = background is SolidColorBrush scb ? scb.Color : TesseraPalette.Primary;
-            else if (background is SolidColorBrush primary)
-                tint = primary.Color;
-            else
-                tint = TesseraPalette.Primary;
+        None = 0,
+        Tinted = 1 << 0,
+        Solid = 1 << 1,
+        InsetMargin = 1 << 2,
+        SharedBackdrop = 1 << 3,
+        LightTintOnly = 1 << 4,
+    }
 
-            result = TesseraGlassPanel.Wrap(
+    /// <summary>Shared high-fidelity chrome pieces for Tessera style layouts.</summary>
+    internal static class TesseraChrome
+    {
+        // Catppuccin Mocha crust #11111b - translucent (ClipToBounds off on stroke shell so outline reaches corners)
+        public static IBrush DarkSolid => new SolidColorBrush(TesseraPalette.PrimarySolid);
+        public static IBrush SoftStroke => new SolidColorBrush(Color.FromArgb(
+            (byte)(TesseraPalette.UseEdgeBlend ? 55 : 80), 255, 255, 255));
+        public static IBrush ArtDim => new SolidColorBrush(Color.FromArgb(
+            (byte)Math.Clamp(TesseraPalette.ShellAlpha - 20, 80, 200), 0x11, 0x11, 0x1b));
+        public static IBrush TileFace => new SolidColorBrush(Color.FromArgb(
+            (byte)Math.Clamp(TesseraPalette.ShellAlpha + 10, 100, 230), 0x11, 0x11, 0x1b));
+        public static IBrush TileFaceHi => new SolidColorBrush(Color.FromArgb(
+            (byte)Math.Clamp(TesseraPalette.ShellAlpha + 25, 120, 240), 0x18, 0x18, 0x25));
+
+        /// <summary>Unified shell entry, glass, tinted glass, solid pill, or inset-margin wrapper.</summary>
+        internal static Control Shell(
+            Control child,
+            double radius,
+            TesseraShellOptions options = TesseraShellOptions.None,
+            IBrush? background = null,
+            Thickness? pad = null,
+            double? w = null,
+            double? h = null,
+            double? minWidth = null,
+            double? maxWidth = null,
+            double? maxHeight = null)
+        {
+            Control result;
+            if (options.HasFlag(TesseraShellOptions.Solid))
+            {
+                result = new Border
+                {
+                    Width = w ?? double.NaN,
+                    Height = h ?? double.NaN,
+                    MinWidth = w ?? double.NaN,
+                    MaxWidth = w ?? double.NaN,
+                    MinHeight = h ?? double.NaN,
+                    MaxHeight = h ?? double.NaN,
+                    Background = background ?? DarkSolid,
+                    CornerRadius = new CornerRadius(radius),
+                    ClipToBounds = true,
+                    Padding = pad ?? new Thickness(0),
+                    Child = child
+                };
+            }
+            else
+            {
+                Color tint = options.HasFlag(TesseraShellOptions.Tinted)
+                    ? background is SolidColorBrush scb ? scb.Color : TesseraPalette.Primary
+                    : background is SolidColorBrush primary ? primary.Color : TesseraPalette.Primary;
+                result = TesseraGlassPanel.Wrap(
+                    child,
+                    radius,
+                    pad,
+                    w,
+                    h,
+                    minWidth,
+                    maxWidth,
+                    maxHeight: maxHeight,
+                    tint: tint,
+                    useSharedBackdrop: options.HasFlag(TesseraShellOptions.SharedBackdrop),
+                    lightTintOnly: options.HasFlag(TesseraShellOptions.LightTintOnly));
+            }
+
+            return !options.HasFlag(TesseraShellOptions.InsetMargin)
+                ? result
+                : new Border
+                {
+                    Background = Brushes.Transparent,
+                    Margin = new Thickness(1),
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    Child = result
+                };
+        }
+
+        /// <summary>Skia glass shell (backdrop blur + tint + edge).</summary>
+        public static Control Glass(Control child, double radius, Thickness? pad = null, double? w = null, double? h = null)
+        {
+            return Shell(child, radius, TesseraShellOptions.None, pad: pad, w: w, h: h);
+        }
+
+        /// <summary>Opaque style pill (Pixel columns), no frost wash.</summary>
+        public static Border SolidPill(
+            Control child,
+            IBrush fill,
+            double radius,
+            double w,
+            double? h = null,
+            Thickness? pad = null)
+        {
+            return (Border)Shell(child, radius, TesseraShellOptions.Solid, fill, pad, w, h);
+        }
+
+        public static Control GlassTinted(
+            Control child,
+            double radius,
+            IBrush background,
+            Thickness? pad = null,
+            double? w = null,
+            double? h = null,
+            bool useSharedBackdrop = false,
+            bool lightTintOnly = false)
+        {
+            TesseraShellOptions options = TesseraShellOptions.Tinted;
+            if (useSharedBackdrop)
+            {
+                options |= TesseraShellOptions.SharedBackdrop;
+            }
+
+            if (lightTintOnly)
+            {
+                options |= TesseraShellOptions.LightTintOnly;
+            }
+
+            return Shell(child, radius, options, background, pad, w, h);
+        }
+
+        internal static Control GlassTintedWrap(
+            Control child,
+            double radius,
+            IBrush background,
+            Thickness? pad,
+            double? w,
+            double? h,
+            bool useSharedBackdrop,
+            bool lightTintOnly)
+        {
+            return GlassTinted(child, radius, background, pad, w, h, useSharedBackdrop, lightTintOnly);
+        }
+
+        /// <summary>CoreUI grid cell, glass tinted tile matching the style reference.</summary>
+        public static Control CoreUiTile(
+            Control child,
+            double? w = null,
+            double? h = null,
+            Thickness? pad = null)
+        {
+            Control tile = Shell(
                 child,
-                radius,
+                8,
+                TesseraShellOptions.Tinted | TesseraShellOptions.SharedBackdrop | TesseraShellOptions.LightTintOnly,
+                TesseraStylePalette.CoreUi.TileBrush,
                 pad,
                 w,
-                h,
-                minWidth,
-                maxWidth,
-                maxHeight: maxHeight,
-                tint: tint,
-                useSharedBackdrop: options.HasFlag(TesseraShellOptions.SharedBackdrop),
-                lightTintOnly: options.HasFlag(TesseraShellOptions.LightTintOnly));
-        }
-
-        if (!options.HasFlag(TesseraShellOptions.InsetMargin))
-            return result;
-
-        return new Border
-        {
-            Background = Brushes.Transparent,
-            Margin = new Thickness(1),
-            HorizontalAlignment = HorizontalAlignment.Left,
-            VerticalAlignment = VerticalAlignment.Top,
-            Child = result
-        };
-    }
-
-    /// <summary>Skia glass shell (backdrop blur + tint + edge).</summary>
-    public static Control Glass(Control child, double radius, Thickness? pad = null, double? w = null, double? h = null) =>
-        Shell(child, radius, TesseraShellOptions.None, pad: pad, w: w, h: h);
-
-    /// <summary>Opaque style pill (Pixel columns), no frost wash.</summary>
-    public static Border SolidPill(
-        Control child,
-        IBrush fill,
-        double radius,
-        double w,
-        double? h = null,
-        Thickness? pad = null) =>
-        (Border)Shell(child, radius, TesseraShellOptions.Solid, fill, pad, w, h);
-
-    public static Control GlassTinted(
-        Control child,
-        double radius,
-        IBrush background,
-        Thickness? pad = null,
-        double? w = null,
-        double? h = null,
-        bool useSharedBackdrop = false,
-        bool lightTintOnly = false)
-    {
-        var options = TesseraShellOptions.Tinted;
-        if (useSharedBackdrop) options |= TesseraShellOptions.SharedBackdrop;
-        if (lightTintOnly) options |= TesseraShellOptions.LightTintOnly;
-        return Shell(child, radius, options, background, pad, w, h);
-    }
-
-    internal static Control GlassTintedWrap(
-        Control child,
-        double radius,
-        IBrush background,
-        Thickness? pad,
-        double? w,
-        double? h,
-        bool useSharedBackdrop,
-        bool lightTintOnly) =>
-        GlassTinted(child, radius, background, pad, w, h, useSharedBackdrop, lightTintOnly);
-
-    /// <summary>CoreUI grid cell, glass tinted tile matching the style reference.</summary>
-    public static Control CoreUiTile(
-        Control child,
-        double? w = null,
-        double? h = null,
-        Thickness? pad = null)
-    {
-        var tile = Shell(
-            child,
-            8,
-            TesseraShellOptions.Tinted | TesseraShellOptions.SharedBackdrop | TesseraShellOptions.LightTintOnly,
-            TesseraStylePalette.CoreUi.TileBrush,
-            pad,
-            w,
-            h);
-        if (w is null)
-            tile.HorizontalAlignment = HorizontalAlignment.Stretch;
-        return tile;
-    }
-
-    /// <summary>
-    /// Wrap Tessera flyout content so glass panels can find the shared backdrop host as an ancestor.
-    /// Scaffold is dormant for live sampling (ForbidLiveBackdropPixelSampling) but kept for extensibility.
-    /// </summary>
-    public static Control WrapFlyoutContent(Control content) =>
-        new TesseraSharedBackdropHost { Child = content };
-
-    /// <summary>Frosted wash: translucent shell + soft art under solid tint (no OS acrylic).</summary>
-    public static Control WithArtWash(Control foreground, byte[]? png, double radius, Thickness pad, double? maxWidth = null, double? maxHeight = null)
-    {
-        var root = new Grid();
-        var wash = new Border
-        {
-            Name = "TesseraMediaWash",
-            Background = Brushes.Transparent,
-            IsHitTestVisible = false,
-            Opacity = 0.55
-        };
-        TesseraMediaPanel.ApplyArtToBorder(wash, png, fillHost: true);
-        root.Children.Add(wash);
-        root.Children.Add(new Border { Background = ArtDim, IsHitTestVisible = false });
-        root.Children.Add(new Border { Padding = pad, Child = foreground });
-        return TesseraGlassPanel.Wrap(root, radius, maxWidth: maxWidth, maxHeight: maxHeight, tint: TesseraPalette.Primary);
-    }
-
-    /// <summary>Tile whose face is album art (CoreUI bottom-left) - art reads clearly with a readable dim.</summary>
-    public static Control ArtTile(Control foreground, byte[]? png, double radius, Thickness pad, double height = 72) =>
-        ArtTile(foreground, png, radius, pad, height, out _);
-
-    public static Control ArtTile(
-        Control foreground, byte[]? png, double radius, Thickness pad, double height, out Border artHost)
-    {
-        var root = new Grid();
-        artHost = new Border
-        {
-            Name = "TesseraMediaArt",
-            Background = TileFaceHi,
-            ClipToBounds = true,
-            IsHitTestVisible = false
-        };
-        TesseraMediaPanel.ApplyArtToBorder(artHost, png, fillHost: true);
-        root.Children.Add(artHost);
-        root.Children.Add(new Border
-        {
-            Background = new SolidColorBrush(Color.FromArgb(140, 0x11, 0x11, 0x1b)),
-            IsHitTestVisible = false
-        });
-        root.Children.Add(new Border
-        {
-            Padding = pad,
-            VerticalAlignment = VerticalAlignment.Center,
-            Child = foreground
-        });
-        var tileTint = Color.FromArgb(
-            (byte)Math.Clamp(TesseraPalette.ShellAlpha + 10, 100, 230), 0x11, 0x11, 0x1b);
-        return TesseraGlassPanel.Wrap(root, radius, height: height, tint: tileTint);
-    }
-
-    public static string SlashFill(double value, int segments = 20)
-    {
-        var n = Math.Clamp((int)Math.Round(Math.Clamp(value, 0, 1) * segments), 0, segments);
-        return new string('/', n) + new string('·', segments - n);
-    }
-
-    public static Control SlashMeter(double value, int segments, double fontSize, out TextBlock live)
-    {
-        live = new TextBlock
-        {
-            Text = SlashFill(value, segments),
-            FontFamily = new FontFamily("Cascadia Mono, Consolas, Courier New"),
-            FontSize = fontSize,
-            Foreground = TesseraPalette.AccentBrush,
-            Name = "TesseraSlashMeter"
-        };
-        // Two-tone: rebuild as Run is awkward; color whole line accent, inactive via mid-dot
-        return live;
-    }
-
-    public static TextBlock Mono(string text, double size, bool muted = false) =>
-        new()
-        {
-            Text = text,
-            FontFamily = new FontFamily("Cascadia Mono, Consolas, Courier New"),
-            FontSize = size,
-            Foreground = muted ? TesseraPalette.FontMutedBrush : TesseraPalette.FontBrush
-        };
-
-    public static TextBlock Label(string text, double size, FontWeight weight = FontWeight.Normal, bool muted = false) =>
-        new()
-        {
-            Text = text,
-            FontSize = size,
-            FontWeight = weight,
-            FontFamily = new FontFamily("Segoe UI Variable, Segoe UI"),
-            Foreground = muted ? TesseraPalette.FontMutedBrush : TesseraPalette.FontBrush,
-            TextTrimming = TextTrimming.CharacterEllipsis
-        };
-
-    public static void ApplyHoverHighlight(Border border, IBrush normal, IBrush hover)
-    {
-        border.Background = normal;
-        border.PointerEntered += (_, _) => border.Background = hover;
-        border.PointerExited += (_, _) => border.Background = normal;
-    }
-
-    /// <summary>Transport glyph with hover, circular for icons, rounded rect for play/pause.</summary>
-    public static Border IconButton(Control child, Action act, double size, bool circularHighlight = true, IBrush? hover = null)
-    {
-        var corner = circularHighlight ? size / 2 : Math.Min(10, size * 0.36);
-        var b = new Border
-        {
-            Width = size,
-            Height = size,
-            CornerRadius = new CornerRadius(corner),
-            ClipToBounds = true,
-            Background = Brushes.Transparent,
-            Child = child
-        };
-        ApplyHoverHighlight(b, Brushes.Transparent, hover ?? TileFaceHi);
-        b.PointerPressed += (_, e) => { act(); e.Handled = true; };
-        return b;
-    }
-}
-
-/// <summary>Circular volume ring (Smouti / ref12).</summary>
-internal static class TesseraVolumeLabel
-{
-    public static string Volume(bool muted, int pct, bool plainextSpeakers) =>
-        muted ? "Mute" : plainextSpeakers ? $"Speakers: {pct}%" : $"{pct}%";
-
-    public static string Brightness(int pct, bool plainext) =>
-        plainext ? $"Brightness: {pct}%" : $"{pct}%";
-}
-
-public sealed class TesseraRingVolume : Panel
-{
-    public static readonly StyledProperty<double> ValueProperty =
-        AvaloniaProperty.Register<TesseraRingVolume, double>(nameof(Value), 0.5);
-
-    public static readonly StyledProperty<IBrush?> AccentBrushOverrideProperty =
-        AvaloniaProperty.Register<TesseraRingVolume, IBrush?>(nameof(AccentBrushOverride));
-
-    public static readonly StyledProperty<IBrush?> PercentBrushOverrideProperty =
-        AvaloniaProperty.Register<TesseraRingVolume, IBrush?>(nameof(PercentBrushOverride));
-
-    /// <summary>Hero ring: glass disc, glow bed, thick arc, Smouti centerpiece.</summary>
-    public static readonly StyledProperty<bool> ShowcaseProperty =
-        AvaloniaProperty.Register<TesseraRingVolume, bool>(nameof(Showcase));
-
-    private readonly Border _glass = new() { IsHitTestVisible = false, IsVisible = false };
-    private readonly Arc _glow = new() { IsHitTestVisible = false, IsVisible = false };
-    private readonly Arc _back = new() { StrokeThickness = 8, Stroke = TesseraPalette.TrackBackBrush, IsHitTestVisible = false };
-    private readonly Arc _fill = new() { StrokeThickness = 8, Stroke = TesseraPalette.AccentBrush, IsHitTestVisible = false };
-    private readonly TextBlock _pct = new()
-    {
-        FontSize = 16,
-        FontWeight = FontWeight.Bold,
-        Foreground = TesseraPalette.FontBrush,
-        HorizontalAlignment = HorizontalAlignment.Center,
-        VerticalAlignment = VerticalAlignment.Center,
-        Name = "TesseraPercent"
-    };
-    private bool _dragging;
-    private bool _suppress;
-    private bool _hovered;
-    private DateTime _userUntil = DateTime.MinValue;
-
-    public TesseraRingVolume()
-    {
-        Width = 64;
-        Height = 64;
-        MinWidth = 64;
-        MinHeight = 64;
-        MaxWidth = 64;
-        MaxHeight = 64;
-        HorizontalAlignment = HorizontalAlignment.Left;
-        VerticalAlignment = VerticalAlignment.Top;
-        Children.Add(_glass);
-        Children.Add(_glow);
-        Children.Add(_back);
-        Children.Add(_fill);
-        Children.Add(_pct);
-        PointerEntered += (_, _) => { _hovered = true; SyncChrome(); };
-        PointerExited += (_, _) => { _hovered = false; SyncChrome(); };
-        PointerPressed += (_, e) => { _dragging = true; Mark(); e.Pointer.Capture(this); Apply(e.GetPosition(this)); SyncChrome(); e.Handled = true; };
-        PointerMoved += (_, e) => { if (!_dragging) return; Mark(); Apply(e.GetPosition(this)); SyncChrome(); e.Handled = true; };
-        PointerReleased += (_, e) => { _dragging = false; Mark(); SyncChrome(); e.Pointer.Capture(null); };
-        PointerCaptureLost += (_, _) =>
-        {
-            if (!_dragging) return;
-            _dragging = false;
-            SyncChrome();
-            InvalidateArrange();
-        };
-        PointerWheelChanged += (_, e) =>
-        {
-            Mark();
-            Value = VolumePercent.Step(Value, e.Delta.Y > 0 ? 2 : -2);
-            SyncChrome();
-            InvalidateArrange();
-            e.Handled = true;
-        };
-        SyncLabel();
-    }
-
-    protected override Size MeasureOverride(Size availableSize)
-    {
-        // Critical: default Panel measures to infinity and blows Smouti to full display height
-        var w = !double.IsNaN(Width) && Width > 0 ? Width : 64;
-        var h = !double.IsNaN(Height) && Height > 0 ? Height : 64;
-        return new Size(w, h);
-    }
-
-    public double Value
-    {
-        get => GetValue(ValueProperty);
-        set => SetValue(ValueProperty, Math.Clamp(value, 0, 1));
-    }
-
-    public IBrush? AccentBrushOverride
-    {
-        get => GetValue(AccentBrushOverrideProperty);
-        set => SetValue(AccentBrushOverrideProperty, value);
-    }
-
-    public IBrush? PercentBrushOverride
-    {
-        get => GetValue(PercentBrushOverrideProperty);
-        set => SetValue(PercentBrushOverrideProperty, value);
-    }
-
-    public bool Showcase
-    {
-        get => GetValue(ShowcaseProperty);
-        set => SetValue(ShowcaseProperty, value);
-    }
-
-    public event EventHandler<double>? ValueChanged;
-    public bool IsUserAdjusting => _dragging || DateTime.UtcNow < _userUntil;
-    public TextBlock PercentLabel => _pct;
-
-    private void Mark() =>
-        _userUntil = DateTime.UtcNow.Add(TesseraVolumeAdjustPolicy.UserAdjustGracePeriod);
-
-    public void SetValueSilent(double v)
-    {
-        if (IsUserAdjusting) return;
-        _suppress = true;
-        try { Value = VolumePercent.Quantize(v); }
-        finally { _suppress = false; }
-    }
-
-    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
-    {
-        base.OnPropertyChanged(change);
-        if (change.Property == ValueProperty)
-        {
-            SyncLabel();
-            InvalidateArrange();
-            if (!_suppress && change.NewValue is double nv)
-                ValueChanged?.Invoke(this, nv);
-            return;
-        }
-
-        if (change.Property == AccentBrushOverrideProperty || change.Property == PercentBrushOverrideProperty
-            || change.Property == ShowcaseProperty)
-        {
-            ClipToBounds = Showcase;
-            ApplyStyleBrushes();
-            SyncChrome();
-            InvalidateArrange();
-        }
-    }
-
-    private void ApplyStyleBrushes()
-    {
-        var accent = AccentBrushOverride ?? TesseraPalette.AccentBrush;
-        _fill.Stroke = accent;
-        _pct.Foreground = PercentBrushOverride ?? TesseraPalette.FontBrush;
-    }
-
-    private void SyncChrome()
-    {
-        if (!Showcase)
-        {
-            _glass.IsVisible = false;
-            _glow.IsVisible = false;
-            _pct.FontSize = 16;
-            return;
-        }
-
-        _glass.IsVisible = true;
-        _glow.IsVisible = true;
-        _pct.FontSize = 22;
-
-        var accent = AccentBrushOverride ?? TesseraPalette.AccentBrush;
-        var accentColor = accent is SolidColorBrush scb ? scb.Color : Colors.Cyan;
-        var lit = _hovered || _dragging || IsUserAdjusting;
-        _glass.Background = new SolidColorBrush(Color.FromArgb((byte)(lit ? 78 : 52), (byte)255, (byte)255, (byte)255));
-        _glass.BorderBrush = new SolidColorBrush(Color.FromArgb(
-            (byte)(lit ? 110 : 70), accentColor.R, accentColor.G, accentColor.B));
-        _glass.BorderThickness = new Thickness(lit ? 2 : 1.5);
-        _glow.Stroke = new SolidColorBrush(Color.FromArgb(
-            (byte)(lit ? 55 : 32), accentColor.R, accentColor.G, accentColor.B));
-    }
-
-    private void SyncLabel()
-    {
-        ApplyStyleBrushes();
-        SyncChrome();
-        _pct.Text = $"{VolumePercent.ToPercent(Value)}%";
-    }
-
-    protected override Size ArrangeOverride(Size finalSize)
-    {
-        var s = Math.Min(finalSize.Width, finalSize.Height);
-        var showcase = Showcase;
-        var stroke = showcase ? Math.Max(11, s * 0.105) : 8;
-        var pad = showcase ? s * 0.075 : 6.0;
-        var rect = new Rect(pad, pad, s - pad * 2, s - pad * 2);
-
-        if (showcase)
-        {
-            _glass.CornerRadius = new CornerRadius(s / 2);
-            _glass.Arrange(new Rect(0, 0, s, s));
-            _glow.StrokeThickness = stroke + 4;
-            _glow.StartAngle = -90;
-            _glow.SweepAngle = 360;
-            _glow.Arrange(rect);
-            _back.Stroke = new SolidColorBrush(Color.FromArgb(72, 255, 255, 255));
-        }
-        else
-        {
-            _back.Stroke = TesseraPalette.TrackBackBrush;
-        }
-
-        _back.StrokeThickness = stroke;
-        _fill.StrokeThickness = stroke + (showcase && (_hovered || _dragging) ? 1.5 : 0);
-        _back.StartAngle = -90;
-        _back.SweepAngle = 360;
-        _back.Arrange(rect);
-        _fill.StartAngle = -90;
-        _fill.SweepAngle = 360 * Math.Clamp(Value, 0, 1);
-        _fill.Arrange(rect);
-        _pct.Arrange(new Rect(0, 0, finalSize.Width, finalSize.Height));
-        return finalSize;
-    }
-
-    private void Apply(Point p)
-    {
-        var cx = Bounds.Width / 2;
-        var cy = Bounds.Height / 2;
-        var ang = Math.Atan2(p.Y - cy, p.X - cx); // -pi.pi, 0 = east
-        // Convert so -90° (north) = 0
-        var deg = ang * 180 / Math.PI + 90;
-        if (deg < 0) deg += 360;
-        Value = VolumePercent.Quantize(deg / 360.0);
-    }
-}
-
-/// <summary>Arc shape used by <see cref="TesseraRingVolume"/>.</summary>
-internal sealed class Arc : Control
-{
-    private double _startAngle;
-    private double _sweepAngle;
-    private double _strokeThickness = 8;
-    private IBrush? _stroke;
-
-    public double StartAngle
-    {
-        get => _startAngle;
-        set
-        {
-            if (Math.Abs(_startAngle - value) < 1e-6) return;
-            _startAngle = value;
-            if (TesseraVolumeAdjustPolicy.VolumeRingArcMustInvalidateVisualOnSweepChange)
-                InvalidateVisual();
-        }
-    }
-
-    public double SweepAngle
-    {
-        get => _sweepAngle;
-        set
-        {
-            if (Math.Abs(_sweepAngle - value) < 1e-6) return;
-            _sweepAngle = value;
-            if (TesseraVolumeAdjustPolicy.VolumeRingArcMustInvalidateVisualOnSweepChange)
-                InvalidateVisual();
-        }
-    }
-
-    public double StrokeThickness
-    {
-        get => _strokeThickness;
-        set
-        {
-            if (Math.Abs(_strokeThickness - value) < 1e-6) return;
-            _strokeThickness = value;
-            InvalidateVisual();
-        }
-    }
-
-    public IBrush? Stroke
-    {
-        get => _stroke;
-        set
-        {
-            if (ReferenceEquals(_stroke, value)) return;
-            _stroke = value;
-            InvalidateVisual();
-        }
-    }
-
-    public override void Render(DrawingContext context)
-    {
-        if (Stroke is null || Bounds.Width < 2 || Math.Abs(SweepAngle) < 0.1) return;
-        var pen = new Pen(Stroke, StrokeThickness) { LineCap = PenLineCap.Round };
-        var r = new Rect(
-            StrokeThickness / 2,
-            StrokeThickness / 2,
-            Math.Max(1, Bounds.Width - StrokeThickness),
-            Math.Max(1, Bounds.Height - StrokeThickness));
-        var geo = new StreamGeometry();
-        using (var ctx = geo.Open())
-        {
-            var start = PointOn(r, StartAngle);
-            ctx.BeginFigure(start, false);
-            // Approximate arc with line segments
-            var steps = Math.Max(8, (int)(Math.Abs(SweepAngle) / 4));
-            for (var i = 1; i <= steps; i++)
+                h);
+            if (w is null)
             {
-                var a = StartAngle + SweepAngle * i / steps;
-                ctx.LineTo(PointOn(r, a));
+                tile.HorizontalAlignment = HorizontalAlignment.Stretch;
+            }
+
+            return tile;
+        }
+
+        /// <summary>
+        /// Wrap Tessera flyout content so glass panels can find the shared backdrop host as an ancestor.
+        /// Scaffold is dormant for live sampling (ForbidLiveBackdropPixelSampling) but kept for extensibility.
+        /// </summary>
+        public static Control WrapFlyoutContent(Control content)
+        {
+            return new TesseraSharedBackdropHost { Child = content };
+        }
+
+        /// <summary>Frosted wash: translucent shell + soft art under solid tint (no OS acrylic).</summary>
+        public static Control WithArtWash(Control foreground, byte[]? png, double radius, Thickness pad, double? maxWidth = null, double? maxHeight = null)
+        {
+            Grid root = new();
+            Border wash = new()
+            {
+                Name = "TesseraMediaWash",
+                Background = Brushes.Transparent,
+                IsHitTestVisible = false,
+                Opacity = 0.55
+            };
+            TesseraMediaPanel.ApplyArtToBorder(wash, png, fillHost: true);
+            root.Children.Add(wash);
+            root.Children.Add(new Border { Background = ArtDim, IsHitTestVisible = false });
+            root.Children.Add(new Border { Padding = pad, Child = foreground });
+            return TesseraGlassPanel.Wrap(root, radius, maxWidth: maxWidth, maxHeight: maxHeight, tint: TesseraPalette.Primary);
+        }
+
+        /// <summary>Tile whose face is album art (CoreUI bottom-left) - art reads clearly with a readable dim.</summary>
+        public static Control ArtTile(Control foreground, byte[]? png, double radius, Thickness pad, double height = 72)
+        {
+            return ArtTile(foreground, png, radius, pad, height, out _);
+        }
+
+        public static Control ArtTile(
+            Control foreground, byte[]? png, double radius, Thickness pad, double height, out Border artHost)
+        {
+            Grid root = new();
+            artHost = new Border
+            {
+                Name = "TesseraMediaArt",
+                Background = TileFaceHi,
+                ClipToBounds = true,
+                IsHitTestVisible = false
+            };
+            TesseraMediaPanel.ApplyArtToBorder(artHost, png, fillHost: true);
+            root.Children.Add(artHost);
+            root.Children.Add(new Border
+            {
+                Background = new SolidColorBrush(Color.FromArgb(140, 0x11, 0x11, 0x1b)),
+                IsHitTestVisible = false
+            });
+            root.Children.Add(new Border
+            {
+                Padding = pad,
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = foreground
+            });
+            Color tileTint = Color.FromArgb(
+                (byte)Math.Clamp(TesseraPalette.ShellAlpha + 10, 100, 230), 0x11, 0x11, 0x1b);
+            return TesseraGlassPanel.Wrap(root, radius, height: height, tint: tileTint);
+        }
+
+        public static string SlashFill(double value, int segments = 20)
+        {
+            int n = Math.Clamp((int)Math.Round(Math.Clamp(value, 0, 1) * segments), 0, segments);
+            return new string('/', n) + new string('·', segments - n);
+        }
+
+        public static Control SlashMeter(double value, int segments, double fontSize, out TextBlock live)
+        {
+            live = new TextBlock
+            {
+                Text = SlashFill(value, segments),
+                FontFamily = new FontFamily("Cascadia Mono, Consolas, Courier New"),
+                FontSize = fontSize,
+                Foreground = TesseraPalette.AccentBrush,
+                Name = "TesseraSlashMeter"
+            };
+            // Two-tone: rebuild as Run is awkward; color whole line accent, inactive via mid-dot
+            return live;
+        }
+
+        public static TextBlock Mono(string text, double size, bool muted = false)
+        {
+            return new()
+            {
+                Text = text,
+                FontFamily = new FontFamily("Cascadia Mono, Consolas, Courier New"),
+                FontSize = size,
+                Foreground = muted ? TesseraPalette.FontMutedBrush : TesseraPalette.FontBrush
+            };
+        }
+
+        public static TextBlock Label(string text, double size, FontWeight weight = FontWeight.Normal, bool muted = false)
+        {
+            return new()
+            {
+                Text = text,
+                FontSize = size,
+                FontWeight = weight,
+                FontFamily = new FontFamily("Segoe UI Variable, Segoe UI"),
+                Foreground = muted ? TesseraPalette.FontMutedBrush : TesseraPalette.FontBrush,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+        }
+
+        public static void ApplyHoverHighlight(Border border, IBrush normal, IBrush hover)
+        {
+            border.Background = normal;
+            border.PointerEntered += (_, _) => border.Background = hover;
+            border.PointerExited += (_, _) => border.Background = normal;
+        }
+
+        /// <summary>Transport glyph with hover, circular for icons, rounded rect for play/pause.</summary>
+        public static Border IconButton(Control child, Action act, double size, bool circularHighlight = true, IBrush? hover = null)
+        {
+            double corner = circularHighlight ? size / 2 : Math.Min(10, size * 0.36);
+            Border b = new()
+            {
+                Width = size,
+                Height = size,
+                CornerRadius = new CornerRadius(corner),
+                ClipToBounds = true,
+                Background = Brushes.Transparent,
+                Child = child
+            };
+            ApplyHoverHighlight(b, Brushes.Transparent, hover ?? TileFaceHi);
+            b.PointerPressed += (_, e) => { act(); e.Handled = true; };
+            return b;
+        }
+    }
+
+    /// <summary>Circular volume ring (Smouti / ref12).</summary>
+    internal static class TesseraVolumeLabel
+    {
+        public static string Volume(bool muted, int pct, bool plainextSpeakers)
+        {
+            return muted ? "Mute" : plainextSpeakers ? $"Speakers: {pct}%" : $"{pct}%";
+        }
+
+        public static string Brightness(int pct, bool plainext)
+        {
+            return plainext ? $"Brightness: {pct}%" : $"{pct}%";
+        }
+    }
+
+    public sealed class TesseraRingVolume : Panel
+    {
+        public static readonly StyledProperty<double> ValueProperty =
+            AvaloniaProperty.Register<TesseraRingVolume, double>(nameof(Value), 0.5);
+
+        public static readonly StyledProperty<IBrush?> AccentBrushOverrideProperty =
+            AvaloniaProperty.Register<TesseraRingVolume, IBrush?>(nameof(AccentBrushOverride));
+
+        public static readonly StyledProperty<IBrush?> PercentBrushOverrideProperty =
+            AvaloniaProperty.Register<TesseraRingVolume, IBrush?>(nameof(PercentBrushOverride));
+
+        /// <summary>Hero ring: glass disc, glow bed, thick arc, Smouti centerpiece.</summary>
+        public static readonly StyledProperty<bool> ShowcaseProperty =
+            AvaloniaProperty.Register<TesseraRingVolume, bool>(nameof(Showcase));
+
+        /// <summary>
+        /// Fancy phase-2 entrance: scales the fill arc so it sweeps up from nothing to the live
+        /// level. 1 = the ring's own Value owns the arc (rest pose).
+        /// </summary>
+        public static readonly StyledProperty<double> SweepFactorProperty =
+            AvaloniaProperty.Register<TesseraRingVolume, double>(nameof(SweepFactor), 1);
+
+        private readonly Border _glass = new() { IsHitTestVisible = false, IsVisible = false };
+        private readonly Arc _glow = new() { IsHitTestVisible = false, IsVisible = false };
+        private readonly Arc _back = new() { StrokeThickness = 8, Stroke = TesseraPalette.TrackBackBrush, IsHitTestVisible = false };
+        private readonly Arc _fill = new() { StrokeThickness = 8, Stroke = TesseraPalette.AccentBrush, IsHitTestVisible = false };
+        private bool _dragging;
+        private bool _suppress;
+        private bool _hovered;
+        private DateTime _userUntil = DateTime.MinValue;
+
+        public TesseraRingVolume()
+        {
+            Width = 64;
+            Height = 64;
+            MinWidth = 64;
+            MinHeight = 64;
+            MaxWidth = 64;
+            MaxHeight = 64;
+            HorizontalAlignment = HorizontalAlignment.Left;
+            VerticalAlignment = VerticalAlignment.Top;
+            Children.Add(_glass);
+            Children.Add(_glow);
+            Children.Add(_back);
+            Children.Add(_fill);
+            Children.Add(PercentLabel);
+            PointerEntered += (_, _) => { _hovered = true; SyncChrome(); };
+            PointerExited += (_, _) => { _hovered = false; SyncChrome(); };
+            PointerPressed += (_, e) => { _dragging = true; Mark(); e.Pointer.Capture(this); Apply(e.GetPosition(this)); SyncChrome(); e.Handled = true; };
+            PointerMoved += (_, e) => { if (!_dragging) { return; } Mark(); Apply(e.GetPosition(this)); SyncChrome(); e.Handled = true; };
+            PointerReleased += (_, e) => { _dragging = false; Mark(); SyncChrome(); e.Pointer.Capture(null); };
+            PointerCaptureLost += (_, _) =>
+            {
+                if (!_dragging)
+                {
+                    return;
+                }
+
+                _dragging = false;
+                SyncChrome();
+                InvalidateArrange();
+            };
+            PointerWheelChanged += (_, e) =>
+            {
+                Mark();
+                Value = VolumePercent.Step(Value, e.Delta.Y > 0 ? 2 : -2);
+                SyncChrome();
+                InvalidateArrange();
+                e.Handled = true;
+            };
+            SyncLabel();
+        }
+
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            // Critical: default Panel measures to infinity and blows Smouti to full display height
+            double w = !double.IsNaN(Width) && Width > 0 ? Width : 64;
+            double h = !double.IsNaN(Height) && Height > 0 ? Height : 64;
+            return new Size(w, h);
+        }
+
+        public double Value
+        {
+            get => GetValue(ValueProperty);
+            set => SetValue(ValueProperty, Math.Clamp(value, 0, 1));
+        }
+
+        public IBrush? AccentBrushOverride
+        {
+            get => GetValue(AccentBrushOverrideProperty);
+            set => SetValue(AccentBrushOverrideProperty, value);
+        }
+
+        public IBrush? PercentBrushOverride
+        {
+            get => GetValue(PercentBrushOverrideProperty);
+            set => SetValue(PercentBrushOverrideProperty, value);
+        }
+
+        public bool Showcase
+        {
+            get => GetValue(ShowcaseProperty);
+            set => SetValue(ShowcaseProperty, value);
+        }
+
+        public double SweepFactor
+        {
+            get => GetValue(SweepFactorProperty);
+            set => SetValue(SweepFactorProperty, value);
+        }
+
+        public event EventHandler<double>? ValueChanged;
+        public bool IsUserAdjusting => _dragging || DateTime.UtcNow < _userUntil;
+        public TextBlock PercentLabel { get; } = new()
+        {
+            FontSize = 16,
+            FontWeight = FontWeight.Bold,
+            Foreground = TesseraPalette.FontBrush,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Name = "TesseraPercent"
+        };
+
+        private void Mark()
+        {
+            _userUntil = DateTime.UtcNow.Add(TesseraVolumeAdjustPolicy.UserAdjustGracePeriod);
+        }
+
+        public void SetValueSilent(double v)
+        {
+            if (IsUserAdjusting)
+            {
+                return;
+            }
+
+            _suppress = true;
+            try { Value = VolumePercent.Quantize(v); }
+            finally { _suppress = false; }
+        }
+
+        protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
+            if (change.Property == ValueProperty)
+            {
+                SyncLabel();
+                InvalidateArrange();
+                if (!_suppress && change.NewValue is double nv)
+                {
+                    ValueChanged?.Invoke(this, nv);
+                }
+
+                return;
+            }
+
+            if (change.Property == AccentBrushOverrideProperty || change.Property == PercentBrushOverrideProperty
+                || change.Property == ShowcaseProperty)
+            {
+                ClipToBounds = Showcase;
+                ApplyStyleBrushes();
+                SyncChrome();
+                InvalidateArrange();
+                return;
+            }
+
+            if (change.Property == SweepFactorProperty)
+            {
+                InvalidateArrange();
             }
         }
-        context.DrawGeometry(null, pen, geo);
+
+        private void ApplyStyleBrushes()
+        {
+            IBrush accent = AccentBrushOverride ?? TesseraPalette.AccentBrush;
+            _fill.Stroke = accent;
+            PercentLabel.Foreground = PercentBrushOverride ?? TesseraPalette.FontBrush;
+        }
+
+        private void SyncChrome()
+        {
+            if (!Showcase)
+            {
+                _glass.IsVisible = false;
+                _glow.IsVisible = false;
+                PercentLabel.FontSize = 16;
+                return;
+            }
+
+            _glass.IsVisible = true;
+            _glow.IsVisible = true;
+            PercentLabel.FontSize = 22;
+
+            IBrush accent = AccentBrushOverride ?? TesseraPalette.AccentBrush;
+            Color accentColor = accent is SolidColorBrush scb ? scb.Color : Colors.Cyan;
+            bool lit = _hovered || _dragging || IsUserAdjusting;
+            _glass.Background = new SolidColorBrush(Color.FromArgb((byte)(lit ? 78 : 52), 255, 255, 255));
+            _glass.BorderBrush = new SolidColorBrush(Color.FromArgb(
+                (byte)(lit ? 110 : 70), accentColor.R, accentColor.G, accentColor.B));
+            _glass.BorderThickness = new Thickness(lit ? 2 : 1.5);
+            _glow.Stroke = new SolidColorBrush(Color.FromArgb(
+                (byte)(lit ? 55 : 32), accentColor.R, accentColor.G, accentColor.B));
+        }
+
+        private void SyncLabel()
+        {
+            ApplyStyleBrushes();
+            SyncChrome();
+            PercentLabel.Text = $"{VolumePercent.ToPercent(Value)}%";
+        }
+
+        protected override Size ArrangeOverride(Size finalSize)
+        {
+            double s = Math.Min(finalSize.Width, finalSize.Height);
+            bool showcase = Showcase;
+            double stroke = showcase ? Math.Max(11, s * 0.105) : 8;
+            double pad = showcase ? s * 0.075 : 6.0;
+            Rect rect = new(pad, pad, s - (pad * 2), s - (pad * 2));
+
+            if (showcase)
+            {
+                _glass.CornerRadius = new CornerRadius(s / 2);
+                _glass.Arrange(new Rect(0, 0, s, s));
+                _glow.StrokeThickness = stroke + 4;
+                _glow.StartAngle = -90;
+                _glow.SweepAngle = 360;
+                _glow.Arrange(rect);
+                _back.Stroke = new SolidColorBrush(Color.FromArgb(72, 255, 255, 255));
+            }
+            else
+            {
+                _back.Stroke = TesseraPalette.TrackBackBrush;
+            }
+
+            _back.StrokeThickness = stroke;
+            _fill.StrokeThickness = stroke + (showcase && (_hovered || _dragging) ? 1.5 : 0);
+            _back.StartAngle = -90;
+            _back.SweepAngle = 360;
+            _back.Arrange(rect);
+            _fill.StartAngle = -90;
+            _fill.SweepAngle = 360 * Math.Clamp(Value, 0, 1) * Math.Clamp(SweepFactor, 0, 1);
+            _fill.Arrange(rect);
+            PercentLabel.Arrange(new Rect(0, 0, finalSize.Width, finalSize.Height));
+            return finalSize;
+        }
+
+        private void Apply(Point p)
+        {
+            double cx = Bounds.Width / 2;
+            double cy = Bounds.Height / 2;
+            double ang = Math.Atan2(p.Y - cy, p.X - cx); // -pi.pi, 0 = east
+            // Convert so -90° (north) = 0
+            double deg = (ang * 180 / Math.PI) + 90;
+            if (deg < 0)
+            {
+                deg += 360;
+            }
+
+            Value = VolumePercent.Quantize(deg / 360.0);
+        }
     }
 
-    private static Point PointOn(Rect r, double deg)
+    /// <summary>Arc shape used by <see cref="TesseraRingVolume"/>.</summary>
+    internal sealed class Arc : Control
     {
-        var rad = deg * Math.PI / 180;
-        var cx = r.X + r.Width / 2;
-        var cy = r.Y + r.Height / 2;
-        return new Point(cx + Math.Cos(rad) * r.Width / 2, cy + Math.Sin(rad) * r.Height / 2);
+        public double StartAngle
+        {
+            get; set
+            {
+                if (Math.Abs(field - value) < 1e-6)
+                {
+                    return;
+                }
+
+                field = value;
+                if (TesseraVolumeAdjustPolicy.VolumeRingArcMustInvalidateVisualOnSweepChange)
+                {
+                    InvalidateVisual();
+                }
+            }
+        }
+
+        public double SweepAngle
+        {
+            get; set
+            {
+                if (Math.Abs(field - value) < 1e-6)
+                {
+                    return;
+                }
+
+                field = value;
+                if (TesseraVolumeAdjustPolicy.VolumeRingArcMustInvalidateVisualOnSweepChange)
+                {
+                    InvalidateVisual();
+                }
+            }
+        }
+
+        public double StrokeThickness
+        {
+            get; set
+            {
+                if (Math.Abs(field - value) < 1e-6)
+                {
+                    return;
+                }
+
+                field = value;
+                InvalidateVisual();
+            }
+        } = 8;
+
+        public IBrush? Stroke
+        {
+            get; set
+            {
+                if (ReferenceEquals(field, value))
+                {
+                    return;
+                }
+
+                field = value;
+                InvalidateVisual();
+            }
+        }
+
+        public override void Render(DrawingContext context)
+        {
+            if (Stroke is null || Bounds.Width < 2 || Math.Abs(SweepAngle) < 0.1)
+            {
+                return;
+            }
+
+            Pen pen = new(Stroke, StrokeThickness) { LineCap = PenLineCap.Round };
+            Rect r = new(
+                StrokeThickness / 2,
+                StrokeThickness / 2,
+                Math.Max(1, Bounds.Width - StrokeThickness),
+                Math.Max(1, Bounds.Height - StrokeThickness));
+            StreamGeometry geo = new();
+            using (StreamGeometryContext ctx = geo.Open())
+            {
+                Point start = PointOn(r, StartAngle);
+                ctx.BeginFigure(start, false);
+                // Approximate arc with line segments
+                int steps = Math.Max(8, (int)(Math.Abs(SweepAngle) / 4));
+                for (int i = 1; i <= steps; i++)
+                {
+                    double a = StartAngle + (SweepAngle * i / steps);
+                    ctx.LineTo(PointOn(r, a));
+                }
+            }
+            context.DrawGeometry(null, pen, geo);
+        }
+
+        private static Point PointOn(Rect r, double deg)
+        {
+            double rad = deg * Math.PI / 180;
+            double cx = r.X + (r.Width / 2);
+            double cy = r.Y + (r.Height / 2);
+            return new Point(cx + (Math.Cos(rad) * r.Width / 2), cy + (Math.Sin(rad) * r.Height / 2));
+        }
     }
 }

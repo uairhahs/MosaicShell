@@ -2,6 +2,8 @@
 
 MosaicShell is a native rewrite of [JaxCore](https://github.com/Jax-Core/JaxCore). We track **what is implemented** vs **what is still backlog** in code, not in marketing copy.
 
+This page covers flag-naming conventions and current status. For the detailed per-module bar each `_mvp` flag must meet, see [`docs/parity/README.md`](../../docs/parity/README.md).
+
 ## Source of truth
 
 [`host/MosaicShell.Core.Tests/HubParityBacklogTests.cs`](../../host/MosaicShell.Core.Tests/HubParityBacklogTests.cs)
@@ -14,14 +16,14 @@ Run: `dotnet test host/MosaicShell.Core.Tests --filter HubParity`
 
 ## Flag naming
 
-| Suffix / pattern | Meaning |
-|------------------|---------|
-| `*_skeleton` | Catalog, settings, and Host wiring exist. |
-| `*_mvp` | A JaxCore-comparable **behavior slice** is in place (not full visual parity). |
-| `*_layout_fidelity` | Screenshot-level layout sign-off vs reference art. |
-| `tessera_*` | Tessera capability / flyout contracts. |
-| `service_*` | Core Windows service adapters. |
-| `library_*` | Mosaicist install + Hub Library. |
+| Suffix / pattern    | Meaning                                                                       |
+| ------------------- | ----------------------------------------------------------------------------- |
+| `*_skeleton`        | Catalog, settings, and Host wiring exist.                                     |
+| `*_mvp`             | A JaxCore-comparable **behavior slice** is in place (not full visual parity). |
+| `*_layout_fidelity` | Screenshot-level layout sign-off vs reference art.                            |
+| `tessera_*`         | Tessera capability / flyout contracts.                                        |
+| `service_*`         | Core Windows service adapters.                                                |
+| `library_*`         | Mosaicist install + Hub Library.                                              |
 
 **MVP is not “done”.** It means the tile or capability does its flagship job in native Host, with Core tests backing honesty.
 
@@ -37,29 +39,29 @@ Styles: Meter, Square, CoreUI, Fluent, Gnome, ModernFlyouts, MaterialYou, PlainT
 
 ## Still false (do not oversell)
 
-| Flag | Why false |
-|------|-----------|
+| Flag                          | Why false                                                                    |
+| ----------------------------- | ---------------------------------------------------------------------------- |
 | `native_tile_overlay_runtime` | Full historical StyleCatalog / DLC as a Rainmeter-style runtime interpreter. |
-| `tessera_media_smtc_only` | Media flyouts without WebNowPlaying merge (browser/YTM art path). |
-| `chrono_layout_fidelity` | No in-repo screenshot proof pair yet. |
-| `phono_layout_fidelity` | Same. |
-| `pulse_layout_fidelity` | Same. |
-| `canvas_layout_fidelity` | Same. |
-| `mixdeck_layout_fidelity` | Same. |
-| `inlay_layout_fidelity` | Same. |
-| `chord_layout_fidelity` | Same. |
-| `substrate_layout_fidelity` | Same. |
-| `slate_layout_fidelity` | Same. |
+| `tessera_media_smtc_only`     | Media flyouts without WebNowPlaying merge (browser/YTM art path).            |
+| `chrono_layout_fidelity`      | No in-repo screenshot proof pair yet.                                        |
+| `phono_layout_fidelity`       | Same.                                                                        |
+| `pulse_layout_fidelity`       | Same.                                                                        |
+| `canvas_layout_fidelity`      | Same.                                                                        |
+| `mixdeck_layout_fidelity`     | Same.                                                                        |
+| `inlay_layout_fidelity`       | Same.                                                                        |
+| `chord_layout_fidelity`       | Same.                                                                        |
+| `substrate_layout_fidelity`   | Same.                                                                        |
+| `slate_layout_fidelity`       | Same.                                                                        |
 
 ## Shipped highlights (true)
 
-| Area | Flags |
-|------|--------|
+| Area            | Flags                                                                                                          |
+| --------------- | -------------------------------------------------------------------------------------------------------------- |
 | Hub + installer | `library_*`, `capability_daemon`, `install_never_uses_iex_or_executionpolicy_bypass`, `product_cutover_no_iex` |
-| Tessera flyouts | `tessera_osd_flyout`, `tessera_locks_flight`, `tessera_live_update_multimonitor`, `tile_tessera_mvp` |
-| Tessera media | `tessera_media_wnp` (SMTC + WNP merge) |
-| Tile MVPs | `tile_*_mvp` for all ten catalog modules |
-| Services | `service_*`, `os_media_audio_brightness_services` |
+| Tessera flyouts | `tessera_osd_flyout`, `tessera_locks_flight`, `tessera_live_update_multimonitor`, `tile_tessera_mvp`           |
+| Tessera media   | `tessera_media_wnp` (SMTC + WNP merge)                                                                         |
+| Tile MVPs       | `tile_*_mvp` for all ten catalog modules                                                                       |
+| Services        | `service_*`, `os_media_audio_brightness_services`                                                              |
 
 See the full list in `HubCapabilities`.
 

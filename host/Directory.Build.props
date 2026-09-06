@@ -1,6 +1,11 @@
 <Project>
   <PropertyGroup>
-    <!-- Overridden in release CI via /p:Version=yyyy.M.d-bN -->
+    <!-- Date-build tags (not semver). Overridden in release CI via /p:Version=yyyy.M.d-bN -->
     <Version>0.0.0-dev</Version>
+  </PropertyGroup>
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 </Project>

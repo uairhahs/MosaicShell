@@ -10,7 +10,7 @@
 
     <TrayIcon.Icons>
         <TrayIcons>
-            <TrayIcon Icon="/Assets/mosaicshell.ico"
+            <TrayIcon Icon="avares://MosaicShell.Host/Assets/mosaicshell.ico"
                       ToolTipText="MosaicShell"
                       Clicked="TrayIcon_OnClicked">
                 <TrayIcon.Menu>

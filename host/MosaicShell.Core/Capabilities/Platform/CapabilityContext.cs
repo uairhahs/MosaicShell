@@ -1,101 +1,110 @@
-namespace MosaicShell.Core.Capabilities.Platform;
 
 using MosaicShell.Core.Services;
 
-/// <summary>
-/// Shared platform services passed to every armed capability. Modules focus on building
-/// <see cref="FlyoutRequest"/> and handling module settings; Core owns flyout routing and media signals.
-/// </summary>
-public interface ICapabilityContext
+namespace MosaicShell.Core.Capabilities.Platform
 {
-    HostServices Services { get; }
-    ICapabilityUiBridge Ui { get; }
-    CapabilityFlyoutSession Flyouts { get; }
-    MediaSessionPlatform Media { get; }
-    ICapabilityEventBus Events { get; }
-}
+    /// <summary>
+    /// Shared platform services passed to every armed capability. Modules focus on building
+    /// <see cref="FlyoutRequest"/> and handling module settings; Core owns flyout routing and media signals.
+    /// </summary>
+    public interface ICapabilityContext
+    {
+        HostServices Services { get; }
+        ICapabilityUiBridge Ui { get; }
+        CapabilityFlyoutSession Flyouts { get; }
+        MediaSessionPlatform Media { get; }
+        ICapabilityEventBus Events { get; }
+    }
 
-public sealed class CapabilityContext : ICapabilityContext
-{
-    public CapabilityContext(
+    public sealed class CapabilityContext(
         HostServices services,
         ICapabilityUiBridge ui,
         CapabilityFlyoutSession flyouts,
         MediaSessionPlatform media,
-        ICapabilityEventBus events)
+        ICapabilityEventBus events) : ICapabilityContext
     {
-        Services = services;
-        Ui = ui;
-        Flyouts = flyouts;
-        Media = media;
-        Events = events;
+        public HostServices Services { get; } = services;
+        public ICapabilityUiBridge Ui { get; } = ui;
+        public CapabilityFlyoutSession Flyouts { get; } = flyouts;
+        public MediaSessionPlatform Media { get; } = media;
+        public ICapabilityEventBus Events { get; } = events;
     }
 
-    public HostServices Services { get; }
-    public ICapabilityUiBridge Ui { get; }
-    public CapabilityFlyoutSession Flyouts { get; }
-    public MediaSessionPlatform Media { get; }
-    public ICapabilityEventBus Events { get; }
-}
-
-/// <summary>
-/// Owns per-module flyout sessions and wires transient dismiss to platform state.
-/// Created once per <see cref="CapabilityDaemon"/>.
-/// </summary>
-public sealed class CapabilityFlyoutPlatform : IDisposable
-{
-    private readonly IFlyoutPresenter _presenter;
-    private readonly Dictionary<string, CapabilityFlyoutSession> _sessions = new(StringComparer.OrdinalIgnoreCase);
-    private readonly object _gate = new();
-    private bool _disposed;
-
-    public CapabilityFlyoutPlatform(IFlyoutPresenter presenter)
+    /// <summary>
+    /// Owns per-module flyout sessions and wires transient dismiss to platform state.
+    /// Created once per <see cref="CapabilityDaemon"/>.
+    /// </summary>
+    public sealed class CapabilityFlyoutPlatform : IDisposable
     {
-        _presenter = presenter;
-        _presenter.TransientDismissed += OnTransientDismissed;
-    }
+        private readonly IFlyoutPresenter _presenter;
+        private readonly Dictionary<string, CapabilityFlyoutSession> _sessions = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Lock _gate = new();
+        private bool _disposed;
 
-    public CapabilityFlyoutSession CreateSession(string moduleId)
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        lock (_gate)
+        public CapabilityFlyoutPlatform(IFlyoutPresenter presenter)
         {
-            if (_sessions.TryGetValue(moduleId, out var existing))
-                return existing;
-            var session = new CapabilityFlyoutSession(moduleId, _presenter);
-            _sessions[moduleId] = session;
-            return session;
+            _presenter = presenter;
+            _presenter.TransientDismissed += OnTransientDismissed;
         }
-    }
 
-    public void RemoveSession(string moduleId)
-    {
-        lock (_gate)
+        public CapabilityFlyoutSession CreateSession(string moduleId)
         {
-            if (!_sessions.Remove(moduleId, out var session)) return;
-            session.Dispose();
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            lock (_gate)
+            {
+                if (_sessions.TryGetValue(moduleId, out CapabilityFlyoutSession? existing))
+                {
+                    return existing;
+                }
+
+                CapabilityFlyoutSession session = new(moduleId, _presenter);
+                _sessions[moduleId] = session;
+                return session;
+            }
         }
-    }
 
-    private void OnTransientDismissed(string moduleId)
-    {
-        lock (_gate)
+        public void RemoveSession(string moduleId)
         {
-            if (_sessions.TryGetValue(moduleId, out var session))
-                session.NotifyTransientDismissed();
-        }
-    }
+            lock (_gate)
+            {
+                if (!_sessions.Remove(moduleId, out CapabilityFlyoutSession? session))
+                {
+                    return;
+                }
 
-    public void Dispose()
-    {
-        if (_disposed) return;
-        _disposed = true;
-        _presenter.TransientDismissed -= OnTransientDismissed;
-        lock (_gate)
-        {
-            foreach (var session in _sessions.Values)
                 session.Dispose();
-            _sessions.Clear();
+            }
+        }
+
+        private void OnTransientDismissed(string moduleId)
+        {
+            lock (_gate)
+            {
+                if (_sessions.TryGetValue(moduleId, out CapabilityFlyoutSession? session))
+                {
+                    session.NotifyTransientDismissed();
+                }
+            }
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            _presenter.TransientDismissed -= OnTransientDismissed;
+            lock (_gate)
+            {
+                foreach (CapabilityFlyoutSession session in _sessions.Values)
+                {
+                    session.Dispose();
+                }
+
+                _sessions.Clear();
+            }
         }
     }
 }

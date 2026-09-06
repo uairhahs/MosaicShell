@@ -1,62 +1,62 @@
 using FluentAssertions;
-using MosaicShell.Core;
 using MosaicShell.Core.Runtime;
 
-namespace MosaicShell.Core.Tests;
-
-public class ModuleLauncherTests : IDisposable
+namespace MosaicShell.Core.Tests
 {
-    private readonly string _home;
-
-    public ModuleLauncherTests()
+    public class ModuleLauncherTests : IDisposable
     {
-        _home = Path.Combine(Path.GetTempPath(), "ms-launch-" + Guid.NewGuid().ToString("N"));
-        AppPaths.SetRootOverride(_home);
-        AppPaths.EnsureLayout();
-    }
+        private readonly string _home;
 
-    public void Dispose()
-    {
-        AppPaths.ClearRootOverride();
-        try { Directory.Delete(_home, recursive: true); } catch { /* ignore */ }
-    }
-
-    [Fact]
-    public void TryLaunch_not_installed_reports_blocker()
-    {
-        var host = new RecordingHost();
-        var launcher = new ModuleLauncher(new TileRuntime(host));
-        var result = launcher.TryLaunch("Canvas");
-        result.Started.Should().BeFalse();
-        result.Blocker.Should().Be(ModuleLaunchBlocker.NotInstalled);
-    }
-
-    [Fact]
-    public void TryLaunch_installed_starts_via_runtime()
-    {
-        Directory.CreateDirectory(Path.Combine(AppPaths.ModulesDirectory, "Canvas"));
-        var host = new RecordingHost();
-        var runtime = new TileRuntime(host);
-        var launcher = new ModuleLauncher(runtime);
-
-        var result = launcher.TryLaunch("Canvas");
-        result.Started.Should().BeTrue();
-        result.Blocker.Should().Be(ModuleLaunchBlocker.None);
-        result.Message.Should().NotContain("Rainmeter");
-        runtime.IsRunning("Canvas").Should().BeTrue();
-        host.Shown.Should().Contain("Canvas");
-    }
-
-    private sealed class RecordingHost : ITileSurfaceHost
-    {
-        public List<string> Shown { get; } = [];
-        public bool Show(string moduleId, out string? error)
+        public ModuleLauncherTests()
         {
-            Shown.Add(moduleId);
-            error = null;
-            return true;
+            _home = Path.Combine(Path.GetTempPath(), "ms-launch-" + Guid.NewGuid().ToString("N"));
+            AppPaths.SetRootOverride(_home);
+            AppPaths.EnsureLayout();
         }
-        public void Focus(string moduleId) { }
-        public void Close(string moduleId) { }
+
+        public void Dispose()
+        {
+            AppPaths.ClearRootOverride();
+            try { Directory.Delete(_home, recursive: true); } catch { /* ignore */ }
+        }
+
+        [Fact]
+        public void TryLaunch_not_installed_reports_blocker()
+        {
+            RecordingHost host = new();
+            ModuleLauncher launcher = new(new TileRuntime(host));
+            ModuleLaunchResult result = launcher.TryLaunch("Canvas");
+            _ = result.Started.Should().BeFalse();
+            _ = result.Blocker.Should().Be(ModuleLaunchBlocker.NotInstalled);
+        }
+
+        [Fact]
+        public void TryLaunch_installed_starts_via_runtime()
+        {
+            _ = Directory.CreateDirectory(Path.Combine(AppPaths.ModulesDirectory, "Canvas"));
+            RecordingHost host = new();
+            TileRuntime runtime = new(host);
+            ModuleLauncher launcher = new(runtime);
+
+            ModuleLaunchResult result = launcher.TryLaunch("Canvas");
+            _ = result.Started.Should().BeTrue();
+            _ = result.Blocker.Should().Be(ModuleLaunchBlocker.None);
+            _ = result.Message.Should().NotContain("Rainmeter");
+            _ = runtime.IsRunning("Canvas").Should().BeTrue();
+            _ = host.Shown.Should().Contain("Canvas");
+        }
+
+        private sealed class RecordingHost : ITileSurfaceHost
+        {
+            public List<string> Shown { get; } = [];
+            public bool Show(string moduleId, out string? error)
+            {
+                Shown.Add(moduleId);
+                error = null;
+                return true;
+            }
+            public void Focus(string moduleId) { }
+            public void Close(string moduleId) { }
+        }
     }
 }

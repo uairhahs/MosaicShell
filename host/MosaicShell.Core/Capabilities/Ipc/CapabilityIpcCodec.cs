@@ -1,101 +1,121 @@
-namespace MosaicShell.Core.Capabilities.Ipc;
 
 using System.Buffers.Binary;
 using System.Text;
 using System.Text.Json;
-using MosaicShell.Core.Capabilities;
 
-public static class CapabilityIpcCodec
+namespace MosaicShell.Core.Capabilities.Ipc
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    public static class CapabilityIpcCodec
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false,
-    };
-
-    public static FlyoutRequestDto ToDto(FlyoutRequest request) =>
-        new(
-            request.ModuleId,
-            request.Kind,
-            request.StyleId,
-            request.Anchor,
-            request.AutoDismissMs,
-            request.Payload?.ToDictionary(
-                static kv => kv.Key,
-                static kv => kv.Value,
-                StringComparer.OrdinalIgnoreCase),
-            request.MonitorIndex,
-            request.XPad,
-            request.YPad,
-            request.Ani,
-            request.AniDir);
-
-    public static FlyoutRequest FromDto(FlyoutRequestDto dto) =>
-        new(
-            dto.ModuleId,
-            dto.Kind,
-            dto.StyleId,
-            dto.Anchor,
-            dto.AutoDismissMs,
-            dto.Payload,
-            dto.MonitorIndex,
-            dto.XPad,
-            dto.YPad,
-            dto.Ani,
-            dto.AniDir);
-
-    public static byte[] Serialize(CapabilityIpcMessage message)
-    {
-        var json = JsonSerializer.Serialize(message, JsonOptions);
-        var payload = Encoding.UTF8.GetBytes(json);
-        if (payload.Length > CapabilityIpcPolicy.MaxMessageBytes)
-            throw new InvalidOperationException("IPC message too large.");
-
-        var frame = new byte[4 + payload.Length];
-        BinaryPrimitives.WriteInt32LittleEndian(frame.AsSpan(0, 4), payload.Length);
-        payload.CopyTo(frame.AsSpan(4));
-        return frame;
-    }
-
-    public static CapabilityIpcMessage Deserialize(ReadOnlySpan<byte> payload) =>
-        JsonSerializer.Deserialize<CapabilityIpcMessage>(payload, JsonOptions)
-        ?? throw new InvalidOperationException("Invalid IPC payload.");
-
-    public static async Task WriteMessageAsync(Stream stream, CapabilityIpcMessage message, CancellationToken ct)
-    {
-        var frame = Serialize(message);
-        await stream.WriteAsync(frame, ct).ConfigureAwait(false);
-        await stream.FlushAsync(ct).ConfigureAwait(false);
-    }
-
-    public static async Task<CapabilityIpcMessage?> TryReadMessageAsync(Stream stream, CancellationToken ct)
-    {
-        var lenBuf = new byte[4];
-        if (!await ReadExactAsync(stream, lenBuf, ct).ConfigureAwait(false))
-            return null;
-
-        var len = BinaryPrimitives.ReadInt32LittleEndian(lenBuf);
-        if (len <= 0 || len > CapabilityIpcPolicy.MaxMessageBytes)
-            throw new InvalidOperationException($"Invalid IPC frame length {len}.");
-
-        var payload = new byte[len];
-        if (!await ReadExactAsync(stream, payload, ct).ConfigureAwait(false))
-            return null;
-
-        return Deserialize(payload);
-    }
-
-    private static async Task<bool> ReadExactAsync(Stream stream, byte[] buffer, CancellationToken ct)
-    {
-        var offset = 0;
-        while (offset < buffer.Length)
+        private static readonly JsonSerializerOptions JsonOptions = new()
         {
-            var read = await stream.ReadAsync(buffer.AsMemory(offset, buffer.Length - offset), ct)
-                .ConfigureAwait(false);
-            if (read == 0) return offset > 0 ? throw new EndOfStreamException() : false;
-            offset += read;
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = false,
+        };
+
+        public static FlyoutRequestDto ToDto(FlyoutRequest request)
+        {
+            return new(
+                request.ModuleId,
+                request.Kind,
+                request.StyleId,
+                request.Anchor,
+                request.AutoDismissMs,
+                request.Payload?.ToDictionary(
+                    static kv => kv.Key,
+                    static kv => kv.Value,
+                    StringComparer.OrdinalIgnoreCase),
+                request.MonitorIndex,
+                request.XPad,
+                request.YPad,
+                request.Ani,
+                request.AniDir,
+                request.AniEase,
+                request.AniSteps,
+                request.AnimationDisplacement);
         }
 
-        return true;
+        public static FlyoutRequest FromDto(FlyoutRequestDto dto)
+        {
+            return new(
+                dto.ModuleId,
+                dto.Kind,
+                dto.StyleId,
+                dto.Anchor,
+                dto.AutoDismissMs,
+                dto.Payload,
+                dto.MonitorIndex,
+                dto.XPad,
+                dto.YPad,
+                dto.Ani,
+                dto.AniDir,
+                dto.AniEase,
+                dto.AniSteps,
+                dto.AnimationDisplacement);
+        }
+
+        public static byte[] Serialize(CapabilityIpcMessage message)
+        {
+            string json = JsonSerializer.Serialize(message, JsonOptions);
+            byte[] payload = Encoding.UTF8.GetBytes(json);
+            if (payload.Length > CapabilityIpcPolicy.MaxMessageBytes)
+            {
+                throw new InvalidOperationException("IPC message too large.");
+            }
+
+            byte[] frame = new byte[4 + payload.Length];
+            BinaryPrimitives.WriteInt32LittleEndian(frame.AsSpan(0, 4), payload.Length);
+            payload.CopyTo(frame.AsSpan(4));
+            return frame;
+        }
+
+        public static CapabilityIpcMessage Deserialize(ReadOnlySpan<byte> payload)
+        {
+            return JsonSerializer.Deserialize<CapabilityIpcMessage>(payload, JsonOptions)
+            ?? throw new InvalidOperationException("Invalid IPC payload.");
+        }
+
+        public static async Task WriteMessageAsync(Stream stream, CapabilityIpcMessage message, CancellationToken ct)
+        {
+            byte[] frame = Serialize(message);
+            await stream.WriteAsync(frame, ct).ConfigureAwait(false);
+            await stream.FlushAsync(ct).ConfigureAwait(false);
+        }
+
+        public static async Task<CapabilityIpcMessage?> TryReadMessageAsync(Stream stream, CancellationToken ct)
+        {
+            byte[] lenBuf = new byte[4];
+            if (!await ReadExactAsync(stream, lenBuf, ct).ConfigureAwait(false))
+            {
+                return null;
+            }
+
+            int len = BinaryPrimitives.ReadInt32LittleEndian(lenBuf);
+            if (len is <= 0 or > CapabilityIpcPolicy.MaxMessageBytes)
+            {
+                throw new InvalidOperationException($"Invalid IPC frame length {len}.");
+            }
+
+            byte[] payload = new byte[len];
+            return !await ReadExactAsync(stream, payload, ct).ConfigureAwait(false) ? null : Deserialize(payload);
+        }
+
+        private static async Task<bool> ReadExactAsync(Stream stream, byte[] buffer, CancellationToken ct)
+        {
+            int offset = 0;
+            while (offset < buffer.Length)
+            {
+                int read = await stream.ReadAsync(buffer.AsMemory(offset, buffer.Length - offset), ct)
+                    .ConfigureAwait(false);
+                if (read == 0)
+                {
+                    return offset > 0 ? throw new EndOfStreamException() : false;
+                }
+
+                offset += read;
+            }
+
+            return true;
+        }
     }
 }

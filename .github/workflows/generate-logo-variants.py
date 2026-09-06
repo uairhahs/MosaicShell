@@ -1,19 +1,25 @@
-# This is a simple script to generate the various logo variants used in the docs and README. It is run automatically by the GitHub Actions workflow on push to main, but can also be run manually if needed.
+# Generate logo variants from .github/res/MosaicShell.png (source of truth).
+# Run from repo root: python .github/workflows/generate-logo-variants.py
+
+import shutil
+from pathlib import Path
 
 from PIL import Image
 
-src = Image.open('.github/res/MosaicShell.png').convert('RGBA')
-out = '.github/res/logo-variants'
+repo = Path(__file__).resolve().parents[2]
+src = Image.open(repo / ".github/res/MosaicShell.png").convert("RGBA")
+out = repo / ".github/res/logo-variants"
 
 for size in [512, 256, 128, 64, 32]:
-    src.resize((size, size), Image.LANCZOS).save(f'{out}/compact-{size}.png')
+    src.resize((size, size), Image.LANCZOS).save(out / f"compact-{size}.png")
 
 for size in [24, 16]:
-    src.resize((size, size), Image.LANCZOS).save(f'{out}/micro-{size}.png')
+    src.resize((size, size), Image.LANCZOS).save(out / f"micro-{size}.png")
+
 
 def monochrome(img, color):
     r, g, b = color
-    result = Image.new('RGBA', img.size)
+    result = Image.new("RGBA", img.size)
     px_in = img.load()
     px_out = result.load()
     for y in range(img.height):
@@ -22,19 +28,25 @@ def monochrome(img, color):
             px_out[x, y] = (r, g, b, a)
     return result
 
+
 for size in [512, 256, 128, 64]:
     resized = src.resize((size, size), Image.LANCZOS)
-    monochrome(resized, (255, 255, 255)).save(f'{out}/monochrome-white-{size}.png')
-    monochrome(resized, (11, 16, 32)).save(f'{out}/monochrome-dark-{size}.png')
+    monochrome(resized, (255, 255, 255)).save(out / f"monochrome-white-{size}.png")
+    monochrome(resized, (11, 16, 32)).save(out / f"monochrome-dark-{size}.png")
 
-ico_imgs = [src.resize((s, s), Image.LANCZOS).convert('RGBA') for s in [16, 32]]
-ico_imgs[0].save(f'{out}/favicon.ico', format='ICO', sizes=[(16, 16), (32, 32)], append_images=[ico_imgs[1]])
+ico_sizes = [256, 128, 64, 48, 32, 24, 16]
+ico_imgs = [src.resize((s, s), Image.LANCZOS).convert("RGBA") for s in ico_sizes]
+favicon = out / "favicon.ico"
+ico_imgs[0].save(
+    favicon,
+    format="ICO",
+    sizes=[(s, s) for s in ico_sizes],
+    append_images=ico_imgs[1:],
+)
 
-import shutil
-for dest in [
-    '@Resources/Actions/Logo.ico',
-    '@Resources/Images/Logo.ico',
-]:
-    shutil.copy(f'{out}/favicon.ico', dest)
+host_ico = repo / "host/MosaicShell.Host/Assets/mosaicshell.ico"
+host_ico.parent.mkdir(parents=True, exist_ok=True)
+shutil.copy(favicon, host_ico)
 
-print('Done')
+print(f"Wrote variants under {out}")
+print(f"Synced Host icon to {host_ico}")

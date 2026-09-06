@@ -1,136 +1,142 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
-using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Material.Icons;
 using Material.Icons.Avalonia;
-using MosaicShell.Core.Services;
+using MosaicShell.Core.Modules.Tessera;
 
-namespace MosaicShell.Host.Tiles.Tessera;
-
-internal static partial class TesseraLayouts
+namespace MosaicShell.Host.Tiles.Tessera
 {
-    public static Control Fluent(TesseraFlyoutViewModel vm)
+    internal static partial class TesseraLayouts
     {
-        if (IsStatus(vm)) return StatusChip(vm, 0);
-
-        if (vm.Kind.Equals("media", StringComparison.OrdinalIgnoreCase)
-            && !TesseraStackedBuildContext.IsActive)
+        public static Control Fluent(TesseraFlyoutViewModel vm)
         {
-            return TesseraChrome.Shell(
-                TesseraMediaPanel.Create(vm, TesseraMediaMode.FluentSide),
-                10,
-                TesseraShellOptions.InsetMargin,
+            if (IsStatus(vm))
+            {
+                return StatusChip(vm, TesseraStatusFlyoutPolicy.ResolveChipCornerRadiusDip("Fluent"));
+            }
+
+            if (vm.Kind.Equals("media", StringComparison.OrdinalIgnoreCase)
+                && !TesseraStackedBuildContext.IsActive)
+            {
+                return TesseraChrome.Shell(
+                    TesseraMediaPanel.Create(vm, TesseraMediaMode.FluentSide),
+                    10,
+                    TesseraShellOptions.InsetMargin,
+                    new SolidColorBrush(TesseraPalette.Primary),
+                    maxWidth: TesseraFluentMetrics.MaxShellWidth);
+            }
+
+            Control? stacked = TesseraStackedBuildContext.TryCreatePanel(
+                vm,
+                buildVolume: FluentVolumeCore,
+                buildMedia: v => TesseraMediaPanel.Create(v, TesseraMediaMode.FluentSide),
+                wrapVolume: vol => FluentVolumeWrap(vm, vol),
+                wrapMedia: media => FluentMediaReveal(vm, media));
+            if (stacked is not null)
+            {
+                return stacked;
+            }
+
+            Control volCol = FluentVolumeCore(vm);
+            Control body = volCol;
+            if (vm.ShowMediaStrip)
+            {
+                Control media = TesseraMediaPanel.Create(vm, TesseraMediaMode.FluentSide);
+                TesseraRevealHost reveal = TesseraRevealHostFactory.WrapMediaFromCatalog(vm, media);
+                body = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Spacing = 0,
+                    Children = { AttachFluentDivider(vm, volCol), reveal }
+                };
+            }
+
+            return TesseraChrome.Shell(body, 10, TesseraShellOptions.InsetMargin,
                 new SolidColorBrush(TesseraPalette.Primary),
                 maxWidth: TesseraFluentMetrics.MaxShellWidth);
         }
 
-        var stacked = TesseraStackedBuildContext.TryCreatePanel(
-            vm,
-            buildVolume: FluentVolumeCore,
-            buildMedia: v => TesseraMediaPanel.Create(v, TesseraMediaMode.FluentSide),
-            wrapVolume: FluentVolumeWrap,
-            wrapMedia: FluentMediaWrap);
-        if (stacked is not null)
-            return stacked;
-
-        var volCol = FluentVolumeCore(vm);
-        Control body = volCol;
-        if (vm.ShowMediaStrip)
+        private static Control FluentVolumeCore(TesseraFlyoutViewModel vm)
         {
+            const double volumeW = TesseraFluentMetrics.VolumeWidth;
             const double h = TesseraFluentMetrics.Height;
             const double pad = TesseraFluentMetrics.Pad;
-            var divider = new Border
+
+            Control glyph = TesseraVolumeGlyph.Create(vm, 20);
+            glyph.Name = "TesseraGlyph";
+            glyph.HorizontalAlignment = HorizontalAlignment.Center;
+            glyph.Margin = new Thickness(0, pad, 0, 6);
+
+            TesseraTrack track = new()
             {
-                Width = 1,
-                Height = h - pad * 2,
-                Background = TesseraPalette.StrokeBrush,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, pad, 0, pad),
-                Opacity = 0.55
+                IsVertical = true,
+                Width = 26,
+                Height = h - (pad * 2) - 48,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Value = vm.PrimaryValue,
+                Name = "TesseraTrack",
+                TrackThickness = 5
             };
-            var media = TesseraMediaPanel.Create(vm, TesseraMediaMode.FluentSide);
-            body = new StackPanel
+            track.ValueChanged += (_, v) => vm.ApplyPrimary(v);
+
+            TextBlock percent = new()
             {
-                Orientation = Orientation.Horizontal,
-                Spacing = 2,
-                Children = { volCol, divider, media }
+                Text = vm.PrimaryPercent,
+                FontSize = 11,
+                FontWeight = FontWeight.SemiBold,
+                Foreground = TesseraPalette.FontBrush,
+                FontFamily = new FontFamily("Segoe UI Variable, Segoe UI"),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 4, 0, pad),
+                Name = "TesseraPercent"
             };
+            TesseraLiveAmbient.RegisterVolume(track, percent, glyph as MaterialIcon);
+
+            DockPanel volPanel = new() { LastChildFill = true };
+            DockPanel.SetDock(glyph, Dock.Top);
+            DockPanel.SetDock(percent, Dock.Bottom);
+            volPanel.Children.Add(glyph);
+            volPanel.Children.Add(percent);
+            volPanel.Children.Add(track);
+
+            Border volCol = new()
+            {
+                Width = volumeW,
+                Height = h,
+                Background = Brushes.Transparent,
+                Child = volPanel
+            };
+            BindWheel(volCol, vm);
+            return volCol;
         }
 
-        return TesseraChrome.Shell(body, 10, TesseraShellOptions.InsetMargin,
-            new SolidColorBrush(TesseraPalette.Primary),
-            maxWidth: TesseraFluentMetrics.MaxShellWidth);
-    }
-
-    private static Control FluentVolumeCore(TesseraFlyoutViewModel vm)
-    {
-        const double volumeW = TesseraFluentMetrics.VolumeWidth;
-        const double h = TesseraFluentMetrics.Height;
-        const double pad = TesseraFluentMetrics.Pad;
-
-        var glyph = TesseraVolumeGlyph.Create(vm, 20);
-        glyph.Name = "TesseraGlyph";
-        glyph.HorizontalAlignment = HorizontalAlignment.Center;
-        glyph.Margin = new Thickness(0, pad, 0, 6);
-
-        var track = new TesseraTrack
+        private static Control FluentVolumeWrap(TesseraFlyoutViewModel vm, Control volCol)
         {
-            IsVertical = true,
-            Width = 26,
-            Height = h - pad * 2 - 48,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Value = vm.PrimaryValue,
-            Name = "TesseraTrack",
-            TrackThickness = 5
-        };
-        track.ValueChanged += (_, v) => vm.ApplyPrimary(v);
+            Control inner = AttachFluentDivider(vm, volCol);
+            TesseraShellOptions options = TesseraStackedBuildContext.IsActive ? TesseraShellOptions.None : TesseraShellOptions.InsetMargin;
+            return TesseraChrome.Shell(inner, 10, options,
+                new SolidColorBrush(TesseraPalette.Primary));
+        }
 
-        var percent = new TextBlock
+        private static Control AttachFluentDivider(TesseraFlyoutViewModel vm, Control volCol)
         {
-            Text = vm.PrimaryPercent,
-            FontSize = 11,
-            FontWeight = FontWeight.SemiBold,
-            Foreground = TesseraPalette.FontBrush,
-            FontFamily = new FontFamily("Segoe UI Variable, Segoe UI"),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 4, 0, pad),
-            Name = "TesseraPercent"
-        };
-        TesseraLiveAmbient.RegisterVolume(track, percent, glyph as MaterialIcon);
+            return !vm.ShowMediaStrip || !TesseraFlyoutAnimatedTargetSpec.FluentDividerMustTweenInPlaceOnShow
+                ? volCol
+                : TesseraRevealHost.WrapFluentVolumeDivider(vm, volCol);
+        }
 
-        var volPanel = new DockPanel { LastChildFill = true };
-        DockPanel.SetDock(glyph, Avalonia.Controls.Dock.Top);
-        DockPanel.SetDock(percent, Avalonia.Controls.Dock.Bottom);
-        volPanel.Children.Add(glyph);
-        volPanel.Children.Add(percent);
-        volPanel.Children.Add(track);
-
-        var volCol = new Border
+        private static Control FluentMediaReveal(TesseraFlyoutViewModel vm, Control media)
         {
-            Width = volumeW,
-            Height = h,
-            Background = Brushes.Transparent,
-            Child = volPanel
-        };
-        BindWheel(volCol, vm);
-        return volCol;
-    }
+            return TesseraRevealHostFactory.WrapMediaFromCatalog(vm, FluentMediaWrap(media));
+        }
 
-    private static Control FluentVolumeWrap(Control volCol)
-    {
-        var options = TesseraStackedBuildContext.IsActive ? TesseraShellOptions.None : TesseraShellOptions.InsetMargin;
-        return TesseraChrome.Shell(volCol, 10, options,
-            new SolidColorBrush(TesseraPalette.Primary));
-    }
-
-    private static Control FluentMediaWrap(Control media)
-    {
-        var options = TesseraStackedBuildContext.IsActive ? TesseraShellOptions.None : TesseraShellOptions.InsetMargin;
-        return TesseraChrome.Shell(media, 10, options,
-            new SolidColorBrush(TesseraPalette.Primary),
-            maxWidth: TesseraFluentMetrics.MaxShellWidth);
+        private static Control FluentMediaWrap(Control media)
+        {
+            TesseraShellOptions options = TesseraStackedBuildContext.IsActive ? TesseraShellOptions.None : TesseraShellOptions.InsetMargin;
+            return TesseraChrome.Shell(media, 10, options,
+                new SolidColorBrush(TesseraPalette.Primary),
+                maxWidth: TesseraFluentMetrics.MaxShellWidth);
+        }
     }
 }

@@ -1,16 +1,17 @@
 using FluentAssertions;
 using MosaicShell.Core.Modules;
 
-namespace MosaicShell.Core.Tests;
-
-public class HostScrollbarChromeSpecTests
+namespace MosaicShell.Core.Tests
 {
-    [Fact]
-    public void Host_must_leave_fluent_scrollbar_chrome_unmodified()
+    public class HostScrollbarChromeSpecTests
     {
-        HostScrollbarChromeSpec.OverrideFluentChrome.Should().BeFalse();
-        HostScrollbarChromeSpec.OverrideScrollBarSize.Should().BeFalse();
-        HostScrollbarChromeSpec.OverrideThumbBrushes.Should().BeFalse();
-        HostScrollbarChromeSpec.HideLineButtons.Should().BeFalse();
+        [Fact]
+        public void Host_must_leave_fluent_scrollbar_chrome_unmodified()
+        {
+            _ = HostScrollbarChromeSpec.OverrideFluentChrome.Should().BeFalse();
+            _ = HostScrollbarChromeSpec.OverrideScrollBarSize.Should().BeFalse();
+            _ = HostScrollbarChromeSpec.OverrideThumbBrushes.Should().BeFalse();
+            _ = HostScrollbarChromeSpec.HideLineButtons.Should().BeFalse();
+        }
     }
 }
