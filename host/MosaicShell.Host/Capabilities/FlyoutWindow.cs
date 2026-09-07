@@ -120,6 +120,24 @@ namespace MosaicShell.Host.Capabilities
         internal int MotionGeneration { get; private set; }
 
         /// <summary>
+        /// Explicit session lifecycle phase.
+        /// </summary>
+        public TesseraFlyoutPhase Phase { get; private set; } = TesseraFlyoutPhase.Hidden;
+
+        private void SetPhase(TesseraFlyoutPhase value)
+        {
+            if (Phase != value)
+            {
+                Phase = value;
+                PhaseChanged?.Invoke(this, value);
+            }
+        }
+
+        public event Action<FlyoutWindow, TesseraFlyoutPhase>? PhaseChanged;
+
+        public bool IsSessionActive => Phase.IsSessionActive();
+
+        /// <summary>
         /// True only when the SoftFrost session is user-visible (not pre-reveal / transient-dismissed).
         /// </summary>
         public bool IsFlyoutSessionShowing =>
@@ -142,7 +160,7 @@ namespace MosaicShell.Host.Capabilities
                     ? "none"
                     : _motionEntrance ? "entering" : "exiting";
                 return $"w{WindowId} role={StackedRole?.ToString() ?? "single"} "
-                    + $"vis={(IsVisible ? 1 : 0)} op={MotionSurface.Opacity:0.###} "
+                    + $"phase={Phase} vis={(IsVisible ? 1 : 0)} op={MotionSurface.Opacity:0.###} "
                     + $"motion={motion} p2={(Phase2Animating ? 1 : 0)} gen={MotionGeneration} "
                     + $"showing={(IsFlyoutSessionShowing ? 1 : 0)}";
             }
@@ -523,6 +541,7 @@ namespace MosaicShell.Host.Capabilities
         /// </summary>
         public void RevealAfterLayout()
         {
+            SetPhase(TesseraFlyoutPhase.Entering);
             void Run()
             {
                 if (!IsVisible)
@@ -566,6 +585,7 @@ namespace MosaicShell.Host.Capabilities
         {
             try
             {
+                SetPhase(TesseraFlyoutPhase.Entering);
                 FinishLayout();
                 RevealAfterLayout();
             }
@@ -879,6 +899,15 @@ namespace MosaicShell.Host.Capabilities
             EnsureStatusRoundClipBeforeReveal();
             Position = _restPosition;
             _motionEntrance = entrance;
+            if (entrance)
+            {
+                SetPhase(TesseraFlyoutPhase.Entering);
+                _exitAnimating = false;
+            }
+            else
+            {
+                SetPhase(TesseraFlyoutPhase.Exiting);
+            }
             (int generation, CancellationToken _) = BeginMotionRun();
             _stackedShowGeneration = generation;
 
@@ -886,6 +915,7 @@ namespace MosaicShell.Host.Capabilities
             {
                 if (entrance)
                 {
+                    SetPhase(TesseraFlyoutPhase.Shown);
                     Opacity = 1;
                     MotionSurface.Opacity = 1;
                     RenderTransform = null;
@@ -893,6 +923,7 @@ namespace MosaicShell.Host.Capabilities
                 }
                 else
                 {
+                    SetPhase(TesseraFlyoutPhase.Hidden);
                     MotionSurface.Opacity = 0;
                     RenderTransform = null;
                 }
@@ -1076,6 +1107,7 @@ namespace MosaicShell.Host.Capabilities
             RenderTransform = null;
             if (entrance)
             {
+                SetPhase(TesseraFlyoutPhase.Shown);
                 Opacity = 1;
                 MotionSurface.Opacity = 1;
                 Position = _restPosition;
@@ -1086,6 +1118,7 @@ namespace MosaicShell.Host.Capabilities
             }
             else
             {
+                SetPhase(TesseraFlyoutPhase.Hidden);
                 MotionSurface.Opacity = 0;
             }
         }
@@ -1192,6 +1225,7 @@ namespace MosaicShell.Host.Capabilities
                 && !PresenterDrivesMotion)
             {
                 _exitAnimating = true;
+                SetPhase(TesseraFlyoutPhase.Exiting);
                 _ = RunExitAnimationAsync(() => FinishTransientHide(notify));
                 return;
             }
@@ -1201,6 +1235,7 @@ namespace MosaicShell.Host.Capabilities
 
         private async Task RunExitAnimationAsync(Action onComplete)
         {
+            int exitGen = MotionGeneration;
             try
             {
                 await FlyoutMotionSession.RunHideAsync([this]).ConfigureAwait(true);
@@ -1212,12 +1247,17 @@ namespace MosaicShell.Host.Capabilities
             finally
             {
                 _exitAnimating = false;
-                onComplete();
+                if (exitGen == MotionGeneration && Phase == TesseraFlyoutPhase.Exiting)
+                {
+                    SetPhase(TesseraFlyoutPhase.Hidden);
+                    onComplete();
+                }
             }
         }
 
         private void FinishTransientHide(bool notify)
         {
+            SetPhase(TesseraFlyoutPhase.Hidden);
             RenderTransform = null;
             Opacity = 1;
             MotionSurface.Opacity = 0;

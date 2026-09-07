@@ -485,8 +485,14 @@ namespace MosaicShell.Host.Capabilities
             IReadOnlyList<FlyoutWindow> windows,
             FlyoutRequest request)
         {
+            int gen = _session.Generation;
+            _session.SetPhase(TesseraFlyoutPhase.Exiting);
             await RunStackedExitAnimationAsync(request, windows).ConfigureAwait(true);
-            DismissStackedImmediate(notify, windows);
+            if (gen == _session.Generation && _session.Phase == TesseraFlyoutPhase.Exiting)
+            {
+                _session.SetPhase(TesseraFlyoutPhase.Hidden);
+                DismissStackedImmediate(notify, windows);
+            }
         }
 
         private void DismissStackedImmediate(bool notify, IReadOnlyList<FlyoutWindow> windows)

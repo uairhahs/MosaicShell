@@ -316,9 +316,35 @@ namespace MosaicShell.Host.Capabilities
         public TesseraFlyoutSessionSnapshot GetSessionSnapshot(string moduleId)
         {
             bool showing = IsVisible(moduleId);
-            return !moduleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase)
-                ? new(showing, 0, TesseraFlyoutSessionMode.None, "", null)
-                : _session.Snapshot(showing);
+            if (!moduleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            {
+                return new(showing, 0, TesseraFlyoutSessionMode.None, "", null, showing ? TesseraFlyoutPhase.Shown : TesseraFlyoutPhase.Hidden);
+            }
+
+            TesseraFlyoutPhase phase = GetTesseraPhase();
+            return _session.Snapshot(showing, phase);
+        }
+
+        private TesseraFlyoutPhase GetTesseraPhase()
+        {
+            if (_stackedSession is not null)
+            {
+                List<FlyoutWindow> windows = GetStackedWindowsFromSession();
+                return windows.Any(w => w.Phase == TesseraFlyoutPhase.Entering)
+                    ? TesseraFlyoutPhase.Entering
+                    : windows.Any(w => w.Phase == TesseraFlyoutPhase.Shown)
+                    ? TesseraFlyoutPhase.Shown
+                    : windows.Any(w => w.Phase == TesseraFlyoutPhase.Exiting)
+                    ? TesseraFlyoutPhase.Exiting
+                    : TesseraFlyoutPhase.Hidden;
+            }
+
+            lock (_gate)
+            {
+                return _windows.TryGetValue("Tessera", out FlyoutWindow? w)
+                    ? w.Phase
+                    : _session.Phase;
+            }
         }
 
         private void SafeShowOrUpdate(FlyoutRequest request, bool resetDismiss = true, bool allowLivePatch = true)
@@ -416,14 +442,9 @@ namespace MosaicShell.Host.Capabilities
                         string.Equals(existing.Kind, request.Kind, StringComparison.OrdinalIgnoreCase)
                         && string.Equals(existing.StyleId ?? "", request.StyleId ?? "", StringComparison.OrdinalIgnoreCase);
 
-                    // A same-kind/style request landing while this window's own entrance is still
-                    // running (Show/Update ingress is always allowLivePatch:false, so it would
-                    // otherwise skip straight to a full ApplyRequest rebuild below) must only patch
-                    // content in place. BeginMotion/PlayShowAnimation reset Position/Opacity, so
-                    // replaying either mid-reveal restarts the entrance from scratch; on a fast run
-                    // of Present calls (rapid track skips) it can perpetually restart and never
-                    // finish, which is what read as choppy/incomplete.
-                    if (existing.IsEntranceMotionInFlight
+                    // A same-kind/style request landing while this window's session is active
+                    // (either entrance motion in flight or shown) must only patch content in place.
+                    if ((existing.IsEntranceMotionInFlight || existing.Phase.IsSessionActive())
                         && sameKindStyle
                         && TryPatchLive(existing, request, resetDismiss))
                     {
@@ -822,6 +843,16 @@ namespace MosaicShell.Host.Capabilities
         {
             window.TransientDismissed -= OnFlyoutTransientDismissed;
             window.TransientDismissed += OnFlyoutTransientDismissed;
+            window.PhaseChanged -= OnFlyoutPhaseChanged;
+            window.PhaseChanged += OnFlyoutPhaseChanged;
+        }
+
+        private void OnFlyoutPhaseChanged(FlyoutWindow window, TesseraFlyoutPhase phase)
+        {
+            if (window.FlyoutRequest.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            {
+                _session.SetPhase(phase);
+            }
         }
 
         private void OnFlyoutTransientDismissed(string moduleId)
