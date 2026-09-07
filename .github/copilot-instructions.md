@@ -1,43 +1,37 @@
 ## Codebase Memory MCP
 
-**MANDATORY: use Codebase Memory MCP graph tools FIRST — before reading files or making code changes.**
+**Use the codebase-memory knowledge graph FIRST for code discovery, before reading files or making changes.**
 
-This rule applies to every request involving this codebase.
+Applies to every request involving this codebase. The graph is a pre-built index with relevance
+ranking: faster and more accurate than manual file search, and it does not follow stale references.
 
-Always call `list_projects` first when you do not already know the project name, then use the `display_name` or exact `name` returned by that tool.
-
-```json
-// Step 0 — discover project names
-mcp_codebase-memo_list_projects()
-
-// Step 1 — use the project identifier returned above
-mcp_codebase-memo_get_architecture({ "project": "<display_name>" })
-```
+Tool names below are the server's own names. The client adds a prefix that depends on how the server
+is registered locally, so never hardcode the prefixed form.
 
 ### Workflow
 
-1. Call `list_projects` to discover the correct project name.
-2. Call `get_architecture(project)` to understand the codebase structure.
-3. Use `search_graph` to find relevant symbols, `trace_call_path` for call chains.
-4. Use `get_code_snippet` to read specific function implementations.
-5. Only use `read_file` when you need exact raw content to edit a specific line.
+1. `list_projects` to discover the project identifier. Never guess it.
+2. `get_architecture(project)` for structure, packages, hotspots, clusters.
+3. `search_graph` for symbols, `trace_call_path` for call chains, `query_graph` for anything
+   relational (complexity, duplicates, fan-in).
+4. `get_code_snippet(qualified_name)` to read an implementation.
+5. `check_index_coverage` before any negative or exhaustive claim. A clean result means no recorded
+   gap, not proof of completeness.
+6. `read_file` only when you need exact raw content to edit a specific line.
 
-### Available Tools (14 MCP tools)
+### Fall back to grep and glob for
 
-**Indexing:**
-- `index_repository(repo_path)` — Index a repository into the knowledge graph
-- `list_projects` — List all indexed projects with node/edge counts
-- `delete_project(project)` — Remove a project and all its graph data
-- `index_status(project)` — Check indexing status
+String literals, error messages, config values, non-code files (`*.ps1`, `*.iss`, `*.axaml`,
+workflow YAML), and verification of anything the graph asserted.
 
-**Querying:**
-- `search_graph(name_pattern, name_scope, label, file_pattern, exclude_file_pattern)` — Structured search by label, name/qualified_name, include/exclude file globs
-- `trace_call_path(function_name, direction, depth)` — BFS call chain traversal
-- `detect_changes(project)` — Map git diff to affected symbols + risk
-- `query_graph(query)` — Execute Cypher-like graph queries (read-only)
-- `get_graph_schema(project)` — Node/edge counts, relationship patterns
-- `get_code_snippet(qualified_name)` — Read source code for a function
-- `get_architecture(project)` — Codebase overview: languages, packages, routes, hotspots
-- `search_code(pattern, project)` — Grep-like text search within indexed files
-- `manage_adr(action)` — CRUD for Architecture Decision Records
-- `ingest_traces(traces)` — Ingest runtime traces to validate HTTP edges
+### Known index gap in this repo
+
+A small number of Core `.cs` files have symbol nodes but no `File` node, so file-level queries can
+undercount. Symbol-level queries are unaffected. Verify file counts with a file search.
+
+### Entry points worth knowing
+
+- Flyout pipeline: `TesseraCapability` -> `CapabilityFlyoutSession.Route` -> `IFlyoutPresenter` ->
+  `AvaloniaFlyoutPresenter` -> `FlyoutWindow`.
+- Per-style facts: `TesseraFlyoutTweenTargetCatalog.ResolveProfile` is the only `switch (styleId)`.
+- Parity honesty flags: `host/MosaicShell.Core.Tests/HubParityBacklogTests.cs`.

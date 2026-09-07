@@ -3,6 +3,7 @@ using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
+using MosaicShell.Core.Modules;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {
@@ -39,7 +40,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             LockName = payload.GetValueOrDefault("lock") ?? "CapsLock";
             LockOn = payload.GetValueOrDefault("on") == "1";
             FlightOn = payload.GetValueOrDefault("on") == "1";
-            Settings = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
+            Settings = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
         }
 
         public static TesseraFlyoutViewModel FromRequest(

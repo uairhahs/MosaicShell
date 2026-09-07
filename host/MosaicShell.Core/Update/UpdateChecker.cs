@@ -10,7 +10,8 @@ namespace MosaicShell.Core.Update
         string? CurrentVersion,
         string? ReleaseUrl,
         string? SetupDownloadUrl = null,
-        string? SetupFileName = null);
+        string? SetupFileName = null,
+        string? SetupSha256 = null);
 
     public static class UpdateChecker
     {
@@ -45,6 +46,7 @@ namespace MosaicShell.Core.Update
                 }
 
                 GhAsset? setup = SelectSetupAsset(release?.Assets);
+                string? sha = await TryReadSetupChecksumAsync(http, release?.Assets, setup?.Name, ct);
                 bool available = HostBuildVersionPolicy.IsNewer(latest, currentVersion);
                 return new UpdateCheckResult(
                     available,
@@ -52,7 +54,8 @@ namespace MosaicShell.Core.Update
                     currentVersion,
                     release?.HtmlUrl,
                     setup?.BrowserDownloadUrl,
-                    setup?.Name);
+                    setup?.Name,
+                    sha);
             }
             catch
             {
@@ -68,24 +71,58 @@ namespace MosaicShell.Core.Update
             UpdateCheckResult check,
             CancellationToken ct = default)
         {
-            if (string.IsNullOrWhiteSpace(check.SetupDownloadUrl))
-            {
-                throw new InvalidOperationException("No Setup.exe asset URL on the latest release.");
-            }
-
-            string name = string.IsNullOrWhiteSpace(check.SetupFileName)
-                ? HostInstallLayoutSpec.SetupExeName
-                : check.SetupFileName;
-
             ReleaseDownloader dl = new(http);
-            return await dl.DownloadAsync(
-                new ReleaseAsset
+            return await dl.DownloadAsync(BuildSetupAsset(check), HostUpdatePolicy.CacheDirectory, ct);
+        }
+
+        /// <summary>
+        /// Builds the download descriptor, carrying the published SHA-256 when the release had one.
+        /// A missing checksum stays null: the downloader must not be told a hash that was never published.
+        /// </summary>
+        public static ReleaseAsset BuildSetupAsset(UpdateCheckResult check)
+        {
+            return string.IsNullOrWhiteSpace(check.SetupDownloadUrl)
+                ? throw new InvalidOperationException("No Setup.exe asset URL on the latest release.")
+                : new ReleaseAsset
                 {
                     Url = check.SetupDownloadUrl,
-                    FileName = name,
-                },
-                HostUpdatePolicy.CacheDirectory,
-                ct);
+                    FileName = string.IsNullOrWhiteSpace(check.SetupFileName)
+                        ? HostInstallLayoutSpec.SetupExeName
+                        : check.SetupFileName,
+                    Sha256 = string.IsNullOrWhiteSpace(check.SetupSha256) ? null : check.SetupSha256,
+                };
+        }
+
+        /// <summary>Picks the CI-published SHA256SUMS.txt asset, if there is one.</summary>
+        public static GhAsset? SelectChecksumAsset(IReadOnlyList<GhAsset>? assets)
+        {
+            return assets?.FirstOrDefault(a =>
+                string.Equals(a.Name, ReleaseAssetChecksums.FileName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static async Task<string?> TryReadSetupChecksumAsync(
+            HttpClient http,
+            IReadOnlyList<GhAsset>? assets,
+            string? setupName,
+            CancellationToken ct)
+        {
+            GhAsset? sums = SelectChecksumAsset(assets);
+            if (sums?.BrowserDownloadUrl is null || string.IsNullOrWhiteSpace(setupName))
+            {
+                return null;
+            }
+
+            try
+            {
+                string body = await http.GetStringAsync(sums.BrowserDownloadUrl, ct);
+                return ReleaseAssetChecksums.Parse(body).TryGet(setupName);
+            }
+            catch
+            {
+                // An unreachable checksum file must not block the update check; the download simply
+                // stays unverified, exactly as it was before checksums were published.
+                return null;
+            }
         }
 
         /// <summary>Picks MosaicShell-Setup.exe or MosaicShell-Setup-*.exe from release assets.</summary>

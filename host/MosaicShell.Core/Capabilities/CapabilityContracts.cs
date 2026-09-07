@@ -1,5 +1,6 @@
 using System.Reflection;
 using MosaicShell.Core.Capabilities.Platform;
+using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Runtime;
 
@@ -97,11 +98,12 @@ namespace MosaicShell.Core.Capabilities
 
         /// <summary>
         /// Optional external plugin: Modules\{id}\module.dll or capability.dll exporting ICapabilityFactory.
-        /// Built-ins always win if already registered.
+        /// Built-ins always win if already registered. Loading is full trust: a third-party module
+        /// runs arbitrary code in the Host process.
         /// </summary>
         public void TryLoadExternal(string moduleId, string modulesRoot)
         {
-            if (_factories.ContainsKey(moduleId))
+            if (_factories.ContainsKey(moduleId) || !ModulePackagePolicy.IsValidModuleId(moduleId))
             {
                 return;
             }

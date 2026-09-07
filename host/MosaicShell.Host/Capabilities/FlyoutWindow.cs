@@ -11,6 +11,7 @@ using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 using MosaicShell.Host.Tiles.Tessera;
+using MosaicShell.Core.Modules;
 
 namespace MosaicShell.Host.Capabilities
 {
@@ -311,7 +312,7 @@ namespace MosaicShell.Host.Capabilities
 
         private void StartLivePump()
         {
-            if (!string.Equals(FlyoutRequest.ModuleId, "Tessera", StringComparison.OrdinalIgnoreCase))
+            if (!ModuleIds.IsTessera(FlyoutRequest.ModuleId))
             {
                 return;
             }
@@ -396,7 +397,7 @@ namespace MosaicShell.Host.Capabilities
 
         public bool TryApplyLive(FlyoutRequest request, HostServices services, bool resetDismiss = true)
         {
-            if (!request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            if (!ModuleIds.IsTessera(request.ModuleId))
             {
                 return false;
             }
@@ -1310,7 +1311,7 @@ namespace MosaicShell.Host.Capabilities
 
         private void OnWheel(object? sender, PointerWheelEventArgs e)
         {
-            if (!FlyoutRequest.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            if (!ModuleIds.IsTessera(FlyoutRequest.ModuleId))
             {
                 return;
             }

@@ -6,6 +6,7 @@ using Avalonia.Threading;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Host.Tiles.Tessera;
+using MosaicShell.Core.Modules;
 
 namespace MosaicShell.Host.Capabilities
 {
@@ -26,7 +27,7 @@ namespace MosaicShell.Host.Capabilities
 
         private bool ShouldUseStackedOsAcrylic(FlyoutRequest request)
         {
-            return request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase)
+            return ModuleIds.IsTessera(request.ModuleId)
             && TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(
                 request.Payload, request.StyleId, request.Kind);
         }
@@ -73,7 +74,7 @@ namespace MosaicShell.Host.Capabilities
                 return false;
             }
 
-            string volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Volume);
+            string volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey(ModuleIds.Tessera, TesseraStackedPanelRole.Volume);
             lock (_gate)
             {
                 if (!_windows.TryGetValue(volumeKey, out FlyoutWindow? volumeWin)
@@ -135,7 +136,7 @@ namespace MosaicShell.Host.Capabilities
                 return false;
             }
 
-            string volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Volume);
+            string volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey(ModuleIds.Tessera, TesseraStackedPanelRole.Volume);
             FlyoutWindow? volumeWin;
             lock (_gate)
             {
@@ -200,7 +201,7 @@ namespace MosaicShell.Host.Capabilities
 
             foreach (TesseraStackedPanelRole role in panels)
             {
-                string slotKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", role);
+                string slotKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey(ModuleIds.Tessera, role);
                 newKeys.Add(slotKey);
 
                 Control content;
@@ -513,7 +514,7 @@ namespace MosaicShell.Host.Capabilities
 
             if (notify && anyVisible)
             {
-                try { TransientDismissed?.Invoke("Tessera"); }
+                try { TransientDismissed?.Invoke(ModuleIds.Tessera); }
                 catch { /* ignore */ }
             }
         }
@@ -863,7 +864,7 @@ namespace MosaicShell.Host.Capabilities
         {
             lock (_gate)
             {
-                if (!_windows.Remove("Tessera", out FlyoutWindow? single))
+                if (!_windows.Remove(ModuleIds.Tessera, out FlyoutWindow? single))
                 {
                     return;
                 }
@@ -906,7 +907,7 @@ namespace MosaicShell.Host.Capabilities
             FlyoutWindow? flyout;
             lock (_gate)
             {
-                _ = _windows.TryGetValue("Tessera", out flyout);
+                _ = _windows.TryGetValue(ModuleIds.Tessera, out flyout);
             }
 
             if (flyout is null)

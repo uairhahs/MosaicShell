@@ -353,7 +353,7 @@ namespace MosaicShell.Host.ViewModels
                 }
 
                 ShowChronoExtras = info.Id.Equals("Chrono", StringComparison.OrdinalIgnoreCase);
-                ShowTesseraExtras = info.Id.Equals("Tessera", StringComparison.OrdinalIgnoreCase);
+                ShowTesseraExtras = ModuleIds.IsTessera(info.Id);
                 ShowHotkeyCapExtras = info.Id is "Inlay" or "Chord" or "Substrate" or "Mixdeck";
                 ShowSlateExtras = info.Id.Equals("Slate", StringComparison.OrdinalIgnoreCase);
                 ShowInlayPins = info.Id.Equals("Inlay", StringComparison.OrdinalIgnoreCase);
@@ -404,7 +404,7 @@ namespace MosaicShell.Host.ViewModels
             }
             else if (ShowTesseraExtras)
             {
-                TesseraSettings s = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
+                TesseraSettings s = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
                 ModuleStyle = StyleIds.Normalize(s.Style);
                 TesseraLegacyVol = s.UseLegacyVolumeHooks;
                 TesseraPosition = string.IsNullOrWhiteSpace(s.Position) ? "TL" : s.Position.ToUpperInvariant();
@@ -596,7 +596,7 @@ namespace MosaicShell.Host.ViewModels
 
         private void PersistTesseraFromUi()
         {
-            TesseraSettings s = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
+            TesseraSettings s = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
             s.Style = StyleIds.Normalize(ModuleStyle);
             s.Position = SelectedTesseraPosition?.Code ?? TesseraPosition;
             s.MonitorIndex = Math.Clamp((int)TesseraMonitorIndex, 1, 8);
@@ -625,7 +625,7 @@ namespace MosaicShell.Host.ViewModels
             TesseraAccentHex = s.AccentColor;
             s.UseLegacyVolumeHooks = TesseraLegacyVol;
             s.LegacyVolumeStep = Math.Clamp((double)TesseraLegacyStepPercent, 1, 25) / 100.0;
-            ModuleSettingsStore.Save("Tessera", s);
+            ModuleSettingsStore.Save(ModuleIds.Tessera, s);
             TesseraPosition = s.Position;
             TesseraAni = s.Ani;
         }
@@ -725,15 +725,15 @@ namespace MosaicShell.Host.ViewModels
                         StatusMessage = "Chrono settings saved! Relaunch widget to apply.";
                         break;
                     }
-                case "tessera":
+                case ModuleIds.Tessera:
                     {
-                        TesseraSettings prior = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
+                        TesseraSettings prior = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
                         bool priorOsAcrylic = prior.UseOsAcrylic;
                         PersistTesseraFromUi();
-                        TesseraSettings saved = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
-                        if (_capabilityHost?.IsArmed("Tessera") == true)
+                        TesseraSettings saved = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
+                        if (_capabilityHost?.IsArmed(ModuleIds.Tessera) == true)
                         {
-                            bool ok = await _capabilityHost.ReArmAsync("Tessera");
+                            bool ok = await _capabilityHost.ReArmAsync(ModuleIds.Tessera);
                             StatusMessage = ok
                                 ? "Tessera settings saved and re-armed."
                                 : "Tessera settings saved but re-arm failed.";
@@ -1015,7 +1015,7 @@ namespace MosaicShell.Host.ViewModels
                 StatusMessage = err;
             }
 
-            if (id.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            if (ModuleIds.IsTessera(id))
             {
                 PreviewTesseraFlyout();
                 return;
