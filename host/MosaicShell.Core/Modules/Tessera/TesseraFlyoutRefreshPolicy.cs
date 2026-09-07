@@ -9,22 +9,18 @@ namespace MosaicShell.Core.Modules.Tessera
     public static class TesseraFlyoutRefreshPolicy
     {
         public static TesseraFlyoutSyncAction ResolvePresentation(
-            TesseraFlyoutRefreshTrigger trigger,
             bool isEffectivelyShowing,
             string openKind,
             string nextKind,
             string? openStyle,
-            string? nextStyle,
-            bool enableMediaFlyouts)
+            string? nextStyle)
         {
             FlyoutSyncAction action = FlyoutRefreshPolicy.ResolvePresentation(
-                FlyoutSyncTriggerMapping.FromTessera(trigger),
                 isEffectivelyShowing,
                 openKind,
                 nextKind,
                 openStyle,
-                nextStyle,
-                enableMediaFlyouts);
+                nextStyle);
             return action == FlyoutSyncAction.Present
                 ? TesseraFlyoutSyncAction.Present
                 : TesseraFlyoutSyncAction.Patch;

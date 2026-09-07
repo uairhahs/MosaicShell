@@ -1,4 +1,5 @@
 
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 
 namespace MosaicShell.Core.Capabilities.Platform
@@ -20,6 +21,10 @@ namespace MosaicShell.Core.Capabilities.Platform
         public string? OpenStyle { get; private set; }
 
         public bool IsVisible => _presenter.IsVisible(_moduleId);
+
+        public bool IsSessionActive => _presenter.GetSessionSnapshot(_moduleId).IsSessionActive;
+
+        public TesseraFlyoutPhase Phase => _presenter.GetSessionSnapshot(_moduleId).Phase;
 
         internal void NotifyTransientDismissed()
         {
@@ -45,7 +50,6 @@ namespace MosaicShell.Core.Capabilities.Platform
         public void Route(
             FlyoutRequest request,
             FlyoutSyncTrigger trigger,
-            bool enableMediaFlyouts,
             string nextStyle,
             MediaSessionInfo? currentMedia = null)
         {
@@ -62,20 +66,21 @@ namespace MosaicShell.Core.Capabilities.Platform
             OpenStyle = nextStyle;
 
             bool visible = _presenter.IsVisible(_moduleId);
+            TesseraFlyoutSessionSnapshot snapshot = _presenter.GetSessionSnapshot(_moduleId);
+            bool sessionActive = snapshot.IsSessionActive;
             FlyoutSyncAction action = FlyoutRefreshPolicy.ResolvePresentation(
-                trigger,
-                visible,
+                sessionActive,
                 openKind,
                 request.Kind,
                 openStyle,
-                nextStyle,
-                enableMediaFlyouts);
+                nextStyle);
 
             currentMedia ??= null;
 
             FlyoutTrace.Write(
                 $"route mod={_moduleId} kind={request.Kind} trigger={trigger} action={action} "
-                + $"visible={visible} boundary={trackBoundary} suppress={_suppressAutoPresent} "
+                + $"phase={snapshot.Phase} sessionActive={sessionActive} visible={visible} "
+                + $"boundary={trackBoundary} suppress={_suppressAutoPresent} "
                 + $"openKind={(string.IsNullOrEmpty(openKind) ? "-" : openKind)} "
                 + $"openStyle={openStyle ?? "-"} nextStyle={nextStyle}");
 

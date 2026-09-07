@@ -322,7 +322,6 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                 Flyouts.Route(
                     request,
                     trigger,
-                    _settings.EnableMediaFlyouts,
                     _settings.Style,
                     Services.Media.Current);
             }

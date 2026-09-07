@@ -6,26 +6,18 @@ namespace MosaicShell.Core.Capabilities.Platform
     public static class FlyoutRefreshPolicy
     {
         public static FlyoutSyncAction ResolvePresentation(
-            FlyoutSyncTrigger trigger,
             bool isEffectivelyShowing,
             string openKind,
             string nextKind,
             string? openStyle,
-            string? nextStyle,
-            bool enableMediaFlyouts)
+            string? nextStyle)
         {
-            if (!isEffectivelyShowing)
-            {
-                return FlyoutSyncAction.Present;
-            }
-
-            if (!string.Equals(openKind, nextKind, StringComparison.OrdinalIgnoreCase)
-                || !string.Equals(openStyle ?? "", nextStyle ?? "", StringComparison.OrdinalIgnoreCase))
-            {
-                return FlyoutSyncAction.Present;
-            }
-
-            return FlyoutSyncAction.Patch;
+            return !isEffectivelyShowing
+                ? FlyoutSyncAction.Present
+                : !string.Equals(openKind, nextKind, StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(openStyle ?? "", nextStyle ?? "", StringComparison.OrdinalIgnoreCase)
+                ? FlyoutSyncAction.Present
+                : FlyoutSyncAction.Patch;
         }
     }
 }
