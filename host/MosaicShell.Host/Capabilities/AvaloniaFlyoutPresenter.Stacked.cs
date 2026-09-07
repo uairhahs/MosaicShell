@@ -489,7 +489,8 @@ namespace MosaicShell.Host.Capabilities
             int gen = _session.Generation;
             _session.SetPhase(TesseraFlyoutPhase.Exiting);
             await RunStackedExitAnimationAsync(request, windows).ConfigureAwait(true);
-            if (gen == _session.Generation && _session.Phase == TesseraFlyoutPhase.Exiting)
+            if (TesseraFlyoutDismissPolicy.ShouldFinishTransientDismiss(
+                    gen, _session.Generation, _session.Phase, windows.Any(static window => window.IsVisible)))
             {
                 _session.SetPhase(TesseraFlyoutPhase.Hidden);
                 DismissStackedImmediate(notify, windows);
@@ -501,7 +502,7 @@ namespace MosaicShell.Host.Capabilities
             bool anyVisible = false;
             foreach (FlyoutWindow window in windows)
             {
-                if (!window.IsFlyoutSessionShowing)
+                if (!window.IsVisible)
                 {
                     continue;
                 }

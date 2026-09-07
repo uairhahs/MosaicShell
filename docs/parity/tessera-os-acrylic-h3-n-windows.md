@@ -78,7 +78,7 @@ Same presenter/session rules as phase 1.
 
 **Status: PASS (2026-08-23, Win11).** Styles: Meter, Gnome, Compact, Modern Flyouts (volume+media strip).
 
-Record under `.local/Tessera/os-acrylic-eval/h3-n-windows/`:
+The recorded sign-off results are summarized below:
 
 | Check                       | Pass criteria                                                          | 2026-08-23 |
 | --------------------------- | ---------------------------------------------------------------------- | ---------- |
@@ -101,4 +101,4 @@ Record under `.local/Tessera/os-acrylic-eval/h3-n-windows/`:
 ## Related
 
 - Spike tracker: [tessera-os-acrylic-spike.md](tessera-os-acrylic-spike.md)
-- H2 eval: `.local/Tessera/os-acrylic-eval/README.md`
+- H2 evaluation: [single-shell evaluation results](tessera-os-acrylic-spike.md#h2--manual-evaluation-checklist-before-ship)

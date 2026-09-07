@@ -1239,7 +1239,9 @@ namespace MosaicShell.Host.Capabilities
             int exitGen = MotionGeneration;
             try
             {
-                await FlyoutMotionSession.RunHideAsync([this]).ConfigureAwait(true);
+                Task exitAnimation = FlyoutMotionSession.RunHideAsync([this]);
+                exitGen = MotionGeneration;
+                await exitAnimation.ConfigureAwait(true);
             }
             catch
             {
@@ -1247,10 +1249,14 @@ namespace MosaicShell.Host.Capabilities
             }
             finally
             {
-                _exitAnimating = false;
-                if (exitGen == MotionGeneration && Phase == TesseraFlyoutPhase.Exiting)
+                if (exitGen == MotionGeneration)
                 {
-                    SetPhase(TesseraFlyoutPhase.Hidden);
+                    _exitAnimating = false;
+                }
+
+                if (TesseraFlyoutDismissPolicy.ShouldFinishTransientDismiss(
+                        exitGen, MotionGeneration, Phase, IsVisible))
+                {
                     onComplete();
                 }
             }

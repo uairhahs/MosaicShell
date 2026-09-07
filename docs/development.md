@@ -1,12 +1,8 @@
 # Development guide (TDD, hierarchy, extensibility)
 
-This document is the **human-readable** source of truth for how MosaicShell should grow. The always-apply development rules live under [`.local/rules/`](../.local/rules/):
-
-| Rule                       | Concern                                   |
-| -------------------------- | ----------------------------------------- |
-| `tdd.mdc`                  | Red → green → refactor via Core contracts |
-| `dependency-hierarchy.mdc` | Who depends on whom; where truth lives    |
-| `extensibility.mdc`        | Prefer seams over one-off Host patches    |
+This guide describes MosaicShell's development contracts: test-first behavior changes,
+the Core-to-Host dependency hierarchy, and extensible module design. The requirements
+and commands below are self-contained and apply to a standard repository checkout.
 
 Goal: **generated and hand-written code stay in the same shape**, so each feature leaves a testable contract instead of Host-only tech debt.
 
@@ -38,25 +34,6 @@ See also [`architecture.md`](architecture.md), [`module-sdk.md`](module-sdk.md),
 
 ---
 
-## `.local` (development sandboxes and workspace)
-
-**`.local/`** is the gitignored repo-local directory for development work that must not ship in CI or releases:
-
-- Throwaway probe projects (`ColorProbe/`, `smtc-probe/`, etc.)
-- Vendored reference trees (`wnp-src/`)
-- Parity assets and Rainmeter refs (e.g. `.local/Tessera/...`; see [`parity/yourflyouts-screenshots.md`](parity/yourflyouts-screenshots.md))
-- Local-only helpers (`compile-local.ps1`, `housekeeping.ps1`)
-
-Nothing under `.local/` is a contract for Host or Core. Promote anything that becomes truth into `host/MosaicShell.Core` (with tests) or into tracked paths under `.github/` / `tools/`. Agent-authored working documents (plans, audit notes, internal decision records) also live here and are never user-facing commitments.
-
-```powershell
-./.local/compile-local.ps1      # build + run Host locally
-./.local/housekeeping.ps1       # prune bin/obj and stale logs under .local
-./.local/housekeeping.ps1 -WhatIf
-```
-
----
-
 ## TDD workflow (required)
 
 Every behavior change that affects chrome, policy, parity, or capability shape:
@@ -71,7 +48,7 @@ Every behavior change that affects chrome, policy, parity, or capability shape:
 dotnet test host/MosaicShell.Core.Tests --filter "FullyQualifiedName~YourNewTests"
 dotnet build host/MosaicShell.Host
 # optional local run
-./.local/compile-local.ps1
+dotnet run --project host/MosaicShell.Host
 ```
 
 **Diagnosis vs proof:** `flyout.log`, screenshots, and “it crashed when I opened config” tell you _what_ broke. They do **not** replace a failing Core test before the fix.
@@ -93,9 +70,11 @@ dotnet build host/MosaicShell.Host
 
 ### Good pattern (scrollbar chrome)
 
-- Core: `HostScrollbarChromeSpec` with hex **and** `HostChromeArgb` for Host.
-- Tests: assert thickness, ARGB parse, required colors.
-- Host: build `IBrush` resources in `App.Initialize`, bind `DynamicResource`: never `x:Static` a hex **string** onto `Fill`/`Background`.
+- Core: `HostScrollbarChromeSpec` (four `bool` consts) says Host must not restyle Avalonia's
+  `FluentTheme` scrollbar chrome, not what its colors are.
+- Tests: assert every const stays `false` (see `HostScrollbarChromeSpecTests`), so a regression
+  that starts overriding chrome fails in Core before it reaches Host.
+- Host: read the spec's consts, do not add a parallel opinion about scrollbar chrome in XAML.
 
 ### Bad pattern (creates debt)
 
@@ -137,9 +116,9 @@ Before merging a feature, answer yes to as many as apply:
 
 ---
 
-## Agent / PR expectations
+## Contribution checks
 
-When an agent (or contributor) implements UI polish, glass, or tile config:
+When contributing UI polish, glass, or tile configuration:
 
 1. Start from Core contract + red test (see TDD rule).
 2. Keep Host thin: binders, presenters, ViewModels that call Core.
