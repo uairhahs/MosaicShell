@@ -437,8 +437,24 @@ namespace MosaicShell.Host.Capabilities
             // TesseraPalette is read live at paint/render time (TesseraGlassPanel.DrawGlassChrome,
             // TesseraTrack.ApplyFillBrush), so re-applying it here (unlike the scale wrapper) keeps
             // acrylic/backdrop-blur/accent settings in sync on a patch without needing a rebuild.
-            TesseraPalette.ApplyMaterial(TesseraFlyoutMaterialFactory.FromPayload(
-                request.Payload, request.StyleId, request.Kind));
+            TesseraFlyoutMaterial freshMaterial = TesseraFlyoutMaterialFactory.FromPayload(
+                request.Payload, request.StyleId, request.Kind);
+            TesseraPalette.ApplyMaterial(freshMaterial);
+
+            // Diagnostic (2026-09-07): TryApplyLive never calls ApplyFlyoutMaterial, so this
+            // window's own TransparencyLevelHint/Background can go stale relative to what content
+            // now assumes via TesseraPalette above. Logging whether the hints actually differ
+            // pins down whether that gap is the cause of MaterialYou's reported inconsistent
+            // background, rather than patching on a guess.
+            if (!_material.TransparencyHints.SequenceEqual(freshMaterial.TransparencyHints, StringComparer.OrdinalIgnoreCase)
+                || _material.ShellAlpha != freshMaterial.ShellAlpha)
+            {
+                TesseraFlyoutDiagnostics.Log(
+                    $"TryApplyLive material drift w{WindowId} style={request.StyleId} kind={request.Kind} "
+                    + $"windowHints=[{string.Join(',', _material.TransparencyHints)}] windowAlpha={_material.ShellAlpha} "
+                    + $"freshHints=[{string.Join(',', freshMaterial.TransparencyHints)}] freshAlpha={freshMaterial.ShellAlpha} "
+                    + $"liveHint={string.Join(',', TransparencyLevelHint)}");
+            }
             string? priorAccent = TesseraFlyoutRequestBuilder.AccentFromPayload(FlyoutRequest.Payload);
             string? nextAccent = TesseraFlyoutRequestBuilder.AccentFromPayload(request.Payload);
             if (!string.Equals(priorAccent, nextAccent, StringComparison.OrdinalIgnoreCase))
@@ -1299,15 +1315,13 @@ namespace MosaicShell.Host.Capabilities
         {
             _material = material;
             TesseraPalette.ApplyMaterial(_material);
-
-            byte shellAlpha = TesseraFlyoutWindowPolicy.ResolveWindowBackgroundAlpha(_material);
-            _ = new SolidColorBrush(Color.FromArgb(shellAlpha, 0x11, 0x11, 0x1b));
             TransparencyLevelHint = ParseTransparencyHints(
                 TesseraFlyoutWindowPolicy.ResolveTransparencyHints(_material));
-            SolidColorBrush shell;
+
+            byte shellAlpha = TesseraFlyoutWindowPolicy.ResolveWindowBackgroundAlpha(_material);
             Background = TesseraFlyoutWindowPolicy.WindowBackgroundBrushIsTransparent
                 ? Brushes.Transparent
-                : shell;
+                : new SolidColorBrush(Color.FromArgb(shellAlpha, 0x11, 0x11, 0x1b));
 
             byte fallbackAlpha = TesseraFlyoutWindowPolicy.ResolveCompositionFallbackAlpha(_material);
             TransparencyBackgroundFallback = fallbackAlpha == 0

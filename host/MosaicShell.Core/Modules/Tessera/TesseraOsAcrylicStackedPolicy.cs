@@ -1,5 +1,4 @@
 using MosaicShell.Core.Capabilities.Platform;
-using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Core.Modules.Tessera
 {
@@ -32,8 +31,9 @@ namespace MosaicShell.Core.Modules.Tessera
         public const float PanelCornerRadius = TesseraOsAcrylicTrialPolicy.SpikeCornerRadius;
 
         /// <summary>
-        /// Win32 region clip radius for stacked OS acrylic HWNDs. Caps design radius at half the
-        /// shorter client edge so capsules (GNOME pill, Meter spine) do not leak square corners.
+        /// Win32 region clip radius for stacked OS acrylic HWNDs. Caps design radius (owned by
+        /// the profile - ADR-0001) at half the shorter client edge so capsules (GNOME pill, Meter
+        /// spine) do not leak square corners.
         /// </summary>
         public static float ResolvePanelCornerRadiusDip(
             string? styleId,
@@ -41,23 +41,11 @@ namespace MosaicShell.Core.Modules.Tessera
             double widthDip,
             double heightDip)
         {
-            string id = StyleIds.Normalize(styleId ?? StyleIds.Fluent);
             float cap = (float)Math.Min(Math.Max(1, widthDip), Math.Max(1, heightDip)) / 2f;
-
-            float design = (id, role) switch
-            {
-                (StyleIds.Meter, TesseraStackedPanelRole.Volume) =>
-                    TesseraStackedPlacementSpec.MeterVolumeCornerRadiusDip,
-                (StyleIds.Meter, TesseraStackedPanelRole.Media) =>
-                    TesseraStackedPlacementSpec.MeterMediaCornerRadiusDip,
-                (StyleIds.Gnome, TesseraStackedPanelRole.Volume) =>
-                    TesseraStackedPlacementSpec.GnomePillCornerRadiusDip,
-                (StyleIds.Gnome, TesseraStackedPanelRole.Media) =>
-                    TesseraStackedPlacementSpec.GnomePillCornerRadiusDip,
-                (StyleIds.Compact, _) => PanelCornerRadius,
-                (StyleIds.ModernFlyouts, _) => PanelCornerRadius,
-                _ => PanelCornerRadius,
-            };
+            TesseraFlyoutStyleProfile profile = TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId);
+            float design = role == TesseraStackedPanelRole.Volume
+                ? profile.VolumeCornerRadiusDip
+                : profile.MediaCornerRadiusDip;
 
             return Math.Min(design, cap);
         }
@@ -73,15 +61,19 @@ namespace MosaicShell.Core.Modules.Tessera
             return TesseraOsAcrylicTrialPolicy.IsStackedMultiPanel(payload);
         }
 
-        // styleId is unused only while CoreUiMultiWindowEnabled is false; it's needed again as
-        // soon as that flag flips on.
+        /// <summary>
+        /// Is this style the CoreUI multi-tile style, owned by the profile (ADR-0001)? Gated
+        /// behind the <see cref="CoreUiMultiWindowEnabled"/> kill switch - that flag is a global
+        /// ship gate, not a per-style fact, so it stays local rather than joining the profile.
+        /// styleId is flagged unused only because the const-false gate makes the analyzer treat
+        /// the right side of the && as dead code; it is read again the moment the flag flips on.
+        /// </summary>
 #pragma warning disable IDE0060
         public static bool IsCoreUiMultiTile(string? styleId)
 #pragma warning restore IDE0060
         {
             return CoreUiMultiWindowEnabled
-            && styleId is not null
-            && StyleIds.Normalize(styleId).Equals(StyleIds.CoreUI, StringComparison.OrdinalIgnoreCase);
+                && TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).SupportsCoreUiMultiTile;
         }
 
         /// <summary>

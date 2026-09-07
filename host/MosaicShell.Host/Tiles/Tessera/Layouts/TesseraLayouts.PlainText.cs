@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
+using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {
@@ -134,10 +135,17 @@ namespace MosaicShell.Host.Tiles.Tessera
 
         private static Control PlainTextShell(Control panel, bool stackedSegment = false)
         {
-            // Stacked OS acrylic already supplies the window's backing material; a second flat
-            // background here (Gnome/Compact/ModernFlyouts/Meter skip theirs the same way) doubles
-            // up on it instead of the intended bare card.
-            if (stackedSegment && TesseraGlass.UseOsAcrylicChrome)
+            // Stacked OS acrylic already supplies the window's backing material for the styles
+            // that actually run under H3 multi-window acrylic (Gnome/Compact/ModernFlyouts/Meter
+            // skip theirs the same way) - a second flat background there doubles up on it instead
+            // of the intended bare card. PlainText is not one of those styles
+            // (TesseraStackedPlacementPolicy.SupportsStackedOsAcrylic is false for it), so
+            // UseOsAcrylicChrome being true elsewhere in the process must not make this shell skip
+            // its own background - nothing else would be painting one behind it, leaving a
+            // transparent hole. The explicit eligibility check is what makes that always false.
+            if (stackedSegment
+                && TesseraGlass.UseOsAcrylicChrome
+                && TesseraStackedPlacementPolicy.SupportsStackedOsAcrylic(StyleIds.PlainText))
             {
                 return panel;
             }

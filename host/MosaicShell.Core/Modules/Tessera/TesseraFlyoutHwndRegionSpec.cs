@@ -166,10 +166,10 @@ namespace MosaicShell.Core.Modules.Tessera
             return signedRestDip > 1 ? signedRestDip : liveBoundsDip > 1 ? liveBoundsDip : Math.Max(0, signedRestDip);
         }
 
+        /// <summary>Only Windows11 needs a dedicated StrokeB region, owned by the profile (ADR-0001).</summary>
         public static bool StyleNeedsStrokeBRegion(string? styleId, bool musicVisible)
         {
-            return musicVisible && StyleIds.Normalize(styleId)
-                .Equals(StyleIds.Windows11, StringComparison.OrdinalIgnoreCase);
+            return musicVisible && TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).NeedsStrokeBRegion;
         }
 
         /// <summary>
@@ -220,43 +220,41 @@ namespace MosaicShell.Core.Modules.Tessera
             double restH = restHeightDip > 1 ? restHeightDip : FallbackRestHeight(id, stackedRole);
             double p = Math.Clamp(progress, 0, 1);
 
-            if (id.Equals(StyleIds.Windows11, StringComparison.OrdinalIgnoreCase))
+            // Reveal-kind identity is owned by the profile (ADR-0001); do not re-derive style
+            // identity here via a second normalize-and-compare chain.
+            switch (TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).RevealKind)
             {
-                return ResolveWin11Region(stackedRole, p, phase2Engaged, musicVisible, restW);
+                case TesseraFlyoutRevealKind.Windows11:
+                    return ResolveWin11Region(stackedRole, p, phase2Engaged, musicVisible, restW);
+
+                case TesseraFlyoutRevealKind.Fluent:
+                    return ResolveFluentRegion(stackedRole, p, musicVisible, restW, restH);
+
+                case TesseraFlyoutRevealKind.ModernFlyouts:
+                    return ResolveClipHeightRegion(
+                        stackedRole,
+                        TesseraFlyoutAnimatedTargetSpec.ResolveModernMediaClipHeightDip(
+                            TesseraStackedPlacementSpec.ModernFlyoutsMediaHeightDip, p, musicVisible),
+                        restW,
+                        TesseraStackedPlacementSpec.ModernFlyoutsVolumeHeightDip);
+
+                case TesseraFlyoutRevealKind.CoreUi:
+                    if (stackedRole == TesseraStackedPanelRole.Media)
+                    {
+                        double clipW = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaClipWidthDip(
+                            TesseraCoreUiLayoutSpec.InnerRowWidthDip, p, musicVisible);
+                        return HorizontalMediaRegion(clipW, restH);
+                    }
+
+                    return new RevealRegionDip(restW, restH, HideChrome: false);
+
+                default:
+                    return stackedRole == TesseraStackedPanelRole.Volume
+                        ? new RevealRegionDip(restW, restH, HideChrome: false)
+                        : stackedRole is TesseraStackedPanelRole.Media or null
+                        ? ResolveScaledMediaRegion(p, musicVisible, restW, restH)
+                        : new RevealRegionDip(restW, restH, HideChrome: false);
             }
-
-            if (id.Equals(StyleIds.Fluent, StringComparison.OrdinalIgnoreCase))
-            {
-                return ResolveFluentRegion(stackedRole, p, musicVisible, restW, restH);
-            }
-
-            if (id.Equals(StyleIds.ModernFlyouts, StringComparison.OrdinalIgnoreCase))
-            {
-                return ResolveClipHeightRegion(
-                    stackedRole,
-                    TesseraFlyoutAnimatedTargetSpec.ResolveModernMediaClipHeightDip(
-                        TesseraStackedPlacementSpec.ModernFlyoutsMediaHeightDip, p, musicVisible),
-                    restW,
-                    TesseraStackedPlacementSpec.ModernFlyoutsVolumeHeightDip);
-            }
-
-            if (id.Equals(StyleIds.CoreUI, StringComparison.OrdinalIgnoreCase))
-            {
-                if (stackedRole == TesseraStackedPanelRole.Media)
-                {
-                    double clipW = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaClipWidthDip(
-                        TesseraCoreUiLayoutSpec.InnerRowWidthDip, p, musicVisible);
-                    return HorizontalMediaRegion(clipW, restH);
-                }
-
-                return new RevealRegionDip(restW, restH, HideChrome: false);
-            }
-
-            return stackedRole == TesseraStackedPanelRole.Volume
-                ? new RevealRegionDip(restW, restH, HideChrome: false)
-                : stackedRole is TesseraStackedPanelRole.Media or null
-                ? ResolveScaledMediaRegion(p, musicVisible, restW, restH)
-                : new RevealRegionDip(restW, restH, HideChrome: false);
         }
 
         public static (int WidthPx, int HeightPx, int CornerRadiusPx) ResolveRoundRectPhysical(
