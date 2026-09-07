@@ -100,7 +100,7 @@ namespace MosaicShell.Core.Capabilities.Ipc
             {
                 return _snapshots.TryGetValue(moduleId, out TesseraFlyoutSessionSnapshot snap)
                     ? snap
-                    : new(IsVisibleUnlocked(moduleId), 0, TesseraFlyoutSessionMode.None, "", null);
+                    : new(IsVisibleUnlocked(moduleId), 0, TesseraFlyoutSessionMode.None, "", null, IsVisibleUnlocked(moduleId) ? TesseraFlyoutPhase.Shown : TesseraFlyoutPhase.Hidden);
             }
         }
 
@@ -140,7 +140,10 @@ namespace MosaicShell.Core.Capabilities.Ipc
                         ? mode
                         : TesseraFlyoutSessionMode.None,
                     dto.Kind,
-                    dto.StyleId);
+                    dto.StyleId,
+                    Enum.TryParse<TesseraFlyoutPhase>(dto.Phase, out TesseraFlyoutPhase phase)
+                        ? phase
+                        : dto.EffectivelyShowing ? TesseraFlyoutPhase.Shown : TesseraFlyoutPhase.Hidden);
                 lock (_gate)
                 {
                     _snapshots[dto.ModuleId] = snap;

@@ -68,7 +68,8 @@ namespace MosaicShell.Core.Capabilities
         /// </summary>
         TesseraFlyoutSessionSnapshot GetSessionSnapshot(string moduleId)
         {
-            return new(IsVisible(moduleId), 0, TesseraFlyoutSessionMode.None, "", null);
+            bool visible = IsVisible(moduleId);
+            return new(visible, 0, TesseraFlyoutSessionMode.None, "", null, visible ? TesseraFlyoutPhase.Shown : TesseraFlyoutPhase.Hidden);
         }
     }
 
