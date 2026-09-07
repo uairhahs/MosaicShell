@@ -4,6 +4,7 @@ using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 using MosaicShell.Host.Tiles.Tessera;
@@ -43,6 +44,9 @@ namespace MosaicShell.Host.Capabilities
         {
             _services = services;
             _hostUi = hostUi;
+            // Core decides Present/Patch/SoftRefresh but owns no logging; route its trace into the
+            // same file so a decision and the Host state that produced it interleave in order.
+            FlyoutTrace.Sink = Log;
             Log($"presenter ctor build={typeof(AvaloniaFlyoutPresenter).Assembly.GetName().Version}");
         }
 
@@ -283,13 +287,30 @@ namespace MosaicShell.Host.Capabilities
         {
             if (moduleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase) && IsStackedTesseraVisible())
             {
+                Log($"IsVisible {moduleId} => True (stacked)");
                 return true;
             }
 
+            bool result;
+            string tag;
             lock (_gate)
             {
-                return _windows.TryGetValue(moduleId, out FlyoutWindow? w) && w.IsFlyoutSessionShowing;
+                // Snapshot inside the lock, log outside it: this runs on every routing decision
+                // and the log call does file IO.
+                if (_windows.TryGetValue(moduleId, out FlyoutWindow? w))
+                {
+                    result = w.IsFlyoutSessionShowing;
+                    tag = w.MotionStateTag;
+                }
+                else
+                {
+                    result = false;
+                    tag = "no-window";
+                }
             }
+
+            Log($"IsVisible {moduleId} => {result} {tag}");
+            return result;
         }
 
         public TesseraFlyoutSessionSnapshot GetSessionSnapshot(string moduleId)
@@ -380,7 +401,7 @@ namespace MosaicShell.Host.Capabilities
 
         private void ShowOrUpdateCoreSinglePath(FlyoutRequest request, bool resetDismiss = true, bool allowLivePatch = true)
         {
-            Log($"ShowOrUpdateCore enter kind={request.Kind}");
+            Log($"ShowOrUpdateCore enter kind={request.Kind} allowLivePatch={allowLivePatch}");
             FlyoutWindow? reuse = null;
             bool reuseWasVisible = false;
 
@@ -391,11 +412,25 @@ namespace MosaicShell.Host.Capabilities
                 {
                     reuse = existing;
                     reuseWasVisible = existing.IsFlyoutSessionShowing;
+                    bool sameKindStyle =
+                        string.Equals(existing.Kind, request.Kind, StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(existing.StyleId ?? "", request.StyleId ?? "", StringComparison.OrdinalIgnoreCase);
 
-                    if (reuseWasVisible
-                        && allowLivePatch
-                        && string.Equals(existing.Kind, request.Kind, StringComparison.OrdinalIgnoreCase)
-                        && string.Equals(existing.StyleId ?? "", request.StyleId ?? "", StringComparison.OrdinalIgnoreCase))
+                    // A same-kind/style request landing while this window's own entrance is still
+                    // running (Show/Update ingress is always allowLivePatch:false, so it would
+                    // otherwise skip straight to a full ApplyRequest rebuild below) must only patch
+                    // content in place. BeginMotion/PlayShowAnimation reset Position/Opacity, so
+                    // replaying either mid-reveal restarts the entrance from scratch; on a fast run
+                    // of Present calls (rapid track skips) it can perpetually restart and never
+                    // finish, which is what read as choppy/incomplete.
+                    if (existing.IsEntranceMotionInFlight
+                        && sameKindStyle
+                        && TryPatchLive(existing, request, resetDismiss))
+                    {
+                        return;
+                    }
+
+                    if (reuseWasVisible && allowLivePatch && sameKindStyle)
                     {
                         if (!_patchCoalesce.TryBeginFlush(MonoNow(), out TimeSpan retryAfter))
                         {
@@ -454,12 +489,13 @@ namespace MosaicShell.Host.Capabilities
                             reuse.Show();
                         }
 
-                        Log($"revive kind={request.Kind} style={request.StyleId}");
+                        Log($"revive kind={request.Kind} style={request.StyleId} {reuse.MotionStateTag}");
                         reuse.PlayShowAnimation();
                         return;
                     }
                 }
 
+                Log($"rebuild path kind={request.Kind} reuseWasVisible={reuseWasVisible} {reuse.MotionStateTag}");
                 Control reusedContent;
                 try { reusedContent = BuildContent(request, reuseWasVisible); }
                 catch (Exception ex)

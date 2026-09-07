@@ -790,9 +790,7 @@ namespace MosaicShell.Core.Modules.Tessera
 
         public static bool Phase2RequiresAnimatedLayout(int ani, string? styleId, bool showMediaStrip)
         {
-            return ani < 2
-                ? false
-                : TesseraFlyoutRevealSpec.StyleSupportsPhase2(styleId) && (TesseraFlyoutRevealSpec.StylePhase2WithoutMediaStrip(styleId) || showMediaStrip);
+            return ani >= 2 && TesseraFlyoutRevealSpec.StyleSupportsPhase2(styleId) && (TesseraFlyoutRevealSpec.StylePhase2WithoutMediaStrip(styleId) || showMediaStrip);
         }
 
         /// <summary>

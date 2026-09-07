@@ -37,6 +37,31 @@ namespace MosaicShell.Core.Tests
             _ = payload["showMediaStrip"].Should().Be("1");
         }
 
+        /// <summary>
+        /// ShowMediaStripOnVolume is a "vol"-kind preference (does the volume flyout also
+        /// show media); it must not gate a standalone "media" flyout's own phase-2 reveal.
+        /// A media card is always itself a media presentation - if showMediaStrip reads
+        /// false here, FlyoutMotionSession.Filter finds nothing phase-2-eligible and the
+        /// card's internal reveal is skipped entirely while phase 1 (window slide/fade)
+        /// still runs, which looks like a partial, broken entrance/exit.
+        /// </summary>
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void Media_kind_payload_always_requests_media_chrome_regardless_of_volume_setting(
+            bool showMediaStripOnVolume)
+        {
+            HostServices services = HostServicesFakes.Create();
+            TesseraSettings settings = new()
+            {
+                Style = "Fluent",
+                ShowMediaStripOnVolume = showMediaStripOnVolume,
+            };
+            Dictionary<string, string> payload =
+                new TesseraFlyoutRequestBuilder().BuildPayload(services, settings, "media");
+            _ = payload["showMediaStrip"].Should().Be("1");
+        }
+
         [Fact]
         public void BuildLivePayload_honors_show_media_strip_override()
         {

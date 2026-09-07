@@ -32,6 +32,64 @@ namespace MosaicShell.Core.Services
         /// <summary>Ignore source jitter smaller than this when deciding whether the API moved.</summary>
         public const double PlayingPositionJitterSeconds = 0.35;
 
+        /// <summary>
+        /// YouTube Music's browser SMTC session closes and a brand-new session object is
+        /// created on every track change, rather than updating in place. Measured via
+        /// <c>.local/smtc-probe</c>: the gap between the old session closing and the new one
+        /// attaching is consistently ~650-950ms. Treating that transient null as a real
+        /// "media stopped" event flickers consumers off then straight back on for what the
+        /// user experiences as one skip. A real stop (no new session attaches) still surfaces
+        /// once this grace window elapses.
+        /// </summary>
+        public const int NullSessionGraceMs = 1000;
+
+        /// <summary>
+        /// YTM/Chrome often re-fire session-changed once album art finishes loading, moments
+        /// after the track's identity (title/artist/app/playing/position) already settled and
+        /// was raised. That should patch the art in place (ProgressChanged), not restart
+        /// Tessera's entrance animation for a track already shown (Changed).
+        /// </summary>
+        public static bool IsArtOnlyRefresh(int prevThumbnailLength, int nextThumbnailLength)
+        {
+            return prevThumbnailLength != nextThumbnailLength;
+        }
+
+        /// <summary>
+        /// A track skip is not one event. The player re-attaches its SMTC session and the new
+        /// track's metadata arrives in stages, each stage raising a session-changed event with a
+        /// different title:
+        /// <code>
+        /// "YouTube Music"            -> app placeholder, session re-attaching
+        /// "no hesi! | YouTube Music" -> browser tab title
+        /// "no hesi!"                 -> settled track metadata
+        /// </code>
+        /// Classifying each of those as a track boundary rebinds the flyout's title/artist/art
+        /// two or three times while its entrance animation is still running, so the card visibly
+        /// churns through placeholder text before landing on the real track.
+        /// <para>
+        /// The discriminator is the artist, not the title: every transitional snapshot measured
+        /// (2026-08-29, YouTube Music, 14 boundaries over 6 skips) had an empty artist and every
+        /// settled one had a real artist, with no counterexample in either direction. Matching on
+        /// the title would mean hardcoding one player's placeholder strings; the artist test is
+        /// player-agnostic.
+        /// </para>
+        /// Callers must treat this as "not settled <i>yet</i>", never as "never a boundary" -
+        /// a track genuinely lacking an artist still has to present once
+        /// <see cref="MetadataSettleMs"/> elapses.
+        /// </summary>
+        public static bool IsMetadataSettling(string? title, string? artist)
+        {
+            return !string.IsNullOrWhiteSpace(title) && string.IsNullOrWhiteSpace(artist);
+        }
+
+        /// <summary>
+        /// How long to wait for <see cref="IsMetadataSettling"/> to clear before accepting a
+        /// title as final anyway. Measured settle latency was 50-122ms across six skips; this
+        /// clears that with headroom while staying well inside the flyout's ~420ms entrance, so
+        /// deferring a present by this much is not perceptible as lag.
+        /// </summary>
+        public const int MetadataSettleMs = 250;
+
         public static bool LooksLikeNewTrackPosition(double prevPositionSeconds, double nextPositionSeconds)
         {
             return (prevPositionSeconds >= MinPrevSecondsForRestart
@@ -49,12 +107,9 @@ namespace MosaicShell.Core.Services
             bool playing,
             bool incomingReportedChange)
         {
-            if (!MustNotRewindPlayingScrubber || !playing)
-            {
-                return incomingSeconds;
-            }
-
-            return !incomingReportedChange
+            return !MustNotRewindPlayingScrubber || !playing
+                ? incomingSeconds
+                : !incomingReportedChange
                 ? incomingSeconds + PlayingPositionJitterSeconds < committedSeconds ? committedSeconds : incomingSeconds
                 : LooksLikeNewTrackPosition(committedSeconds, incomingSeconds)
                 ? incomingSeconds

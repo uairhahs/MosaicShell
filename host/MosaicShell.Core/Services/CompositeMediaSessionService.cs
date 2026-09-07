@@ -295,7 +295,8 @@ namespace MosaicShell.Core.Services
 
         private static bool ThumbEqual(byte[]? a, byte[]? b)
         {
-            return ReferenceEquals(a, b) ? true : a is not null && b is not null && a.Length == b.Length && a.AsSpan().SequenceEqual(b);
+            return ReferenceEquals(a, b)
+                || (a is not null && b is not null && a.Length == b.Length && a.AsSpan().SequenceEqual(b));
         }
 
         private static bool SessionEqual(MediaSessionInfo? a, MediaSessionInfo? b)
@@ -316,17 +317,11 @@ namespace MosaicShell.Core.Services
         internal static byte[]? PickCover(
             byte[]? smtcThumb, byte[]? wnpCover, string? smtcTitle, string? wnpTitle, string? appId)
         {
-            if (LooksLikeBrowserSession(appId) && IsUsableCover(wnpCover))
-            {
-                return wnpCover;
-            }
-
-            if (IsUsableCover(smtcThumb))
-            {
-                return smtcThumb;
-            }
-
-            return IsUsableCover(wnpCover)
+            return LooksLikeBrowserSession(appId) && IsUsableCover(wnpCover)
+                ? wnpCover
+                : IsUsableCover(smtcThumb)
+                ? smtcThumb
+                : IsUsableCover(wnpCover)
                 ? wnpCover
                 : WebNowPlayingReduxHost.TryGetCachedCover(smtcTitle, out byte[]? png) && IsUsableCover(png)
                 ? png

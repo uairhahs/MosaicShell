@@ -56,11 +56,9 @@ namespace MosaicShell.Core.Capabilities.Platform
 
         public static bool IsTrackBoundary(MediaSessionInfo? previous, MediaSessionInfo? next)
         {
-            return next is null
-                ? false
-                : previous is null || (!string.IsNullOrWhiteSpace(next.Title)
+            return next is not null && (previous is null || (!string.IsNullOrWhiteSpace(next.Title)
                 && !string.Equals(previous.Title, next.Title, StringComparison.Ordinal)) || MediaSessionChangePolicy.LooksLikeNewTrackPosition(
-                previous.PositionSeconds, next.PositionSeconds);
+                previous.PositionSeconds, next.PositionSeconds));
         }
 
         public static bool ShouldResetDismissForMediaChange(MediaSessionInfo? previous, MediaSessionInfo? next)

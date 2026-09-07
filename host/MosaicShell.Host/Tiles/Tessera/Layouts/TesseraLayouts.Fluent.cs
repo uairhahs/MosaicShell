@@ -19,12 +19,12 @@ namespace MosaicShell.Host.Tiles.Tessera
             if (vm.Kind.Equals("media", StringComparison.OrdinalIgnoreCase)
                 && !TesseraStackedBuildContext.IsActive)
             {
-                return TesseraChrome.Shell(
-                    TesseraMediaPanel.Create(vm, TesseraMediaMode.FluentSide),
-                    10,
-                    TesseraShellOptions.InsetMargin,
-                    new SolidColorBrush(TesseraPalette.Primary),
-                    maxWidth: TesseraFluentMetrics.MaxShellWidth);
+                // Must go through FluentMediaReveal, not TesseraChrome.Shell directly: phase 2
+                // drives TesseraRevealHost instances found in the visual tree, so a media card
+                // built without one is collected as zero hosts and the reveal is skipped outright
+                // (measured: 26 ticks for the volume flyout, 0 for this one). The chrome below is
+                // identical to FluentMediaWrap's - this branch had forked it and lost the wrap.
+                return FluentMediaReveal(vm, TesseraMediaPanel.Create(vm, TesseraMediaMode.FluentSide));
             }
 
             Control? stacked = TesseraStackedBuildContext.TryCreatePanel(

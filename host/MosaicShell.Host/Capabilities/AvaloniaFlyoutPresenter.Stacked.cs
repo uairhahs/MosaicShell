@@ -77,7 +77,7 @@ namespace MosaicShell.Host.Capabilities
             lock (_gate)
             {
                 if (!_windows.TryGetValue(volumeKey, out FlyoutWindow? volumeWin)
-                    || !volumeWin.IsFlyoutSessionShowing)
+                    || !(volumeWin.IsFlyoutSessionShowing || volumeWin.IsEntranceMotionInFlight))
                 {
                     return false;
                 }
@@ -148,6 +148,15 @@ namespace MosaicShell.Host.Capabilities
             if (volumeWin.IsFlyoutSessionShowing)
             {
                 return false;
+            }
+
+            if (volumeWin.IsEntranceMotionInFlight)
+            {
+                // Kind/style already matched above; a request landing mid-entrance must only
+                // patch content, not replay PlayStackedShowAnimation - that restarts BeginMotion
+                // on every stacked window (resets Position/Opacity) before the previous run
+                // finishes, so a fast run of requests can perpetually restart and never complete.
+                return volumeWin.TryApplyLive(request, _services, resetDismiss);
             }
 
             if (!volumeWin.TryApplyLive(request, _services, resetDismiss))

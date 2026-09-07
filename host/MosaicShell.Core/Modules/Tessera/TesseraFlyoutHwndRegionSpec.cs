@@ -184,11 +184,11 @@ namespace MosaicShell.Core.Modules.Tessera
             TesseraStackedPanelRole? stackedRole)
         {
             return StyleNeedsStrokeBRegion(styleId, musicVisible)
-                ? true
-                : musicVisible && (stackedRole != TesseraStackedPanelRole.Volume
-                || TesseraFlyoutTweenTargetCatalog.HasChannel(styleId, TesseraTweenChannel.VolumeFillOpacity)
-                || TesseraFlyoutTweenTargetCatalog.StylePhase2WithoutMediaStrip(styleId)) && TesseraFlyoutTweenTargetCatalog.StyleSupportsPhase2(styleId)
-                   && !TesseraFlyoutTweenTargetCatalog.StylePhase2WithoutMediaStrip(styleId);
+                || (musicVisible && (stackedRole != TesseraStackedPanelRole.Volume
+                    || TesseraFlyoutTweenTargetCatalog.HasChannel(styleId, TesseraTweenChannel.VolumeFillOpacity)
+                    || TesseraFlyoutTweenTargetCatalog.StylePhase2WithoutMediaStrip(styleId))
+                    && TesseraFlyoutTweenTargetCatalog.StyleSupportsPhase2(styleId)
+                    && !TesseraFlyoutTweenTargetCatalog.StylePhase2WithoutMediaStrip(styleId));
         }
 
         public static double ResolveRegionHeightDip(

@@ -72,9 +72,15 @@ namespace MosaicShell.Core.Modules.Tessera
                 p["mediaPlaying"] = "0";
             }
 
-            p["showMediaStrip"] = !TesseraStatusFlyoutPolicy.IsStatusKind(kind)
-                                  && settings.ShowMediaStripOnVolume
-                                  && TesseraFlyoutTweenTargetCatalog.StyleRequestsVolumeMediaChrome(settings.Style)
+            // A standalone "media" flyout is always itself a media presentation - it must not
+            // depend on ShowMediaStripOnVolume, which is specifically about whether the "vol"
+            // flyout also shows media. Reading false here skips the media card's own phase-2
+            // reveal entirely (FlyoutMotionSession.Filter finds nothing phase-2-eligible) while
+            // phase 1 still runs, which looks like a partial, broken entrance/exit.
+            p["showMediaStrip"] = kind.Equals("media", StringComparison.OrdinalIgnoreCase)
+                                  || (!TesseraStatusFlyoutPolicy.IsStatusKind(kind)
+                                      && settings.ShowMediaStripOnVolume
+                                      && TesseraFlyoutTweenTargetCatalog.StyleRequestsVolumeMediaChrome(settings.Style))
                 ? "1"
                 : "0";
             p["acrylic"] = settings.UseAcrylicBackdrop ? "1" : "0";
@@ -165,9 +171,10 @@ namespace MosaicShell.Core.Modules.Tessera
         public static bool BackdropBlurFromPayload(IReadOnlyDictionary<string, string>? payload)
         {
             return payload is null
-                ? true
-                : (!payload.TryGetValue("backdropBlur", out string? raw)
-                && !payload.TryGetValue("bakedFrost", out raw)) || string.IsNullOrWhiteSpace(raw) || raw is not ("0" or "false" or "False" or "off" or "Off");
+                || (!payload.TryGetValue("backdropBlur", out string? raw)
+                    && !payload.TryGetValue("bakedFrost", out raw))
+                || string.IsNullOrWhiteSpace(raw)
+                || raw is not ("0" or "false" or "False" or "off" or "Off");
         }
 
         /// <summary>Flyout UI scale from payload (50..150 percent). Default 1.0.</summary>

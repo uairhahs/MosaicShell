@@ -111,14 +111,11 @@ namespace MosaicShell.Core.Modules.Tessera
             bool compileAvailable = Available,
             string? kind = null)
         {
-            if (TesseraStatusFlyoutPolicy.MustUseDedicatedSingleWindow(kind))
-            {
-                return false;
-            }
-
-            return !compileAvailable || !trialRequested || !osSupportsWinUiAcrylic || !osAcrylicRenderingAvailable
-                ? false
-                : TesseraFlyoutMaterialFactory.UseAcrylicFromPayload(payload) && IsVolumeMediaStripStacked(payload) && TesseraStackedPlacementPolicy.SupportsStackedOsAcrylic(styleId);
+            return !TesseraStatusFlyoutPolicy.MustUseDedicatedSingleWindow(kind)
+                && compileAvailable && trialRequested && osSupportsWinUiAcrylic && osAcrylicRenderingAvailable
+                && TesseraFlyoutMaterialFactory.UseAcrylicFromPayload(payload)
+                && IsVolumeMediaStripStacked(payload)
+                && TesseraStackedPlacementPolicy.SupportsStackedOsAcrylic(styleId);
         }
 
         /// <summary>Logical panels for volume+media strip (phase 1).</summary>

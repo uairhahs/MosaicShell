@@ -25,19 +25,7 @@ namespace MosaicShell.Core.Capabilities.Platform
                 return FlyoutSyncAction.Present;
             }
 
-            return trigger == FlyoutSyncTrigger.MediaSession
-                && !enableMediaFlyouts
-                && MediaFlyoutRouter.IsStripKind(openKind)
-                ? FlyoutSyncAction.Patch
-                : trigger == FlyoutSyncTrigger.ShellMedia
-                && enableMediaFlyouts
-                && openKind.Equals("media", StringComparison.OrdinalIgnoreCase)
-                ? FlyoutSyncAction.Patch
-                : trigger == FlyoutSyncTrigger.MediaSession
-                && enableMediaFlyouts
-                && openKind.Equals("media", StringComparison.OrdinalIgnoreCase)
-                ? FlyoutSyncAction.Patch
-                : FlyoutSyncAction.Patch;
+            return FlyoutSyncAction.Patch;
         }
     }
 }

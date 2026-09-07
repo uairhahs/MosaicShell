@@ -37,6 +37,16 @@ namespace MosaicShell.Host.Capabilities
                 ? TesseraFlyoutMotionPlan.ResolveShow(request.Ani, request.StyleId, showMedia, stacked)
                 : TesseraFlyoutMotionPlan.ResolveHide(request.Ani, request.StyleId, showMedia, stacked);
 
+            // Volume and media entrances measured ~1.8x apart on the same style; these are every
+            // input the plan is built from, plus how many slots each phase actually claims, so
+            // the divergence can be read off directly instead of inferred from total duration.
+            TesseraFlyoutDiagnostics.Log(
+                $"motion plan entrance={entrance} kind={request.Kind} style={request.StyleId} "
+                + $"ani={request.Ani} steps={request.AniSteps} showMedia={showMedia} stacked={stacked} "
+                + $"windows={windows.Count} roles=[{string.Join(",", windows.Select(static w => w.StackedRole?.ToString() ?? "single"))}] "
+                + $"plan=[{string.Join(",", plan.Steps.Select(static s => s.Kind.ToString()))}] "
+                + $"claims=[{string.Join(",", plan.Steps.Select(s => s.Kind is TesseraFlyoutMotionStepKind.Phase1 or TesseraFlyoutMotionStepKind.Phase2 ? $"{s.Kind}:{Filter(windows, s).Count}" : s.Kind.ToString()))}]");
+
             try
             {
                 long t0 = Environment.TickCount64;
@@ -188,13 +198,24 @@ namespace MosaicShell.Host.Capabilities
             }
             catch (Exception ex)
             {
-                TesseraFlyoutDiagnostics.Log($"flyout motion failed: {ex.Message}");
+                TesseraFlyoutDiagnostics.Log(
+                    $"flyout motion failed: entrance={entrance} style={request.StyleId} stacked={stacked} {ex}");
             }
             finally
             {
                 foreach (FlyoutWindow window in windows)
                 {
-                    window.CompleteMotion(entrance);
+                    try
+                    {
+                        window.CompleteMotion(entrance);
+                    }
+                    catch (Exception ex)
+                    {
+                        // The window can be disposed by a competing operation while this
+                        // sequence was still in flight; cleanup must not throw a second,
+                        // unhandled exception on top of whatever RunAsync already caught.
+                        TesseraFlyoutDiagnostics.Log($"flyout motion cleanup failed: {ex}");
+                    }
                 }
             }
         }
