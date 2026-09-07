@@ -1,6 +1,6 @@
 # Development guide (TDD, hierarchy, extensibility)
 
-This document is the **human-readable** source of truth for how MosaicShell should grow. Cursor agents also load the always-apply rules under [`.cursor/rules/`](../.cursor/rules/):
+This document is the **human-readable** source of truth for how MosaicShell should grow. The always-apply development rules live under [`.local/rules/`](../.local/rules/):
 
 | Rule                       | Concern                                   |
 | -------------------------- | ----------------------------------------- |
@@ -38,16 +38,16 @@ See also [`architecture.md`](architecture.md), [`module-sdk.md`](module-sdk.md),
 
 ---
 
-## `.local` (scratch / sandboxes)
+## `.local` (development sandboxes and workspace)
 
-**`.local/`** is the gitignored repo-local scratch directory. Use it for sandboxes that must not ship in CI or releases:
+**`.local/`** is the gitignored repo-local directory for development work that must not ship in CI or releases:
 
 - Throwaway probe projects (`ColorProbe/`, `smtc-probe/`, etc.)
 - Vendored reference trees (`wnp-src/`)
 - Parity assets and Rainmeter refs (e.g. `.local/Tessera/...`; see [`parity/yourflyouts-screenshots.md`](parity/yourflyouts-screenshots.md))
 - Local-only helpers (`compile-local.ps1`, `housekeeping.ps1`)
 
-Nothing under `.local/` is a contract for Host or Core. Promote anything that becomes truth into `host/MosaicShell.Core` (with tests) or into tracked paths under `.github/` / `tools/`.
+Nothing under `.local/` is a contract for Host or Core. Promote anything that becomes truth into `host/MosaicShell.Core` (with tests) or into tracked paths under `.github/` / `tools/`. Agent-authored working documents (plans, audit notes, internal decision records) also live here and are never user-facing commitments.
 
 ```powershell
 ./.local/compile-local.ps1      # build + run Host locally
@@ -111,7 +111,7 @@ dotnet build host/MosaicShell.Host
 of truth for "what does style X do". A new fact about a style (host kind, region needs, stacked
 layout kind, corner radius, rest size, …) is a **new field on the profile**, not a new
 `switch (styleId)` in another file. Full field list and the migration inventory:
-[`tessera-style-profile.md`](tessera-style-profile.md). Rationale: ADR-0001.
+[`tessera-style-profile.md`](tessera-style-profile.md).
 
 - [ ] Does this add a `switch` / `if (styleId == …)` outside `ResolveProfile`? Add a profile field instead and make the call site a one-line accessor.
 - [ ] Would two style-capability answers disagree for the same style id if someone edited only one of them? If `TesseraFlyoutStyleProfileConsistencyTests` would not fail, the tables are not unified yet.

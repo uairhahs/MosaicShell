@@ -5,8 +5,7 @@
 [`host/MosaicShell.Core/Modules/Tessera/TesseraFlyoutTweenTargetCatalog.cs`](../host/MosaicShell.Core/Modules/Tessera/TesseraFlyoutTweenTargetCatalog.cs)
 — is the **single source of truth** for "what does style X do".
 
-Rule and rationale: [`development.md`](development.md) → "Style-capability rule", and ADR-0001
-(query with `manage_adr`). This page is the concrete map: check it **before** writing another
+Rule and rationale: [`development.md`](development.md) → "Style-capability rule". This page is the concrete map: check it **before** writing another
 `switch (styleId)`.
 
 ## The rule in one line
