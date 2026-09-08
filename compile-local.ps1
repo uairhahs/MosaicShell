@@ -4,13 +4,13 @@
 # After Win11 sign-off, --tessera-os-acrylic is ignored; this script reads/writes the hub file.
 #
 # Usage:
-#   .\.local\compile-local.ps1
-#   .\.local\compile-local.ps1 -BuildOnly
-#   .\.local\compile-local.ps1 -Configuration Release
-#   .\.local\compile-local.ps1 -NoKill
-#   .\.local\compile-local.ps1 -TesseraOsAcrylic On     # write UseOsAcrylic=true, then run
-#   .\.local\compile-local.ps1 -TesseraOsAcrylic Off    # write UseOsAcrylic=false, then run
-#   .\.local\compile-local.ps1 -ForceSoftwareRender     # H2 frost fallback eval row
+#   .\compile-local.ps1
+#   .\compile-local.ps1 -BuildOnly
+#   .\compile-local.ps1 -Configuration Release
+#   .\compile-local.ps1 -NoKill
+#   .\compile-local.ps1 -TesseraOsAcrylic On     # write UseOsAcrylic=true, then run
+#   .\compile-local.ps1 -TesseraOsAcrylic Off    # write UseOsAcrylic=false, then run
+#   .\compile-local.ps1 -ForceSoftwareRender     # H2 frost fallback eval row
 
 [CmdletBinding()]
 param(

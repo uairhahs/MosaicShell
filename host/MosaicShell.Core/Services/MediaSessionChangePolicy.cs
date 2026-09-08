@@ -34,8 +34,8 @@ namespace MosaicShell.Core.Services
 
         /// <summary>
         /// YouTube Music's browser SMTC session closes and a brand-new session object is
-        /// created on every track change, rather than updating in place. Measured via
-        /// <c>.local/smtc-probe</c>: the gap between the old session closing and the new one
+        /// created on every track change, rather than updating in place. Measured empirically
+        /// (one-off local probe): the gap between the old session closing and the new one
         /// attaching is consistently ~650-950ms. Treating that transient null as a real
         /// "media stopped" event flickers consumers off then straight back on for what the
         /// user experiences as one skip. A real stop (no new session attaches) still surfaces

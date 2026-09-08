@@ -59,7 +59,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Null_session_grace_is_positive_and_covers_measured_ytm_gap()
         {
-            // .local/smtc-probe measured ~650-950ms between session close and reattach.
+            // Measured empirically (one-off local probe): ~650-950ms between session close and reattach.
             _ = MediaSessionChangePolicy.NullSessionGraceMs.Should().BeGreaterThan(950);
         }
 
