@@ -28,12 +28,17 @@ namespace MosaicShell.Core.Capabilities.Ipc
             }
         }
 
-        public async Task ConnectAsync(CancellationToken cancellationToken = default)
+        /// <param name="cancellationToken">Cancels the connect attempt.</param>
+        /// <param name="pipeName">Override for tests only; production callers use the default so
+        /// Worker and Host agree on <see cref="CapabilityIpcPolicy.PipeName"/>.</param>
+        public async Task ConnectAsync(
+            CancellationToken cancellationToken = default,
+            string pipeName = CapabilityIpcPolicy.PipeName)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
             NamedPipeClientStream pipe = new(
                 ".",
-                CapabilityIpcPolicy.PipeName,
+                pipeName,
                 PipeDirection.InOut,
                 PipeOptions.Asynchronous);
 

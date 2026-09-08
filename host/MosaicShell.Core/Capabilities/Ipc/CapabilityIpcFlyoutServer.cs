@@ -11,16 +11,25 @@ namespace MosaicShell.Core.Capabilities.Ipc
     {
         private readonly IFlyoutPresenter _presenter;
         private readonly Action<Action> _runOnUiThread;
+        private readonly string _pipeName;
         private readonly CancellationTokenSource _cts = new();
         private Task? _acceptLoop;
         private ServerConnection? _client;
         private readonly Lock _gate = new();
         private bool _disposed;
 
-        public CapabilityIpcFlyoutServer(IFlyoutPresenter presenter, Action<Action> runOnUiThread)
+        /// <param name="presenter">Applies incoming flyout commands.</param>
+        /// <param name="runOnUiThread">Dispatches each handled message onto the Host UI thread.</param>
+        /// <param name="pipeName">Override for tests only; production callers use the default so
+        /// Worker and Host agree on <see cref="CapabilityIpcPolicy.PipeName"/>.</param>
+        public CapabilityIpcFlyoutServer(
+            IFlyoutPresenter presenter,
+            Action<Action> runOnUiThread,
+            string pipeName = CapabilityIpcPolicy.PipeName)
         {
             _presenter = presenter;
             _runOnUiThread = runOnUiThread;
+            _pipeName = pipeName;
             _presenter.TransientDismissed += OnPresenterTransientDismissed;
         }
 
@@ -42,7 +51,7 @@ namespace MosaicShell.Core.Capabilities.Ipc
                 try
                 {
                     NamedPipeServerStream pipe = new(
-                        CapabilityIpcPolicy.PipeName,
+                        _pipeName,
                         PipeDirection.InOut,
                         1,
                         PipeTransmissionMode.Byte,
