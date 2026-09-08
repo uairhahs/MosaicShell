@@ -19,6 +19,7 @@ using MosaicShell.Core.Settings;
 using MosaicShell.Core.Shp;
 using MosaicShell.Core.Styles;
 using MosaicShell.Core.Update;
+using MosaicShell.Host.Capabilities;
 using MosaicShell.Host.Input;
 using MosaicShell.Host.Tiles;
 using MosaicShell.Host.Tiles.Tessera;
@@ -597,6 +598,7 @@ namespace MosaicShell.Host.ViewModels
         private void PersistTesseraFromUi()
         {
             TesseraSettings s = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
+            string priorStyle = s.Style;
             s.Style = StyleIds.Normalize(ModuleStyle);
             s.Position = SelectedTesseraPosition?.Code ?? TesseraPosition;
             s.MonitorIndex = Math.Clamp((int)TesseraMonitorIndex, 1, 8);
@@ -626,6 +628,12 @@ namespace MosaicShell.Host.ViewModels
             s.UseLegacyVolumeHooks = TesseraLegacyVol;
             s.LegacyVolumeStep = Math.Clamp((double)TesseraLegacyStepPercent, 1, 25) / 100.0;
             ModuleSettingsStore.Save(ModuleIds.Tessera, s);
+            string path = ModuleSettingsStore.PathFor(ModuleIds.Tessera);
+            DateTime mtime = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
+            TesseraFlyoutDiagnostics.Log(
+                $"[Hub] PersistTesseraFromUi: style {priorStyle} -> {s.Style} "
+                + $"(UI ModuleStyle={ModuleStyle}), autoDismissMs={s.AutoDismissMs}, "
+                + $"wroteMtimeUtc={mtime:O}");
             TesseraPosition = s.Position;
             TesseraAni = s.Ani;
         }
@@ -707,16 +715,25 @@ namespace MosaicShell.Host.ViewModels
         [RelayCommand]
         private async Task SaveModuleConfigAsync()
         {
+            TesseraFlyoutDiagnostics.Log(
+                $"[Hub] SaveModuleConfigCommand invoked: ConfigModuleId='{ConfigModuleId}', "
+                + $"IsRunning={SaveModuleConfigCommand.IsRunning}");
             if (string.IsNullOrWhiteSpace(ConfigModuleId))
             {
+                TesseraFlyoutDiagnostics.Log("[Hub] SaveModuleConfigCommand: ConfigModuleId empty, returning early.");
                 return;
             }
 
             string id = ConfigModuleId;
             IsCapturingHotkey = false;
-            switch (id.ToLowerInvariant())
+            // Case-insensitive by construction (ModuleIds.Is), not by convention - ids arrive from
+            // user-authored manifests/settings, and hand-lowercasing each case label independently
+            // (the previous pattern) silently breaks the moment one case is written differently,
+            // which is exactly what happened to Tessera when it was swapped for the ModuleIds
+            // constant but the case label kept its canonical capitalization.
+            switch (id)
             {
-                case "chrono":
+                case string when ModuleIds.Is(id, ModuleIds.Chrono):
                     {
                         ChronoSettings s = ModuleSettingsStore.Load("Chrono", () => new ChronoSettings());
                         s.Style = StyleIds.Normalize(ModuleStyle);
@@ -725,18 +742,22 @@ namespace MosaicShell.Host.ViewModels
                         StatusMessage = "Chrono settings saved! Relaunch widget to apply.";
                         break;
                     }
-                case ModuleIds.Tessera:
+                case string when ModuleIds.IsTessera(id):
                     {
                         TesseraSettings prior = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
                         bool priorOsAcrylic = prior.UseOsAcrylic;
                         PersistTesseraFromUi();
                         TesseraSettings saved = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
-                        if (_capabilityHost?.IsArmed(ModuleIds.Tessera) == true)
+                        bool wasArmed = _capabilityHost?.IsArmed(ModuleIds.Tessera) == true;
+                        TesseraFlyoutDiagnostics.Log(
+                            $"[Hub] Save clicked: style={saved.Style}, armed={wasArmed}");
+                        if (wasArmed)
                         {
-                            bool ok = await _capabilityHost.ReArmAsync(ModuleIds.Tessera);
+                            bool ok = await _capabilityHost!.ReArmAsync(ModuleIds.Tessera);
                             StatusMessage = ok
                                 ? "Tessera settings saved and re-armed."
                                 : "Tessera settings saved but re-arm failed.";
+                            TesseraFlyoutDiagnostics.Log($"[Hub] ReArmAsync(Tessera) -> {ok}");
                         }
                         else
                         {
@@ -750,7 +771,7 @@ namespace MosaicShell.Host.ViewModels
 
                         break;
                     }
-                case "phono":
+                case string when ModuleIds.Is(id, ModuleIds.Phono):
                     {
                         PhonoSettings s = ModuleSettingsStore.Load("Phono", () => new PhonoSettings());
                         s.Style = StyleIds.Normalize(ModuleStyle);
@@ -758,7 +779,7 @@ namespace MosaicShell.Host.ViewModels
                         StatusMessage = "Phono style saved.";
                         break;
                     }
-                case "pulse":
+                case string when ModuleIds.Is(id, ModuleIds.Pulse):
                     {
                         PulseSettings s = ModuleSettingsStore.Load("Pulse", () => new PulseSettings());
                         s.Style = StyleIds.Normalize(ModuleStyle);
@@ -766,7 +787,7 @@ namespace MosaicShell.Host.ViewModels
                         StatusMessage = "Pulse style saved.";
                         break;
                     }
-                case "canvas":
+                case string when ModuleIds.Is(id, ModuleIds.Canvas):
                     {
                         CanvasSettings s = ModuleSettingsStore.Load("Canvas", () => new CanvasSettings());
                         s.Style = StyleIds.Normalize(ModuleStyle);
@@ -774,7 +795,7 @@ namespace MosaicShell.Host.ViewModels
                         StatusMessage = "Canvas style saved.";
                         break;
                     }
-                case "mixdeck":
+                case string when ModuleIds.Is(id, ModuleIds.Mixdeck):
                     {
                         MixdeckSettings s = ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings());
                         s.Style = StyleIds.Normalize(ModuleStyle);
@@ -784,7 +805,7 @@ namespace MosaicShell.Host.ViewModels
                         StatusMessage = await PersistHotkeyArmAsync(id);
                         break;
                     }
-                case "inlay":
+                case string when ModuleIds.Is(id, ModuleIds.Inlay):
                     {
                         InlaySettings s = ModuleSettingsStore.Load("Inlay", () => new InlaySettings());
                         s.Style = StyleIds.Normalize(ModuleStyle);
@@ -800,7 +821,7 @@ namespace MosaicShell.Host.ViewModels
                         StatusMessage = await PersistHotkeyArmAsync(id);
                         break;
                     }
-                case "chord":
+                case string when ModuleIds.Is(id, ModuleIds.Chord):
                     {
                         ChordSettings s = ModuleSettingsStore.Load("Chord", () => new ChordSettings());
                         s.Style = StyleIds.Normalize(ModuleStyle);
@@ -817,7 +838,7 @@ namespace MosaicShell.Host.ViewModels
                         StatusMessage = await PersistHotkeyArmAsync(id);
                         break;
                     }
-                case "slate":
+                case string when ModuleIds.Is(id, ModuleIds.Slate):
                     {
                         SlateSettings s = ModuleSettingsStore.Load("Slate", () => new SlateSettings());
                         s.Style = StyleIds.Normalize(ModuleStyle);
@@ -832,7 +853,7 @@ namespace MosaicShell.Host.ViewModels
                         StatusMessage = "Slate saved" + (_capabilityHost?.IsArmed(id) == true ? " and re-armed." : ".");
                         break;
                     }
-                case "substrate":
+                case string when ModuleIds.Is(id, ModuleIds.Substrate):
                     {
                         SubstrateSettings s = ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings());
                         s.Style = StyleIds.Normalize(ModuleStyle);

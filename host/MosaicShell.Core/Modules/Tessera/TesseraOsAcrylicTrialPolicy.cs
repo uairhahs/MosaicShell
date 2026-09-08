@@ -42,9 +42,10 @@ namespace MosaicShell.Core.Modules.Tessera
             bool osAcrylicRenderingAvailable = true,
             string? styleId = null)
         {
-            // A style whose spec calls for matte-only chrome (MaterialYou) must never be eligible
-            // for any window-level transparency, OS Acrylic included - it has no local background
-            // to fall back on if the OS composite silently fails, unlike every other style.
+            // A style whose spec calls for matte-only chrome (MaterialYou, PlainText) must never
+            // be eligible for any window-level transparency, OS Acrylic included - the unpainted
+            // window area around its shape has no local background to fall back on if the OS
+            // composite silently fails, unlike every other style.
             return !TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).RequiresMatteChrome
                 && compileAvailable && trialRequested && osSupportsWinUiAcrylic && osAcrylicRenderingAvailable && (!IsStackedMultiPanel(payload)
                 || styleId is null

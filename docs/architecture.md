@@ -175,7 +175,7 @@ Phase C is post-B5 optional polish, gated by `*_layout_fidelity` flags; never fl
 ## Further reading
 
 - `docs/development.md`: TDD workflow, dependency hierarchy, and the style-capability rule (ADR-0001) that governs Tessera's per-style code.
-- `docs/tessera-style-profile.md`: the per-style dispatch inventory ADR-0001 governs — check it before writing another `switch (styleId)`.
+- `docs/tessera-style-profile.md`: the per-style dispatch inventory ADR-0001 governs, check it before writing another `switch (styleId)`.
 - `docs/module-sdk.md`: third-party module contract (manifest, install, factory signatures).
 - `docs/capability-platform.md`: the `ICapabilityContext`/`CapabilityFlyoutSession`/`MediaSessionPlatform` API surface.
 - `docs/parity/README.md`: living per-module MVP/skeleton bars and honesty-flag conventions.

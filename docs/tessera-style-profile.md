@@ -39,6 +39,7 @@ one of them lying. No test failed.
 | `PhaseTwoUsesInLayoutMedia` | Media column lives in the volume HWND, not a stacked strip |
 | `StatusChipCornerRadiusDip` | Status chip corner radius |
 | `NeedsStrokeBRegion` | Needs a dedicated StrokeB HWND region (Windows11 only) |
+| `RequiresMatteChrome` | Chrome doesn't cover its full window bounds (MaterialYou's pills, PlainText's slant-clipped card), so it must never request OS Acrylic or Skia soft-frost glass - a failed OS composite in the unpainted gap would show raw desktop passthrough |
 
 Fields are added per consolidation batch (see below); this table tracks what exists today.
 

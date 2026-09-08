@@ -15,7 +15,8 @@ namespace MosaicShell.Host.Tiles.Tessera
             string styleId,
             IReadOnlyDictionary<string, string> payload,
             IHostUiBridge? hostUi,
-            int ani)
+            int ani,
+            int autoDismissMs)
         {
             Services = services;
             HostUi = hostUi;
@@ -23,6 +24,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             StyleId = styleId;
             Payload = payload;
             Ani = ani;
+            AutoDismissMs = autoDismissMs;
             Volume = Parse(payload, "volume", services.Audio.MasterVolume);
             IsMuted = payload.GetValueOrDefault("muted") == "1" || services.Audio.IsMuted;
             Brightness = Parse(payload, "brightness", services.Brightness.IsSupported ? services.Brightness.Brightness : 0.5);
@@ -47,11 +49,13 @@ namespace MosaicShell.Host.Tiles.Tessera
             HostServices services, FlyoutRequest request, IHostUiBridge? hostUi = null)
         {
             return new(services, request.Kind, request.StyleId ?? "Fluent",
-                request.Payload ?? new Dictionary<string, string>(), hostUi, request.Ani);
+                request.Payload ?? new Dictionary<string, string>(), hostUi, request.Ani, request.AutoDismissMs);
         }
 
         public HostServices Services { get; }
         public IHostUiBridge? HostUi { get; }
+        /// <summary>Milliseconds until this flyout auto-hides; 0 or negative means it does not.</summary>
+        public int AutoDismissMs { get; }
         public TesseraSettings Settings { get; }
         public int Ani { get; }
         public string Kind { get; }

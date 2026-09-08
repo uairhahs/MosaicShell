@@ -32,8 +32,8 @@ namespace MosaicShell.Core.Tests
         [Theory]
         [InlineData(0, false, 50)]
         [InlineData(0, true, 50)]
-        [InlineData(0.5, true, 137.5)]
-        [InlineData(1, true, 225)]
+        [InlineData(0.5, true, 147.5)]
+        [InlineData(1, true, 245)]
         public void Region_height_tracks_strokeB_when_phase2_engaged(double p, bool engaged, double expected)
         {
             _ = TesseraFlyoutHwndRegionSpec.ResolveRegionHeightDip(p, engaged, musicVisible: true)

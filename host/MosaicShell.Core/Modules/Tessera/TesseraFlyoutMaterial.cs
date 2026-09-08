@@ -53,12 +53,13 @@ namespace MosaicShell.Core.Modules.Tessera
             string? styleId = null,
             string? kind = null)
         {
-            // A style whose spec calls for matte components only (MaterialYou) must never touch
-            // OS Acrylic or the Skia soft-frost glass, regardless of settings - it has no local
+            // A style whose spec calls for matte chrome only (MaterialYou's pills, PlainText's
+            // slant-clipped card) must never touch OS Acrylic or the Skia soft-frost glass,
+            // regardless of settings - the unpainted window area around its shape has no local
             // background to fall back on if a glass material fails to render, unlike every other
             // style. The window itself still uses plain Transparent (true per-pixel alpha, not an
-            // OS material) so the desktop shows through the gaps between pills exactly as before;
-            // only the two glass paths are excluded, not window transparency itself.
+            // OS material) so the desktop shows through those gaps exactly as before; only the two
+            // glass paths are excluded, not window transparency itself.
             return TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).RequiresMatteChrome
                 ? Create(useAcrylic: false)
                 : Create(

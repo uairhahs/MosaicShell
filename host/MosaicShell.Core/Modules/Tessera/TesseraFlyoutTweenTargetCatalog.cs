@@ -217,7 +217,10 @@ namespace MosaicShell.Core.Modules.Tessera
                     PhaseTwoUsesInLayoutMedia: false,
                     StatusChipCornerRadiusDip: 4f,
                     NeedsStrokeBRegion: false,
-                    RequiresMatteChrome: false),
+                    // PlainTextShell clips its card to a slanted PathGeometry (see
+                    // TesseraLayouts.PlainText.cs); the sliver that clip cuts away is unpainted
+                    // window area, the same shape of exposure as MaterialYou's inter-pill gaps.
+                    RequiresMatteChrome: true),
                 StyleIds.Meter => new(
                     [
                         new("MediaB", TesseraTweenChannel.SlideOffset),

@@ -114,9 +114,13 @@ namespace MosaicShell.Host.Tiles.Tessera
                 $"{FormatTime(vm.MediaPositionSeconds)} {TesseraChrome.SlashFill(vm.MediaProgress, 16)} {FormatTime(vm.MediaDurationSeconds)}",
                 12);
             TesseraLiveAmbient.RegisterPlainTextMedia(title, artist, prog);
+            // Narrower than the card's own top width (340, minus 32 of content padding) on
+            // purpose: the card's right edge is a slant, not a straight edge, and this row's
+            // actual clearance depends on its vertical position within it. The extra margin here
+            // is the padding against that slant the title needs regardless of exactly where it lands.
             return
             [
-                title,
+                TesseraMarqueeText.Wrap(title, 260, vm.AutoDismissMs),
                 artist,
                 prog,
                 TesseraChrome.Mono("Media playing | Heart: 0 Shuffle: 0 Repeat: 0", 10, muted: true)
@@ -155,15 +159,14 @@ namespace MosaicShell.Host.Tiles.Tessera
                 Width = TesseraStackedPlacementSpec.PlainTextWidthDip,
                 MinHeight = stackedSegment ? 0 : 80
             };
-            Border bg = new()
-            {
-                Background = new SolidColorBrush(Color.FromArgb(200, 0x11, 0x11, 0x1b)),
-                BorderBrush = TesseraPalette.AccentBrush,
-                BorderThickness = new Thickness(1),
-                Child = new Border { Padding = new Thickness(16, 12), Child = panel }
-            };
-            shell.Children.Add(bg);
-            PathFigures clipFigures =
+
+            // The card is a slanted quadrilateral, not a rectangle. Stroking a rectangular
+            // Border and then Clip-ing the result to this shape drew the accent outline around
+            // the rectangle first and cropped it afterward, so the diagonal edge had no stroke at
+            // all - it just looked cut off. The fill is the full closed silhouette; the outline is
+            // a separate, deliberately open path covering only top/left/bottom - the right slant
+            // is a bare cut edge by design and was never meant to carry a stroke.
+            PathFigures cardFillFigures =
             [
                 new PathFigure
                 {
@@ -177,7 +180,60 @@ namespace MosaicShell.Host.Tiles.Tessera
                     ]
                 }
             ];
-            bg.Clip = new PathGeometry { Figures = clipFigures };
+            Avalonia.Controls.Shapes.Path bg = new()
+            {
+                Data = new PathGeometry { Figures = cardFillFigures },
+                Fill = new SolidColorBrush(Color.FromArgb(200, 0x11, 0x11, 0x1b))
+            };
+            PathFigures outlineFigures =
+            [
+                new PathFigure
+                {
+                    StartPoint = new Point(340, 0),
+                    IsClosed = false,
+                    Segments =
+                    [
+                        new LineSegment { Point = new Point(0, 0) },
+                        new LineSegment { Point = new Point(0, 200) },
+                        new LineSegment { Point = new Point(320, 200) }
+                    ]
+                }
+            ];
+            Avalonia.Controls.Shapes.Path outline = new()
+            {
+                Data = new PathGeometry { Figures = outlineFigures },
+                Stroke = TesseraPalette.AccentBrush,
+                StrokeThickness = 1,
+                StrokeJoin = PenLineJoin.Miter
+            };
+            shell.Children.Add(bg);
+            shell.Children.Add(outline);
+            shell.Children.Add(new Border
+            {
+                Padding = new Thickness(16, 12),
+                // Content must stay inside the same silhouette as the fill, or text near the
+                // bottom (where the slant has already narrowed the card) renders past the visible
+                // edge into the transparent gap instead of being cropped to it. A fresh geometry
+                // instance, not the fill's own Data, so the two Path elements each own theirs.
+                Clip = new PathGeometry
+                {
+                    Figures =
+                    [
+                        new PathFigure
+                        {
+                            StartPoint = new Point(0, 0),
+                            IsClosed = true,
+                            Segments =
+                            [
+                                new LineSegment { Point = new Point(340, 0) },
+                                new LineSegment { Point = new Point(320, 200) },
+                                new LineSegment { Point = new Point(0, 200) }
+                            ]
+                        }
+                    ]
+                },
+                Child = panel
+            });
             return shell;
         }
     }
