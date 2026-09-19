@@ -77,7 +77,7 @@ the page.
 ### YouTube Music: heart and thumbs-down
 
 MosaicShell reads the real state of the player's like and dislike buttons through Windows accessibility, with
-nothing to install. That works while the player is the visible tab or app window. A player in a background tab
+nothing to install. That works while the player is the visible tab or app window, and not while that window is minimised. A player in a background tab
 cannot be read, so its buttons are not offered, and the first read after a page loads can take a couple of seconds.
 
 ---
