@@ -5,7 +5,7 @@ namespace MosaicShell.Core.Tests
 {
     /// <summary>
     /// Measured 2026-09-19 (YouTube Music PWA): every skip surfaces the tab title "X | YouTube Music"
-    /// with an empty artist, and when WebNowPlaying supplies nothing that title is all the flyout gets.
+    /// with an empty artist, and when no browser source supplies more, that title is all the flyout gets.
     /// </summary>
     public class MediaTitleNormalizerTests
     {

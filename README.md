@@ -67,77 +67,18 @@ See [host/README.md](host/README.md) and [`.github/docs/parity.md`](.github/docs
 
 ## Known issues
 
-### YouTube Music: no artist or album art (temporary workaround)
+### The flyout shows only the track title, with no artist or cover
 
-**Symptom.** In the YouTube Music web app (the installed app window or a browser tab), the flyout shows the
-track title but no artist and no album art, on Edge or Chrome.
+Windows learns a browser's artist and cover from the page's Media Session, which the browser passes on. A browser
+extension that replaces the page's Media Session hides it from the browser, so Windows only gets the page title.
+KDE's **Plasma Integration** extension does this. Turn such an extension off in `edge://extensions`, then reload
+the page.
 
-**Cause.** Windows only receives the page title from the browser for this app, so MosaicShell relies on the
-[WebNowPlaying](https://wnp.keifufu.dev/) browser extension for artist and cover. YouTube Music replaced
-`playerApi` with an asynchronous `resolvePlayerApi()`, which breaks the extension's YouTube Music adapter
-(version 3.1.0). Upstream tracks it as
-[keifufu/WebNowPlaying#59](https://github.com/keifufu/WebNowPlaying/issues/59). **Once that is fixed and the
-store extension has updated, remove this workaround and re-enable the store extension.**
+### YouTube Music: heart and thumbs-down
 
-**Workaround.** Run a local copy of the extension with the adapter fixed. This edits a third-party extension
-on your own machine; it is not shipped with MosaicShell. It was tested only against WebNowPlaying 3.1.0 on
-Edge 153. If a find string below does not match exactly once, your extension version differs, so do not
-apply it. The changes are limited to the adapter fix on purpose, so that going back to the store extension
-later changes nothing else.
-
-1. Copy the installed extension folder to a permanent location outside the browser profile. On Edge it is
-   `%LOCALAPPDATA%\Microsoft\Edge\User Data\Default\Extensions\jfakgfcdgpghbbefmdfjkbdlibjgnbli\3.1.0_0` (on Chrome, the same
-   path under `Google\Chrome`).
-2. In the copy, delete the `_metadata` folder. In `manifest.json`, remove the `"key"` and `"update_url"`
-   entries, set `"name"` to `WebNowPlaying (YTM patch)` and `"version"` to `3.1.0.1`. This gives the copy its
-   own identity so it does not collide with the store extension.
-3. In `injected.js`, make two replacements (each find string occurs exactly once):
-
-   <details>
-   <summary>Replacement 1: resolve the player API asynchronously and cache it</summary>
-
-   Find:
-
-   ```js
-   Be=()=>document.querySelector("ytmusic-player-bar")?.playerApi,
-   ```
-
-   Replace with:
-
-   ```js
-   Be=(()=>{let b=null,a=null,p=!1;return()=>{const e=document.querySelector("ytmusic-player-bar");if(!e){b=a=null;p=!1;return}if(e.playerApi)return e.playerApi;if(e!==b){b=e;a=null;p=!1}if(!a&&!p&&"function"==typeof e.resolvePlayerApi){p=!0;try{Promise.resolve(e.resolvePlayerApi()).then((t=>{if(b===e&&t){a=t;console.info("[WNP-YTM-patch] playerApi resolved:",["isReady","getPlayerState","getCurrentTime","getVolume"].map((k=>k+"="+typeof t[k])).join(" "))}}),(t=>{console.info("[WNP-YTM-patch] resolvePlayerApi failed:",t)})).finally((()=>{p=!1}))}catch(t){p=!1}}return a||void 0}})(),
-   ```
-
-   </details>
-
-   <details>
-   <summary>Replacement 2: tolerate a resolved object without <code>isReady</code></summary>
-
-   Find:
-
-   ```js
-   ready:()=>Be()?.isReady(),info:m({name:()=>"YouTube Music"
-   ```
-
-   Replace with:
-
-   ```js
-   ready:()=>{const a=Be();return a?"function"==typeof a.isReady?a.isReady():!0:void 0},info:m({name:()=>"YouTube Music"
-   ```
-
-   </details>
-
-4. In `sw.js`, replace `enabledBuiltInAdapters:["Rainmeter Adapter"]` with `enabledBuiltInAdapters:["CLI Adapter"]`. A copy with a new
-   identity starts with default settings, and this makes it connect to MosaicShell (CLI adapter, port 5468).
-   You can instead enable **CLI Adapter** in the extension's popup.
-5. Open `edge://extensions`, turn on Developer mode, choose **Load unpacked**, and select the folder. Turn
-   off the store **WebNowPlaying** so only one copy runs.
-6. Close and re-open the YouTube Music window or tab. A page that was already open when the extension was
-   enabled has no content script and shows nothing until it is re-opened. After editing the copy later,
-   choose **Reload** on the extension and re-open the page again.
-
-Artist and cover should now appear in the flyout. To check the extension itself, open the page's DevTools
-console (Ctrl+Shift+I) and filter for `WNP-YTM-patch`: one line reports which player methods resolved.
+MosaicShell reads the real state of the player's like and dislike buttons through Windows accessibility, with
+nothing to install. That works while the player is the visible tab or app window. A player in a background tab
+cannot be read, so its buttons are not offered, and the first read after a page loads can take a couple of seconds.
 
 ---
 

@@ -35,7 +35,7 @@ namespace MosaicShell.Core.Capabilities
         /// <summary>Cross-module platform events (media track boundaries, volume, lifecycle).</summary>
         public ICapabilityEventBus Events { get; }
 
-        /// <summary>Shared media signal layer (SMTC/WNP classification). Used by armed capabilities.</summary>
+        /// <summary>Shared media signal layer (SMTC classification). Used by armed capabilities.</summary>
         public MediaSessionPlatform MediaPlatform { get; }
 
         public IReadOnlyList<string> ArmedModuleIds

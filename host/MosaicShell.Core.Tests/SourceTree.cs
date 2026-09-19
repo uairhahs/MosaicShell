@@ -37,7 +37,7 @@ namespace MosaicShell.Core.Tests
             return segments.Contains("obj") || segments.Contains("bin");
         }
 
-        private static string RepoRoot()
+        internal static string RepoRoot()
         {
             foreach (string start in new[] { AppContext.BaseDirectory, Directory.GetCurrentDirectory() })
             {

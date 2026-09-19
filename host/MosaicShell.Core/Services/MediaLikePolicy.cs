@@ -1,21 +1,10 @@
 namespace MosaicShell.Core.Services
 {
     /// <summary>
-    /// Like / unlike semantics for browser players via WebNowPlaying (WNPLIB rev 3).
-    /// Windows SMTC has no standard like API; PWAs expose like through the extension.
+    /// What the flyout's heart and thumbs-down icons read. A browser source reports the real state of the player's like
+    /// and dislike buttons (<see cref="BrowserRating"/>); this maps it to the value the icons use.
     /// </summary>
-    /// <remarks>
-    /// WNP rating values for LIKE_DISLIKE sites (YouTube Music):
-    /// 0 unrated, 1 disliked, 5 liked.
-    /// YTM <c>setRating(0)</c> on an unrated track triggers thumbs-down, so unlike must
-    /// only be sent when the host knows the track is liked (rating 5).
-    /// The stock extension (3.1.0, upstream issue #52) cannot read YouTube Music's like state, so its
-    /// helper always sees an unrated track: a request of 5 clicks the Dislike button (button[1]) and a
-    /// request of 1 or 0 clicks the Like button (button[0]). Requests below therefore never depend on the
-    /// host's rating for which button is clicked; YouTube Music toggles the button and switches from the
-    /// other state, so one press reaches the intended state from any starting state.
-    /// Spotify web uses LIKE-only (Library add/remove) inside the extension.
-    /// </remarks>
+    /// <remarks>Rating values: 0 unrated, 1 disliked, 5 liked.</remarks>
     public static class MediaLikePolicy
     {
         public const int Unrated = 0;
@@ -53,85 +42,6 @@ namespace MosaicShell.Core.Services
         public static bool ShouldShowDislikedThumb(int? rating)
         {
             return IsDisliked(rating);
-        }
-
-        /// <summary>YouTube Music exposes like and dislike; most other players are like-only.</summary>
-        public static bool SupportsDislike(string? appId, string? playerName = null)
-        {
-            return IsYouTubeMusic(playerName) || IsYouTubeMusicAppId(appId);
-        }
-
-        /// <summary>Default rating for generic like intent (Spotify, etc.).</summary>
-        public const int DefaultLikeRequestRating = Liked;
-
-        public static int UnlikeRequestRating => Unrated;
-
-        /// <summary>
-        /// Whether sending TRY_SET_RATING 0 is safe for unlike intent on generic sites.
-        /// False for unrated host state (YTM would thumbs-down).
-        /// </summary>
-        public static bool MaySendUnlikeRating(int hostLikeRating)
-        {
-            return hostLikeRating == Liked;
-        }
-
-        /// <summary>Whether clearing a known dislike is meaningful (host rating was disliked).</summary>
-        public static bool MaySendUndislikeRating(int hostLikeRating)
-        {
-            return hostLikeRating == Disliked;
-        }
-
-        /// <summary>
-        /// Maps UI like/unlike intent to WNP TRY_SET_RATING data for the active player.
-        /// </summary>
-        public static int ResolveLikeRequestRating(string? playerName, bool wantLiked, int hostLikeRating)
-        {
-            if (IsYouTubeMusic(playerName))
-            {
-                // WNP YouTubeMusic.ts (pre PR #53): setRating(5) calls toggleLike on
-                // button[1], which is the thumbs-down control on current YTM layouts.
-                // likeDislike(rating &lt; 3) calls toggleDislike on button[0] (thumbs-up).
-                // Send 1 so the extension clicks the Like button. It cannot read the state, so this does
-                // not depend on the host rating.
-                // See https://github.com/keifufu/WebNowPlaying/issues/52
-                return wantLiked || MaySendUnlikeRating(hostLikeRating) ? Disliked : Unrated;
-            }
-
-            return wantLiked ? DefaultLikeRequestRating : UnlikeRequestRating;
-        }
-
-        /// <summary>
-        /// Maps UI dislike/undislike intent for YouTube Music (like-dislike WNP sites only).
-        /// </summary>
-        public static int ResolveDislikeRequestRating(string? playerName, bool wantDisliked, int hostLikeRating)
-        {
-            if (!IsYouTubeMusic(playerName))
-            {
-                return wantDisliked ? Disliked : UnlikeRequestRating;
-            }
-
-            if (wantDisliked)
-            {
-                // Rating 5 clicks the Dislike button whatever the current state. Sending 0 for a liked track
-                // clicked Like instead, so a dislike after a like only cleared the like and needed a second press.
-                return Liked;
-            }
-
-            // Clear dislike: toggleLike via 5 when extension sees live rating 1.
-            return MaySendUndislikeRating(hostLikeRating) ? Liked : Unrated;
-        }
-
-        public static bool IsYouTubeMusic(string? playerName)
-        {
-            return !string.IsNullOrWhiteSpace(playerName)
-            && playerName.Contains("YouTube Music", StringComparison.OrdinalIgnoreCase);
-        }
-
-        public static bool IsYouTubeMusicAppId(string? appId)
-        {
-            return !string.IsNullOrWhiteSpace(appId)
-            && (appId.Contains("music.youtube", StringComparison.OrdinalIgnoreCase)
-                || appId.Contains("youtube", StringComparison.OrdinalIgnoreCase));
         }
     }
 }

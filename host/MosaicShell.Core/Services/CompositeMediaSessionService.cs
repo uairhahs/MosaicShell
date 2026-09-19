@@ -242,7 +242,7 @@ namespace MosaicShell.Core.Services
             }
 
             // Prefer any browser cover when SMTC has none (YTM PWA / browser)
-            byte[]? thumb = PickCover(smtc.ThumbnailPng, browser?.CoverPng, smtc.Title, browser?.Title, smtc.AppId);
+            byte[]? thumb = PickCover(smtc.ThumbnailPng, browser?.CoverPng, smtc.AppId);
             string? title = MediaTitleNormalizer.StripSiteSuffix(smtc.Title);
             string? artist = smtc.Artist;
             if (browser is not null && !string.IsNullOrWhiteSpace(browser.Title)
@@ -334,20 +334,13 @@ namespace MosaicShell.Core.Services
             return bytes is not null && bytes.Length >= 32 && (LooksLikePng(bytes) || LooksLikeJpeg(bytes) || LooksLikeWebp(bytes) || bytes.Length >= 256);
         }
 
-        internal static byte[]? PickCover(
-            byte[]? smtcThumb, byte[]? browserCover, string? smtcTitle, string? browserTitle, string? appId)
+        internal static byte[]? PickCover(byte[]? smtcThumb, byte[]? browserCover, string? appId)
         {
             return BrowserSessionPolicy.LooksLikeBrowserSession(appId) && IsUsableCover(browserCover)
                 ? browserCover
                 : IsUsableCover(smtcThumb)
                 ? smtcThumb
-                : IsUsableCover(browserCover)
-                ? browserCover
-                : MediaArtworkCache.TryGet(smtcTitle, out byte[]? png) && IsUsableCover(png)
-                ? png
-                : MediaArtworkCache.TryGet(browserTitle, out byte[]? png2) && IsUsableCover(png2)
-                ? png2
-                : IsUsableCover(smtcThumb) ? smtcThumb : null;
+                : IsUsableCover(browserCover) ? browserCover : null;
         }
 
         private static bool LooksLikePng(byte[] b)

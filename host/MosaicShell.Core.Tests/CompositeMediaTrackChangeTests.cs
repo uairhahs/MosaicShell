@@ -54,8 +54,8 @@ namespace MosaicShell.Core.Tests
         public void Rebuild_raises_changed_on_position_restart_when_title_still_stale()
         {
             SteppingMediaSessionService smtc = new();
-            StubBrowserMediaSource wnp = new();
-            using CompositeMediaSessionService composite = new(smtc, wnp);
+            StubBrowserMediaSource browser = new();
+            using CompositeMediaSessionService composite = new(smtc, browser);
 
             int changed = 0;
             composite.Changed += (_, _) => changed++;
@@ -74,8 +74,8 @@ namespace MosaicShell.Core.Tests
         public void Rebuild_raises_changed_once_when_smtc_title_and_position_both_signal_skip()
         {
             SteppingMediaSessionService smtc = new();
-            StubBrowserMediaSource wnp = new();
-            using CompositeMediaSessionService composite = new(smtc, wnp);
+            StubBrowserMediaSource browser = new();
+            using CompositeMediaSessionService composite = new(smtc, browser);
 
             int changed = 0;
             composite.Changed += (_, _) => changed++;
@@ -88,10 +88,10 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void Rebuild_raises_changed_when_smtc_skips_but_wnp_position_is_stale()
+        public void Rebuild_raises_changed_when_smtc_skips_but_browser_position_is_stale()
         {
             SteppingMediaSessionService smtc = new();
-            StubBrowserMediaSource wnp = new()
+            StubBrowserMediaSource browser = new()
             {
                 Active = new BrowserPlayerSnapshot
                 {
@@ -103,7 +103,7 @@ namespace MosaicShell.Core.Tests
                     DurationSeconds = 180,
                 }
             };
-            using CompositeMediaSessionService composite = new(smtc, wnp);
+            using CompositeMediaSessionService composite = new(smtc, browser);
 
             int changed = 0;
             composite.Changed += (_, _) => changed++;
@@ -114,15 +114,15 @@ namespace MosaicShell.Core.Tests
 
             smtc.Set(new MediaSessionInfo(
                 "Track A", "A", "music.youtube.com-x!App", true, null, 0.5, 180));
-            _ = changed.Should().Be(2, "SMTC restart must raise Changed even when WNP timeline is stale");
+            _ = changed.Should().Be(2, "SMTC restart must raise Changed even when the browser timeline is stale");
         }
 
         [Fact]
-        public void Browser_tab_title_reaches_consumers_without_the_site_suffix_when_wnp_is_silent()
+        public void Browser_tab_title_reaches_consumers_without_the_site_suffix_when_browser_is_silent()
         {
             SteppingMediaSessionService smtc = new();
-            StubBrowserMediaSource wnp = new();
-            using CompositeMediaSessionService composite = new(smtc, wnp);
+            StubBrowserMediaSource browser = new();
+            using CompositeMediaSessionService composite = new(smtc, browser);
 
             smtc.Set(new MediaSessionInfo(
                 "JUST DANCE | YouTube Music", null, "music.youtube.com-x!App", true, null, 5, 108));
@@ -134,8 +134,8 @@ namespace MosaicShell.Core.Tests
         public void Suffixed_smtc_title_does_not_raise_changed_on_every_progress_tick()
         {
             SteppingMediaSessionService smtc = new();
-            StubBrowserMediaSource wnp = new();
-            using CompositeMediaSessionService composite = new(smtc, wnp);
+            StubBrowserMediaSource browser = new();
+            using CompositeMediaSessionService composite = new(smtc, browser);
 
             int changed = 0;
             composite.Changed += (_, _) => changed++;

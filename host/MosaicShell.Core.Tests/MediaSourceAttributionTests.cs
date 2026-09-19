@@ -18,7 +18,7 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void Smtc_only_browser_session_reports_no_artist_no_art_and_no_wnp()
+        public void Smtc_only_browser_session_reports_no_artist_no_art_and_no_browser()
         {
             MediaSessionInfo smtc = Smtc("JUST DANCE | YouTube Music", null);
             MediaSessionInfo merged = CompositeMediaSessionService.Merge(smtc, null)!;
@@ -35,9 +35,9 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Browser_supplying_title_artist_and_cover_is_reported_as_the_source()
         {
-            byte[] cover = WebNowPlayingHostTests.TinyPng;
+            byte[] cover = TestImages.TinyPng;
             MediaSessionInfo smtc = Smtc("Song | YouTube Music", null);
-            BrowserPlayerSnapshot wnp = new()
+            BrowserPlayerSnapshot browser = new()
             {
                 Name = "YouTube Music",
                 Title = "Song",
@@ -45,9 +45,9 @@ namespace MosaicShell.Core.Tests
                 State = BrowserPlaybackState.Playing,
                 CoverPng = cover,
             };
-            MediaSessionInfo merged = CompositeMediaSessionService.Merge(smtc, wnp)!;
+            MediaSessionInfo merged = CompositeMediaSessionService.Merge(smtc, browser)!;
 
-            string line = MediaSourceAttribution.Describe(smtc, wnp, merged);
+            string line = MediaSourceAttribution.Describe(smtc, browser, merged);
 
             _ = line.Should().Contain("browser=[name=YouTube Music state=Playing title=[Song] artist=[Someone]");
             _ = line.Should().Contain("use title=browser artist=browser art=browser");
@@ -69,10 +69,10 @@ namespace MosaicShell.Core.Tests
         public void Browser_present_but_empty_is_distinguished_from_no_browser_source()
         {
             MediaSessionInfo smtc = Smtc("Song | YouTube Music", null);
-            BrowserPlayerSnapshot wnp = new() { State = BrowserPlaybackState.Stopped };
-            MediaSessionInfo merged = CompositeMediaSessionService.Merge(smtc, wnp)!;
+            BrowserPlayerSnapshot browser = new() { State = BrowserPlaybackState.Stopped };
+            MediaSessionInfo merged = CompositeMediaSessionService.Merge(smtc, browser)!;
 
-            string line = MediaSourceAttribution.Describe(smtc, wnp, merged);
+            string line = MediaSourceAttribution.Describe(smtc, browser, merged);
 
             _ = line.Should().NotContain("browser=none");
             _ = line.Should().Contain("browser=[name= state=Stopped title=[] artist=[]");

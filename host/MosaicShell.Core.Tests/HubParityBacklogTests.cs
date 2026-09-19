@@ -43,7 +43,7 @@ namespace MosaicShell.Core.Tests
             { "tessera_fluent_win11_kit", true },
             { "tessera_fluent_yourflyouts", true },
             { "tessera_media_smtc_only", false },
-            { "tessera_media_wnp", true },
+            { "tessera_media_browser", true },
             { "style_catalog_jaxcore_ids", true },
 
             // Phase C layout fidelity (false until screenshot proofs; see .github/docs/parity.md)
@@ -116,7 +116,7 @@ namespace MosaicShell.Core.Tests
             ["tessera_fluent_win11_kit"] = nameof(TesseraParityTests.StyleCatalog_still_has_eleven_tessera_layouts),
             ["tessera_fluent_yourflyouts"] = nameof(TesseraParityTests.TesseraSettings_host_polish_defaults),
             ["tessera_media_smtc_only"] = nameof(TesseraParityTests.MediaSessionInfo_accepts_thumbnail_and_timeline),
-            ["tessera_media_wnp"] = nameof(BrowserMediaMergeTests.Merge_overlays_wnp_cover_when_smtc_thumbnail_missing),
+            ["tessera_media_browser"] = nameof(BrowserMediaMergeTests.Merge_overlays_browser_cover_when_smtc_thumbnail_missing),
             ["tile_tessera_mvp"] = nameof(TesseraCapabilityTests.Armed_tessera_shows_flyout_on_volume_change),
             ["tile_mixdeck_skeleton"] = nameof(HonestyGateTests.Mixdeck_is_capability_with_app_audio_surface),
             ["tile_mixdeck_mvp"] = nameof(OverlayBehaviorTests.CloseOnEscape_honors_capability_settings),
@@ -172,7 +172,7 @@ namespace MosaicShell.Core.Tests
             _ = TesseraLayoutCoverage.AllLayoutFidelitySignedOff().Should().BeTrue();
             _ = TesseraOsAcrylicSignOffPolicy.Win11EvalComplete.Should().BeTrue();
             _ = map["tessera_fluent_yourflyouts"].Should().BeTrue();
-            _ = map["tessera_media_wnp"].Should().BeTrue();
+            _ = map["tessera_media_browser"].Should().BeTrue();
             _ = map["tessera_media_smtc_only"].Should().BeFalse();
             _ = map["tile_mixdeck_skeleton"].Should().BeTrue();
             _ = map["tile_mixdeck_mvp"].Should().BeTrue();

@@ -186,7 +186,7 @@ namespace MosaicShell.Host.Tiles.Tessera
 
             if (b.MediaArt is not null)
             {
-                byte[]? thumb = ResolveThumbnail(media?.ThumbnailPng, media?.Title ?? b.MediaTitle?.Text);
+                byte[]? thumb = ResolveThumbnail(media?.ThumbnailPng);
                 bool fillHost = double.IsNaN(b.MediaArt.Width) || b.MediaArt.Width <= 1.0;
                 TesseraMediaPanel.ApplyArtToBorder(b.MediaArt, thumb, fillHost);
             }
@@ -229,11 +229,9 @@ namespace MosaicShell.Host.Tiles.Tessera
             return t.TotalHours >= 1 ? t.ToString(@"h\:mm\:ss") : t.ToString(@"m\:ss");
         }
 
-        public static byte[]? ResolveThumbnail(byte[]? smtcOrMerged, string? title)
+        public static byte[]? ResolveThumbnail(byte[]? smtcOrMerged)
         {
-            return smtcOrMerged is { Length: >= 32 }
-                ? smtcOrMerged
-                : MediaArtworkCache.TryGet(title, out byte[]? png) ? png : null;
+            return smtcOrMerged is { Length: >= 32 } ? smtcOrMerged : null;
         }
     }
 }

@@ -2,33 +2,27 @@
 
 ## How JaxCore got YTM covers
 
-YourFlyouts **Auto** mode used **WebNowPlaying**: a browser extension reads
-`navigator.mediaSession.metadata.artwork` on the page (YouTube Music site script),
-downloads the image, and sends PNG bytes to an adapter over WebSocket.
-
-That is **not** Windows SMTC `Thumbnail`. The YT Music PWA often leaves SMTC
-`Thumbnail` null while still exposing Media Session artwork in-page - which is why
-JaxCore showed art and SMTC-only hosts did not.
+YourFlyouts used a Rainmeter media plugin fed by a browser extension. The extension read
+`navigator.mediaSession.metadata.artwork` on the page, downloaded the image and sent it to Rainmeter over a local
+socket.
 
 ## What MosaicShell does now
 
-1. **SMTC** (`WindowsMediaSessionService`) - title/timeline/transport for the OS session.
-2. **WebNowPlaying Redux host** (`WebNowPlayingReduxHost`, WNPLIB revision **3**) -
-   listens on `ws://127.0.0.1:5468/` - the built-in **CLI** adapter port
-   ([WebNowPlaying-CLI](https://github.com/keifufu/WebNowPlaying-CLI)).
-3. **`CompositeMediaSessionService`** - overlays WNP cover (and browser title/artist)
-   when SMTC has no thumbnail.
+Nothing has to be installed. Edge and Chrome publish a page's Media Session to Windows' own media session (SMTC), and
+that carries the title, artist and cover, for tabs and for installed web apps alike.
 
-### One-time setup
+1. **SMTC** (`WindowsMediaSessionService`) supplies title, artist, cover, timeline and transport.
+2. **`CompositeMediaSessionService`** merges SMTC with browser sources.
+3. **`BrowserUiSource`** reads YouTube Music's like and dislike buttons through UI Automation, because SMTC has no
+   like state. See `host/MosaicShell.Core/Services/BrowserUi/`.
 
-1. Install the [WebNowPlaying](https://chromewebstore.google.com/detail/webnowplaying/jfakgfcdgpghbbefmdfjkbdlibjgnbli) extension (Chrome/Edge).
-2. Enable the built-in **CLI** adapter (port **5468**).
-3. Keep MosaicShell Host running.
-4. Play YouTube Music in that browser - flyout album art should populate.
+### When the artist and cover are missing
 
-**Do not** also run `wnpcli start-daemon` while Host is listening on 5468 (same port).
+A browser extension that replaces `navigator.mediaSession` (measured with KDE's Plasma Integration, whose page script
+redefines `metadata` and `playbackState` without calling the browser's own) stops the browser receiving the page's
+metadata, so Windows falls back to the page title with no artist and no cover. Turn such an extension off.
 
 ## Flags
 
-- `tessera_media_wnp` = true (adapter wired)
+- `tessera_media_browser` = true (browser like and dislike read through UI Automation)
 - `tessera_media_smtc_only` = false

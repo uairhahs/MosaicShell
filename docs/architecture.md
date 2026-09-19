@@ -10,7 +10,7 @@ This page supersedes `docs/native-rewrite.md` and `docs/architecture-native.md`;
 MosaicShell.Host (tray, Avalonia UI thread)
   CapabilityDaemon          arm/disarm, persist, shared platform
     CapabilityFlyoutPlatform  Present/Patch/SoftRefresh, dismiss suppress
-    MediaSessionPlatform      SMTC/WNP signal classification
+    MediaSessionPlatform      SMTC signal classification
   HostServices                OS adapters (audio, SMTC, shell hook, locks, and more)
   IModuleCapability            per-module: settings + build FlyoutRequest + hooks
   IFlyoutPresenter (Host)      Avalonia windows, coalesced patch queue
@@ -93,7 +93,7 @@ Runtime: `TesseraCapability` (thin) plus `Capabilities/Platform/*` (Core platfor
 | Area                    | Status                                                                                                                  |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | Flyout kinds            | `vol`, `bright`, `media`, `locks`, `flight`                                                                             |
-| Media backend           | SMTC + WebNowPlaying (browser covers; CLI adapter port **5468**)                                                        |
+| Media backend           | SMTC (title, artist, cover) + UI Automation (YouTube Music like and dislike)                                            |
 | Layouts                 | All 11 catalog styles visually signed off (`tessera_layout_fidelity`); Radial and PlainText remain lighter Host layouts |
 | Placement               | Default top-left; 9-point `Position`; re-anchors after measure                                                          |
 | Settings                | Host Tessera panel: flyout scale %, soft frost / baked frost / focus dim                                                |
@@ -112,9 +112,9 @@ Motion runs in two phases. Phase 1 is a window-level slide and fade driven by Av
 - Full appearance DLC (colors/sizes beyond what Host settings expose) is not implemented.
 - Brightness / airplane-mode control has the same Win11-build caveats YourFlyouts itself documents upstream.
 - Vendor laptop OEM OSDs (Dell/HP, and others) are not suppressed.
-- Only WebNowPlaying and SMTC are supported NowPlaying sources: no Rainmeter-style multi-player `Auto` detection.
+- Only SMTC (plus the browser like-button read) is a supported NowPlaying source: no Rainmeter-style multi-player `Auto` detection.
 
-External references: [Jax-Core/YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [ModernFlyouts-Community/ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts) (OSD/ShellHook), [WebNowPlaying](https://wnp.keifufu.dev/) (browser media/art, CLI port 5468, see `docs/parity/smtc-album-art.md`).
+External references: [Jax-Core/YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [ModernFlyouts-Community/ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts) (OSD/ShellHook). Browser media and album art: see `docs/parity/smtc-album-art.md`.
 
 ## Other modules
 
