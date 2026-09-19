@@ -15,8 +15,11 @@ namespace MosaicShell.Core.Services.BrowserBridge
     /// the Host does not control, so a connection that breaks the protocol, floods it or claims too many tabs is
     /// dropped, and one that goes quiet ages out of selection. No I/O happens here: the transport feeds it frames.
     /// </summary>
-    public sealed class BrowserSessionHub(TimeProvider clock, int maxConnections = 8)
+    public sealed class BrowserSessionHub(TimeProvider clock, int maxConnections = BrowserSessionHub.DefaultMaxConnections)
     {
+        /// <summary>Relays connected at once: a few browsers, each with one relay.</summary>
+        public const int DefaultMaxConnections = 8;
+
         /// <summary>Tabs one connection may hold at once; a browser has few tabs playing media.</summary>
         public const int MaxSessionsPerConnection = 32;
 

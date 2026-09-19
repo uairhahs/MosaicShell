@@ -23,7 +23,7 @@ namespace MosaicShell.Core.Tests
             return response;
         }
 
-        private BrowserArtworkFetcher Fetcher(FakeHandler handler, TimeSpan? timeout = null)
+        private BrowserArtworkFetcher Fetcher(StubHttpHandler handler, TimeSpan? timeout = null)
         {
             return new BrowserArtworkFetcher(handler, _clock, timeout);
         }
@@ -31,7 +31,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public async Task An_image_is_fetched_and_then_served_from_the_cache()
         {
-            FakeHandler handler = new((_, _) => Task.FromResult(Ok(Png)));
+            StubHttpHandler handler = new((_, _) => Task.FromResult(Ok(Png)));
             using BrowserArtworkFetcher fetcher = Fetcher(handler);
 
             await fetcher.RequestAsync(Url);
@@ -44,7 +44,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Nothing_is_returned_for_a_url_that_was_never_requested()
         {
-            using BrowserArtworkFetcher fetcher = Fetcher(new FakeHandler((_, _) => Task.FromResult(Ok(Png))));
+            using BrowserArtworkFetcher fetcher = Fetcher(new StubHttpHandler((_, _) => Task.FromResult(Ok(Png))));
 
             _ = fetcher.TryGet(Url).Should().BeNull();
         }
@@ -52,7 +52,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public async Task Fetched_is_raised_once_for_a_success()
         {
-            using BrowserArtworkFetcher fetcher = Fetcher(new FakeHandler((_, _) => Task.FromResult(Ok(Png))));
+            using BrowserArtworkFetcher fetcher = Fetcher(new StubHttpHandler((_, _) => Task.FromResult(Ok(Png))));
             int raised = 0;
             fetcher.Fetched += (_, _) => raised++;
 
@@ -65,7 +65,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public async Task Bytes_that_are_not_an_image_are_refused_whatever_the_content_type_says()
         {
-            FakeHandler handler = new((_, _) => Task.FromResult(Ok("<html>sign in</html> padding"u8.ToArray(), "image/png")));
+            StubHttpHandler handler = new((_, _) => Task.FromResult(Ok("<html>sign in</html> padding"u8.ToArray(), "image/png")));
             using BrowserArtworkFetcher fetcher = Fetcher(handler);
             int raised = 0;
             fetcher.Fetched += (_, _) => raised++;
@@ -79,7 +79,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public async Task A_declared_length_over_the_cap_is_refused_without_reading_the_body()
         {
-            FakeHandler handler = new((_, _) =>
+            StubHttpHandler handler = new((_, _) =>
             {
                 HttpResponseMessage response = Ok(Png);
                 response.Content = new OversizedContent(BrowserArtworkFetcher.MaxBytes + 1, declared: true);
@@ -95,7 +95,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public async Task A_body_over_the_cap_is_refused_even_when_no_length_is_declared()
         {
-            FakeHandler handler = new((_, _) =>
+            StubHttpHandler handler = new((_, _) =>
             {
                 HttpResponseMessage response = Ok(Png);
                 response.Content = new OversizedContent(BrowserArtworkFetcher.MaxBytes + 1, declared: false);
@@ -113,7 +113,7 @@ namespace MosaicShell.Core.Tests
         {
             byte[] body = new byte[BrowserArtworkFetcher.MaxBytes];
             Png.CopyTo(body, 0);
-            using BrowserArtworkFetcher fetcher = Fetcher(new FakeHandler((_, _) => Task.FromResult(Ok(body))));
+            using BrowserArtworkFetcher fetcher = Fetcher(new StubHttpHandler((_, _) => Task.FromResult(Ok(body))));
 
             await fetcher.RequestAsync(Url);
 
@@ -129,7 +129,7 @@ namespace MosaicShell.Core.Tests
         [InlineData("not a url")]
         public async Task An_unfetchable_url_is_refused_before_any_request_is_made(string url)
         {
-            FakeHandler handler = new((_, _) => Task.FromResult(Ok(Png)));
+            StubHttpHandler handler = new((_, _) => Task.FromResult(Ok(Png)));
             using BrowserArtworkFetcher fetcher = Fetcher(handler);
 
             await fetcher.RequestAsync(url);
@@ -141,7 +141,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public async Task A_server_error_yields_nothing_and_throws_nothing()
         {
-            using BrowserArtworkFetcher fetcher = Fetcher(new FakeHandler((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound))));
+            using BrowserArtworkFetcher fetcher = Fetcher(new StubHttpHandler((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound))));
 
             await fetcher.RequestAsync(Url);
 
@@ -151,7 +151,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public async Task A_network_failure_yields_nothing_and_throws_nothing()
         {
-            using BrowserArtworkFetcher fetcher = Fetcher(new FakeHandler((_, _) => throw new HttpRequestException("connection refused")));
+            using BrowserArtworkFetcher fetcher = Fetcher(new StubHttpHandler((_, _) => throw new HttpRequestException("connection refused")));
 
             await fetcher.RequestAsync(Url);
 
@@ -161,7 +161,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public async Task A_server_that_never_answers_is_given_up_on()
         {
-            FakeHandler handler = new(async (_, ct) =>
+            StubHttpHandler handler = new(async (_, ct) =>
             {
                 await Task.Delay(Timeout.Infinite, ct);
                 return Ok(Png);
@@ -178,7 +178,7 @@ namespace MosaicShell.Core.Tests
         public async Task A_failure_is_not_retried_until_the_backoff_has_passed()
         {
             int calls = 0;
-            FakeHandler handler = new((_, _) =>
+            StubHttpHandler handler = new((_, _) =>
             {
                 calls++;
                 return Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError));
@@ -199,7 +199,7 @@ namespace MosaicShell.Core.Tests
         public async Task Two_requests_for_the_same_url_in_flight_share_one_download()
         {
             TaskCompletionSource<HttpResponseMessage> gate = new();
-            FakeHandler handler = new((_, _) => gate.Task);
+            StubHttpHandler handler = new((_, _) => gate.Task);
             using BrowserArtworkFetcher fetcher = Fetcher(handler);
 
             Task first = fetcher.RequestAsync(Url);
@@ -213,7 +213,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public async Task The_oldest_image_is_evicted_when_the_cache_is_full()
         {
-            using BrowserArtworkFetcher fetcher = Fetcher(new FakeHandler((_, _) => Task.FromResult(Ok(Png))));
+            using BrowserArtworkFetcher fetcher = Fetcher(new StubHttpHandler((_, _) => Task.FromResult(Ok(Png))));
             for (int i = 0; i <= BrowserArtworkFetcher.MaxCachedEntries; i++)
             {
                 await fetcher.RequestAsync($"https://a.example/{i}.png");
@@ -226,7 +226,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public async Task Reading_an_image_keeps_it_from_being_evicted()
         {
-            using BrowserArtworkFetcher fetcher = Fetcher(new FakeHandler((_, _) => Task.FromResult(Ok(Png))));
+            using BrowserArtworkFetcher fetcher = Fetcher(new StubHttpHandler((_, _) => Task.FromResult(Ok(Png))));
             for (int i = 0; i < BrowserArtworkFetcher.MaxCachedEntries; i++)
             {
                 await fetcher.RequestAsync($"https://a.example/{i}.png");
@@ -243,7 +243,7 @@ namespace MosaicShell.Core.Tests
         public async Task The_request_carries_no_credentials_referrer_or_cookies()
         {
             HttpRequestMessage? seen = null;
-            FakeHandler handler = new((request, _) =>
+            StubHttpHandler handler = new((request, _) =>
             {
                 seen = request;
                 return Task.FromResult(Ok(Png));
@@ -268,19 +268,6 @@ namespace MosaicShell.Core.Tests
             Func<Task> connect = async () => await BrowserArtworkFetcher.ConnectPublicAsync(host, 443, CancellationToken.None);
 
             _ = await connect.Should().ThrowAsync<HttpRequestException>();
-        }
-
-        private sealed class FakeHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond) : HttpMessageHandler
-        {
-            private int _calls;
-
-            public int Calls => _calls;
-
-            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            {
-                _ = Interlocked.Increment(ref _calls);
-                return respond(request, cancellationToken);
-            }
         }
 
         /// <summary>A body of the given length that never allocates it, so the reader is what must stop.</summary>

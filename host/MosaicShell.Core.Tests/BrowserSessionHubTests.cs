@@ -24,10 +24,10 @@ namespace MosaicShell.Core.Tests
             hub.Receive(connection, Encoding.UTF8.GetBytes(json));
         }
 
-        private (BrowserSessionHub Hub, FakeConnection Connection, int Id) Connected(int maxConnections = 8)
+        private (BrowserSessionHub Hub, FakeBrowserConnection Connection, int Id) Connected(int maxConnections = 8)
         {
             BrowserSessionHub hub = new(_clock, maxConnections);
-            FakeConnection connection = new();
+            FakeBrowserConnection connection = new();
             int id = hub.Open(connection);
             Send(hub, id, Hello);
             return (hub, connection, id);
@@ -36,7 +36,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void A_hello_is_answered_with_a_resync_so_a_restarted_Host_learns_the_open_tabs()
         {
-            (_, FakeConnection connection, _) = Connected();
+            (_, FakeBrowserConnection connection, _) = Connected();
 
             _ = connection.Sent.Should().Equal("""{"type":"resync"}""");
         }
@@ -80,8 +80,8 @@ namespace MosaicShell.Core.Tests
         public void The_same_tab_id_on_two_connections_is_two_sessions()
         {
             BrowserSessionHub hub = new(_clock);
-            int a = hub.Open(new FakeConnection());
-            int b = hub.Open(new FakeConnection());
+            int a = hub.Open(new FakeBrowserConnection());
+            int b = hub.Open(new FakeBrowserConnection());
             Send(hub, a, Hello);
             Send(hub, b, Hello);
             Send(hub, a, Session(1, "In Edge"));
@@ -178,9 +178,9 @@ namespace MosaicShell.Core.Tests
         {
             BrowserSessionHub hub = new(_clock, maxConnections: 2);
 
-            int first = hub.Open(new FakeConnection());
-            int second = hub.Open(new FakeConnection());
-            int third = hub.Open(new FakeConnection());
+            int first = hub.Open(new FakeBrowserConnection());
+            int second = hub.Open(new FakeBrowserConnection());
+            int third = hub.Open(new FakeBrowserConnection());
 
             _ = first.Should().BeGreaterThanOrEqualTo(0);
             _ = second.Should().BeGreaterThanOrEqualTo(0).And.NotBe(first);
@@ -192,18 +192,18 @@ namespace MosaicShell.Core.Tests
         public void A_closed_connection_frees_its_place_under_the_cap()
         {
             BrowserSessionHub hub = new(_clock, maxConnections: 1);
-            int first = hub.Open(new FakeConnection());
+            int first = hub.Open(new FakeBrowserConnection());
 
             hub.Close(first);
 
-            _ = hub.Open(new FakeConnection()).Should().BeGreaterThanOrEqualTo(0);
+            _ = hub.Open(new FakeBrowserConnection()).Should().BeGreaterThanOrEqualTo(0);
         }
 
         [Fact]
         public void A_session_before_the_hello_is_refused_and_the_connection_dropped()
         {
             BrowserSessionHub hub = new(_clock);
-            FakeConnection connection = new();
+            FakeBrowserConnection connection = new();
             int id = hub.Open(connection);
 
             Send(hub, id, Session(1, "Too early"));
@@ -217,7 +217,7 @@ namespace MosaicShell.Core.Tests
         public void A_hello_for_another_protocol_drops_the_connection()
         {
             BrowserSessionHub hub = new(_clock);
-            FakeConnection connection = new();
+            FakeBrowserConnection connection = new();
             int id = hub.Open(connection);
 
             Send(hub, id, """{"type":"hello","protocol":2,"extensionVersion":"9","browser":"edge"}""");
@@ -228,7 +228,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void A_second_hello_on_the_same_connection_is_a_violation_not_a_new_identity()
         {
-            (BrowserSessionHub hub, FakeConnection connection, int id) = Connected();
+            (BrowserSessionHub hub, FakeBrowserConnection connection, int id) = Connected();
 
             for (int i = 0; i < BrowserSessionHub.MaxViolations; i++)
             {
@@ -241,7 +241,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void An_oversized_message_drops_the_connection_at_once()
         {
-            (BrowserSessionHub hub, FakeConnection connection, int id) = Connected();
+            (BrowserSessionHub hub, FakeBrowserConnection connection, int id) = Connected();
 
             hub.Receive(id, new byte[BrowserProtocol.MaxMessageBytes + 1]);
 
@@ -251,7 +251,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Malformed_messages_are_tolerated_until_the_violation_limit()
         {
-            (BrowserSessionHub hub, FakeConnection connection, int id) = Connected();
+            (BrowserSessionHub hub, FakeBrowserConnection connection, int id) = Connected();
 
             for (int i = 0; i < BrowserSessionHub.MaxViolations - 1; i++)
             {
@@ -268,7 +268,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void An_unknown_message_type_is_ignored_and_is_not_a_violation()
         {
-            (BrowserSessionHub hub, FakeConnection connection, int id) = Connected();
+            (BrowserSessionHub hub, FakeBrowserConnection connection, int id) = Connected();
 
             for (int i = 0; i < BrowserSessionHub.MaxViolations * 2; i++)
             {
@@ -313,7 +313,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void A_flood_is_dropped_beyond_the_burst_and_recovers_as_time_passes()
         {
-            (BrowserSessionHub hub, FakeConnection connection, int id) = Connected();
+            (BrowserSessionHub hub, FakeBrowserConnection connection, int id) = Connected();
 
             for (int i = 0; i < BrowserSessionHub.BurstMessages; i++)
             {
@@ -334,7 +334,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void A_sustained_flood_drops_the_connection()
         {
-            (BrowserSessionHub hub, FakeConnection connection, int id) = Connected();
+            (BrowserSessionHub hub, FakeBrowserConnection connection, int id) = Connected();
 
             for (int i = 0; i < BrowserSessionHub.BurstMessages + BrowserSessionHub.MaxViolations + 5; i++)
             {
@@ -385,8 +385,8 @@ namespace MosaicShell.Core.Tests
         public void A_command_goes_to_the_connection_that_owns_the_tab()
         {
             BrowserSessionHub hub = new(_clock);
-            FakeConnection edge = new();
-            FakeConnection chrome = new();
+            FakeBrowserConnection edge = new();
+            FakeBrowserConnection chrome = new();
             int a = hub.Open(edge);
             int b = hub.Open(chrome);
             Send(hub, a, Hello);
@@ -418,7 +418,7 @@ namespace MosaicShell.Core.Tests
         public void A_connection_that_throws_while_being_sent_to_is_dropped_not_propagated()
         {
             BrowserSessionHub hub = new(_clock);
-            FakeConnection connection = new();
+            FakeBrowserConnection connection = new();
             int id = hub.Open(connection);
             Send(hub, id, Hello);
             Send(hub, id, Session(4, "Song"));
@@ -428,28 +428,6 @@ namespace MosaicShell.Core.Tests
 
             _ = sent.Should().BeFalse();
             _ = hub.ConnectionCount.Should().Be(0);
-        }
-
-        private sealed class FakeConnection : IBrowserConnection
-        {
-            public List<string> Sent { get; } = [];
-            public bool Closed { get; private set; }
-            public bool ThrowOnSend { get; set; }
-
-            public void Send(byte[] payload)
-            {
-                if (ThrowOnSend)
-                {
-                    throw new IOException("pipe broken");
-                }
-
-                Sent.Add(Encoding.UTF8.GetString(payload));
-            }
-
-            public void Close()
-            {
-                Closed = true;
-            }
         }
     }
 }
