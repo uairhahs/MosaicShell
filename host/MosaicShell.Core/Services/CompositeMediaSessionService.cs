@@ -6,7 +6,7 @@ namespace MosaicShell.Core.Services
     /// Merges Windows SMTC with WebNowPlaying. SMTC drives transport when present;
     /// WNP supplies album art for browser players (YouTube Music) where SMTC Thumbnail is null.
     /// </summary>
-    public sealed class CompositeMediaSessionService : IMediaSessionService
+    public sealed class CompositeMediaSessionService : IMediaSessionService, IMediaSourceDiagnostics
     {
         private readonly IMediaSessionService _smtc;
         private readonly IWebNowPlayingService _wnp;
@@ -24,6 +24,11 @@ namespace MosaicShell.Core.Services
         public MediaSessionInfo? Current { get; private set; }
         public event EventHandler? Changed;
         public event EventHandler? ProgressChanged;
+
+        public string DescribeSources()
+        {
+            return MediaSourceAttribution.Describe(_smtc.Current, _wnp.Active, Current);
+        }
 
         public void PumpTimeline()
         {

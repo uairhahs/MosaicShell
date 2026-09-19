@@ -60,6 +60,15 @@ namespace MosaicShell.Core.Services
         Task ToggleDislikeAsync(bool wantDisliked);
     }
 
+    /// <summary>
+    /// Implemented by a media service that merges several sources, so a diagnostic can say which one
+    /// supplied each field instead of showing only the merged result.
+    /// </summary>
+    public interface IMediaSourceDiagnostics
+    {
+        string DescribeSources();
+    }
+
     public sealed record HotkeyBinding(string Id, string Gesture);
 
     public interface IHotkeyService : IDisposable

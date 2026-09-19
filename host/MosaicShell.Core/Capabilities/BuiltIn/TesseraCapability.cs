@@ -171,6 +171,10 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                     + $"action={action} app={Trim(current?.AppId)} art={current?.ThumbnailPng?.Length ?? -1} "
                     + $"pos={current?.PositionSeconds ?? -1:0.#}/{current?.DurationSeconds ?? -1:0.#} "
                     + $"artist=[{Trim(current?.Artist)}] title=[{Trim(current?.Title)}]");
+                if (FlyoutTrace.IsEnabled && Services.Media is IMediaSourceDiagnostics sources)
+                {
+                    FlyoutTrace.Write("media sources " + sources.DescribeSources());
+                }
 
                 if (action == MediaFlyoutAction.PresentMediaFlyout
                     && visible
