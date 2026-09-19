@@ -32,6 +32,17 @@ namespace MosaicShell.Core.Services
             return head.Length == 0 || !IsSiteName(tail) ? title : head;
         }
 
+        /// <summary>
+        /// Whether two titles name the same track once the site suffix, case and surrounding space are ignored.
+        /// An empty or missing title matches nothing, not even another empty one.
+        /// </summary>
+        public static bool LooselyMatch(string? a, string? b)
+        {
+            return !string.IsNullOrWhiteSpace(a)
+                && !string.IsNullOrWhiteSpace(b)
+                && string.Equals(StripSiteSuffix(a)!.Trim(), StripSiteSuffix(b)!.Trim(), StringComparison.OrdinalIgnoreCase);
+        }
+
         private static bool IsSiteName(string tail)
         {
             foreach (string site in SiteSuffixes)

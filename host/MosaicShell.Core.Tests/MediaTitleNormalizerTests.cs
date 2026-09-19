@@ -41,5 +41,30 @@ namespace MosaicShell.Core.Tests
         {
             _ = MediaTitleNormalizer.StripSiteSuffix(null).Should().BeNull();
         }
+
+        [Theory]
+        [InlineData("Song", "Song")]
+        [InlineData("Song | YouTube Music", "Song")]
+        [InlineData("Song", "Song | YouTube Music")]
+        [InlineData("SONG", "song")]
+        [InlineData("  Song ", "Song | YouTube")]
+        public void Two_spellings_of_one_title_match(string a, string b)
+        {
+            _ = MediaTitleNormalizer.LooselyMatch(a, b).Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("Song", "Other")]
+        [InlineData("Song", "Song (Remix)")]
+        [InlineData("", "")]
+        [InlineData(null, null)]
+        [InlineData("   ", "   ")]
+        [InlineData("Song", null)]
+        [InlineData(null, "Song")]
+        [InlineData("YouTube Music", "Song")]
+        public void Different_or_empty_titles_do_not_match(string? a, string? b)
+        {
+            _ = MediaTitleNormalizer.LooselyMatch(a, b).Should().BeFalse();
+        }
     }
 }

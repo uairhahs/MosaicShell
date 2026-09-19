@@ -247,12 +247,12 @@ namespace MosaicShell.Core.Services
             string? artist = smtc.Artist;
             if (browser is not null && !string.IsNullOrWhiteSpace(browser.Title)
                 && (LooksLikeBrowserSession(smtc.AppId)
-                    || TitlesLooselyMatch(smtc.Title, browser.Title)))
+                    || MediaTitleNormalizer.LooselyMatch(smtc.Title, browser.Title)))
             {
                 // Use the browser title and artist when SMTC is empty or still agrees with it.
                 // Do not keep a stale browser title when SMTC already advanced to a new track;
                 // that swallowed Media.Changed and blocked Tessera media flyouts.
-                if (string.IsNullOrWhiteSpace(smtc.Title) || TitlesLooselyMatch(smtc.Title, browser.Title))
+                if (string.IsNullOrWhiteSpace(smtc.Title) || MediaTitleNormalizer.LooselyMatch(smtc.Title, browser.Title))
                 {
                     title = browser.Title;
                     if (!string.IsNullOrWhiteSpace(browser.Artist))
@@ -316,16 +316,6 @@ namespace MosaicShell.Core.Services
                    || appId.Contains("firefox", StringComparison.OrdinalIgnoreCase)
                    || appId.Contains("music.youtube", StringComparison.OrdinalIgnoreCase)
                    || appId.Contains("brave", StringComparison.OrdinalIgnoreCase));
-        }
-
-        private static bool TitlesLooselyMatch(string? a, string? b)
-        {
-            return !string.IsNullOrWhiteSpace(a)
-                && !string.IsNullOrWhiteSpace(b)
-                && string.Equals(
-                    MediaTitleNormalizer.StripSiteSuffix(a)!.Trim(),
-                    MediaTitleNormalizer.StripSiteSuffix(b)!.Trim(),
-                    StringComparison.OrdinalIgnoreCase);
         }
 
         private static string? NullIfEmpty(string? s)
