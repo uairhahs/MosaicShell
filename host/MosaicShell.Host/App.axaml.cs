@@ -82,7 +82,7 @@ namespace MosaicShell.Host
 
                 desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
-                _services = HostServices.CreateWindowsDefaults();
+                _services = HostServices.CreateWindowsDefaults(browserRating: true);
 
 
 

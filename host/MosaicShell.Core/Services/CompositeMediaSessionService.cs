@@ -246,7 +246,7 @@ namespace MosaicShell.Core.Services
             string? title = MediaTitleNormalizer.StripSiteSuffix(smtc.Title);
             string? artist = smtc.Artist;
             if (browser is not null && !string.IsNullOrWhiteSpace(browser.Title)
-                && (LooksLikeBrowserSession(smtc.AppId)
+                && (BrowserSessionPolicy.LooksLikeBrowserSession(smtc.AppId)
                     || MediaTitleNormalizer.LooselyMatch(smtc.Title, browser.Title)))
             {
                 // Use the browser title and artist when SMTC is empty or still agrees with it.
@@ -271,7 +271,7 @@ namespace MosaicShell.Core.Services
             double pos = smtc.PositionSeconds;
             double dur = smtc.DurationSeconds;
             if (browser is not null && browser.DurationSeconds > 0
-                && (dur <= 0.5 || LooksLikeBrowserSession(smtc.AppId)))
+                && (dur <= 0.5 || BrowserSessionPolicy.LooksLikeBrowserSession(smtc.AppId)))
             {
                 // A browser position often lags a skip; do not mask SMTC restart edges.
                 if (!MediaSessionChangePolicy.LooksLikeNewTrackPosition(
@@ -300,22 +300,12 @@ namespace MosaicShell.Core.Services
 
         private static int? ResolveLikeRating(string? appId, BrowserRating? rating)
         {
-            return !LooksLikeBrowserSession(appId) || rating is null ? null : MediaLikePolicy.ToLikeRating(rating.Value);
+            return !BrowserSessionPolicy.LooksLikeBrowserSession(appId) || rating is null ? null : MediaLikePolicy.ToLikeRating(rating.Value);
         }
 
         private static BrowserMediaCapabilities ResolveCapabilities(string? appId, BrowserPlayerSnapshot? browser)
         {
-            return browser is not null && LooksLikeBrowserSession(appId) ? browser.Capabilities : BrowserMediaCapabilities.None;
-        }
-
-        private static bool LooksLikeBrowserSession(string? appId)
-        {
-            return !string.IsNullOrEmpty(appId) && (appId.Contains("youtube", StringComparison.OrdinalIgnoreCase)
-                   || appId.Contains("chrome", StringComparison.OrdinalIgnoreCase)
-                   || appId.Contains("msedge", StringComparison.OrdinalIgnoreCase)
-                   || appId.Contains("firefox", StringComparison.OrdinalIgnoreCase)
-                   || appId.Contains("music.youtube", StringComparison.OrdinalIgnoreCase)
-                   || appId.Contains("brave", StringComparison.OrdinalIgnoreCase));
+            return browser is not null && BrowserSessionPolicy.LooksLikeBrowserSession(appId) ? browser.Capabilities : BrowserMediaCapabilities.None;
         }
 
         private static string? NullIfEmpty(string? s)
@@ -347,7 +337,7 @@ namespace MosaicShell.Core.Services
         internal static byte[]? PickCover(
             byte[]? smtcThumb, byte[]? browserCover, string? smtcTitle, string? browserTitle, string? appId)
         {
-            return LooksLikeBrowserSession(appId) && IsUsableCover(browserCover)
+            return BrowserSessionPolicy.LooksLikeBrowserSession(appId) && IsUsableCover(browserCover)
                 ? browserCover
                 : IsUsableCover(smtcThumb)
                 ? smtcThumb

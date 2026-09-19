@@ -1,3 +1,4 @@
+using MosaicShell.Core.Services.BrowserUi;
 using MosaicShell.Core.Services.WebNowPlaying;
 
 namespace MosaicShell.Core.Services
@@ -158,7 +159,11 @@ namespace MosaicShell.Core.Services
             ShellFlyoutTriggers.Dispose();
         }
 
-        public static HostServices CreateWindowsDefaults()
+        /// <param name="browserRating">
+        /// True only in the Host: it reads the browser's like buttons through the accessibility tree, and the Worker and tests,
+        /// which build their own services, must not each poll the browser.
+        /// </param>
+        public static HostServices CreateWindowsDefaults(bool browserRating = false)
         {
             WindowsBrightnessService brightness = new();
             return new HostServices
@@ -166,7 +171,7 @@ namespace MosaicShell.Core.Services
                 Audio = new WindowsAudioService(),
                 AppAudio = new WindowsAppAudioService(),
                 Brightness = brightness,
-                Media = CreateMediaStack(),
+                Media = CreateMediaStack(browserRating),
                 Hotkeys = new WindowsHotkeyService(),
                 Metrics = new WindowsSystemMetricsService(),
                 AudioLevels = new WindowsAudioLevelService(),
@@ -183,12 +188,19 @@ namespace MosaicShell.Core.Services
             };
         }
 
-        /// <summary>SMTC + WebNowPlaying (browser covers for YTM, etc.).</summary>
-        public static IMediaSessionService CreateMediaStack()
+        /// <summary>
+        /// Windows SMTC, then (in the Host) the browser's own like buttons read natively, then WebNowPlaying. Sources are in
+        /// order of preference: the native read is the real state, and WebNowPlaying is the fallback until it is removed.
+        /// </summary>
+        public static IMediaSessionService CreateMediaStack(bool browserRating = false)
         {
             WebNowPlayingReduxHost wnp = new();
             wnp.Start();
-            return new CompositeMediaSessionService(new WindowsMediaSessionService(), new WebNowPlayingSource(wnp));
+            WindowsMediaSessionService smtc = new();
+            WebNowPlayingSource legacy = new(wnp);
+            return browserRating
+                ? new CompositeMediaSessionService(smtc, new BrowserUiSource(new WindowsBrowserUi(), () => smtc.Current, TimeProvider.System), legacy)
+                : new CompositeMediaSessionService(smtc, legacy);
         }
     }
 }
