@@ -1,0 +1,33 @@
+# Git normalizes text on commit, checks out platform-native.
+* text=auto
+
+# Windows-only toolchain: keep CRLF in the working tree.
+*.ps1 text eol=crlf
+*.psm1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.iss text eol=crlf
+
+*.sln text eol=crlf
+*.csproj text eol=crlf
+*.props text eol=crlf
+*.targets text eol=crlf
+*.cs text eol=crlf
+*.axaml text eol=crlf
+*.manifest text eol=crlf
+
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.py text eol=lf
+*.toml text eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.zip binary
+*.exe binary
+*.dll binary
+*.ttf binary
+*.otf binary

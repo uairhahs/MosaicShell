@@ -160,6 +160,40 @@ namespace MosaicShell.Core.Tests
         }
     }
 
+    public class CapabilityIpcControlCodecTests
+    {
+        [Fact]
+        public void Control_message_frame_serializes_and_deserializes()
+        {
+            CapabilityControlMessage message = new(
+                CapabilityControlMessageType.Arm,
+                RequestId: 7,
+                ModuleId: "Tessera",
+                Persist: false);
+
+            byte[] frame = CapabilityIpcControlCodec.Serialize(message);
+            CapabilityControlMessage back = CapabilityIpcControlCodec.Deserialize(frame.AsSpan(4));
+            _ = back.Type.Should().Be(CapabilityControlMessageType.Arm);
+            _ = back.RequestId.Should().Be(7);
+            _ = back.ModuleId.Should().Be("Tessera");
+            _ = back.Persist.Should().BeFalse();
+        }
+
+        [Fact]
+        public void Control_response_with_string_list_round_trips()
+        {
+            CapabilityControlMessage message = new(
+                CapabilityControlMessageType.StringListResult,
+                RequestId: 3,
+                StringList: ["Tessera", "Mixdeck"]);
+
+            byte[] frame = CapabilityIpcControlCodec.Serialize(message);
+            CapabilityControlMessage back = CapabilityIpcControlCodec.Deserialize(frame.AsSpan(4));
+            _ = back.Type.Should().Be(CapabilityControlMessageType.StringListResult);
+            _ = back.StringList.Should().BeEquivalentTo(["Tessera", "Mixdeck"]);
+        }
+    }
+
     public class CapabilityDaemonEventBusTests : IDisposable
     {
         private readonly string _root;

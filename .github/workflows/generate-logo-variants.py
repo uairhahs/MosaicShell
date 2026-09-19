@@ -11,10 +11,10 @@ src = Image.open(repo / ".github/res/MosaicShell.png").convert("RGBA")
 out = repo / ".github/res/logo-variants"
 
 for size in [512, 256, 128, 64, 32]:
-    src.resize((size, size), Image.LANCZOS).save(out / f"compact-{size}.png")
+    src.resize((size, size), Image.LANCZOS).save(out / f"compact-{size}.png") # type: ignore
 
 for size in [24, 16]:
-    src.resize((size, size), Image.LANCZOS).save(out / f"micro-{size}.png")
+    src.resize((size, size), Image.LANCZOS).save(out / f"micro-{size}.png") # type: ignore
 
 
 def monochrome(img, color):
@@ -25,17 +25,17 @@ def monochrome(img, color):
     for y in range(img.height):
         for x in range(img.width):
             a = px_in[x, y][3]
-            px_out[x, y] = (r, g, b, a)
+            px_out[x, y] = (r, g, b, a) # type: ignore
     return result
 
 
 for size in [512, 256, 128, 64]:
-    resized = src.resize((size, size), Image.LANCZOS)
+    resized = src.resize((size, size), Image.LANCZOS) # type: ignore
     monochrome(resized, (255, 255, 255)).save(out / f"monochrome-white-{size}.png")
     monochrome(resized, (11, 16, 32)).save(out / f"monochrome-dark-{size}.png")
 
-ico_sizes = [256, 128, 64, 48, 32, 24, 16]
-ico_imgs = [src.resize((s, s), Image.LANCZOS).convert("RGBA") for s in ico_sizes]
+ico_sizes = [512, 256, 128, 64, 48, 32, 24, 16]
+ico_imgs = [src.resize((s, s), Image.LANCZOS).convert("RGBA") for s in ico_sizes] # type: ignore
 favicon = out / "favicon.ico"
 ico_imgs[0].save(
     favicon,

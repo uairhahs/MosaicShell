@@ -4,9 +4,11 @@ using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 using MosaicShell.Host.Tiles.Tessera;
+using MosaicShell.Core.Modules;
 
 namespace MosaicShell.Host.Capabilities
 {
@@ -43,6 +45,9 @@ namespace MosaicShell.Host.Capabilities
         {
             _services = services;
             _hostUi = hostUi;
+            // Core decides Present/Patch/SoftRefresh but owns no logging; route its trace into the
+            // same file so a decision and the Host state that produced it interleave in order.
+            FlyoutTrace.Sink = Log;
             Log($"presenter ctor build={typeof(AvaloniaFlyoutPresenter).Assembly.GetName().Version}");
         }
 
@@ -161,7 +166,7 @@ namespace MosaicShell.Host.Capabilities
                 {
                     if (ShouldUseStackedOsAcrylic(request))
                     {
-                        string volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Volume);
+                        string volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey(ModuleIds.Tessera, TesseraStackedPanelRole.Volume);
                         if (!_windows.TryGetValue(volumeKey, out FlyoutWindow? volumeWin)
                             || !volumeWin.IsFlyoutSessionShowing)
                         {
@@ -232,7 +237,7 @@ namespace MosaicShell.Host.Capabilities
 
         private void HideCore(string moduleId)
         {
-            if (moduleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            if (ModuleIds.IsTessera(moduleId))
             {
                 CloseStackedSession();
                 FlyoutWindow? single;
@@ -281,23 +286,66 @@ namespace MosaicShell.Host.Capabilities
 
         public bool IsVisible(string moduleId)
         {
-            if (moduleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase) && IsStackedTesseraVisible())
+            if (ModuleIds.IsTessera(moduleId) && IsStackedTesseraVisible())
             {
+                Log($"IsVisible {moduleId} => True (stacked)");
                 return true;
             }
 
+            bool result;
+            string tag;
             lock (_gate)
             {
-                return _windows.TryGetValue(moduleId, out FlyoutWindow? w) && w.IsFlyoutSessionShowing;
+                // Snapshot inside the lock, log outside it: this runs on every routing decision
+                // and the log call does file IO.
+                if (_windows.TryGetValue(moduleId, out FlyoutWindow? w))
+                {
+                    result = w.IsFlyoutSessionShowing;
+                    tag = w.MotionStateTag;
+                }
+                else
+                {
+                    result = false;
+                    tag = "no-window";
+                }
             }
+
+            Log($"IsVisible {moduleId} => {result} {tag}");
+            return result;
         }
 
         public TesseraFlyoutSessionSnapshot GetSessionSnapshot(string moduleId)
         {
             bool showing = IsVisible(moduleId);
-            return !moduleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase)
-                ? new(showing, 0, TesseraFlyoutSessionMode.None, "", null)
-                : _session.Snapshot(showing);
+            if (!ModuleIds.IsTessera(moduleId))
+            {
+                return new(showing, 0, TesseraFlyoutSessionMode.None, "", null, showing ? TesseraFlyoutPhase.Shown : TesseraFlyoutPhase.Hidden);
+            }
+
+            TesseraFlyoutPhase phase = GetTesseraPhase();
+            return _session.Snapshot(showing, phase);
+        }
+
+        private TesseraFlyoutPhase GetTesseraPhase()
+        {
+            if (_stackedSession is not null)
+            {
+                List<FlyoutWindow> windows = GetStackedWindowsFromSession();
+                return windows.Any(w => w.Phase == TesseraFlyoutPhase.Entering)
+                    ? TesseraFlyoutPhase.Entering
+                    : windows.Any(w => w.Phase == TesseraFlyoutPhase.Shown)
+                    ? TesseraFlyoutPhase.Shown
+                    : windows.Any(w => w.Phase == TesseraFlyoutPhase.Exiting)
+                    ? TesseraFlyoutPhase.Exiting
+                    : TesseraFlyoutPhase.Hidden;
+            }
+
+            lock (_gate)
+            {
+                return _windows.TryGetValue(ModuleIds.Tessera, out FlyoutWindow? w)
+                    ? w.Phase
+                    : _session.Phase;
+            }
         }
 
         private void SafeShowOrUpdate(FlyoutRequest request, bool resetDismiss = true, bool allowLivePatch = true)
@@ -325,7 +373,7 @@ namespace MosaicShell.Host.Capabilities
                 return;
             }
 
-            if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            if (ModuleIds.IsTessera(request.ModuleId))
             {
                 CloseStackedSession();
             }
@@ -335,7 +383,7 @@ namespace MosaicShell.Host.Capabilities
 
         private void InvalidateTesseraQueuesOnHandoff(FlyoutRequest request)
         {
-            if (!request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            if (!ModuleIds.IsTessera(request.ModuleId))
             {
                 return;
             }
@@ -355,7 +403,7 @@ namespace MosaicShell.Host.Capabilities
             {
                 lock (_gate)
                 {
-                    if (_windows.TryGetValue("Tessera", out FlyoutWindow? single))
+                    if (_windows.TryGetValue(ModuleIds.Tessera, out FlyoutWindow? single))
                     {
                         hasOpen = true;
                         openKind = single.Kind;
@@ -380,23 +428,40 @@ namespace MosaicShell.Host.Capabilities
 
         private void ShowOrUpdateCoreSinglePath(FlyoutRequest request, bool resetDismiss = true, bool allowLivePatch = true)
         {
-            Log($"ShowOrUpdateCore enter kind={request.Kind}");
-            FlyoutWindow? reuse = null;
-            bool reuseWasVisible = false;
+            Log($"ShowOrUpdateCore enter kind={request.Kind} allowLivePatch={allowLivePatch}");
 
+            FlyoutWindow? reuse;
+            bool reuseWasVisible;
+            FlyoutIngressDecision decision;
+
+            // The decision and the two warm patch paths stay under the lock, as they were before
+            // this switch existed: they read and mutate the registered window.
             lock (_gate)
             {
-                if (_windows.TryGetValue(request.ModuleId, out FlyoutWindow? existing)
-                    && TesseraFlyoutLiveSyncPolicy.MustReuseRegisteredFlyoutHwnd)
-                {
-                    reuse = existing;
-                    reuseWasVisible = existing.IsFlyoutSessionShowing;
+                _ = _windows.TryGetValue(request.ModuleId, out FlyoutWindow? existing);
+                reuse = existing;
+                reuseWasVisible = existing?.IsFlyoutSessionShowing ?? false;
+                decision = FlyoutIngressPolicy.Resolve(BuildIngressState(existing, request, allowLivePatch));
+                Log($"ingress decision={decision} kind={request.Kind} style={request.StyleId}");
 
-                    if (reuseWasVisible
-                        && allowLivePatch
-                        && string.Equals(existing.Kind, request.Kind, StringComparison.OrdinalIgnoreCase)
-                        && string.Equals(existing.StyleId ?? "", request.StyleId ?? "", StringComparison.OrdinalIgnoreCase))
-                    {
+                switch (decision)
+                {
+                    case FlyoutIngressDecision.CloseThenColdBuild when existing is not null:
+                        try { existing.Close(); } catch { /* ignore */ }
+                        _ = _windows.Remove(request.ModuleId);
+                        reuse = null;
+                        break;
+
+                    case FlyoutIngressDecision.PatchActiveSession when existing is not null:
+                        if (TryPatchLive(existing, request, resetDismiss))
+                        {
+                            return;
+                        }
+
+                        decision = FlyoutIngressPolicy.OnPatchMissed(decision);
+                        break;
+
+                    case FlyoutIngressDecision.PatchVisibleCoalesced when existing is not null:
                         if (!_patchCoalesce.TryBeginFlush(MonoNow(), out TimeSpan retryAfter))
                         {
                             DeferIngress(
@@ -415,78 +480,98 @@ namespace MosaicShell.Host.Capabilities
                         }
 
                         Log($"live-apply missed kind={request.Kind} style={request.StyleId}, rebuilding");
-                    }
+                        decision = FlyoutIngressPolicy.OnPatchMissed(decision);
+                        break;
+
+                    default:
+                        break;
                 }
-                else if (_windows.TryGetValue(request.ModuleId, out FlyoutWindow? old))
+            }
+
+            if (reuse is not null && decision == FlyoutIngressDecision.RecreateHwnd)
+            {
+                Log($"status after media shell: recreate HWND open={reuse.Kind} next={request.Kind}");
+                reuse.TransientDismissed -= OnFlyoutTransientDismissed;
+                reuse.SuppressAutoDismiss();
+                try { reuse.Close(); } catch { /* ignore */ }
+                lock (_gate)
                 {
-                    try { old.Close(); } catch { /* ignore */ }
                     _ = _windows.Remove(request.ModuleId);
                 }
+
+                reuse = null;
             }
 
-            if (reuse is not null)
+            if (reuse is not null
+                && decision == FlyoutIngressDecision.ReviveHidden
+                && TryPatchLive(reuse, request, resetDismiss))
             {
-                if (TesseraStatusFlyoutPolicy.MustRecreateHwndAfterMediaShellKind(reuse.Kind, request.Kind))
-                {
-                    Log($"status after media shell: recreate HWND open={reuse.Kind} next={request.Kind}");
-                    reuse.TransientDismissed -= OnFlyoutTransientDismissed;
-                    reuse.SuppressAutoDismiss();
-                    try { reuse.Close(); } catch { /* ignore */ }
-                    lock (_gate)
-                    {
-                        _ = _windows.Remove(request.ModuleId);
-                    }
-
-                    reuse = null;
-                }
-            }
-
-            if (reuse is not null)
-            {
-                if (!reuseWasVisible
-                    && string.Equals(reuse.Kind, request.Kind, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(reuse.StyleId ?? "", request.StyleId ?? "", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (TryPatchLive(reuse, request, resetDismiss))
-                    {
-                        if (!reuse.IsVisible)
-                        {
-                            reuse.Show();
-                        }
-
-                        Log($"revive kind={request.Kind} style={request.StyleId}");
-                        reuse.PlayShowAnimation();
-                        return;
-                    }
-                }
-
-                Control reusedContent;
-                try { reusedContent = BuildContent(request, reuseWasVisible); }
-                catch (Exception ex)
-                {
-                    Log($"BuildContent failed on reuse, using fallback: {ex}");
-                    reusedContent = BuildFallbackContent(request, ex.Message);
-                }
-
-                reuse.ApplyRequest(request, reusedContent);
-                WireTesseraSession(reuse);
-                EnsureTesseraSession(request, TesseraFlyoutSessionMode.Single);
                 if (!reuse.IsVisible)
                 {
                     reuse.Show();
                 }
 
-                reuse.EnsureLivePump();
-                PresentFlyout(reuse, request);
-                if (TesseraFlyoutLiveSyncPolicy.ShouldPlayShowAnimationAfterApplyRequest(
-                        reuseWasVisible, TesseraFlyoutWindowPolicy.HideUntilCompositionReady))
-                {
-                    reuse.PlayShowAnimation();
-                }
-
+                Log($"revive kind={request.Kind} style={request.StyleId} {reuse.MotionStateTag}");
+                reuse.PlayShowAnimation();
                 return;
             }
 
+            if (reuse is not null)
+            {
+                RebuildInPlace(reuse, request, reuseWasVisible);
+                return;
+            }
+
+            ColdBuild(request);
+        }
+
+        private static FlyoutIngressState BuildIngressState(FlyoutWindow? existing, FlyoutRequest request, bool allowLivePatch)
+        {
+            return new FlyoutIngressState
+            {
+                HasExistingWindow = existing is not null,
+                ReuseRegisteredHwnd = TesseraFlyoutLiveSyncPolicy.MustReuseRegisteredFlyoutHwnd,
+                OpenKind = existing?.Kind,
+                OpenStyleId = existing?.StyleId,
+                RequestKind = request.Kind,
+                RequestStyleId = request.StyleId,
+                Phase = existing?.Phase ?? TesseraFlyoutPhase.Hidden,
+                EntranceMotionInFlight = existing?.IsEntranceMotionInFlight ?? false,
+                OpenWindowVisible = existing?.IsFlyoutSessionShowing ?? false,
+                AllowLivePatch = allowLivePatch,
+            };
+        }
+
+        private void RebuildInPlace(FlyoutWindow reuse, FlyoutRequest request, bool reuseWasVisible)
+        {
+            Log($"rebuild path kind={request.Kind} reuseWasVisible={reuseWasVisible} {reuse.MotionStateTag}");
+            Control reusedContent;
+            try { reusedContent = BuildContent(request, reuseWasVisible); }
+            catch (Exception ex)
+            {
+                Log($"BuildContent failed on reuse, using fallback: {ex}");
+                reusedContent = BuildFallbackContent(request, ex.Message);
+            }
+
+            reuse.ApplyRequest(request, reusedContent);
+            WireTesseraSession(reuse);
+            EnsureTesseraSession(request, TesseraFlyoutSessionMode.Single);
+            if (!reuse.IsVisible)
+            {
+                reuse.Show();
+            }
+
+            reuse.EnsureLivePump();
+            PresentFlyout(reuse, request);
+            if (TesseraFlyoutLiveSyncPolicy.ShouldPlayShowAnimationAfterApplyRequest(
+                    reuseWasVisible, TesseraFlyoutWindowPolicy.HideUntilCompositionReady))
+            {
+                reuse.PlayShowAnimation();
+            }
+        }
+
+        private void ColdBuild(FlyoutRequest request)
+        {
             Control content;
             try
             {
@@ -499,7 +584,7 @@ namespace MosaicShell.Host.Capabilities
                 Log("FALLBACK content, Tessera live session unsuccessful");
             }
 
-            if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            if (ModuleIds.IsTessera(request.ModuleId))
             {
                 bool hasHost = content is Control c && TesseraLiveHost.FindIn(c) is not null;
                 bool isFallback = content is Border { Child: TextBlock };
@@ -522,8 +607,8 @@ namespace MosaicShell.Host.Capabilities
                         _ = _windows.Remove(request.ModuleId);
                     }
                 }
-                if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase)
-                    && !IsVisible("Tessera"))
+                if (ModuleIds.IsTessera(request.ModuleId)
+                    && !IsVisible(ModuleIds.Tessera))
                 {
                     StopOutsideClickWatcher();
                     CloseFocusDim();
@@ -571,7 +656,7 @@ namespace MosaicShell.Host.Capabilities
 
         private void EnsureTesseraSession(FlyoutRequest request, TesseraFlyoutSessionMode mode)
         {
-            if (!request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            if (!ModuleIds.IsTessera(request.ModuleId))
             {
                 return;
             }
@@ -659,7 +744,7 @@ namespace MosaicShell.Host.Capabilities
                 $"hint={string.Join('|', window.TransparencyLevelHint)} " +
                 $"actual={window.ActualTransparencyLevel} layered={layered}");
 
-            if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            if (ModuleIds.IsTessera(request.ModuleId))
             {
                 ScheduleOutsideClickArm(window);
             }
@@ -718,7 +803,7 @@ namespace MosaicShell.Host.Capabilities
 
         private void SyncFocusDim(FlyoutRequest request)
         {
-            if (!request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase)
+            if (!ModuleIds.IsTessera(request.ModuleId)
                 || !TesseraFocusDimPolicy.EnabledFromPayload(request.Payload))
             {
                 CloseFocusDim();
@@ -786,6 +871,16 @@ namespace MosaicShell.Host.Capabilities
         {
             window.TransientDismissed -= OnFlyoutTransientDismissed;
             window.TransientDismissed += OnFlyoutTransientDismissed;
+            window.PhaseChanged -= OnFlyoutPhaseChanged;
+            window.PhaseChanged += OnFlyoutPhaseChanged;
+        }
+
+        private void OnFlyoutPhaseChanged(FlyoutWindow window, TesseraFlyoutPhase phase)
+        {
+            if (ModuleIds.IsTessera(window.FlyoutRequest.ModuleId))
+            {
+                _session.SetPhase(phase);
+            }
         }
 
         private void OnFlyoutTransientDismissed(string moduleId)
@@ -835,7 +930,7 @@ namespace MosaicShell.Host.Capabilities
 
         private Control BuildContent(FlyoutRequest request, bool sessionAlreadyShowing = false)
         {
-            if (request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            if (ModuleIds.IsTessera(request.ModuleId))
             {
                 TesseraFlyoutMaterial material = TesseraFlyoutMaterialFactory.FromPayload(
                     request.Payload, request.StyleId, request.Kind);

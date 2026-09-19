@@ -349,6 +349,27 @@ namespace MosaicShell.Core.Tests
             _ = inMid.Should().BeLessThan(outMid);
         }
 
+        [Theory]
+        [InlineData(20)]
+        [InlineData(10)]
+        [InlineData(40)]
+        public void SampleEaseContinuous_aligns_with_stepped_ResolveTweenNode_at_step_boundaries(int aniSteps)
+        {
+            foreach (string ease in TesseraFlyoutAnimationPolicy.AllEaseTypes)
+            {
+                for (int step = 0; step <= aniSteps; step++)
+                {
+                    double t = (double)step / aniSteps;
+                    double continuous = TesseraFlyoutAnimationPolicy.SampleEaseContinuous(t, ease);
+                    double stepped = TesseraFlyoutAnimationPolicy.ResolveTweenNode(
+                        step, aniSteps, ease, entrance: true) / 100.0;
+                    _ = continuous.Should().BeApproximately(
+                        stepped, 1e-9,
+                        $"ease '{ease}' at step {step}/{aniSteps} should agree between continuous and stepped");
+                }
+            }
+        }
+
         [Fact]
         public void Stepped_progress_differs_for_in_vs_out_at_same_step()
         {

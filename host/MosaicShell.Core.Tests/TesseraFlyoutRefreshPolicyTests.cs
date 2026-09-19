@@ -18,39 +18,33 @@ namespace MosaicShell.Core.Tests
             TesseraFlyoutSyncAction expected)
         {
             _ = TesseraFlyoutRefreshPolicy.ResolvePresentation(
-                TesseraFlyoutRefreshTrigger.MediaSessionChanged,
                 showing,
                 openKind,
                 nextKind,
                 "Fluent",
-                "Fluent",
-                enableMediaFlyouts: true).Should().Be(expected);
+                "Fluent").Should().Be(expected);
         }
 
         [Fact]
         public void Visible_media_shell_hook_patches_not_presents()
         {
             _ = TesseraFlyoutRefreshPolicy.ResolvePresentation(
-                TesseraFlyoutRefreshTrigger.ShellMediaHook,
                 isEffectivelyShowing: true,
                 openKind: "media",
                 nextKind: "media",
                 openStyle: "Fluent",
-                nextStyle: "Fluent",
-                enableMediaFlyouts: true).Should().Be(TesseraFlyoutSyncAction.Patch);
+                nextStyle: "Fluent").Should().Be(TesseraFlyoutSyncAction.Patch);
         }
 
         [Fact]
         public void Status_toggle_while_showing_same_kind_patches()
         {
             _ = TesseraFlyoutRefreshPolicy.ResolvePresentation(
-                TesseraFlyoutRefreshTrigger.StatusToggle,
                 isEffectivelyShowing: true,
                 openKind: "locks",
                 nextKind: "locks",
                 openStyle: "Fluent",
-                nextStyle: "Fluent",
-                enableMediaFlyouts: true).Should().Be(TesseraFlyoutSyncAction.Patch);
+                nextStyle: "Fluent").Should().Be(TesseraFlyoutSyncAction.Patch);
         }
     }
 }

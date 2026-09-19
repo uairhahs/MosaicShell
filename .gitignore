@@ -1,5 +1,6 @@
 # local only folders
 .cursor
+.claude
 .local
 .venv
 
@@ -17,4 +18,7 @@ debug**.log
 **/obj/
 *.user
 *.suo
+
+# local run captures
+_run_*.txt
 

@@ -54,14 +54,10 @@ namespace MosaicShell.Core.Modules.Tessera
             string? openStyle,
             string? nextStyle)
         {
-            if (!PresentMustInvalidatePendingQueuesOnSessionChange || !hasOpenSession)
-            {
-                return false;
-            }
-
-            return openStacked != nextStacked
-                ? true
-                : !string.Equals(openKind ?? "", nextKind ?? "", StringComparison.OrdinalIgnoreCase) || !string.Equals(openStyle ?? "", nextStyle ?? "", StringComparison.OrdinalIgnoreCase);
+            return PresentMustInvalidatePendingQueuesOnSessionChange && hasOpenSession
+                && (openStacked != nextStacked
+                    || !string.Equals(openKind ?? "", nextKind ?? "", StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(openStyle ?? "", nextStyle ?? "", StringComparison.OrdinalIgnoreCase));
         }
     }
 }

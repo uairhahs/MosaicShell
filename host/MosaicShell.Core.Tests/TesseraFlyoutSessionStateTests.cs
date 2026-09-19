@@ -109,8 +109,36 @@ namespace MosaicShell.Core.Tests
             _ = snap.Generation.Should().Be(1);
             _ = snap.Mode.Should().Be(TesseraFlyoutSessionMode.Stacked);
             _ = snap.Kind.Should().Be("vol");
+            _ = snap.Phase.Should().Be(TesseraFlyoutPhase.Entering);
+            _ = snap.IsSessionActive.Should().BeTrue();
             _ = TesseraFlyoutLiveSyncPolicy.IsEffectivelyShowing(windowVisible: true, opacity: 0)
                 .Should().BeFalse();
+        }
+
+        [Fact]
+        public void Phase_lifecycle_transitions_correctly()
+        {
+            TesseraFlyoutSessionState session = new();
+            _ = session.Phase.Should().Be(TesseraFlyoutPhase.Hidden);
+            _ = session.HasOpenSession.Should().BeFalse();
+
+            _ = session.Begin(TesseraFlyoutSessionMode.Single, "vol", "Fluent");
+            _ = session.Phase.Should().Be(TesseraFlyoutPhase.Entering);
+            _ = session.HasOpenSession.Should().BeTrue();
+            _ = session.Phase.IsSessionActive().Should().BeTrue();
+
+            session.SetPhase(TesseraFlyoutPhase.Shown);
+            _ = session.Phase.Should().Be(TesseraFlyoutPhase.Shown);
+            _ = session.Phase.IsSessionActive().Should().BeTrue();
+
+            session.SetPhase(TesseraFlyoutPhase.Exiting);
+            _ = session.Phase.Should().Be(TesseraFlyoutPhase.Exiting);
+            _ = session.Phase.IsSessionActive().Should().BeFalse();
+
+            _ = session.Clear();
+            _ = session.Phase.Should().Be(TesseraFlyoutPhase.Hidden);
+            _ = session.HasOpenSession.Should().BeFalse();
+            _ = session.Phase.IsSessionActive().Should().BeFalse();
         }
     }
 }

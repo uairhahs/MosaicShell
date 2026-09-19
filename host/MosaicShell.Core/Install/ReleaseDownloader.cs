@@ -65,7 +65,7 @@ namespace MosaicShell.Core.Install
         public async Task InstallModuleFromZipAsync(string zipPath, string moduleId, CancellationToken ct = default)
         {
             AppPaths.EnsureLayout();
-            string dest = Path.Combine(AppPaths.ModulesDirectory, moduleId);
+            string dest = ModulePackagePolicy.ResolveModuleDirectory(AppPaths.ModulesDirectory, moduleId);
             if (Directory.Exists(dest))
             {
                 Directory.Delete(dest, recursive: true);
