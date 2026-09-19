@@ -24,6 +24,7 @@ namespace MosaicShell.Core.Install
         {
             ct.ThrowIfCancellationRequested();
             AppPaths.EnsureLayout();
+            _ = ModulePackagePolicy.EnsureValidModuleId(moduleId);
 
             return TryInstallFromSourceTree(moduleId, progress, sourceTreeRoot)
                 ? Task.CompletedTask
@@ -83,7 +84,8 @@ namespace MosaicShell.Core.Install
                     throw new InvalidOperationException("module.manifest.json must set Id.");
                 }
 
-                string dest = Path.Combine(AppPaths.ModulesDirectory, moduleId);
+                // The id came from the package, so it is untrusted until the policy clears it.
+                string dest = ModulePackagePolicy.ResolveModuleDirectory(AppPaths.ModulesDirectory, moduleId);
                 if (Directory.Exists(dest))
                 {
                     Directory.Delete(dest, recursive: true);

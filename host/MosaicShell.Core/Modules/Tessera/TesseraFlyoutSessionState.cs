@@ -9,12 +9,41 @@ namespace MosaicShell.Core.Modules.Tessera
         Stacked,
     }
 
+    /// <summary>
+    /// Explicit session lifecycle phase.
+    /// Replaces inference from opacity threshold (which collapsed entering, exiting, and pre-motion gap into hidden).
+    /// </summary>
+    public enum TesseraFlyoutPhase
+    {
+        Hidden,
+        Entering,
+        Shown,
+        Exiting,
+    }
+
+    public static class TesseraFlyoutPhaseExtensions
+    {
+        /// <summary>
+        /// True when a session exists and should accept in-place patches rather than cold-presenting.
+        /// Both Entering (animation in flight) and Shown (visible at resting opacity) are active sessions.
+        /// </summary>
+        public static bool IsSessionActive(this TesseraFlyoutPhase phase)
+        {
+            return phase is TesseraFlyoutPhase.Entering or TesseraFlyoutPhase.Shown;
+        }
+    }
+
     public readonly record struct TesseraFlyoutSessionSnapshot(
         bool EffectivelyShowing,
         int Generation,
         TesseraFlyoutSessionMode Mode,
         string Kind,
-        string? StyleId);
+        string? StyleId,
+        TesseraFlyoutPhase Phase = TesseraFlyoutPhase.Hidden)
+    {
+        public bool IsSessionActive =>
+            Phase.IsSessionActive() || (Phase == TesseraFlyoutPhase.Hidden && EffectivelyShowing);
+    }
 
     /// <summary>
     /// One Tessera HUD session. Generation increments on Present and Clear so
@@ -30,9 +59,11 @@ namespace MosaicShell.Core.Modules.Tessera
 
         public string? StyleId { get; private set; }
 
-        public bool HasOpenSession => Mode != TesseraFlyoutSessionMode.None;
+        public TesseraFlyoutPhase Phase { get; private set; } = TesseraFlyoutPhase.Hidden;
 
-        public int Begin(TesseraFlyoutSessionMode mode, string kind, string? styleId)
+        public bool HasOpenSession => Mode != TesseraFlyoutSessionMode.None && Phase != TesseraFlyoutPhase.Hidden;
+
+        public int Begin(TesseraFlyoutSessionMode mode, string kind, string? styleId, TesseraFlyoutPhase phase = TesseraFlyoutPhase.Entering)
         {
             if (mode == TesseraFlyoutSessionMode.None)
             {
@@ -43,7 +74,13 @@ namespace MosaicShell.Core.Modules.Tessera
             Mode = mode;
             Kind = kind ?? "";
             StyleId = styleId;
+            Phase = phase;
             return Generation;
+        }
+
+        public void SetPhase(TesseraFlyoutPhase phase)
+        {
+            Phase = phase;
         }
 
         public int Clear()
@@ -52,12 +89,13 @@ namespace MosaicShell.Core.Modules.Tessera
             Mode = TesseraFlyoutSessionMode.None;
             Kind = "";
             StyleId = null;
+            Phase = TesseraFlyoutPhase.Hidden;
             return Generation;
         }
 
-        public TesseraFlyoutSessionSnapshot Snapshot(bool effectivelyShowing)
+        public TesseraFlyoutSessionSnapshot Snapshot(bool effectivelyShowing, TesseraFlyoutPhase? phase = null)
         {
-            return new(effectivelyShowing, Generation, Mode, Kind, StyleId);
+            return new(effectivelyShowing, Generation, Mode, Kind, StyleId, phase ?? Phase);
         }
     }
 

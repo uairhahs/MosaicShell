@@ -9,6 +9,17 @@ namespace MosaicShell.Core.Modules.Tessera
     /// </summary>
     public static class TesseraFlyoutDismissPolicy
     {
+        public static bool ShouldFinishTransientDismiss(
+            int dismissalGeneration,
+            int currentGeneration,
+            TesseraFlyoutPhase phase,
+            bool windowVisible)
+        {
+            return dismissalGeneration == currentGeneration
+                && phase is TesseraFlyoutPhase.Exiting or TesseraFlyoutPhase.Hidden
+                && windowVisible;
+        }
+
         public static bool ShouldResetAutoDismiss(
             TesseraFlyoutRefreshTrigger trigger,
             MediaSessionInfo? previousMedia,

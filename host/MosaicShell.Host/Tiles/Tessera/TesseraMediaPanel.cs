@@ -51,7 +51,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             {
                 Margin = new Thickness(10, 14, 14, 0),
                 Spacing = 2,
-                Children = { title, artist }
+                Children = { TesseraMarqueeText.Wrap(title, 240, vm.AutoDismissMs), artist }
             };
             MaterialIcon playIcon = PlayIcon(vm, 16);
             (StackPanel? transport, MaterialIcon? likeIcon, MaterialIcon? dislikeIcon) = TransportRow(vm, playIcon, shuffleRepeat: true, spacing: 12, btnSize: 28);
@@ -102,9 +102,14 @@ namespace MosaicShell.Host.Tiles.Tessera
                     TesseraChrome.Label("Media playing", 10, muted: true)
                 }
             };
-            TextBlock title = Text(vm.MediaTitle, 12, FontWeight.SemiBold, w - 80 - (pad * 3));
-            TextBlock artist = Text(vm.MediaArtist, 11, FontWeight.Normal, w - 80 - (pad * 3), muted: true);
-            StackPanel textCol = new() { Spacing = 4, Margin = new Thickness(0, 4, 0, 0), Children = { header, title, artist } };
+            double titleWidth = w - 80 - (pad * 3);
+            TextBlock title = Text(vm.MediaTitle, 12, FontWeight.SemiBold, titleWidth);
+            TextBlock artist = Text(vm.MediaArtist, 11, FontWeight.Normal, titleWidth, muted: true);
+            // Same box as the title's marquee viewport, anchored at the same left edge, so artist
+            // lines up flush with title instead of stretching to whatever the column's widest
+            // sibling (e.g. the header row) happens to need.
+            artist.HorizontalAlignment = HorizontalAlignment.Left;
+            StackPanel textCol = new() { Spacing = 4, Margin = new Thickness(0, 4, 0, 0), Children = { header, TesseraMarqueeText.Wrap(title, titleWidth, vm.AutoDismissMs), artist } };
             Grid top = new()
             {
                 ColumnDefinitions = new ColumnDefinitions("*,80"),
@@ -204,7 +209,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             StackPanel left = new()
             {
                 Margin = new Thickness(0, 0, 8, 0),
-                Children = { header, title, artist }
+                Children = { header, TesseraMarqueeText.Wrap(title, 220, vm.AutoDismissMs), artist }
             };
             Grid.SetColumn(left, 0);
             Grid.SetColumn(art, 1);
@@ -244,7 +249,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 Children =
                 {
                     art,
-                    new StackPanel { Spacing = 4, VerticalAlignment = VerticalAlignment.Center, Children = { title, artist, time, heart } }
+                    new StackPanel { Spacing = 4, VerticalAlignment = VerticalAlignment.Center, Children = { TesseraMarqueeText.Wrap(title, 200, vm.AutoDismissMs), artist, time, heart } }
                 }
             };
 
@@ -282,7 +287,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 Children =
                 {
                     art,
-                    new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center, Width = 140, Children = { title, artist } },
+                    new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center, Width = 140, Children = { TesseraMarqueeText.Wrap(title, 140, vm.AutoDismissMs), artist } },
                     prev,
                     play,
                     next
@@ -316,9 +321,8 @@ namespace MosaicShell.Host.Tiles.Tessera
                 ? new Thickness(0, 0, 0, TesseraStackedPlacementSpec.MeterMediaArtBottomMarginDip)
                 : new Thickness(0, 8, 0, 8);
             TextBlock title = Text(vm.MediaTitle, 15, FontWeight.SemiBold, 160);
-            title.HorizontalAlignment = HorizontalAlignment.Center;
-            title.TextAlignment = TextAlignment.Center;
-            title.Height = TesseraStackedPlacementSpec.MeterMediaTitleLineDip;
+            Control titleDisplay = TesseraMarqueeText.Wrap(title, 160, vm.AutoDismissMs, centerWhenStatic: true);
+            titleDisplay.Height = TesseraStackedPlacementSpec.MeterMediaTitleLineDip;
             TextBlock artist = Text(vm.MediaArtist, 12, FontWeight.Normal, 160, muted: true);
             artist.HorizontalAlignment = HorizontalAlignment.Center;
             artist.TextAlignment = TextAlignment.Center;
@@ -346,7 +350,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                     Spacing = TesseraStackedPlacementSpec.MeterMediaHeaderSpacingDip,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Top,
-                    Children = { art, title, artist }
+                    Children = { art, titleDisplay, artist }
                 };
                 DockPanel dock = new()
                 {
@@ -365,7 +369,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 body = new StackPanel
                 {
                     Width = TesseraStackedPlacementSpec.MeterMediaBodyWidthDip,
-                    Children = { art, title, artist, transport }
+                    Children = { art, titleDisplay, artist, transport }
                 };
             }
 
@@ -417,7 +421,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 Spacing = 4,
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(8, 0, pad, 0),
-                Children = { header, title, artist, time }
+                Children = { header, TesseraMarqueeText.Wrap(title, 220, vm.AutoDismissMs), artist, time }
             };
 
             Grid row = new()
@@ -438,10 +442,13 @@ namespace MosaicShell.Host.Tiles.Tessera
         {
             TextBlock title = Text(vm.MediaTitle, 13, FontWeight.SemiBold, 220);
             title.Foreground = TesseraStylePalette.Radial.BrightBrush;
-            title.TextTrimming = TextTrimming.CharacterEllipsis;
             TextBlock artist = Text(vm.MediaArtist, 11, FontWeight.Normal, 220, muted: true);
             artist.Foreground = TesseraStylePalette.Radial.AccentHiBrush;
             artist.TextTrimming = TextTrimming.CharacterEllipsis;
+            // Same 220-wide box as the title's marquee viewport, anchored at the same left edge -
+            // Center here means centered relative to the title, not the wider outer column.
+            artist.HorizontalAlignment = HorizontalAlignment.Left;
+            artist.TextAlignment = TextAlignment.Center;
             TextBlock pos = Text(FormatTime(vm.MediaPositionSeconds), 14, FontWeight.Bold, 48);
             pos.Foreground = TesseraStylePalette.Radial.BrightBrush;
             TextBlock dur = Text(FormatTime(vm.MediaDurationSeconds), 11, FontWeight.Normal, 44, muted: true);
@@ -544,7 +551,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 MaxWidth = 300,
-                Children = { topIcons, timeRow, title, artist, transport }
+                Children = { topIcons, timeRow, TesseraMarqueeText.Wrap(title, 220, vm.AutoDismissMs), artist, transport }
             };
         }
 

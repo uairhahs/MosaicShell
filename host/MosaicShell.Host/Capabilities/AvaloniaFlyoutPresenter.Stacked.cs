@@ -6,6 +6,7 @@ using Avalonia.Threading;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Host.Tiles.Tessera;
+using MosaicShell.Core.Modules;
 
 namespace MosaicShell.Host.Capabilities
 {
@@ -26,7 +27,7 @@ namespace MosaicShell.Host.Capabilities
 
         private bool ShouldUseStackedOsAcrylic(FlyoutRequest request)
         {
-            return request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase)
+            return ModuleIds.IsTessera(request.ModuleId)
             && TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(
                 request.Payload, request.StyleId, request.Kind);
         }
@@ -73,11 +74,11 @@ namespace MosaicShell.Host.Capabilities
                 return false;
             }
 
-            string volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Volume);
+            string volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey(ModuleIds.Tessera, TesseraStackedPanelRole.Volume);
             lock (_gate)
             {
                 if (!_windows.TryGetValue(volumeKey, out FlyoutWindow? volumeWin)
-                    || !volumeWin.IsFlyoutSessionShowing)
+                    || !(volumeWin.IsFlyoutSessionShowing || volumeWin.IsEntranceMotionInFlight))
                 {
                     return false;
                 }
@@ -135,7 +136,7 @@ namespace MosaicShell.Host.Capabilities
                 return false;
             }
 
-            string volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Volume);
+            string volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey(ModuleIds.Tessera, TesseraStackedPanelRole.Volume);
             FlyoutWindow? volumeWin;
             lock (_gate)
             {
@@ -148,6 +149,15 @@ namespace MosaicShell.Host.Capabilities
             if (volumeWin.IsFlyoutSessionShowing)
             {
                 return false;
+            }
+
+            if (volumeWin.IsEntranceMotionInFlight)
+            {
+                // Kind/style already matched above; a request landing mid-entrance must only
+                // patch content, not replay PlayStackedShowAnimation - that restarts BeginMotion
+                // on every stacked window (resets Position/Opacity) before the previous run
+                // finishes, so a fast run of requests can perpetually restart and never complete.
+                return volumeWin.TryApplyLive(request, _services, resetDismiss);
             }
 
             if (!volumeWin.TryApplyLive(request, _services, resetDismiss))
@@ -191,7 +201,7 @@ namespace MosaicShell.Host.Capabilities
 
             foreach (TesseraStackedPanelRole role in panels)
             {
-                string slotKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", role);
+                string slotKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey(ModuleIds.Tessera, role);
                 newKeys.Add(slotKey);
 
                 Control content;
@@ -476,8 +486,15 @@ namespace MosaicShell.Host.Capabilities
             IReadOnlyList<FlyoutWindow> windows,
             FlyoutRequest request)
         {
+            int gen = _session.Generation;
+            _session.SetPhase(TesseraFlyoutPhase.Exiting);
             await RunStackedExitAnimationAsync(request, windows).ConfigureAwait(true);
-            DismissStackedImmediate(notify, windows);
+            if (TesseraFlyoutDismissPolicy.ShouldFinishTransientDismiss(
+                    gen, _session.Generation, _session.Phase, windows.Any(static window => window.IsVisible)))
+            {
+                _session.SetPhase(TesseraFlyoutPhase.Hidden);
+                DismissStackedImmediate(notify, windows);
+            }
         }
 
         private void DismissStackedImmediate(bool notify, IReadOnlyList<FlyoutWindow> windows)
@@ -485,7 +502,7 @@ namespace MosaicShell.Host.Capabilities
             bool anyVisible = false;
             foreach (FlyoutWindow window in windows)
             {
-                if (!window.IsFlyoutSessionShowing)
+                if (!window.IsVisible)
                 {
                     continue;
                 }
@@ -498,7 +515,7 @@ namespace MosaicShell.Host.Capabilities
 
             if (notify && anyVisible)
             {
-                try { TransientDismissed?.Invoke("Tessera"); }
+                try { TransientDismissed?.Invoke(ModuleIds.Tessera); }
                 catch { /* ignore */ }
             }
         }
@@ -848,7 +865,7 @@ namespace MosaicShell.Host.Capabilities
         {
             lock (_gate)
             {
-                if (!_windows.Remove("Tessera", out FlyoutWindow? single))
+                if (!_windows.Remove(ModuleIds.Tessera, out FlyoutWindow? single))
                 {
                     return;
                 }
@@ -891,7 +908,7 @@ namespace MosaicShell.Host.Capabilities
             FlyoutWindow? flyout;
             lock (_gate)
             {
-                _ = _windows.TryGetValue("Tessera", out flyout);
+                _ = _windows.TryGetValue(ModuleIds.Tessera, out flyout);
             }
 
             if (flyout is null)

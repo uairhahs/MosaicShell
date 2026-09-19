@@ -44,7 +44,8 @@ namespace MosaicShell.Core.Capabilities.Ipc
         int Generation,
         string Mode,
         string Kind,
-        string? StyleId)
+        string? StyleId,
+        string? Phase = null)
     {
         public static TesseraFlyoutIpcSnapshotDto From(string moduleId, TesseraFlyoutSessionSnapshot snapshot)
         {
@@ -54,7 +55,8 @@ namespace MosaicShell.Core.Capabilities.Ipc
                 snapshot.Generation,
                 snapshot.Mode.ToString(),
                 snapshot.Kind,
-                snapshot.StyleId);
+                snapshot.StyleId,
+                snapshot.Phase.ToString());
         }
     }
 

@@ -39,7 +39,7 @@ Compile kill-switch: `TesseraOsAcrylicTrialPolicy.Available` in Core (set `false
 
 ## H1 smoke (2026-08-23, informal)
 
-Win11 manual pass on `--tessera-os-acrylic` (via `.local/compile-local.ps1`): eligible single-shell styles look good. Not a formal H2 sign-off.
+Win11 manual pass on `--tessera-os-acrylic`: eligible single-shell styles look good. Not a formal H2 sign-off.
 
 | Area                           | Result             | Notes                                                                |
 | ------------------------------ | ------------------ | -------------------------------------------------------------------- |
@@ -54,19 +54,11 @@ Win11 manual pass on `--tessera-os-acrylic` (via `.local/compile-local.ps1`): el
 
 ## H2 — Manual evaluation checklist (before ship)
 
-**Status: PASS (2026-08-23, Win11).** Formal table: [`.local/Tessera/os-acrylic-eval/README.md`](../../.local/Tessera/os-acrylic-eval/README.md).
+**Status: PASS (2026-08-23, Win11).** Recorded results are summarized in the tables below.
 
 Formal sign-off target is **Windows 11**. Optional Win10 smoke is best-effort only; failures on Win10 do not block kill/ship on Win11.
 
-Record screenshots + notes under `.local/Tessera/os-acrylic-eval/` (gitignored scratch). Suggested files:
-
-```ascii
-.local/Tessera/os-acrylic-eval/
-  README.md          # copy table below + pass/fail per row
-  win11-flag-off/    # frost baseline PNGs
-  win11-flag-on/     # acrylic trial PNGs
-  notes.md           # timings (black flash ms), repro steps
-```
+These tables summarize the recorded evaluation; they are not a published raw screenshot archive.
 
 ### Acrylic + composition (required Win11)
 

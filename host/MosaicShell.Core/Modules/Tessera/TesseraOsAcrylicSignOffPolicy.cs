@@ -23,9 +23,6 @@ namespace MosaicShell.Core.Modules.Tessera
         public static bool Win11EvalComplete =>
             H2Win11EvalSignedOff && H3StackedVolumeMediaSignedOff;
 
-        /// <summary>Scratch eval notes (gitignored): .local/Tessera/os-acrylic-eval/</summary>
-        public const string EvalScratchRelativeDirectory = ".local/Tessera/os-acrylic-eval";
-
         private static readonly HashSet<string> H3StackedStylesSignedOff = new(StringComparer.OrdinalIgnoreCase)
         {
             StyleIds.Meter,

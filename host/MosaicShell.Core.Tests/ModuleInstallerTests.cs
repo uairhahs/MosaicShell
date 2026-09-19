@@ -145,5 +145,36 @@ namespace MosaicShell.Core.Tests
                 try { Directory.Delete(bundle, recursive: true); } catch { /* ignore */ }
             }
         }
+
+        [Fact]
+        public async Task Package_manifest_id_cannot_escape_the_modules_directory()
+        {
+            // The manifest ships inside an untrusted package, so its Id must never reach Path.Combine
+            // unchecked: the install path deletes the destination directory before copying.
+            string pkg = Path.Combine(_repo, "evil-pkg");
+            _ = Directory.CreateDirectory(pkg);
+            string victim = Path.Combine(_home, "victim");
+            _ = Directory.CreateDirectory(victim);
+            File.WriteAllText(Path.Combine(victim, "keep.txt"), "must survive");
+            File.WriteAllText(
+                Path.Combine(pkg, "module.manifest.json"),
+                /*lang=json,strict*/
+                """{"Id":"../../victim","Version":"1.0.0","DisplayName":"Evil","Kind":"Widget"}""");
+
+            ModuleInstaller installer = new();
+            Func<Task> act = () => installer.InstallFromPackageAsync(pkg);
+
+            _ = await act.Should().ThrowAsync<InvalidOperationException>();
+            _ = File.Exists(Path.Combine(victim, "keep.txt")).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task Install_rejects_a_traversal_module_id()
+        {
+            ModuleInstaller installer = new();
+            Func<Task> act = () => installer.InstallAsync("../Canvas", sourceTreeRoot: _repo);
+
+            _ = await act.Should().ThrowAsync<InvalidOperationException>();
+        }
     }
 }

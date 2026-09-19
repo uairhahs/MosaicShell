@@ -388,12 +388,12 @@ namespace MosaicShell.Core.Modules.Tessera
             return from + ((to - from) * blend);
         }
 
-        /// <summary>Continuous easing sample (0..1) for Avalonia keyframe generation.</summary>
+        /// <summary>Continuous easing sample for Avalonia keyframe generation.</summary>
         public static double SampleEaseContinuous(double t, string? ease)
         {
             t = Math.Clamp(t, 0, 1);
             Func<double, double, double, double, double> fn = TesseraFlyoutTweenEngine.ResolveEasingFunction(NormalizeEase(ease));
-            return Math.Clamp(fn(t, 0, 1, 1), 0, 1);
+            return fn(t, 0, 1, 1);
         }
 
         /// <summary>Penner-style easing sample. <paramref name="t"/> is 0..1 linear progress.</summary>
@@ -790,9 +790,7 @@ namespace MosaicShell.Core.Modules.Tessera
 
         public static bool Phase2RequiresAnimatedLayout(int ani, string? styleId, bool showMediaStrip)
         {
-            return ani < 2
-                ? false
-                : TesseraFlyoutRevealSpec.StyleSupportsPhase2(styleId) && (TesseraFlyoutRevealSpec.StylePhase2WithoutMediaStrip(styleId) || showMediaStrip);
+            return ani >= 2 && TesseraFlyoutRevealSpec.StyleSupportsPhase2(styleId) && (TesseraFlyoutRevealSpec.StylePhase2WithoutMediaStrip(styleId) || showMediaStrip);
         }
 
         /// <summary>

@@ -11,6 +11,7 @@ using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 using MosaicShell.Host.Tiles.Tessera;
+using MosaicShell.Core.Modules;
 
 namespace MosaicShell.Host.Capabilities
 {
@@ -21,6 +22,8 @@ namespace MosaicShell.Host.Capabilities
     /// </summary>
     internal sealed class FlyoutWindow : Window
     {
+        private static int _nextWindowId;
+        private long _motionStartTicks;
         private readonly HostServices _services;
         private TesseraFlyoutMaterial _material = null!;
         private DispatcherTimer? _dismiss;
@@ -70,6 +73,7 @@ namespace MosaicShell.Host.Capabilities
         public FlyoutWindow(FlyoutRequest request, Control content, HostServices services)
         {
             FlyoutRequest = request;
+            WindowId = Interlocked.Increment(ref _nextWindowId);
             _services = services;
             ApplyFlyoutMaterial(TesseraFlyoutMaterialFactory.FromPayload(request.Payload, request.StyleId, request.Kind));
             // Win32 title is for HWND identity only, WindowDecorations.None; never a visible chrome strip.
@@ -117,10 +121,62 @@ namespace MosaicShell.Host.Capabilities
         internal int MotionGeneration { get; private set; }
 
         /// <summary>
+        /// Explicit session lifecycle phase.
+        /// </summary>
+        public TesseraFlyoutPhase Phase { get; private set; } = TesseraFlyoutPhase.Hidden;
+
+        private void SetPhase(TesseraFlyoutPhase value)
+        {
+            if (Phase != value)
+            {
+                Phase = value;
+                PhaseChanged?.Invoke(this, value);
+            }
+        }
+
+        public event Action<FlyoutWindow, TesseraFlyoutPhase>? PhaseChanged;
+
+        public bool IsSessionActive => Phase.IsSessionActive();
+
+        /// <summary>
         /// True only when the SoftFrost session is user-visible (not pre-reveal / transient-dismissed).
         /// </summary>
         public bool IsFlyoutSessionShowing =>
             TesseraFlyoutLiveSyncPolicy.IsEffectivelyShowing(IsVisible, MotionSurface.Opacity);
+
+        /// <summary>Stable per-HWND id so log lines can be correlated across a reused surface.</summary>
+        internal int WindowId { get; }
+
+        /// <summary>
+        /// Diagnostics-only view of the state that <see cref="IsFlyoutSessionShowing"/> collapses
+        /// into one bool. Routing reads only that bool, so a decision taken mid-entrance is
+        /// indistinguishable in the log from one taken while hidden unless the inputs are recorded
+        /// alongside it.
+        /// </summary>
+        internal string MotionStateTag
+        {
+            get
+            {
+                string motion = !_motionAnimating
+                    ? "none"
+                    : _motionEntrance ? "entering" : "exiting";
+                return $"w{WindowId} role={StackedRole?.ToString() ?? "single"} "
+                    + $"phase={Phase} vis={(IsVisible ? 1 : 0)} op={MotionSurface.Opacity:0.###} "
+                    + $"motion={motion} p2={(Phase2Animating ? 1 : 0)} gen={MotionGeneration} "
+                    + $"showing={(IsFlyoutSessionShowing ? 1 : 0)}";
+            }
+        }
+
+        /// <summary>
+        /// True while this window's own entrance sequence is still running. Opacity ramps from 0,
+        /// so IsFlyoutSessionShowing reads false for the whole entrance even though the window is
+        /// not "closed" and does not need reviving. A same-kind/style Present that arrives during
+        /// this window must patch content in place and let the in-flight entrance finish - treating
+        /// it as not-showing restarts BeginMotion (resets Position/Opacity) before the previous run
+        /// completes, which is why a rapid string of track-change Present calls looked choppy and
+        /// never finished.
+        /// </summary>
+        internal bool IsEntranceMotionInFlight => _motionAnimating && _motionEntrance;
 
         private void SetFlyoutContent(Control content)
         {
@@ -256,7 +312,7 @@ namespace MosaicShell.Host.Capabilities
 
         private void StartLivePump()
         {
-            if (!string.Equals(FlyoutRequest.ModuleId, "Tessera", StringComparison.OrdinalIgnoreCase))
+            if (!ModuleIds.IsTessera(FlyoutRequest.ModuleId))
             {
                 return;
             }
@@ -341,7 +397,7 @@ namespace MosaicShell.Host.Capabilities
 
         public bool TryApplyLive(FlyoutRequest request, HostServices services, bool resetDismiss = true)
         {
-            if (!request.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            if (!ModuleIds.IsTessera(request.ModuleId))
             {
                 return false;
             }
@@ -381,8 +437,24 @@ namespace MosaicShell.Host.Capabilities
             // TesseraPalette is read live at paint/render time (TesseraGlassPanel.DrawGlassChrome,
             // TesseraTrack.ApplyFillBrush), so re-applying it here (unlike the scale wrapper) keeps
             // acrylic/backdrop-blur/accent settings in sync on a patch without needing a rebuild.
-            TesseraPalette.ApplyMaterial(TesseraFlyoutMaterialFactory.FromPayload(
-                request.Payload, request.StyleId, request.Kind));
+            TesseraFlyoutMaterial freshMaterial = TesseraFlyoutMaterialFactory.FromPayload(
+                request.Payload, request.StyleId, request.Kind);
+            TesseraPalette.ApplyMaterial(freshMaterial);
+
+            // Diagnostic (2026-09-07): TryApplyLive never calls ApplyFlyoutMaterial, so this
+            // window's own TransparencyLevelHint/Background can go stale relative to what content
+            // now assumes via TesseraPalette above. Logging whether the hints actually differ
+            // pins down whether that gap is the cause of MaterialYou's reported inconsistent
+            // background, rather than patching on a guess.
+            if (!_material.TransparencyHints.SequenceEqual(freshMaterial.TransparencyHints, StringComparer.OrdinalIgnoreCase)
+                || _material.ShellAlpha != freshMaterial.ShellAlpha)
+            {
+                TesseraFlyoutDiagnostics.Log(
+                    $"TryApplyLive material drift w{WindowId} style={request.StyleId} kind={request.Kind} "
+                    + $"windowHints=[{string.Join(',', _material.TransparencyHints)}] windowAlpha={_material.ShellAlpha} "
+                    + $"freshHints=[{string.Join(',', freshMaterial.TransparencyHints)}] freshAlpha={freshMaterial.ShellAlpha} "
+                    + $"liveHint={string.Join(',', TransparencyLevelHint)}");
+            }
             string? priorAccent = TesseraFlyoutRequestBuilder.AccentFromPayload(FlyoutRequest.Payload);
             string? nextAccent = TesseraFlyoutRequestBuilder.AccentFromPayload(request.Payload);
             if (!string.Equals(priorAccent, nextAccent, StringComparison.OrdinalIgnoreCase))
@@ -404,6 +476,15 @@ namespace MosaicShell.Host.Capabilities
         public void ApplyRequest(FlyoutRequest request, Control content)
         {
             bool wasShowing = IsFlyoutSessionShowing;
+            if (_motionAnimating)
+            {
+                // Full rebuild over a live animation. This resets SizeToContent/Width/Height and
+                // relayouts, so the surface can repaint at a stale or partial size mid-reveal.
+                TesseraFlyoutDiagnostics.Log(
+                    $"MOTION INTERRUPTED by ApplyRequest {MotionStateTag} wasShowing={wasShowing} "
+                    + $"kind={FlyoutRequest.Kind}->{request.Kind} style={request.StyleId}");
+            }
+
             FlyoutRequest = request;
             ApplyFlyoutMaterial(TesseraFlyoutMaterialFactory.FromPayload(request.Payload, request.StyleId, request.Kind));
             // Invalidate any posted SoftFrost reveal from the previous surface.
@@ -477,6 +558,7 @@ namespace MosaicShell.Host.Capabilities
         /// </summary>
         public void RevealAfterLayout()
         {
+            SetPhase(TesseraFlyoutPhase.Entering);
             void Run()
             {
                 if (!IsVisible)
@@ -520,6 +602,7 @@ namespace MosaicShell.Host.Capabilities
         {
             try
             {
+                SetPhase(TesseraFlyoutPhase.Entering);
                 FinishLayout();
                 RevealAfterLayout();
             }
@@ -786,14 +869,22 @@ namespace MosaicShell.Host.Capabilities
             }
         }
 
-        private async void RunEntranceAnimation()
+        private Task RunEntranceAnimationAsync()
         {
-            if (PresenterDrivesMotion)
-            {
-                return;
-            }
+            return PresenterDrivesMotion ? Task.CompletedTask : FlyoutMotionSession.RunShowAsync([this]);
+        }
 
-            await FlyoutMotionSession.RunShowAsync([this]).ConfigureAwait(true);
+        /// <summary>
+        /// Fire-and-forget entry point for callers that can't await (Dispatcher.Post lambdas).
+        /// RunShowAsync already catches everything it can attribute to a specific window/step;
+        /// this continuation only guards against something escaping that, so it never becomes
+        /// an unobserved fault on this window's Task instead of a silent crash.
+        /// </summary>
+        private void RunEntranceAnimation()
+        {
+            _ = RunEntranceAnimationAsync().ContinueWith(
+                static t => TesseraFlyoutDiagnostics.Log($"entrance animation faulted: {t.Exception}"),
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
         }
 
         internal double ResolveMonitorScale()
@@ -811,9 +902,29 @@ namespace MosaicShell.Host.Capabilities
 
         internal void BeginMotion(bool entrance)
         {
+            if (_motionAnimating)
+            {
+                // The previous sequence never reached CompleteMotion. Each occurrence is one
+                // visible restart: BeginMotion re-seeds Position and (for entrance) opacity/reveal
+                // from the start pose, so the run in flight is discarded part-way.
+                TesseraFlyoutDiagnostics.Log(
+                    $"MOTION RESTART begin(entrance={entrance}) over in-flight {MotionStateTag} "
+                    + $"kind={FlyoutRequest.Kind} style={FlyoutRequest.StyleId}");
+            }
+
+            _motionStartTicks = Environment.TickCount64;
             EnsureStatusRoundClipBeforeReveal();
             Position = _restPosition;
             _motionEntrance = entrance;
+            if (entrance)
+            {
+                SetPhase(TesseraFlyoutPhase.Entering);
+                _exitAnimating = false;
+            }
+            else
+            {
+                SetPhase(TesseraFlyoutPhase.Exiting);
+            }
             (int generation, CancellationToken _) = BeginMotionRun();
             _stackedShowGeneration = generation;
 
@@ -821,6 +932,7 @@ namespace MosaicShell.Host.Capabilities
             {
                 if (entrance)
                 {
+                    SetPhase(TesseraFlyoutPhase.Shown);
                     Opacity = 1;
                     MotionSurface.Opacity = 1;
                     RenderTransform = null;
@@ -828,6 +940,7 @@ namespace MosaicShell.Host.Capabilities
                 }
                 else
                 {
+                    SetPhase(TesseraFlyoutPhase.Hidden);
                     MotionSurface.Opacity = 0;
                     RenderTransform = null;
                 }
@@ -980,17 +1093,38 @@ namespace MosaicShell.Host.Capabilities
 
         internal void CompleteMotion(bool entrance)
         {
+            long elapsed = Environment.TickCount64 - _motionStartTicks;
             if (_stackedShowGeneration != MotionGeneration)
             {
+                // Superseded: another BeginMotion bumped the generation before this run finished,
+                // so this sequence's cleanup is skipped and _motionAnimating stays owned by the
+                // newer run. Logged because it is the silent half of a restart.
+                TesseraFlyoutDiagnostics.Log(
+                    $"motion superseded entrance={entrance} elapsedMs={elapsed} "
+                    + $"runGen={_stackedShowGeneration} nowGen={MotionGeneration} {MotionStateTag}");
                 return;
             }
 
+            // A competing operation (e.g. a live-apply rebuild or kind/style handoff close)
+            // can dispose this window's platform implementation while its own motion sequence
+            // was still in flight. That's an expected race, not a bug in this cleanup - the
+            // window is going away regardless, so there is nothing left to reset.
+            if (PlatformImpl is null)
+            {
+                TesseraFlyoutDiagnostics.Log(
+                    $"motion cleanup skipped (window disposed) entrance={entrance} elapsedMs={elapsed}");
+                return;
+            }
+
+            TesseraFlyoutDiagnostics.Log(
+                $"motion complete entrance={entrance} elapsedMs={elapsed} {MotionStateTag}");
             _motionAnimating = false;
             _motionRegionProgress = null;
             _suppressRegionClientRedraw = false;
             RenderTransform = null;
             if (entrance)
             {
+                SetPhase(TesseraFlyoutPhase.Shown);
                 Opacity = 1;
                 MotionSurface.Opacity = 1;
                 Position = _restPosition;
@@ -1001,6 +1135,7 @@ namespace MosaicShell.Host.Capabilities
             }
             else
             {
+                SetPhase(TesseraFlyoutPhase.Hidden);
                 MotionSurface.Opacity = 0;
             }
         }
@@ -1107,6 +1242,7 @@ namespace MosaicShell.Host.Capabilities
                 && !PresenterDrivesMotion)
             {
                 _exitAnimating = true;
+                SetPhase(TesseraFlyoutPhase.Exiting);
                 _ = RunExitAnimationAsync(() => FinishTransientHide(notify));
                 return;
             }
@@ -1116,9 +1252,12 @@ namespace MosaicShell.Host.Capabilities
 
         private async Task RunExitAnimationAsync(Action onComplete)
         {
+            int exitGen = MotionGeneration;
             try
             {
-                await FlyoutMotionSession.RunHideAsync([this]).ConfigureAwait(true);
+                Task exitAnimation = FlyoutMotionSession.RunHideAsync([this]);
+                exitGen = MotionGeneration;
+                await exitAnimation.ConfigureAwait(true);
             }
             catch
             {
@@ -1126,13 +1265,22 @@ namespace MosaicShell.Host.Capabilities
             }
             finally
             {
-                _exitAnimating = false;
-                onComplete();
+                if (exitGen == MotionGeneration)
+                {
+                    _exitAnimating = false;
+                }
+
+                if (TesseraFlyoutDismissPolicy.ShouldFinishTransientDismiss(
+                        exitGen, MotionGeneration, Phase, IsVisible))
+                {
+                    onComplete();
+                }
             }
         }
 
         private void FinishTransientHide(bool notify)
         {
+            SetPhase(TesseraFlyoutPhase.Hidden);
             RenderTransform = null;
             Opacity = 1;
             MotionSurface.Opacity = 0;
@@ -1167,15 +1315,13 @@ namespace MosaicShell.Host.Capabilities
         {
             _material = material;
             TesseraPalette.ApplyMaterial(_material);
-
-            byte shellAlpha = TesseraFlyoutWindowPolicy.ResolveWindowBackgroundAlpha(_material);
-            _ = new SolidColorBrush(Color.FromArgb(shellAlpha, 0x11, 0x11, 0x1b));
             TransparencyLevelHint = ParseTransparencyHints(
                 TesseraFlyoutWindowPolicy.ResolveTransparencyHints(_material));
-            SolidColorBrush shell;
+
+            byte shellAlpha = TesseraFlyoutWindowPolicy.ResolveWindowBackgroundAlpha(_material);
             Background = TesseraFlyoutWindowPolicy.WindowBackgroundBrushIsTransparent
                 ? Brushes.Transparent
-                : shell;
+                : new SolidColorBrush(Color.FromArgb(shellAlpha, 0x11, 0x11, 0x1b));
 
             byte fallbackAlpha = TesseraFlyoutWindowPolicy.ResolveCompositionFallbackAlpha(_material);
             TransparencyBackgroundFallback = fallbackAlpha == 0
@@ -1185,7 +1331,7 @@ namespace MosaicShell.Host.Capabilities
 
         private void OnWheel(object? sender, PointerWheelEventArgs e)
         {
-            if (!FlyoutRequest.ModuleId.Equals("Tessera", StringComparison.OrdinalIgnoreCase))
+            if (!ModuleIds.IsTessera(FlyoutRequest.ModuleId))
             {
                 return;
             }

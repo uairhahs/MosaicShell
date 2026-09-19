@@ -62,46 +62,16 @@ namespace MosaicShell.Core.Modules.Tessera
 
 
 
+        /// <summary>Which cluster shape a style uses. Owned by the profile (ADR-0001).</summary>
         public static TesseraStackedLayoutKind ResolveLayoutKind(string? styleId)
-
         {
-
-            string id = StyleIds.Normalize(styleId ?? StyleIds.Fluent);
-
-            return id switch
-
-            {
-
-                StyleIds.Meter => TesseraStackedLayoutKind.HorizontalMediaFirst,
-
-                StyleIds.Gnome => TesseraStackedLayoutKind.VerticalMediaFirst,
-
-                StyleIds.Fluent => TesseraStackedLayoutKind.HorizontalVolumeFirst,
-
-                StyleIds.Windows11 => TesseraStackedLayoutKind.VerticalWin11,
-
-                StyleIds.Radial => TesseraStackedLayoutKind.HorizontalRadial,
-
-                StyleIds.PlainText => TesseraStackedLayoutKind.PlainTextColumn,
-
-                StyleIds.Compact or StyleIds.ModernFlyouts => TesseraStackedLayoutKind.VerticalVolumeFirst,
-
-                _ => TesseraStackedLayoutKind.VerticalVolumeFirst,
-
-            };
-
+            return TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).LayoutKind;
         }
 
-
-
+        /// <summary>H3 multi-window OS-acrylic eligibility. Owned by the profile (ADR-0001).</summary>
         public static bool SupportsStackedOsAcrylic(string? styleId)
-
         {
-
-            string id = StyleIds.Normalize(styleId ?? StyleIds.Fluent);
-
-            return id is StyleIds.Meter or StyleIds.Gnome or StyleIds.Compact or StyleIds.ModernFlyouts;
-
+            return TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).SupportsStackedOsAcrylic;
         }
 
 
@@ -140,17 +110,9 @@ namespace MosaicShell.Core.Modules.Tessera
 
                 StyleIds.ModernFlyouts => ModernFlyoutsPlacements(),
 
-                _ => VerticalVolumeFirstPlacements(
-
-                    TesseraStackedPlacementSpec.CompactVolumeWidthDip,
-
-                    TesseraStackedPlacementSpec.CompactVolumeHeightDip,
-
-                    TesseraStackedPlacementSpec.CompactMediaWidthDip,
-
-                    TesseraStackedPlacementSpec.CompactMediaHeightDip,
-
-                    TesseraStackedPlacementSpec.CompactGapDip),
+                // Unlisted styles never reach here through the live H3 path (SupportsStackedOsAcrylic
+                // gates it); this mirrors Compact's shape so an unexpected id still has a sane estimate.
+                _ => VerticalVolumeFirstPlacements(StyleIds.Compact),
 
             };
 
@@ -472,24 +434,15 @@ namespace MosaicShell.Core.Modules.Tessera
 
 
 
+        /// <summary>
+        /// Gap used by the <see cref="TesseraStackedLayoutKind.VerticalVolumeFirst"/> arm only
+        /// (Compact, ModernFlyouts, and the shared default). Other layout kinds (Win11, Gnome,
+        /// PlainText, Meter) keep their own dedicated gap constants below - owned by the profile
+        /// (ADR-0001), not restated as a second switch.
+        /// </summary>
         private static double VerticalGapForStyle(string? styleId)
-
         {
-
-            string id = StyleIds.Normalize(styleId ?? StyleIds.Fluent);
-
-            return id switch
-
-            {
-
-                StyleIds.Compact => TesseraStackedPlacementSpec.CompactGapDip,
-
-                StyleIds.ModernFlyouts => TesseraStackedPlacementSpec.ModernFlyoutsGapDip,
-
-                _ => VerticalGapDip,
-
-            };
-
+            return TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).StackedGapDip;
         }
 
 
@@ -659,8 +612,8 @@ namespace MosaicShell.Core.Modules.Tessera
             double measuredMediaHeightDip = 0)
 
         {
-
-            double mediaW = TesseraStackedPlacementSpec.MeterMediaWidthDip;
+            TesseraFlyoutStyleProfile profile = TesseraFlyoutTweenTargetCatalog.ResolveProfile(StyleIds.Meter);
+            double mediaW = profile.MediaWidthDip;
 
             // Width stays on the signed reference (transient measure parked the pill under media).
 
@@ -668,13 +621,13 @@ namespace MosaicShell.Core.Modules.Tessera
 
             double mediaH = Math.Max(
 
-                TesseraStackedPlacementSpec.MeterMediaHeightDip,
+                profile.MediaHeightDip,
 
                 Math.Max(0, measuredMediaHeightDip));
 
-            double volW = TesseraStackedPlacementSpec.MeterVolumeWidthDip;
+            double volW = profile.VolumeWidthDip;
 
-            double volH = TesseraStackedPlacementSpec.MeterVolumeHeightDip;
+            double volH = profile.VolumeHeightDip;
 
             double volX = mediaW + TesseraStackedPlacementSpec.MeterGapDip;
 
@@ -695,39 +648,27 @@ namespace MosaicShell.Core.Modules.Tessera
 
 
         private static IReadOnlyList<TesseraStackedPanelPlacement> Win11Placements()
-
         {
-
-            double w = TesseraStackedPlacementSpec.Win11WidthDip;
-
-            double volH = TesseraStackedPlacementSpec.Win11VolumeHeightDip;
-
-            double mediaH = TesseraStackedPlacementSpec.Win11MediaHeightDip;
-
+            TesseraFlyoutStyleProfile profile = TesseraFlyoutTweenTargetCatalog.ResolveProfile(StyleIds.Windows11);
+            double w = profile.VolumeWidthDip;
+            double volH = profile.VolumeHeightDip;
+            double mediaH = profile.MediaHeightDip;
             return
-
             [
-
                 new(TesseraStackedPanelRole.Volume, 0, 0, w, volH),
-
                 new(TesseraStackedPanelRole.Media, 0, volH, w, mediaH),
-
             ];
-
         }
 
 
 
         private static IReadOnlyList<TesseraStackedPanelPlacement> RadialPlacements()
-
         {
-
-            double volW = TesseraStackedPlacementSpec.RadialVolumeWidthDip;
-
-            double mediaW = TesseraStackedPlacementSpec.RadialMediaWidthDip;
-
-            double h = TesseraStackedPlacementSpec.RadialPanelHeightDip;
-
+            TesseraFlyoutStyleProfile profile = TesseraFlyoutTweenTargetCatalog.ResolveProfile(StyleIds.Radial);
+            double volW = profile.VolumeWidthDip;
+            double mediaW = profile.MediaWidthDip;
+            double h = profile.VolumeHeightDip;
+            // Cluster width is placement-only spread math, not a style rest size; stays local.
             double clusterW = TesseraStackedPlacementSpec.RadialClusterWidthDip;
 
             return
@@ -745,17 +686,12 @@ namespace MosaicShell.Core.Modules.Tessera
 
 
         private static IReadOnlyList<TesseraStackedPanelPlacement> PlainTextPlacements()
-
         {
-
-            double w = TesseraStackedPlacementSpec.PlainTextWidthDip;
-
-            double volH = TesseraStackedPlacementSpec.PlainTextVolumeHeightDip;
-
+            TesseraFlyoutStyleProfile profile = TesseraFlyoutTweenTargetCatalog.ResolveProfile(StyleIds.PlainText);
+            double w = profile.VolumeWidthDip;
+            double volH = profile.VolumeHeightDip;
             double gap = TesseraStackedPlacementSpec.PlainTextGapDip;
-
-            double mediaH = TesseraStackedPlacementSpec.PlainTextMediaHeightDip;
-
+            double mediaH = profile.MediaHeightDip;
             return
 
             [
@@ -772,75 +708,31 @@ namespace MosaicShell.Core.Modules.Tessera
 
         private static IReadOnlyList<TesseraStackedPanelPlacement> GnomePlacements()
         {
+            TesseraFlyoutStyleProfile profile = TesseraFlyoutTweenTargetCatalog.ResolveProfile(StyleIds.Gnome);
             return VerticalColumn(
-
-                (TesseraStackedPanelRole.Media,
-
-                    TesseraStackedPlacementSpec.GnomeMediaWidthDip,
-
-                    TesseraStackedPlacementSpec.GnomeMediaHeightDip),
-
-                (TesseraStackedPanelRole.Volume,
-
-                    TesseraStackedPlacementSpec.GnomeVolumeWidthDip,
-
-                    TesseraStackedPlacementSpec.GnomeVolumeHeightDip),
-
+                (TesseraStackedPanelRole.Media, profile.MediaWidthDip, profile.MediaHeightDip),
+                (TesseraStackedPanelRole.Volume, profile.VolumeWidthDip, profile.VolumeHeightDip),
                 TesseraStackedPlacementSpec.GnomeGapDip,
-
                 centerHorizontally: true);
         }
 
         private static IReadOnlyList<TesseraStackedPanelPlacement> CompactPlacements()
         {
-            return VerticalVolumeFirstPlacements(
-
-                TesseraStackedPlacementSpec.CompactVolumeWidthDip,
-
-                TesseraStackedPlacementSpec.CompactVolumeHeightDip,
-
-                TesseraStackedPlacementSpec.CompactMediaWidthDip,
-
-                TesseraStackedPlacementSpec.CompactMediaHeightDip,
-
-                TesseraStackedPlacementSpec.CompactGapDip);
+            return VerticalVolumeFirstPlacements(StyleIds.Compact);
         }
 
         private static IReadOnlyList<TesseraStackedPanelPlacement> ModernFlyoutsPlacements()
         {
-            return VerticalVolumeFirstPlacements(
-
-                TesseraStackedPlacementSpec.ModernFlyoutsVolumeWidthDip,
-
-                TesseraStackedPlacementSpec.ModernFlyoutsVolumeHeightDip,
-
-                TesseraStackedPlacementSpec.ModernFlyoutsMediaWidthDip,
-
-                TesseraStackedPlacementSpec.ModernFlyoutsMediaHeightDip,
-
-                TesseraStackedPlacementSpec.ModernFlyoutsGapDip);
+            return VerticalVolumeFirstPlacements(StyleIds.ModernFlyouts);
         }
 
-        private static IReadOnlyList<TesseraStackedPanelPlacement> VerticalVolumeFirstPlacements(
-
-            double volumeWidth,
-
-            double volumeHeight,
-
-            double mediaWidth,
-
-            double mediaHeight,
-
-            double gapDip)
+        private static IReadOnlyList<TesseraStackedPanelPlacement> VerticalVolumeFirstPlacements(string? styleId)
         {
+            TesseraFlyoutStyleProfile profile = TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId);
             return VerticalColumn(
-
-                (TesseraStackedPanelRole.Volume, volumeWidth, volumeHeight),
-
-                (TesseraStackedPanelRole.Media, mediaWidth, mediaHeight),
-
-                gapDip,
-
+                (TesseraStackedPanelRole.Volume, profile.VolumeWidthDip, profile.VolumeHeightDip),
+                (TesseraStackedPanelRole.Media, profile.MediaWidthDip, profile.MediaHeightDip),
+                profile.StackedGapDip,
                 centerHorizontally: true);
         }
     }

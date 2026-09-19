@@ -19,10 +19,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             if (vm.Kind.Equals("media", StringComparison.OrdinalIgnoreCase)
                 && !TesseraStackedBuildContext.IsActive)
             {
-                return TesseraChrome.Glass(
-                    TesseraMediaPanel.Create(vm, TesseraMediaMode.Windows11Below),
-                    TesseraWindows11Metrics.CornerRadius,
-                    w: TesseraWindows11Metrics.Width);
+                return Win11MediaOnlyReveal(vm);
             }
 
             Control? stacked = TesseraStackedBuildContext.TryCreatePanel(
@@ -142,6 +139,27 @@ namespace MosaicShell.Host.Tiles.Tessera
         {
             return TesseraChrome.GlassTinted(media, TesseraWindows11Metrics.CornerRadius, TesseraStylePalette.Windows11.ShellBrush,
                 w: TesseraWindows11Metrics.Width);
+        }
+
+        /// <summary>
+        /// Single-HWND media card. The reveal wrap is what makes phase 2 animate at all - the
+        /// pump drives <see cref="TesseraRevealHost"/> instances collected from the visual tree,
+        /// so a card built from bare chrome yields zero hosts and silently skips its reveal while
+        /// phase 1 still runs, which reads as a flat card next to the volume flyout.
+        /// <para>
+        /// Keeps this style's existing untinted <c>Glass</c> chrome rather than reusing
+        /// <see cref="Win11MediaWrap"/>'s tinted variant: the two differ visually, and the defect
+        /// here is the missing wrap, not the chrome.
+        /// </para>
+        /// </summary>
+        private static Control Win11MediaOnlyReveal(TesseraFlyoutViewModel vm)
+        {
+            return TesseraRevealHostFactory.WrapMediaFromCatalog(
+                vm,
+                TesseraChrome.Glass(
+                    TesseraMediaPanel.Create(vm, TesseraMediaMode.Windows11Below),
+                    TesseraWindows11Metrics.CornerRadius,
+                    w: TesseraWindows11Metrics.Width));
         }
     }
 }

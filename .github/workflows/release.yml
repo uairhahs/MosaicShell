@@ -185,6 +185,27 @@ jobs:
           "path=$zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           Write-Host "Portable: $zip"
 
+      - name: Compute release checksums
+        id: sums
+        env:
+          BUILD_VERSION: ${{ steps.tag.outputs.name }}
+        run: |
+          $setup = "${{ steps.setup.outputs.setup }}"
+          $zip = "${{ steps.zip.outputs.path }}"
+          $alias = Join-Path $env:GITHUB_WORKSPACE "MosaicShell-Setup.exe"
+          Copy-Item -Force $setup $alias
+
+          $sums = Join-Path $env:GITHUB_WORKSPACE "SHA256SUMS.txt"
+          $lines = foreach ($f in @($setup, $alias, $zip)) {
+            $h = (Get-FileHash $f -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$h  $(Split-Path -Leaf $f)"
+          }
+          # Host update path parses this file to verify the download; format is sha256sum's.
+          Set-Content -Path $sums -Value $lines -Encoding ascii
+          "path=$sums" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "alias=$alias" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Get-Content $sums | Write-Host
+
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -193,8 +214,8 @@ jobs:
           $name = "${{ steps.tag.outputs.name }}"
           $setup = "${{ steps.setup.outputs.setup }}"
           $zip = "${{ steps.zip.outputs.path }}"
-          $alias = Join-Path $env:GITHUB_WORKSPACE "MosaicShell-Setup.exe"
-          Copy-Item -Force $setup $alias
+          $alias = "${{ steps.sums.outputs.alias }}"
+          $sums = "${{ steps.sums.outputs.path }}"
 
           $signNote = if ($env:SIGNING_ENABLED -eq 'true') {
             "- Release binaries are Authenticode-signed via Azure Trusted Signing."
@@ -202,7 +223,7 @@ jobs:
             "- Builds are currently **unsigned** (SmartScreen may warn). Signing is deferred; see [.github/docs/release-signing.md](https://github.com/uairhahs/MosaicShell/blob/main/.github/docs/release-signing.md) when ready."
           }
 
-          gh release create $name $setup $alias $zip `
+          gh release create $name $setup $alias $zip $sums `
             --title "MosaicShell $name" `
             --notes @"
           ## Install
@@ -213,8 +234,12 @@ jobs:
           - Optional: **MosaicShell-Portable-$name.zip** for a folder-based layout.
           $signNote
 
+          ## Verify
+          **SHA256SUMS.txt** lists the SHA-256 of every asset. Host checks it automatically on update.
+          To verify by hand: ``Get-FileHash .\MosaicShell-Setup-$name.exe -Algorithm SHA256``.
+
           ## Update
-          In Host: Settings / Check updates downloads the latest Setup and runs it silently.
+          In Host: Settings / Check updates downloads the latest Setup, verifies its SHA-256, and runs it silently.
           "@ `
             --prerelease `
             --target "${{ github.sha }}"

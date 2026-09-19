@@ -148,21 +148,10 @@ namespace MosaicShell.Core.Modules.Tessera
                     Math.Clamp(h, TesseraFlyoutWindowPolicy.RelayoutMinHeightDip, ChipMaxHeightDip));
         }
 
+        /// <summary>Status chip radius per style, owned by the profile (ADR-0001).</summary>
         public static float ResolveChipCornerRadiusDip(string? styleId)
         {
-            string id = Styles.StyleIds.Normalize(styleId ?? Styles.StyleIds.Fluent);
-            return id switch
-            {
-                Styles.StyleIds.Square => 24f,
-                Styles.StyleIds.Gnome => 24f,
-                Styles.StyleIds.MaterialYou => 24f,
-                Styles.StyleIds.Meter => 16f,
-                Styles.StyleIds.Radial => 10f,
-                Styles.StyleIds.CoreUI => 8f,
-                Styles.StyleIds.PlainText => 4f,
-                Styles.StyleIds.Fluent => ChipCornerRadiusDip,
-                _ => ChipCornerRadiusDip,
-            };
+            return TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).StatusChipCornerRadiusDip;
         }
     }
 }

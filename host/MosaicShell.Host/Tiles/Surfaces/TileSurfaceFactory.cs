@@ -1,6 +1,7 @@
 using System.Reflection;
 using Avalonia.Controls;
 using MosaicShell.Core;
+using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Services;
 
@@ -38,7 +39,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
             Register(new DelegateTileViewFactory("Chrono", _ => new ChronoTileView()));
             Register(new DelegateTileViewFactory("Phono", s => new PhonoTileView(s.Media)));
             Register(new DelegateTileViewFactory("Pulse", s => new PulseTileView(s.AudioLevels)));
-            Register(new DelegateTileViewFactory("Tessera", s => new TesseraTileView(s.Audio, s.Brightness, s.Media)));
+            Register(new DelegateTileViewFactory(ModuleIds.Tessera, s => new TesseraTileView(s.Audio, s.Brightness, s.Media)));
             Register(new DelegateTileViewFactory("Mixdeck", s => new MixdeckTileView(s.AppAudio, s.Audio)));
             Register(new DelegateTileViewFactory("Inlay", _ => new InlayTileView()));
             Register(new DelegateTileViewFactory("Slate", _ => new SlateTileView()));
@@ -48,11 +49,12 @@ namespace MosaicShell.Host.Tiles.Surfaces
 
         /// <summary>
         /// Load <c>Modules\{id}\module.dll</c> or <c>tile.dll</c> exporting a parameterless <see cref="ITileViewFactory"/>.
-        /// Built-ins win on id collision.
+        /// Built-ins win on id collision. Loading is full trust: a third-party tile runs arbitrary
+        /// code in the Host process.
         /// </summary>
         public void TryLoadExternal(string moduleId, string modulesRoot)
         {
-            if (_factories.ContainsKey(moduleId))
+            if (_factories.ContainsKey(moduleId) || !ModulePackagePolicy.IsValidModuleId(moduleId))
             {
                 return;
             }

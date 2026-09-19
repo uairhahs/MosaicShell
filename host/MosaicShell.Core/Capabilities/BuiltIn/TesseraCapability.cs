@@ -165,11 +165,19 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                     visible,
                     Flyouts.OpenKind);
 
+                FlyoutTrace.Write(
+                    $"media signal kind={signal.Kind} boundary={signal.IsTrackBoundary} "
+                    + $"visible={visible} openKind={(string.IsNullOrEmpty(Flyouts.OpenKind) ? "-" : Flyouts.OpenKind)} "
+                    + $"action={action} app={Trim(current?.AppId)} art={current?.ThumbnailPng?.Length ?? -1} "
+                    + $"pos={current?.PositionSeconds ?? -1:0.#}/{current?.DurationSeconds ?? -1:0.#} "
+                    + $"artist=[{Trim(current?.Artist)}] title=[{Trim(current?.Title)}]");
+
                 if (action == MediaFlyoutAction.PresentMediaFlyout
                     && visible
                     && Flyouts.OpenKind.Equals("media", StringComparison.OrdinalIgnoreCase)
                     && !signal.IsTrackBoundary)
                 {
+                    FlyoutTrace.Write("media signal -> SoftRefresh (non-boundary on visible media)");
                     Flyouts.SoftRefresh(BuildRequest("media", null));
                     return;
                 }
@@ -260,6 +268,14 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
             return VolumePercent.Step(current, deltaPercent);
         }
 
+        /// <summary>Short, single-line track title for <see cref="FlyoutTrace"/> output.</summary>
+        private static string Trim(string? title)
+        {
+            return string.IsNullOrWhiteSpace(title)
+                ? "-"
+                : title.Length <= 28 ? title : title[..28];
+        }
+
         private void PresentMediaFlyout(
             bool pumpFirst,
             FlyoutSyncTrigger trigger,
@@ -306,7 +322,6 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                 Flyouts.Route(
                     request,
                     trigger,
-                    _settings.EnableMediaFlyouts,
                     _settings.Style,
                     Services.Media.Current);
             }
@@ -358,9 +373,13 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
 
         private void ReloadSettings()
         {
+            string priorStyle = _settings.Style;
             _settings = ModuleSettingsStore.Load("Tessera", () => new TesseraSettings());
             string path = ModuleSettingsStore.PathFor("Tessera");
             _settingsMtimeUtc = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
+            TryLog(
+                $"settings reloaded: style {priorStyle} -> {_settings.Style}, "
+                + $"autoDismissMs={_settings.AutoDismissMs}, mtimeUtc={_settingsMtimeUtc:O}");
         }
 
         private void EnsureSettingsFresh()
@@ -371,6 +390,20 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
             {
                 ReloadSettings();
             }
+        }
+
+        /// <summary>Traces Tessera settings reloads (e.g. after Hub Save) so it is visible whether
+        /// and when an already-armed capability actually picks up a saved style change, rather
+        /// than only the Hub-side confirmation that the settings file was written.</summary>
+        private static void TryLog(string line)
+        {
+            try
+            {
+                AppPaths.EnsureLayout();
+                string path = Path.Combine(AppPaths.CacheDirectory, "flyout.log");
+                File.AppendAllText(path, $"{DateTime.Now:HH:mm:ss.fff} [TesseraCapability] {line}{Environment.NewLine}");
+            }
+            catch { /* soft-fail */ }
         }
 
         private void StartLockKeysHook()

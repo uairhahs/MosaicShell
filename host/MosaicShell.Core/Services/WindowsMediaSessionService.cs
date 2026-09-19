@@ -15,6 +15,7 @@ namespace MosaicShell.Core.Services
         private bool _disposed;
         private int _updateGen;
         private Timer? _timelinePoll;
+        private Timer? _nullSessionGrace;
 
         public WindowsMediaSessionService()
         {
@@ -67,14 +68,14 @@ namespace MosaicShell.Core.Services
                 _session = _manager.GetCurrentSession();
                 if (_session is null)
                 {
-                    Current = null;
                     _lastThumb = null;
                     _lastTitle = null;
                     _lastAppId = null;
-                    Changed?.Invoke(this, EventArgs.Empty);
+                    ScheduleNullSessionChanged();
                     return;
                 }
 
+                CancelPendingNullSessionChanged();
                 _session.MediaPropertiesChanged += OnProps;
                 _session.PlaybackInfoChanged += OnProps;
                 _session.TimelinePropertiesChanged += OnTimeline;
@@ -84,6 +85,41 @@ namespace MosaicShell.Core.Services
             {
                 Current = null;
             }
+        }
+
+        /// <summary>
+        /// YTM's browser session closes and reopens on every track change (see
+        /// <see cref="MediaSessionChangePolicy.NullSessionGraceMs"/>). Defer the null state
+        /// so a session reattaching within the grace window never surfaces as a stop-then-start
+        /// blip; a real stop still lands once the window elapses with nothing reattached.
+        /// </summary>
+        private void ScheduleNullSessionChanged()
+        {
+            _nullSessionGrace?.Dispose();
+            _nullSessionGrace = new Timer(
+                _ =>
+                {
+                    try
+                    {
+                        Current = null;
+                        Changed?.Invoke(this, EventArgs.Empty);
+                    }
+                    catch (Exception ex)
+                    {
+                        // An unhandled exception on this ThreadPool timer thread would
+                        // otherwise crash the whole process, same as _timelinePoll.
+                        System.Diagnostics.Debug.WriteLine($"[WindowsMediaSessionService null-session] {ex}");
+                    }
+                },
+                null,
+                MediaSessionChangePolicy.NullSessionGraceMs,
+                Timeout.Infinite);
+        }
+
+        private void CancelPendingNullSessionChanged()
+        {
+            _nullSessionGrace?.Dispose();
+            _nullSessionGrace = null;
         }
 
         private void OnProps(GlobalSystemMediaTransportControlsSession sender, object args)
@@ -195,7 +231,9 @@ namespace MosaicShell.Core.Services
                     _timelinePlaying = next.IsPlaying;
                     Changed?.Invoke(this, EventArgs.Empty);
                 }
-                else if (raiseProgress)
+                else if (raiseProgress
+                    || (prev is not null && MediaSessionChangePolicy.IsArtOnlyRefresh(
+                        prev.ThumbnailPng?.Length ?? 0, next.ThumbnailPng?.Length ?? 0)))
                 {
                     ProgressChanged?.Invoke(this, EventArgs.Empty);
                 }
@@ -230,19 +268,11 @@ namespace MosaicShell.Core.Services
                 return true;
             }
 
-            if (MediaSessionChangePolicy.LooksLikeNewTrackPosition(prev.PositionSeconds, next.PositionSeconds))
-            {
-                return true;
-            }
-
-            int prevLen = prev.ThumbnailPng?.Length ?? 0;
-            int nextLen = next.ThumbnailPng?.Length ?? 0;
-            if (prevLen != nextLen)
-            {
-                return true;
-            }
-            // First time art appears with same length is rare; also detect null→bytes
-            return prevLen == 0 && nextLen > 0;
+            // Thumbnail-only differences are deliberately excluded: late-arriving art for a
+            // track whose identity already settled must patch in via ProgressChanged, not
+            // restart Tessera's entrance animation. See the caller's IsArtOnlyRefresh check.
+            return MediaSessionChangePolicy.LooksLikeNewTrackPosition(
+                prev.PositionSeconds, next.PositionSeconds);
         }
 
         private DateTimeOffset _timelineSampleUtc = DateTimeOffset.MinValue;
@@ -403,7 +433,9 @@ namespace MosaicShell.Core.Services
 
                 _lastThumb = thumb;
                 Current = Current with { ThumbnailPng = thumb };
-                Changed?.Invoke(this, EventArgs.Empty);
+                // Only the thumbnail changed here - patch in place, do not restart the
+                // entrance animation for a track already shown (see IsArtOnlyRefresh).
+                ProgressChanged?.Invoke(this, EventArgs.Empty);
             }
             catch { /* ignore */ }
             finally
@@ -626,6 +658,8 @@ namespace MosaicShell.Core.Services
             _disposed = true;
             _timelinePoll?.Dispose();
             _timelinePoll = null;
+            _nullSessionGrace?.Dispose();
+            _nullSessionGrace = null;
             if (_session is not null)
             {
                 _session.MediaPropertiesChanged -= OnProps;

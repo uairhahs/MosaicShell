@@ -78,7 +78,9 @@ namespace MosaicShell.Core.Modules.Tessera
         public const double Win11WidthDip = 320;
         public const double Win11GapDip = 0;
         public const double Win11VolumeHeightDip = 50;
-        public const double Win11MediaHeightDip = 175;
+        /// <summary>Header + title/artist row, scrubber, and transport row need slightly more than
+        /// 175 to avoid clipping the position/duration line under the scrubber; 195 gives headroom.</summary>
+        public const double Win11MediaHeightDip = 195;
         public const double Win11PadDip = 15;
         public const double Win11CornerRadiusDip = 12;
 
