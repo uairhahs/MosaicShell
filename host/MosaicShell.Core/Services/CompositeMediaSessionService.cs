@@ -123,7 +123,8 @@ namespace MosaicShell.Core.Services
             if (prev is not null && smtc is not null)
             {
                 if (!string.IsNullOrWhiteSpace(smtc.Title)
-                    && !string.Equals(prev.Title, smtc.Title, StringComparison.Ordinal))
+                    && !string.Equals(
+                        prev.Title, MediaTitleNormalizer.StripSiteSuffix(smtc.Title), StringComparison.Ordinal))
                 {
                     raiseChanged = true;
                 }
@@ -199,7 +200,7 @@ namespace MosaicShell.Core.Services
 
             // Prefer any WNP cover when SMTC has none (YTM PWA / browser)
             byte[]? thumb = PickCover(smtc.ThumbnailPng, wnp?.CoverPng, smtc.Title, wnp?.Title, smtc.AppId);
-            string? title = smtc.Title;
+            string? title = MediaTitleNormalizer.StripSiteSuffix(smtc.Title);
             string? artist = smtc.Artist;
             if (wnp is not null && !string.IsNullOrWhiteSpace(wnp.Title)
                 && (LooksLikeBrowserSession(smtc.AppId)
@@ -270,22 +271,12 @@ namespace MosaicShell.Core.Services
 
         private static bool TitlesLooselyMatch(string? a, string? b)
         {
-            if (string.IsNullOrWhiteSpace(a) || string.IsNullOrWhiteSpace(b))
-            {
-                return false;
-            }
-
-            static string Norm(string s)
-            {
-                int i = s.IndexOf('|');
-                if (i > 0)
-                {
-                    s = s[..i];
-                }
-
-                return s.Trim();
-            }
-            return string.Equals(Norm(a), Norm(b), StringComparison.OrdinalIgnoreCase);
+            return !string.IsNullOrWhiteSpace(a)
+                && !string.IsNullOrWhiteSpace(b)
+                && string.Equals(
+                    MediaTitleNormalizer.StripSiteSuffix(a)!.Trim(),
+                    MediaTitleNormalizer.StripSiteSuffix(b)!.Trim(),
+                    StringComparison.OrdinalIgnoreCase);
         }
 
         private static string? NullIfEmpty(string? s)

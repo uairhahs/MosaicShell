@@ -118,6 +118,38 @@ namespace MosaicShell.Core.Tests
             _ = changed.Should().Be(2, "SMTC restart must raise Changed even when WNP timeline is stale");
         }
 
+        [Fact]
+        public void Browser_tab_title_reaches_consumers_without_the_site_suffix_when_wnp_is_silent()
+        {
+            SteppingMediaSessionService smtc = new();
+            StubWebNowPlayingService wnp = new();
+            using CompositeMediaSessionService composite = new(smtc, wnp);
+
+            smtc.Set(new MediaSessionInfo(
+                "JUST DANCE | YouTube Music", null, "music.youtube.com-x!App", true, null, 5, 108));
+
+            _ = composite.Current!.Title.Should().Be("JUST DANCE");
+        }
+
+        [Fact]
+        public void Suffixed_smtc_title_does_not_raise_changed_on_every_progress_tick()
+        {
+            SteppingMediaSessionService smtc = new();
+            StubWebNowPlayingService wnp = new();
+            using CompositeMediaSessionService composite = new(smtc, wnp);
+
+            int changed = 0;
+            composite.Changed += (_, _) => changed++;
+
+            smtc.Set(new MediaSessionInfo(
+                "JUST DANCE | YouTube Music", null, "music.youtube.com-x!App", true, null, 5, 108));
+            _ = changed.Should().Be(1);
+
+            smtc.Set(new MediaSessionInfo(
+                "JUST DANCE | YouTube Music", null, "music.youtube.com-x!App", true, null, 8, 108));
+            _ = changed.Should().Be(1, "the title did not change, only the suffix differs from the merged value");
+        }
+
         private sealed class SteppingMediaSessionService : IMediaSessionService
         {
             public MediaSessionInfo? Current { get; private set; }
