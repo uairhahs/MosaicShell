@@ -43,60 +43,20 @@ namespace MosaicShell.Core.Tests
 
         private static List<string> Scan(Func<string, bool> isViolation)
         {
-            string hostRoot = Path.Combine(FindRepoRoot(), "host");
             List<string> hits = [];
-            foreach (string project in ProductionProjects)
+            foreach (string file in SourceTree.EnumerateSources(ProductionProjects))
             {
-                string dir = Path.Combine(hostRoot, project);
-                if (!Directory.Exists(dir))
+                string[] lines = File.ReadAllLines(file);
+                for (int i = 0; i < lines.Length; i++)
                 {
-                    continue;
-                }
-
-                foreach (string file in Directory.EnumerateFiles(dir, "*.cs", SearchOption.AllDirectories))
-                {
-                    if (IsBuildOutput(file))
+                    if (isViolation(lines[i]))
                     {
-                        continue;
-                    }
-
-                    string[] lines = File.ReadAllLines(file);
-                    for (int i = 0; i < lines.Length; i++)
-                    {
-                        if (isViolation(lines[i]))
-                        {
-                            hits.Add($"{Path.GetRelativePath(hostRoot, file)}:{i + 1}");
-                        }
+                        hits.Add($"{SourceTree.RelativeToHost(file)}:{i + 1}");
                     }
                 }
             }
 
             return hits;
-        }
-
-        private static bool IsBuildOutput(string path)
-        {
-            string[] segments = path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            return segments.Contains("obj") || segments.Contains("bin");
-        }
-
-        private static string FindRepoRoot()
-        {
-            foreach (string start in new[] { AppContext.BaseDirectory, Directory.GetCurrentDirectory() })
-            {
-                DirectoryInfo? dir = new(start);
-                while (dir is not null)
-                {
-                    if (Directory.Exists(Path.Combine(dir.FullName, "host", "MosaicShell.Core")))
-                    {
-                        return dir.FullName;
-                    }
-
-                    dir = dir.Parent;
-                }
-            }
-
-            throw new DirectoryNotFoundException("Could not locate the repo root (host/MosaicShell.Core).");
         }
     }
 }
