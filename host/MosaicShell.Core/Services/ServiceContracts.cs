@@ -33,8 +33,10 @@ namespace MosaicShell.Core.Services
         byte[]? ThumbnailPng = null,
         double PositionSeconds = 0,
         double DurationSeconds = 0,
-        /// <summary>WNP like rating when known (0 unrated, 1 disliked, 5 liked); null for native SMTC-only.</summary>
-        int? LikeRating = null);
+        /// <summary>Browser like rating when known (0 unrated, 1 disliked, 5 liked); null for native SMTC-only.</summary>
+        int? LikeRating = null,
+        /// <summary>What the browser player behind this session can be asked to do; none for native SMTC-only.</summary>
+        BrowserMediaCapabilities Capabilities = BrowserMediaCapabilities.None);
 
     public interface IMediaSessionService : IDisposable
     {
@@ -186,7 +188,7 @@ namespace MosaicShell.Core.Services
         {
             WebNowPlayingReduxHost wnp = new();
             wnp.Start();
-            return new CompositeMediaSessionService(new WindowsMediaSessionService(), wnp);
+            return new CompositeMediaSessionService(new WindowsMediaSessionService(), new WebNowPlayingSource(wnp));
         }
     }
 }

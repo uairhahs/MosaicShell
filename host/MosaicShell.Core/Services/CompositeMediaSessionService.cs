@@ -1,23 +1,26 @@
-using MosaicShell.Core.Services.WebNowPlaying;
-
 namespace MosaicShell.Core.Services
 {
     /// <summary>
-    /// Merges Windows SMTC with WebNowPlaying. SMTC drives transport when present;
-    /// WNP supplies album art for browser players (YouTube Music) where SMTC Thumbnail is null.
+    /// Merges Windows SMTC with browser media sources. SMTC drives transport when present; a browser source
+    /// supplies artist, album and cover for browser players (YouTube Music) where SMTC has only the page title.
     /// </summary>
     public sealed class CompositeMediaSessionService : IMediaSessionService, IMediaSourceDiagnostics
     {
         private readonly IMediaSessionService _smtc;
-        private readonly IWebNowPlayingService _wnp;
+        private readonly IBrowserMediaSource[] _browser;
 
-        public CompositeMediaSessionService(IMediaSessionService smtc, IWebNowPlayingService wnp)
+        /// <summary>Browser sources are listed in order of preference; the first with an active player is used.</summary>
+        public CompositeMediaSessionService(IMediaSessionService smtc, params IBrowserMediaSource[] browserSources)
         {
             _smtc = smtc;
-            _wnp = wnp;
+            _browser = browserSources;
             _smtc.Changed += OnSourceChanged;
             _smtc.ProgressChanged += OnSmtcProgress;
-            _wnp.Changed += OnSourceChanged;
+            foreach (IBrowserMediaSource source in _browser)
+            {
+                source.Changed += OnSourceChanged;
+            }
+
             Rebuild(raiseProgress: false);
         }
 
@@ -27,13 +30,13 @@ namespace MosaicShell.Core.Services
 
         public string DescribeSources()
         {
-            return MediaSourceAttribution.Describe(_smtc.Current, _wnp.Active, Current);
+            return MediaSourceAttribution.Describe(_smtc.Current, ActiveBrowserPlayer(), Current);
         }
 
         public void PumpTimeline()
         {
             _smtc.PumpTimeline();
-            // WNP position updates arrive via Changed; still refresh merge in case only SMTC moved
+            // Browser position updates arrive via Changed; still refresh merge in case only SMTC moved
             Rebuild(raiseProgress: true);
         }
 
@@ -60,34 +63,36 @@ namespace MosaicShell.Core.Services
         public async Task ToggleShuffleAsync()
         {
             await _smtc.ToggleShuffleAsync();
-            if (_wnp is WebNowPlayingReduxHost host)
+            if (ActiveSourceWith(BrowserMediaCapabilities.Shuffle) is { } source)
             {
-                await host.TryToggleShuffleAsync();
+                await source.ToggleShuffleAsync();
             }
         }
+
         public async Task ToggleRepeatAsync()
         {
             await _smtc.ToggleRepeatAsync();
-            if (_wnp is WebNowPlayingReduxHost host)
+            if (ActiveSourceWith(BrowserMediaCapabilities.Repeat) is { } source)
             {
-                await host.TryToggleRepeatAsync();
+                await source.ToggleRepeatAsync();
             }
         }
+
         public async Task ToggleLikeAsync(bool wantLiked)
         {
             await _smtc.ToggleLikeAsync(wantLiked);
-            if (_wnp is WebNowPlayingReduxHost host)
+            if (ActiveSourceWith(BrowserMediaCapabilities.Rating) is { } source)
             {
-                await host.TrySetLikeAsync(wantLiked);
+                await source.SetLikedAsync(wantLiked);
             }
         }
 
         public async Task ToggleDislikeAsync(bool wantDisliked)
         {
             await _smtc.ToggleDislikeAsync(wantDisliked);
-            if (_wnp is WebNowPlayingReduxHost host)
+            if (ActiveSourceWith(BrowserMediaCapabilities.Dislike) is { } source)
             {
-                await host.TrySetDislikeAsync(wantDisliked);
+                await source.SetDislikedAsync(wantDisliked);
             }
         }
 
@@ -95,9 +100,16 @@ namespace MosaicShell.Core.Services
         {
             _smtc.Changed -= OnSourceChanged;
             _smtc.ProgressChanged -= OnSmtcProgress;
-            _wnp.Changed -= OnSourceChanged;
+            foreach (IBrowserMediaSource source in _browser)
+            {
+                source.Changed -= OnSourceChanged;
+            }
+
             _smtc.Dispose();
-            _wnp.Dispose();
+            foreach (IBrowserMediaSource source in _browser)
+            {
+                source.Dispose();
+            }
         }
 
         private void OnSourceChanged(object? sender, EventArgs e)
@@ -110,12 +122,37 @@ namespace MosaicShell.Core.Services
             Rebuild(raiseProgress: true);
         }
 
+        /// <summary>The source whose player is active: the first, in order of preference, that has one.</summary>
+        private IBrowserMediaSource? ActiveSource()
+        {
+            foreach (IBrowserMediaSource source in _browser)
+            {
+                if (source.Active is not null)
+                {
+                    return source;
+                }
+            }
+
+            return null;
+        }
+
+        private BrowserPlayerSnapshot? ActiveBrowserPlayer()
+        {
+            return ActiveSource()?.Active;
+        }
+
+        private IBrowserMediaSource? ActiveSourceWith(BrowserMediaCapabilities capability)
+        {
+            IBrowserMediaSource? source = ActiveSource();
+            return source?.Active is { } player && player.Capabilities.HasFlag(capability) ? source : null;
+        }
+
         private void Rebuild(bool raiseProgress)
         {
             MediaSessionInfo? smtc = _smtc.Current;
-            WnpPlayerSnapshot? wnp = _wnp.Active;
+            BrowserPlayerSnapshot? browser = ActiveBrowserPlayer();
             MediaSessionInfo? prev = Current;
-            MediaSessionInfo? next = Merge(smtc, wnp);
+            MediaSessionInfo? next = Merge(smtc, browser);
             Current = next;
 
             if (prev is null && next is null)
@@ -183,9 +220,9 @@ namespace MosaicShell.Core.Services
             }
         }
 
-        internal static MediaSessionInfo? Merge(MediaSessionInfo? smtc, WnpPlayerSnapshot? wnp)
+        internal static MediaSessionInfo? Merge(MediaSessionInfo? smtc, BrowserPlayerSnapshot? browser)
         {
-            if (smtc is null && wnp is null)
+            if (smtc is null && browser is null)
             {
                 return null;
             }
@@ -193,58 +230,59 @@ namespace MosaicShell.Core.Services
             if (smtc is null)
             {
                 return new MediaSessionInfo(
-                    Title: NullIfEmpty(wnp!.Title),
-                    Artist: NullIfEmpty(wnp.Artist),
-                    AppId: NullIfEmpty(wnp.Name) ?? "WebNowPlaying",
-                    IsPlaying: wnp.IsPlaying,
-                    ThumbnailPng: wnp.CoverPng,
-                    PositionSeconds: wnp.PositionSeconds,
-                    DurationSeconds: wnp.DurationSeconds,
-                    LikeRating: wnp.Rating);
+                    Title: NullIfEmpty(browser!.Title),
+                    Artist: NullIfEmpty(browser.Artist),
+                    AppId: NullIfEmpty(browser.Name) ?? "Browser",
+                    IsPlaying: browser.IsPlaying,
+                    ThumbnailPng: browser.CoverPng,
+                    PositionSeconds: browser.PositionSeconds,
+                    DurationSeconds: browser.DurationSeconds,
+                    LikeRating: MediaLikePolicy.ToLikeRating(browser.Rating),
+                    Capabilities: browser.Capabilities);
             }
 
-            // Prefer any WNP cover when SMTC has none (YTM PWA / browser)
-            byte[]? thumb = PickCover(smtc.ThumbnailPng, wnp?.CoverPng, smtc.Title, wnp?.Title, smtc.AppId);
+            // Prefer any browser cover when SMTC has none (YTM PWA / browser)
+            byte[]? thumb = PickCover(smtc.ThumbnailPng, browser?.CoverPng, smtc.Title, browser?.Title, smtc.AppId);
             string? title = MediaTitleNormalizer.StripSiteSuffix(smtc.Title);
             string? artist = smtc.Artist;
-            if (wnp is not null && !string.IsNullOrWhiteSpace(wnp.Title)
+            if (browser is not null && !string.IsNullOrWhiteSpace(browser.Title)
                 && (LooksLikeBrowserSession(smtc.AppId)
-                    || TitlesLooselyMatch(smtc.Title, wnp.Title)))
+                    || TitlesLooselyMatch(smtc.Title, browser.Title)))
             {
-                // Use WNP title/artist when SMTC is empty or still agrees with WNP.
-                // Do not keep a stale WNP title when SMTC already advanced to a new track;
+                // Use the browser title and artist when SMTC is empty or still agrees with it.
+                // Do not keep a stale browser title when SMTC already advanced to a new track;
                 // that swallowed Media.Changed and blocked Tessera media flyouts.
-                if (string.IsNullOrWhiteSpace(smtc.Title) || TitlesLooselyMatch(smtc.Title, wnp.Title))
+                if (string.IsNullOrWhiteSpace(smtc.Title) || TitlesLooselyMatch(smtc.Title, browser.Title))
                 {
-                    title = wnp.Title;
-                    if (!string.IsNullOrWhiteSpace(wnp.Artist))
+                    title = browser.Title;
+                    if (!string.IsNullOrWhiteSpace(browser.Artist))
                     {
-                        artist = wnp.Artist;
+                        artist = browser.Artist;
                     }
                 }
 
-                if (!IsUsableCover(thumb) && IsUsableCover(wnp.CoverPng))
+                if (!IsUsableCover(thumb) && IsUsableCover(browser.CoverPng))
                 {
-                    thumb = wnp.CoverPng;
+                    thumb = browser.CoverPng;
                 }
             }
 
-            // Prefer WNP timeline when SMTC duration is missing / sticky
+            // Prefer the browser timeline when SMTC duration is missing / sticky
             double pos = smtc.PositionSeconds;
             double dur = smtc.DurationSeconds;
-            if (wnp is not null && wnp.DurationSeconds > 0
+            if (browser is not null && browser.DurationSeconds > 0
                 && (dur <= 0.5 || LooksLikeBrowserSession(smtc.AppId)))
             {
-                // WNP position often lags a skip; do not mask SMTC restart edges.
+                // A browser position often lags a skip; do not mask SMTC restart edges.
                 if (!MediaSessionChangePolicy.LooksLikeNewTrackPosition(
-                        wnp.PositionSeconds, smtc.PositionSeconds))
+                        browser.PositionSeconds, smtc.PositionSeconds))
                 {
                     pos = MediaSessionChangePolicy.ResolvePlayingPosition(
                         smtc.PositionSeconds,
-                        wnp.PositionSeconds,
+                        browser.PositionSeconds,
                         smtc.IsPlaying,
                         incomingReportedChange: true);
-                    dur = wnp.DurationSeconds;
+                    dur = browser.DurationSeconds;
                 }
             }
 
@@ -255,13 +293,19 @@ namespace MosaicShell.Core.Services
                 ThumbnailPng = thumb,
                 PositionSeconds = pos,
                 DurationSeconds = dur,
-                LikeRating = ResolveLikeRating(smtc.AppId, wnp?.Rating),
+                LikeRating = ResolveLikeRating(smtc.AppId, browser?.Rating),
+                Capabilities = ResolveCapabilities(smtc.AppId, browser),
             };
         }
 
-        private static int? ResolveLikeRating(string? appId, int? wnpRating)
+        private static int? ResolveLikeRating(string? appId, BrowserRating? rating)
         {
-            return !LooksLikeBrowserSession(appId) || wnpRating is null ? null : wnpRating.Value;
+            return !LooksLikeBrowserSession(appId) || rating is null ? null : MediaLikePolicy.ToLikeRating(rating.Value);
+        }
+
+        private static BrowserMediaCapabilities ResolveCapabilities(string? appId, BrowserPlayerSnapshot? browser)
+        {
+            return browser is not null && LooksLikeBrowserSession(appId) ? browser.Capabilities : BrowserMediaCapabilities.None;
         }
 
         private static bool LooksLikeBrowserSession(string? appId)
@@ -311,17 +355,17 @@ namespace MosaicShell.Core.Services
         }
 
         internal static byte[]? PickCover(
-            byte[]? smtcThumb, byte[]? wnpCover, string? smtcTitle, string? wnpTitle, string? appId)
+            byte[]? smtcThumb, byte[]? browserCover, string? smtcTitle, string? browserTitle, string? appId)
         {
-            return LooksLikeBrowserSession(appId) && IsUsableCover(wnpCover)
-                ? wnpCover
+            return LooksLikeBrowserSession(appId) && IsUsableCover(browserCover)
+                ? browserCover
                 : IsUsableCover(smtcThumb)
                 ? smtcThumb
-                : IsUsableCover(wnpCover)
-                ? wnpCover
-                : WebNowPlayingReduxHost.TryGetCachedCover(smtcTitle, out byte[]? png) && IsUsableCover(png)
+                : IsUsableCover(browserCover)
+                ? browserCover
+                : MediaArtworkCache.TryGet(smtcTitle, out byte[]? png) && IsUsableCover(png)
                 ? png
-                : WebNowPlayingReduxHost.TryGetCachedCover(wnpTitle, out byte[]? png2) && IsUsableCover(png2)
+                : MediaArtworkCache.TryGet(browserTitle, out byte[]? png2) && IsUsableCover(png2)
                 ? png2
                 : IsUsableCover(smtcThumb) ? smtcThumb : null;
         }

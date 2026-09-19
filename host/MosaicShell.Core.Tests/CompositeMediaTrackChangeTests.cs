@@ -1,7 +1,6 @@
 using FluentAssertions;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
-using MosaicShell.Core.Services.WebNowPlaying;
 
 namespace MosaicShell.Core.Tests
 {
@@ -55,7 +54,7 @@ namespace MosaicShell.Core.Tests
         public void Rebuild_raises_changed_on_position_restart_when_title_still_stale()
         {
             SteppingMediaSessionService smtc = new();
-            StubWebNowPlayingService wnp = new();
+            StubBrowserMediaSource wnp = new();
             using CompositeMediaSessionService composite = new(smtc, wnp);
 
             int changed = 0;
@@ -75,7 +74,7 @@ namespace MosaicShell.Core.Tests
         public void Rebuild_raises_changed_once_when_smtc_title_and_position_both_signal_skip()
         {
             SteppingMediaSessionService smtc = new();
-            StubWebNowPlayingService wnp = new();
+            StubBrowserMediaSource wnp = new();
             using CompositeMediaSessionService composite = new(smtc, wnp);
 
             int changed = 0;
@@ -92,14 +91,14 @@ namespace MosaicShell.Core.Tests
         public void Rebuild_raises_changed_when_smtc_skips_but_wnp_position_is_stale()
         {
             SteppingMediaSessionService smtc = new();
-            StubWebNowPlayingService wnp = new()
+            StubBrowserMediaSource wnp = new()
             {
-                Active = new WnpPlayerSnapshot
+                Active = new BrowserPlayerSnapshot
                 {
                     Title = "Track A",
                     Artist = "A",
                     Name = "YouTube Music",
-                    State = WnpState.Playing,
+                    State = BrowserPlaybackState.Playing,
                     PositionSeconds = 45,
                     DurationSeconds = 180,
                 }
@@ -122,7 +121,7 @@ namespace MosaicShell.Core.Tests
         public void Browser_tab_title_reaches_consumers_without_the_site_suffix_when_wnp_is_silent()
         {
             SteppingMediaSessionService smtc = new();
-            StubWebNowPlayingService wnp = new();
+            StubBrowserMediaSource wnp = new();
             using CompositeMediaSessionService composite = new(smtc, wnp);
 
             smtc.Set(new MediaSessionInfo(
@@ -135,7 +134,7 @@ namespace MosaicShell.Core.Tests
         public void Suffixed_smtc_title_does_not_raise_changed_on_every_progress_tick()
         {
             SteppingMediaSessionService smtc = new();
-            StubWebNowPlayingService wnp = new();
+            StubBrowserMediaSource wnp = new();
             using CompositeMediaSessionService composite = new(smtc, wnp);
 
             int changed = 0;
@@ -206,14 +205,32 @@ namespace MosaicShell.Core.Tests
             public void Dispose() { }
         }
 
-        private sealed class StubWebNowPlayingService : IWebNowPlayingService
+        private sealed class StubBrowserMediaSource : IBrowserMediaSource
         {
-            public WnpPlayerSnapshot? Active { get; init; }
-            public int ConnectedClients => 0;
-            public int ListenPort => 0;
+            public BrowserPlayerSnapshot? Active { get; init; }
 #pragma warning disable CS0067
             public event EventHandler? Changed;
 #pragma warning restore CS0067
+            public Task SetLikedAsync(bool liked)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task SetDislikedAsync(bool disliked)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task ToggleShuffleAsync()
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task ToggleRepeatAsync()
+            {
+                return Task.CompletedTask;
+            }
+
             public void Dispose() { }
         }
     }

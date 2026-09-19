@@ -204,8 +204,11 @@ namespace MosaicShell.Host.Tiles.Tessera
             }
         }
 
+        // The app id test keeps the button available before a browser source has reported; the capability is what
+        // the active browser player actually declares. The app id test goes away at cutover.
         public bool SupportsMediaDislike =>
-            MediaLikePolicy.SupportsDislike(Services.Media.Current?.AppId);
+            MediaLikePolicy.SupportsDislike(Services.Media.Current?.AppId)
+            || Services.Media.Current?.Capabilities.HasFlag(BrowserMediaCapabilities.Dislike) == true;
 
         public async Task ToggleDislikeAsync(Material.Icons.Avalonia.MaterialIcon? icon = null)
         {

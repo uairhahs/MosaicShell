@@ -1,23 +1,22 @@
 using System.Security.Cryptography;
-using MosaicShell.Core.Services.WebNowPlaying;
 
 namespace MosaicShell.Core.Services
 {
     /// <summary>
     /// One log line saying which source supplied each field the flyout shows. The merged session alone
-    /// cannot answer it: an empty artist could be SMTC publishing nothing, WebNowPlaying reporting
+    /// cannot answer it: an empty artist could be SMTC publishing nothing, a browser source reporting
     /// nothing, or a merge that dropped what one of them sent.
     /// </summary>
     public static class MediaSourceAttribution
     {
         private const int MaxTitleChars = 80;
 
-        public static string Describe(MediaSessionInfo? smtc, WnpPlayerSnapshot? wnp, MediaSessionInfo? merged)
+        public static string Describe(MediaSessionInfo? smtc, BrowserPlayerSnapshot? browser, MediaSessionInfo? merged)
         {
-            return $"{DescribeSmtc(smtc)} {DescribeWnp(wnp)} "
-                + $"use title={UseTitle(smtc, wnp, merged)} "
-                + $"artist={UseArtist(smtc, wnp, merged)} "
-                + $"art={UseArt(smtc, wnp, merged)}";
+            return $"{DescribeSmtc(smtc)} {DescribeBrowser(browser)} "
+                + $"use title={UseTitle(smtc, browser, merged)} "
+                + $"artist={UseArtist(smtc, browser, merged)} "
+                + $"art={UseArt(smtc, browser, merged)}";
         }
 
         private static string DescribeSmtc(MediaSessionInfo? smtc)
@@ -28,15 +27,15 @@ namespace MosaicShell.Core.Services
                     + $"smtc.artist={Text(smtc.Artist)} smtc.art={Art(smtc.ThumbnailPng)}";
         }
 
-        private static string DescribeWnp(WnpPlayerSnapshot? wnp)
+        private static string DescribeBrowser(BrowserPlayerSnapshot? browser)
         {
-            return wnp is null
-                ? "wnp=none"
-                : $"wnp=[name={wnp.Name} state={wnp.State} title=[{Cap(wnp.Title)}] artist=[{Cap(wnp.Artist)}] "
-                    + $"art={Art(wnp.CoverPng)}]";
+            return browser is null
+                ? "browser=none"
+                : $"browser=[name={browser.Name} state={browser.State} title=[{Cap(browser.Title)}] artist=[{Cap(browser.Artist)}] "
+                    + $"art={Art(browser.CoverPng)}]";
         }
 
-        private static string UseTitle(MediaSessionInfo? smtc, WnpPlayerSnapshot? wnp, MediaSessionInfo? merged)
+        private static string UseTitle(MediaSessionInfo? smtc, BrowserPlayerSnapshot? browser, MediaSessionInfo? merged)
         {
             string? value = merged?.Title;
             if (string.IsNullOrWhiteSpace(value))
@@ -44,16 +43,16 @@ namespace MosaicShell.Core.Services
                 return "none";
             }
 
-            bool wnpHas = wnp is not null && string.Equals(wnp.Title, value, StringComparison.Ordinal);
+            bool browserHas = browser is not null && string.Equals(browser.Title, value, StringComparison.Ordinal);
             bool smtcRaw = smtc is not null && string.Equals(smtc.Title, value, StringComparison.Ordinal);
             bool smtcStripped = smtc is not null
                 && string.Equals(MediaTitleNormalizer.StripSiteSuffix(smtc.Title), value, StringComparison.Ordinal);
 
-            // WebNowPlaying wins a tie with a suffix-stripped SMTC title: Merge takes its text when the two agree.
-            return wnpHas && !smtcRaw ? "wnp" : smtcRaw || smtcStripped ? "smtc" : wnpHas ? "wnp" : "other";
+            // A browser source wins a tie with a suffix-stripped SMTC title: Merge takes its text when the two agree.
+            return browserHas && !smtcRaw ? "browser" : smtcRaw || smtcStripped ? "smtc" : browserHas ? "browser" : "other";
         }
 
-        private static string UseArtist(MediaSessionInfo? smtc, WnpPlayerSnapshot? wnp, MediaSessionInfo? merged)
+        private static string UseArtist(MediaSessionInfo? smtc, BrowserPlayerSnapshot? browser, MediaSessionInfo? merged)
         {
             string? value = merged?.Artist;
             if (string.IsNullOrWhiteSpace(value))
@@ -61,12 +60,12 @@ namespace MosaicShell.Core.Services
                 return "none";
             }
 
-            bool wnpHas = wnp is not null && string.Equals(wnp.Artist, value, StringComparison.Ordinal);
+            bool browserHas = browser is not null && string.Equals(browser.Artist, value, StringComparison.Ordinal);
             bool smtcHas = smtc is not null && string.Equals(smtc.Artist, value, StringComparison.Ordinal);
-            return wnpHas && !smtcHas ? "wnp" : smtcHas ? "smtc" : wnpHas ? "wnp" : "other";
+            return browserHas && !smtcHas ? "browser" : smtcHas ? "smtc" : browserHas ? "browser" : "other";
         }
 
-        private static string UseArt(MediaSessionInfo? smtc, WnpPlayerSnapshot? wnp, MediaSessionInfo? merged)
+        private static string UseArt(MediaSessionInfo? smtc, BrowserPlayerSnapshot? browser, MediaSessionInfo? merged)
         {
             byte[]? value = merged?.ThumbnailPng;
             if (value is null || value.Length == 0)
@@ -75,8 +74,8 @@ namespace MosaicShell.Core.Services
             }
 
             bool fromSmtc = SameBytes(smtc?.ThumbnailPng, value);
-            bool fromWnp = SameBytes(wnp?.CoverPng, value);
-            return fromWnp && !fromSmtc ? "wnp" : fromSmtc ? "smtc" : fromWnp ? "wnp" : "cache";
+            bool fromBrowser = SameBytes(browser?.CoverPng, value);
+            return fromBrowser && !fromSmtc ? "browser" : fromSmtc ? "smtc" : fromBrowser ? "browser" : "cache";
         }
 
         private static bool SameBytes(byte[]? a, byte[]? b)

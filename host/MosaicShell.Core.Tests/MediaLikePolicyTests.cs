@@ -1,11 +1,19 @@
 using FluentAssertions;
 using MosaicShell.Core.Services;
-using MosaicShell.Core.Services.WebNowPlaying;
 
 namespace MosaicShell.Core.Tests
 {
     public class MediaLikePolicyTests
     {
+        [Theory]
+        [InlineData(BrowserRating.None, 0)]
+        [InlineData(BrowserRating.Liked, 5)]
+        [InlineData(BrowserRating.Disliked, 1)]
+        public void ToLikeRating_maps_a_browser_rating_to_the_value_the_flyout_icons_read(BrowserRating rating, int expected)
+        {
+            _ = MediaLikePolicy.ToLikeRating(rating).Should().Be(expected);
+        }
+
         [Theory]
         [InlineData(5, true)]
         [InlineData(1, false)]
@@ -101,10 +109,10 @@ namespace MosaicShell.Core.Tests
         {
             MediaSessionInfo smtc = new(
                 "Song", "Artist", "music.youtube.com-x!App", true, null, 10, 180);
-            WnpPlayerSnapshot wnp = new()
+            BrowserPlayerSnapshot wnp = new()
             {
                 Title = "Song",
-                Rating = 5,
+                Rating = BrowserRating.Liked,
             };
 
             MediaSessionInfo? merged = CompositeMediaSessionService.Merge(smtc, wnp);
@@ -117,7 +125,7 @@ namespace MosaicShell.Core.Tests
         {
             MediaSessionInfo smtc = new("Song", "Artist", "Spotify.exe", true, null, 10, 180);
 
-            MediaSessionInfo? merged = CompositeMediaSessionService.Merge(smtc, wnp: null);
+            MediaSessionInfo? merged = CompositeMediaSessionService.Merge(smtc, browser: null);
 
             _ = merged!.LikeRating.Should().BeNull();
         }

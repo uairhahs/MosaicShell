@@ -6,7 +6,6 @@ using Material.Icons.Avalonia;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
-using MosaicShell.Core.Services.WebNowPlaying;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {
@@ -234,7 +233,7 @@ namespace MosaicShell.Host.Tiles.Tessera
         {
             return smtcOrMerged is { Length: >= 32 }
                 ? smtcOrMerged
-                : WebNowPlayingReduxHost.TryGetCachedCover(title, out byte[]? png) && png is { Length: >= 32 } ? png : null;
+                : MediaArtworkCache.TryGet(title, out byte[]? png) ? png : null;
         }
     }
 }

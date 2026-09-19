@@ -22,6 +22,17 @@ namespace MosaicShell.Core.Services
         public const int Disliked = 1;
         public const int Liked = 5;
 
+        /// <summary>Maps a browser rating to the value the flyout icons read (0 unrated, 1 disliked, 5 liked).</summary>
+        public static int ToLikeRating(BrowserRating rating)
+        {
+            return rating switch
+            {
+                BrowserRating.Liked => Liked,
+                BrowserRating.Disliked => Disliked,
+                _ => Unrated,
+            };
+        }
+
         public static bool IsLiked(int? rating)
         {
             return rating == Liked;

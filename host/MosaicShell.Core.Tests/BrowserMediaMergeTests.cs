@@ -1,10 +1,9 @@
 using FluentAssertions;
 using MosaicShell.Core.Services;
-using MosaicShell.Core.Services.WebNowPlaying;
 
 namespace MosaicShell.Core.Tests
 {
-    public class WebNowPlayingMergeTests
+    public class BrowserMediaMergeTests
     {
         [Fact]
         public void Merge_overlays_wnp_cover_when_smtc_thumbnail_missing()
@@ -13,12 +12,12 @@ namespace MosaicShell.Core.Tests
                 "Song | YouTube Music", null, "music.youtube.com-x!App", true,
                 ThumbnailPng: null, PositionSeconds: 10, DurationSeconds: 100);
             byte[] cover = WebNowPlayingHostTests.TinyPng;
-            WnpPlayerSnapshot wnp = new()
+            BrowserPlayerSnapshot wnp = new()
             {
                 Title = "Song",
                 Artist = "Artist",
                 Name = "YouTube Music",
-                State = WnpState.Playing,
+                State = BrowserPlaybackState.Playing,
                 CoverPng = cover,
             };
 
@@ -36,7 +35,7 @@ namespace MosaicShell.Core.Tests
             MediaSessionInfo smtc = new("T", "A", "Spotify.exe", true, smtcCover, 1, 2);
             byte[] wnpCover = [.. WebNowPlayingHostTests.TinyPng];
             wnpCover[^2] ^= 0x01;
-            WnpPlayerSnapshot wnp = new() { CoverPng = wnpCover };
+            BrowserPlayerSnapshot wnp = new() { CoverPng = wnpCover };
 
             MediaSessionInfo merged = CompositeMediaSessionService.Merge(smtc, wnp)!;
             _ = merged.ThumbnailPng.Should().BeSameAs(smtcCover);
@@ -46,12 +45,12 @@ namespace MosaicShell.Core.Tests
         public void Merge_wnp_only_when_no_smtc()
         {
             byte[] cover = new byte[40];
-            WnpPlayerSnapshot wnp = new()
+            BrowserPlayerSnapshot wnp = new()
             {
                 Title = "Web",
                 Artist = "A",
                 Name = "YouTube Music",
-                State = WnpState.Playing,
+                State = BrowserPlaybackState.Playing,
                 CoverPng = cover,
                 PositionSeconds = 3,
                 DurationSeconds = 30,
@@ -69,12 +68,12 @@ namespace MosaicShell.Core.Tests
             MediaSessionInfo smtc = new(
                 "Brand New Track", "New Artist", "music.youtube.com-x!App", true,
                 ThumbnailPng: null, PositionSeconds: 1, DurationSeconds: 200);
-            WnpPlayerSnapshot wnp = new()
+            BrowserPlayerSnapshot wnp = new()
             {
                 Title = "Old Track",
                 Artist = "Old Artist",
                 Name = "YouTube Music",
-                State = WnpState.Playing,
+                State = BrowserPlaybackState.Playing,
                 CoverPng = WebNowPlayingHostTests.TinyPng,
             };
 
@@ -90,12 +89,12 @@ namespace MosaicShell.Core.Tests
             MediaSessionInfo smtc = new(
                 "Song", "Artist", "music.youtube.com-x!App", true,
                 ThumbnailPng: null, PositionSeconds: 0.5, DurationSeconds: 180);
-            WnpPlayerSnapshot wnp = new()
+            BrowserPlayerSnapshot wnp = new()
             {
                 Title = "Song",
                 Artist = "Artist",
                 Name = "YouTube Music",
-                State = WnpState.Playing,
+                State = BrowserPlaybackState.Playing,
                 PositionSeconds = 42,
                 DurationSeconds = 180,
             };
@@ -110,12 +109,12 @@ namespace MosaicShell.Core.Tests
             MediaSessionInfo smtc = new(
                 "Song", "Artist", "music.youtube.com-x!App", true,
                 ThumbnailPng: null, PositionSeconds: 40, DurationSeconds: 180);
-            WnpPlayerSnapshot wnp = new()
+            BrowserPlayerSnapshot wnp = new()
             {
                 Title = "Song",
                 Artist = "Artist",
                 Name = "YouTube Music",
-                State = WnpState.Playing,
+                State = BrowserPlaybackState.Playing,
                 PositionSeconds = 38,
                 DurationSeconds = 180,
             };
@@ -131,12 +130,12 @@ namespace MosaicShell.Core.Tests
                 "Song | YouTube Music", null, "music.youtube.com-x!App", true,
                 ThumbnailPng: null, PositionSeconds: 10, DurationSeconds: 100);
             byte[] cover = WebNowPlayingHostTests.TinyPng;
-            WnpPlayerSnapshot wnp = new()
+            BrowserPlayerSnapshot wnp = new()
             {
                 Title = "Song",
                 Artist = "Artist",
                 Name = "YouTube Music",
-                State = WnpState.Playing,
+                State = BrowserPlaybackState.Playing,
                 CoverPng = cover,
             };
 

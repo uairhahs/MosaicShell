@@ -1,6 +1,5 @@
 using FluentAssertions;
 using MosaicShell.Core.Services;
-using MosaicShell.Core.Services.WebNowPlaying;
 
 namespace MosaicShell.Core.Tests
 {
@@ -26,12 +25,12 @@ namespace MosaicShell.Core.Tests
             MediaSessionInfo smtc = new(
             "Track | YouTube Music", "A", "Chrome.exe", true,
             ThumbnailPng: null, PositionSeconds: 1, DurationSeconds: 10);
-            WnpPlayerSnapshot wnp = new()
+            BrowserPlayerSnapshot wnp = new()
             {
                 Title = "Track",
                 Artist = "A",
                 Name = "YouTube Music",
-                State = WnpState.Playing,
+                State = BrowserPlaybackState.Playing,
                 CoverPng = WebNowPlayingHostTests.TinyPng,
             };
 
@@ -47,11 +46,11 @@ namespace MosaicShell.Core.Tests
             Array.Fill(stub, (byte)0xAB);
             MediaSessionInfo smtc = new(
             "Track", "A", "msedge", true, stub, 1, 10);
-            WnpPlayerSnapshot wnp = new()
+            BrowserPlayerSnapshot wnp = new()
             {
                 Title = "Track",
                 CoverPng = WebNowPlayingHostTests.TinyPng,
-                State = WnpState.Playing,
+                State = BrowserPlaybackState.Playing,
             };
 
             MediaSessionInfo merged = CompositeMediaSessionService.Merge(smtc, wnp)!;
@@ -64,7 +63,7 @@ namespace MosaicShell.Core.Tests
             byte[] smtcPng = [.. WebNowPlayingHostTests.TinyPng];
             smtcPng[^1] ^= 0x01; // distinct instance, still PNG-shaped
             MediaSessionInfo smtc = new("T", "A", "Spotify.exe", true, smtcPng, 1, 2);
-            WnpPlayerSnapshot wnp = new() { CoverPng = WebNowPlayingHostTests.TinyPng };
+            BrowserPlayerSnapshot wnp = new() { CoverPng = WebNowPlayingHostTests.TinyPng };
 
             MediaSessionInfo merged = CompositeMediaSessionService.Merge(smtc, wnp)!;
             _ = merged.ThumbnailPng.Should().BeSameAs(smtcPng);

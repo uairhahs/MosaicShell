@@ -17,7 +17,6 @@ namespace MosaicShell.Core.Services.WebNowPlaying
         public const string AdapterVersion = "3.0.0";
 
         private static readonly HttpClient Http = CreateHttp();
-        private static readonly ConcurrentDictionary<string, byte[]> CoversByTitle = new(StringComparer.OrdinalIgnoreCase);
 
         private readonly ConcurrentDictionary<long, MutablePlayer> _players = new();
         private readonly ConcurrentDictionary<string, WebSocket> _sockets = new();
@@ -33,22 +32,6 @@ namespace MosaicShell.Core.Services.WebNowPlaying
         public WnpPlayerSnapshot? Active { get; private set; }
         public bool IsListening => _listener?.IsListening == true;
         public event EventHandler? Changed;
-
-        public static bool TryGetCachedCover(string? title, out byte[]? png)
-        {
-            png = null;
-            if (string.IsNullOrWhiteSpace(title))
-            {
-                return false;
-            }
-
-            if (CoversByTitle.TryGetValue(NormTitle(title), out byte[]? bytes) && bytes.Length > 32)
-            {
-                png = bytes;
-                return true;
-            }
-            return false;
-        }
 
         public void Start()
         {
@@ -488,12 +471,7 @@ namespace MosaicShell.Core.Services.WebNowPlaying
 
         private void CacheCover(string? title, byte[] img)
         {
-            if (string.IsNullOrWhiteSpace(title) || img.Length < 32)
-            {
-                return;
-            }
-
-            CoversByTitle[NormTitle(title)] = img;
+            MediaArtworkCache.Store(title, img);
         }
 
         private void SaveCoverFile(uint id, byte[] img)
@@ -564,7 +542,7 @@ namespace MosaicShell.Core.Services.WebNowPlaying
                 clients = ConnectedClients,
                 activeTitle = Active?.Title,
                 activeCoverBytes = Active?.CoverPng?.Length ?? 0,
-                cachedTitles = CoversByTitle.Count,
+                cachedTitles = MediaArtworkCache.Count,
                 players,
                 trace = _trace.Reverse().Take(25).ToArray(),
             }, new JsonSerializerOptions { WriteIndented = true });
@@ -802,17 +780,6 @@ namespace MosaicShell.Core.Services.WebNowPlaying
             {
                 apply(v);
             }
-        }
-
-        private static string NormTitle(string title)
-        {
-            int i = title.IndexOf('|');
-            if (i > 0)
-            {
-                title = title[..i];
-            }
-
-            return title.Trim();
         }
 
         private static bool LooksLikeImage(byte[] b)

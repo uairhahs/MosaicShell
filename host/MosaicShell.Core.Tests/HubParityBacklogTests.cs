@@ -116,7 +116,7 @@ namespace MosaicShell.Core.Tests
             ["tessera_fluent_win11_kit"] = nameof(TesseraParityTests.StyleCatalog_still_has_eleven_tessera_layouts),
             ["tessera_fluent_yourflyouts"] = nameof(TesseraParityTests.TesseraSettings_host_polish_defaults),
             ["tessera_media_smtc_only"] = nameof(TesseraParityTests.MediaSessionInfo_accepts_thumbnail_and_timeline),
-            ["tessera_media_wnp"] = nameof(WebNowPlayingMergeTests.Merge_overlays_wnp_cover_when_smtc_thumbnail_missing),
+            ["tessera_media_wnp"] = nameof(BrowserMediaMergeTests.Merge_overlays_wnp_cover_when_smtc_thumbnail_missing),
             ["tile_tessera_mvp"] = nameof(TesseraCapabilityTests.Armed_tessera_shows_flyout_on_volume_change),
             ["tile_mixdeck_skeleton"] = nameof(HonestyGateTests.Mixdeck_is_capability_with_app_audio_surface),
             ["tile_mixdeck_mvp"] = nameof(OverlayBehaviorTests.CloseOnEscape_honors_capability_settings),

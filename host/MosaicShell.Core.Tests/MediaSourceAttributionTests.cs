@@ -1,6 +1,5 @@
 using FluentAssertions;
 using MosaicShell.Core.Services;
-using MosaicShell.Core.Services.WebNowPlaying;
 
 namespace MosaicShell.Core.Tests
 {
@@ -26,7 +25,7 @@ namespace MosaicShell.Core.Tests
 
             string line = MediaSourceAttribution.Describe(smtc, null, merged);
 
-            _ = line.Should().Contain("wnp=none");
+            _ = line.Should().Contain("browser=none");
             _ = line.Should().Contain("smtc.title=[JUST DANCE | YouTube Music]");
             _ = line.Should().Contain("smtc.artist=null");
             _ = line.Should().Contain("smtc.art=none");
@@ -34,24 +33,24 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void Wnp_supplying_title_artist_and_cover_is_reported_as_the_source()
+        public void Browser_supplying_title_artist_and_cover_is_reported_as_the_source()
         {
             byte[] cover = WebNowPlayingHostTests.TinyPng;
             MediaSessionInfo smtc = Smtc("Song | YouTube Music", null);
-            WnpPlayerSnapshot wnp = new()
+            BrowserPlayerSnapshot wnp = new()
             {
                 Name = "YouTube Music",
                 Title = "Song",
                 Artist = "Someone",
-                State = WnpState.Playing,
+                State = BrowserPlaybackState.Playing,
                 CoverPng = cover,
             };
             MediaSessionInfo merged = CompositeMediaSessionService.Merge(smtc, wnp)!;
 
             string line = MediaSourceAttribution.Describe(smtc, wnp, merged);
 
-            _ = line.Should().Contain("wnp=[name=YouTube Music state=Playing title=[Song] artist=[Someone]");
-            _ = line.Should().Contain("use title=wnp artist=wnp art=wnp");
+            _ = line.Should().Contain("browser=[name=YouTube Music state=Playing title=[Song] artist=[Someone]");
+            _ = line.Should().Contain("use title=browser artist=browser art=browser");
         }
 
         [Fact]
@@ -67,16 +66,16 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void Wnp_present_but_empty_is_distinguished_from_no_wnp()
+        public void Browser_present_but_empty_is_distinguished_from_no_browser_source()
         {
             MediaSessionInfo smtc = Smtc("Song | YouTube Music", null);
-            WnpPlayerSnapshot wnp = new() { State = WnpState.Stopped };
+            BrowserPlayerSnapshot wnp = new() { State = BrowserPlaybackState.Stopped };
             MediaSessionInfo merged = CompositeMediaSessionService.Merge(smtc, wnp)!;
 
             string line = MediaSourceAttribution.Describe(smtc, wnp, merged);
 
-            _ = line.Should().NotContain("wnp=none");
-            _ = line.Should().Contain("wnp=[name= state=Stopped title=[] artist=[]");
+            _ = line.Should().NotContain("browser=none");
+            _ = line.Should().Contain("browser=[name= state=Stopped title=[] artist=[]");
             _ = line.Should().Contain("use title=smtc artist=none art=none");
         }
 
@@ -111,7 +110,7 @@ namespace MosaicShell.Core.Tests
         {
             string line = MediaSourceAttribution.Describe(null, null, null);
 
-            _ = line.Should().Contain("smtc=none").And.Contain("wnp=none");
+            _ = line.Should().Contain("smtc=none").And.Contain("browser=none");
         }
     }
 
