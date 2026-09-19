@@ -1,3 +1,5 @@
+# Copilot Instructions
+
 ## Codebase Memory MCP
 
 **Use the codebase-memory knowledge graph FIRST for code discovery, before reading files or making changes.**
