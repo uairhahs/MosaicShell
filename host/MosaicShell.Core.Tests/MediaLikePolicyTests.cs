@@ -78,7 +78,7 @@ namespace MosaicShell.Core.Tests
 
         [Theory]
         [InlineData("YouTube Music", true, 0, 5)]
-        [InlineData("YouTube Music", true, 5, 0)]
+        [InlineData("YouTube Music", true, 5, 5)]
         [InlineData("YouTube Music", true, 1, 5)]
         [InlineData("YouTube Music", false, 1, 5)]
         [InlineData("YouTube Music", false, 0, 0)]

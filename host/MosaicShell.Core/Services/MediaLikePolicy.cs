@@ -9,6 +9,11 @@ namespace MosaicShell.Core.Services
     /// 0 unrated, 1 disliked, 5 liked.
     /// YTM <c>setRating(0)</c> on an unrated track triggers thumbs-down, so unlike must
     /// only be sent when the host knows the track is liked (rating 5).
+    /// The stock extension (3.1.0, upstream issue #52) cannot read YouTube Music's like state, so its
+    /// helper always sees an unrated track: a request of 5 clicks the Dislike button (button[1]) and a
+    /// request of 1 or 0 clicks the Like button (button[0]). Requests below therefore never depend on the
+    /// host's rating for which button is clicked; YouTube Music toggles the button and switches from the
+    /// other state, so one press reaches the intended state from any starting state.
     /// Spotify web uses LIKE-only (Library add/remove) inside the extension.
     /// </remarks>
     public static class MediaLikePolicy
@@ -75,7 +80,8 @@ namespace MosaicShell.Core.Services
                 // WNP YouTubeMusic.ts (pre PR #53): setRating(5) calls toggleLike on
                 // button[1], which is the thumbs-down control on current YTM layouts.
                 // likeDislike(rating &lt; 3) calls toggleDislike on button[0] (thumbs-up).
-                // Send 1 so the extension toggles the like button; it reads live DOM state.
+                // Send 1 so the extension clicks the Like button. It cannot read the state, so this does
+                // not depend on the host rating.
                 // See https://github.com/keifufu/WebNowPlaying/issues/52
                 return wantLiked || MaySendUnlikeRating(hostLikeRating) ? Disliked : Unrated;
             }
@@ -95,12 +101,8 @@ namespace MosaicShell.Core.Services
 
             if (wantDisliked)
             {
-                // Liked -> dislike: likeDislike(0) with live rating 5 calls toggleLike (dislike btn).
-                if (hostLikeRating == Liked)
-                {
-                    return Unrated;
-                }
-                // Unrated / already disliked: toggleLike via rating 5 hits the dislike button.
+                // Rating 5 clicks the Dislike button whatever the current state. Sending 0 for a liked track
+                // clicked Like instead, so a dislike after a like only cleared the like and needed a second press.
                 return Liked;
             }
 
