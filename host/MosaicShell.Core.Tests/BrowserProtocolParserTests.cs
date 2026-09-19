@@ -391,6 +391,12 @@ namespace MosaicShell.Core.Tests
             _ = BrowserProtocol.Parse(overCap).Error.Should().Be(BrowserParseError.TooLarge);
         }
 
+        [Fact]
+        public void A_resync_asks_the_extension_to_send_every_tab_again()
+        {
+            _ = Encoding.UTF8.GetString(BrowserProtocol.SerializeResync()).Should().Be("""{"type":"resync"}""");
+        }
+
         [Theory]
         [InlineData(BrowserCommandAction.Like, "like")]
         [InlineData(BrowserCommandAction.Dislike, "dislike")]

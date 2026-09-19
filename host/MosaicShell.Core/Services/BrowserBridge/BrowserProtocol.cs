@@ -108,6 +108,15 @@ namespace MosaicShell.Core.Services.BrowserBridge
             }
         }
 
+        /// <summary>
+        /// Asks the extension to send every tab it holds again. The Host sends it after a hello, because the Host
+        /// may have restarted while the browser kept running and knows nothing about the tabs already playing.
+        /// </summary>
+        public static byte[] SerializeResync()
+        {
+            return "{\"type\":\"resync\"}"u8.ToArray();
+        }
+
         public static byte[] SerializeCommand(int tabId, BrowserCommandAction action)
         {
             using MemoryStream stream = new();
