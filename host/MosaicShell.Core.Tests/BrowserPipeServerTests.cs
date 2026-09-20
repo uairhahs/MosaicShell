@@ -233,10 +233,10 @@ namespace MosaicShell.Core.Tests
 
             _ = rules.Should().NotBeEmpty();
             string administratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null).Value;
-            string[] identities = [.. rules.Select(r => r.IdentityReference.Value)];
-            _ = identities.Should().OnlyContain(
+            _ = rules.Select(r => r.IdentityReference.Value).Should().OnlyContain(
                 sid => sid == me.User!.Value || sid == administratorsSid,
                 "PipeOptions.CurrentUserOnly must stay on; Windows may retain the built-in Administrators ACE for an administrator runner");
+            _ = rules.Select(r => r.IdentityReference.Value).Should().Contain(me.User!.Value);
         }
 
         [Fact]
