@@ -6,7 +6,7 @@ Core platform services sit **between** `HostServices` (OS adapters) and `IModule
 
 | Layer                                              | Responsibility                                                          |
 | -------------------------------------------------- | ----------------------------------------------------------------------- |
-| `HostServices`                                     | Win32 / SMTC / WNP / shell hook adapters                                |
+| `HostServices`                                     | Win32 / SMTC / UI Automation / shell hook adapters                      |
 | `CapabilityDaemon`                                 | Arm/disarm, persist, create `ICapabilityContext`, `ICapabilityEventBus` |
 | `CapabilityFlyoutPlatform`                         | Per-module flyout sessions, transient-dismiss wiring                    |
 | `CapabilityFlyoutSession`                          | Present vs Patch vs SoftRefresh, auto-dismiss reset policy              |
@@ -91,7 +91,7 @@ dotnet run --project host/MosaicShell.Worker
 
 | Kind                                     | When                          |
 | ---------------------------------------- | ----------------------------- |
-| `MediaTrackBoundary`                     | SMTC/WNP track skip detected  |
+| `MediaTrackBoundary`                     | SMTC track skip detected      |
 | `MediaSessionChanged`                    | Metadata/session change       |
 | `MediaProgress`                          | Timeline tick                 |
 | `VolumeChanged`                          | Master volume changed         |

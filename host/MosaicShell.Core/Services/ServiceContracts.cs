@@ -1,5 +1,3 @@
-using MosaicShell.Core.Services.WebNowPlaying;
-
 namespace MosaicShell.Core.Services
 {
     public interface IAudioService : IDisposable
@@ -33,8 +31,10 @@ namespace MosaicShell.Core.Services
         byte[]? ThumbnailPng = null,
         double PositionSeconds = 0,
         double DurationSeconds = 0,
-        /// <summary>WNP like rating when known (0 unrated, 1 disliked, 5 liked); null for native SMTC-only.</summary>
-        int? LikeRating = null);
+        /// <summary>Browser like rating when known (0 unrated, 1 disliked, 5 liked); null for native SMTC-only.</summary>
+        int? LikeRating = null,
+        /// <summary>What the browser player behind this session can be asked to do; none for native SMTC-only.</summary>
+        BrowserMediaCapabilities Capabilities = BrowserMediaCapabilities.None);
 
     public interface IMediaSessionService : IDisposable
     {
@@ -58,6 +58,15 @@ namespace MosaicShell.Core.Services
         Task ToggleLikeAsync(bool wantLiked);
         /// <summary>Dislike or clear dislike (YouTube Music / like-dislike players only).</summary>
         Task ToggleDislikeAsync(bool wantDisliked);
+    }
+
+    /// <summary>
+    /// Implemented by a media service that merges several sources, so a diagnostic can say which one
+    /// supplied each field instead of showing only the merged result.
+    /// </summary>
+    public interface IMediaSourceDiagnostics
+    {
+        string DescribeSources();
     }
 
     public sealed record HotkeyBinding(string Id, string Gesture);
@@ -147,7 +156,12 @@ namespace MosaicShell.Core.Services
             ShellFlyoutTriggers.Dispose();
         }
 
-        public static HostServices CreateWindowsDefaults()
+        /// <param name="browserSources">
+        /// True only in the Host: it listens for the browser extension and falls back to reading the browser's like buttons
+        /// through the accessibility tree. The Worker and tests, which build their own services, must not each open the
+        /// extension's pipe or poll the browser.
+        /// </param>
+        public static HostServices CreateWindowsDefaults(bool browserSources = false)
         {
             WindowsBrightnessService brightness = new();
             return new HostServices
@@ -155,7 +169,7 @@ namespace MosaicShell.Core.Services
                 Audio = new WindowsAudioService(),
                 AppAudio = new WindowsAppAudioService(),
                 Brightness = brightness,
-                Media = CreateMediaStack(),
+                Media = CreateMediaStack(browserSources),
                 Hotkeys = new WindowsHotkeyService(),
                 Metrics = new WindowsSystemMetricsService(),
                 AudioLevels = new WindowsAudioLevelService(),
@@ -172,12 +186,16 @@ namespace MosaicShell.Core.Services
             };
         }
 
-        /// <summary>SMTC + WebNowPlaying (browser covers for YTM, etc.).</summary>
-        public static IMediaSessionService CreateMediaStack()
+        /// <summary>
+        /// Windows SMTC, which carries title, artist and cover, plus (in the Host) the browser sources, which carry the like
+        /// and dislike state SMTC does not have: see <see cref="BrowserSourceStack"/>.
+        /// </summary>
+        public static IMediaSessionService CreateMediaStack(bool browserSources = false)
         {
-            WebNowPlayingReduxHost wnp = new();
-            wnp.Start();
-            return new CompositeMediaSessionService(new WindowsMediaSessionService(), wnp);
+            WindowsMediaSessionService smtc = new();
+            return browserSources
+                ? new CompositeMediaSessionService(smtc, BrowserSourceStack.Create(() => smtc.Current))
+                : new CompositeMediaSessionService(smtc);
         }
     }
 }

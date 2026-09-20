@@ -17,13 +17,12 @@ dotnet run --project MosaicShell.Host
 
 Host: Library → Tessera → Arm. Triggers on the system volume, brightness, and media keys.
 
-## Browser album art (YouTube Music)
+## Browser media (YouTube Music)
 
-Tessera merges **WebNowPlaying** covers when SMTC has no thumbnail.
-
-1. Install the [WebNowPlaying](https://chromewebstore.google.com/detail/webnowplaying/jfakgfcdgpghbbefmdfjkbdlibjgnbli) browser extension.
-2. Enable the built-in **CLI** adapter (port **5468**, same as [WebNowPlaying-CLI](https://github.com/keifufu/WebNowPlaying-CLI)).
-3. Run MosaicShell Host, play YTM in that browser.
+Title, artist and cover come from Windows' media session, which Edge and Chrome feed from the page, so nothing needs
+installing. Like and dislike for YouTube Music are read from the player's buttons through Windows accessibility.
+If the flyout shows only a title, a browser extension that replaces the page's Media Session (for example KDE Plasma
+Integration) is probably turned on; turn it off.
 
 Details: [`docs/parity/smtc-album-art.md`](../../docs/parity/smtc-album-art.md).
 

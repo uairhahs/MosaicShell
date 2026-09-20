@@ -42,7 +42,7 @@ Styles: Meter, Square, CoreUI, Fluent, Gnome, ModernFlyouts, MaterialYou, PlainT
 | Flag                          | Why false                                                                    |
 | ----------------------------- | ---------------------------------------------------------------------------- |
 | `native_tile_overlay_runtime` | Full historical StyleCatalog / DLC as a Rainmeter-style runtime interpreter. |
-| `tessera_media_smtc_only`     | Media flyouts without WebNowPlaying merge (browser/YTM art path).            |
+| `tessera_media_smtc_only`     | Media flyouts without the browser rating source (SMTC only).      |
 | `chrono_layout_fidelity`      | No in-repo screenshot proof pair yet.                                        |
 | `phono_layout_fidelity`       | Same.                                                                        |
 | `pulse_layout_fidelity`       | Same.                                                                        |
@@ -59,7 +59,7 @@ Styles: Meter, Square, CoreUI, Fluent, Gnome, ModernFlyouts, MaterialYou, PlainT
 | --------------- | -------------------------------------------------------------------------------------------------------------- |
 | Hub + installer | `library_*`, `capability_daemon`, `install_never_uses_iex_or_executionpolicy_bypass`, `product_cutover_no_iex` |
 | Tessera flyouts | `tessera_osd_flyout`, `tessera_locks_flight`, `tessera_live_update_multimonitor`, `tile_tessera_mvp`           |
-| Tessera media   | `tessera_media_wnp` (SMTC + WNP merge)                                                                         |
+| Tessera media   | `tessera_media_browser` (SMTC + browser rating)                                                                         |
 | Tile MVPs       | `tile_*_mvp` for all ten catalog modules                                                                       |
 | Services        | `service_*`, `os_media_audio_brightness_services`                                                              |
 

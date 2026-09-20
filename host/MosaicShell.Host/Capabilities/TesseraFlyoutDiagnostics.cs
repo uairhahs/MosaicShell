@@ -31,28 +31,6 @@ namespace MosaicShell.Host.Capabilities
             Log(ex.StackTrace ?? "(no stack)");
         }
 
-        #region agent log
-        internal static void AgentLog(string hypothesisId, string location, string message, object? data = null)
-        {
-            try
-            {
-                string line = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object?>
-                {
-                    ["sessionId"] = "ab1bfe",
-                    ["hypothesisId"] = hypothesisId,
-                    ["location"] = location,
-                    ["message"] = message,
-                    ["data"] = data,
-                    ["timestamp"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                });
-                File.AppendAllText(@"d:\Projects\MosaicShell\debug-ab1bfe.log", line + Environment.NewLine);
-            }
-            catch
-            {
-                // ignore
-            }
-        }
-        #endregion
 
         public static void LogStackedPlacement(
             string? styleId,

@@ -7,7 +7,7 @@ Phono runs as an Avalonia **widget** via `TileRuntime`.
 | `host/MosaicShell.Host/Tiles/Surfaces/LiveTilesA.cs` (`PhonoTileView`) | SMTC media + transport |
 | `host/MosaicShell.Core/Settings/ModuleSettings.cs` (`PhonoSettings`)   | Style / show artist    |
 
-Media is **SMTC only** on the Host path (WebNowPlaying covers are Tessera-side).
+Media is **SMTC only** on the Host path.
 
 ## Install / start
 
