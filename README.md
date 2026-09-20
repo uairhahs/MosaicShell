@@ -2,16 +2,14 @@
 
 > _Your desktop, composed._
 
-<p align="center">
-  <img src=".github/res/logo-variants/compact-256.png" alt="MosaicShell" width="120" height="120" />
-</p>
+![MosaicShell](.github/res/logo-variants/compact-128.png)
 
-<p align="center">
-  <img alt="Version" src="https://img.shields.io/github/v/tag/uairhahs/MosaicShell?label=Version&style=for-the-badge" />
-  <img alt="Downloads" src="https://img.shields.io/github/downloads/uairhahs/MosaicShell/total?style=for-the-badge" />
-  <img alt="Last Update" src="https://img.shields.io/github/release-date/uairhahs/MosaicShell?label=Last%20Update&style=for-the-badge" />
-  <img alt="License" src="https://img.shields.io/github/license/uairhahs/MosaicShell?style=for-the-badge" />
-</p>
+![Version](https://img.shields.io/github/v/tag/uairhahs/MosaicShell?label=Version&style=for-the-badge)
+![Downloads](https://img.shields.io/github/downloads/uairhahs/MosaicShell/total?style=for-the-badge)
+![Last Update](https://img.shields.io/github/release-date/uairhahs/MosaicShell?label=Last%20Update&style=for-the-badge)
+![License](https://img.shields.io/github/license/uairhahs/MosaicShell?style=for-the-badge)
+
+![MosaicShell: your desktop, composed. Tessera volume and media flyouts in the Fluent, Compact and Material You styles.](.github/res/promo/hero.png)
 
 ---
 
@@ -97,6 +95,8 @@ than a wrong state. The fallback does not work when:
 
 Every catalog module ships as a thin `Tiles/{Id}` install stub (`module.native.json` + README). Runtime code lives under `host/`.
 
+![The ten MosaicShell tiles: Tessera, Mixdeck, Inlay, Slate, Chord, Substrate, Pulse, Chrono, Phono and Canvas.](.github/res/promo/tiles.png)
+
 | Tile      | Description                                            | License |
 | --------- | ------------------------------------------------------ | ------- |
 | Tessera   | Volume / brightness / media flyouts (armed capability) | MPL-2.0 |
@@ -109,6 +109,10 @@ Every catalog module ships as a thin `Tiles/{Id}` install stub (`module.native.j
 | Chrono    | Clock widget                                           | MIT     |
 | Phono     | SMTC media widget                                      | MIT     |
 | Canvas    | System-metrics text widget                             | MIT     |
+
+### Tessera styles
+
+![Tessera in its eleven flyout styles: Fluent, Material You, Windows 11, Compact, CoreUI, Modern Flyouts, Radial, Gnome, Meter, Plain Text and Square.](.github/res/promo/tessera-styles.png)
 
 ---
 
