@@ -93,7 +93,7 @@ Runtime: `TesseraCapability` (thin) plus `Capabilities/Platform/*` (Core platfor
 | Area                    | Status                                                                                                                  |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | Flyout kinds            | `vol`, `bright`, `media`, `locks`, `flight`                                                                             |
-| Media backend           | SMTC (title, artist, cover) + UI Automation (YouTube Music like and dislike)                                            |
+| Media backend           | SMTC (title, artist, cover) + the Grout browser extension, or UI Automation without it (YouTube Music like and dislike) |
 | Layouts                 | All 11 catalog styles visually signed off (`tessera_layout_fidelity`); Radial and PlainText remain lighter Host layouts |
 | Placement               | Default top-left; 9-point `Position`; re-anchors after measure                                                          |
 | Settings                | Host Tessera panel: flyout scale %, soft frost / baked frost / focus dim                                                |

@@ -1,5 +1,3 @@
-using MosaicShell.Core.Services.BrowserUi;
-
 namespace MosaicShell.Core.Services
 {
     public interface IAudioService : IDisposable
@@ -158,11 +156,12 @@ namespace MosaicShell.Core.Services
             ShellFlyoutTriggers.Dispose();
         }
 
-        /// <param name="browserRating">
-        /// True only in the Host: it reads the browser's like buttons through the accessibility tree, and the Worker and tests,
-        /// which build their own services, must not each poll the browser.
+        /// <param name="browserSources">
+        /// True only in the Host: it listens for the browser extension and falls back to reading the browser's like buttons
+        /// through the accessibility tree. The Worker and tests, which build their own services, must not each open the
+        /// extension's pipe or poll the browser.
         /// </param>
-        public static HostServices CreateWindowsDefaults(bool browserRating = false)
+        public static HostServices CreateWindowsDefaults(bool browserSources = false)
         {
             WindowsBrightnessService brightness = new();
             return new HostServices
@@ -170,7 +169,7 @@ namespace MosaicShell.Core.Services
                 Audio = new WindowsAudioService(),
                 AppAudio = new WindowsAppAudioService(),
                 Brightness = brightness,
-                Media = CreateMediaStack(browserRating),
+                Media = CreateMediaStack(browserSources),
                 Hotkeys = new WindowsHotkeyService(),
                 Metrics = new WindowsSystemMetricsService(),
                 AudioLevels = new WindowsAudioLevelService(),
@@ -188,14 +187,14 @@ namespace MosaicShell.Core.Services
         }
 
         /// <summary>
-        /// Windows SMTC, which carries title, artist and cover, plus (in the Host) the browser's own like buttons read through
-        /// the accessibility tree, which carry the like and dislike state SMTC does not have.
+        /// Windows SMTC, which carries title, artist and cover, plus (in the Host) the browser sources, which carry the like
+        /// and dislike state SMTC does not have: see <see cref="BrowserSourceStack"/>.
         /// </summary>
-        public static IMediaSessionService CreateMediaStack(bool browserRating = false)
+        public static IMediaSessionService CreateMediaStack(bool browserSources = false)
         {
             WindowsMediaSessionService smtc = new();
-            return browserRating
-                ? new CompositeMediaSessionService(smtc, new BrowserUiSource(new WindowsBrowserUi(), () => smtc.Current, TimeProvider.System))
+            return browserSources
+                ? new CompositeMediaSessionService(smtc, BrowserSourceStack.Create(() => smtc.Current))
                 : new CompositeMediaSessionService(smtc);
         }
     }

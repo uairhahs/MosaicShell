@@ -4,10 +4,10 @@ using FluentAssertions;
 namespace MosaicShell.Core.Tests
 {
     /// <summary>
-    /// MosaicShell reads media natively: Windows' media session for title, artist and cover, and the browser's accessibility
-    /// tree for YouTube Music's like and dislike. It once depended on a third-party browser extension and a local port for
-    /// that, and both are gone. This fails if the dependency, or its name, comes back into source or documentation.
-    /// History (git, the legacy notes on Rainmeter-era skins) is allowed to name it.
+    /// MosaicShell takes title, artist and cover from Windows' media session and the browser's like and dislike from its
+    /// own extension (Grout) or, without it, from the accessibility tree. It once depended on a third-party browser
+    /// extension and a local port for that, and both are gone. This fails if the dependency, or its name, comes back into
+    /// source or documentation. History (git, the legacy notes on Rainmeter-era skins) is allowed to name it.
     /// </summary>
     public class NoWebNowPlayingTests
     {

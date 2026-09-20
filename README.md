@@ -71,14 +71,25 @@ See [host/README.md](host/README.md) and [`.github/docs/parity.md`](.github/docs
 
 Windows learns a browser's artist and cover from the page's Media Session, which the browser passes on. A browser
 extension that replaces the page's Media Session hides it from the browser, so Windows only gets the page title.
-KDE's **Plasma Integration** extension does this. Turn such an extension off in `edge://extensions`, then reload
-the page.
+KDE's **Plasma Integration** extension does this. Install the **Grout** extension (below), which reads the page
+itself and is not affected, or turn the other extension off in `edge://extensions` and reload the page.
 
 ### YouTube Music: heart and thumbs-down
 
-MosaicShell reads the real state of the player's like and dislike buttons through Windows accessibility, with
-nothing to install. That works while the player is the visible tab or app window, and not while that window is minimised. A player in a background tab
-cannot be read, so its buttons are not offered, and the first read after a page loads can take a couple of seconds.
+With the **Grout** browser extension installed, the heart and thumbs-down show and change the real state of the
+track whatever the browser window is doing: covered by other windows, minimised, or in another tab. MosaicShell
+registers Grout's connection for your account when it starts, so installing the extension is the only step, and it
+needs no administrator rights. Grout runs only on YouTube Music, YouTube, Spotify and SoundCloud, and talks only
+to MosaicShell on your computer.
+
+Without Grout, MosaicShell falls back to reading the player's buttons through Windows accessibility, which needs
+nothing installed but sees only a window that is on screen. A browser stops updating the page of a window it
+cannot see, so the buttons would show a state that may no longer be the page's; MosaicShell offers nothing rather
+than a wrong state. The fallback does not work when:
+
+- **The window is covered or minimised.** The buttons come back a few seconds after the window is visible again.
+- **The player is in a background tab.** Only the tab being shown can be read.
+- **The window is narrow.** YouTube Music takes the buttons out of its player bar in a narrow window.
 
 ---
 

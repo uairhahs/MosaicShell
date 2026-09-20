@@ -21,7 +21,7 @@ Runtime is host-only; `Tiles/Tessera` is a native install stub. B0 is **not** fu
 | `tessera_os_acrylic_win11_eval`    | **true** - Win11 OS acrylic trial (single-shell + H3 stacked N-window); hub toggle or `--tessera-os-acrylic`; frost remains alpha default. See [tessera-os-acrylic-spike.md](tessera-os-acrylic-spike.md) |
 | `tessera_fluent_yourflyouts`       | **true** - Fluent / Win11 / Center tightened for Host identity (compact, soft frost, optional baked wash)                                                                                                 |
 | `tessera_media_smtc_only`          | **false** - SMTC is not the only media path                                                                                                                                                               |
-| `tessera_media_wnp`                | **true** - like and dislike read through UI Automation                                                                                                                                                     
+| `tessera_media_wnp`                | **true** - like and dislike read by the Grout extension, or through UI Automation without it                                                                                                                                                     
 | `tile_tessera_mvp`                 | Armed flyouts + named styles (Host path)                                                                                                                                                                  |
 
 References: [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts) (OSD / ShellHook).

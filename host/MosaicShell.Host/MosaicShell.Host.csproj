@@ -30,6 +30,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Mosaicist\Mosaicist.csproj" />
+    <ProjectReference Include="..\MosaicShell.BrowserRelay\MosaicShell.BrowserRelay.csproj" />
     <ProjectReference Include="..\MosaicShell.Core\MosaicShell.Core.csproj" />
   </ItemGroup>
 
