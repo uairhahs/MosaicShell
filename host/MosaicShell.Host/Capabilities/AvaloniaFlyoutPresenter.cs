@@ -1,3 +1,4 @@
+using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
@@ -48,7 +49,11 @@ namespace MosaicShell.Host.Capabilities
             // Core decides Present/Patch/SoftRefresh but owns no logging; route its trace into the
             // same file so a decision and the Host state that produced it interleave in order.
             FlyoutTrace.Sink = Log;
-            Log($"presenter ctor build={typeof(AvaloniaFlyoutPresenter).Assembly.GetName().Version}");
+            Log(RunBanner.Format(
+                DateTimeOffset.Now,
+                Environment.ProcessId,
+                typeof(AvaloniaFlyoutPresenter).Assembly
+                    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion));
         }
 
         public void AttachHostUi(IHostUiBridge hostUi)

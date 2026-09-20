@@ -1,7 +1,6 @@
 using FluentAssertions;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
-using MosaicShell.Core.Services.WebNowPlaying;
 
 namespace MosaicShell.Core.Tests
 {
@@ -55,8 +54,8 @@ namespace MosaicShell.Core.Tests
         public void Rebuild_raises_changed_on_position_restart_when_title_still_stale()
         {
             SteppingMediaSessionService smtc = new();
-            StubWebNowPlayingService wnp = new();
-            using CompositeMediaSessionService composite = new(smtc, wnp);
+            StubBrowserMediaSource browser = new();
+            using CompositeMediaSessionService composite = new(smtc, browser);
 
             int changed = 0;
             composite.Changed += (_, _) => changed++;
@@ -75,8 +74,8 @@ namespace MosaicShell.Core.Tests
         public void Rebuild_raises_changed_once_when_smtc_title_and_position_both_signal_skip()
         {
             SteppingMediaSessionService smtc = new();
-            StubWebNowPlayingService wnp = new();
-            using CompositeMediaSessionService composite = new(smtc, wnp);
+            StubBrowserMediaSource browser = new();
+            using CompositeMediaSessionService composite = new(smtc, browser);
 
             int changed = 0;
             composite.Changed += (_, _) => changed++;
@@ -89,22 +88,22 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void Rebuild_raises_changed_when_smtc_skips_but_wnp_position_is_stale()
+        public void Rebuild_raises_changed_when_smtc_skips_but_browser_position_is_stale()
         {
             SteppingMediaSessionService smtc = new();
-            StubWebNowPlayingService wnp = new()
+            StubBrowserMediaSource browser = new()
             {
-                Active = new WnpPlayerSnapshot
+                Active = new BrowserPlayerSnapshot
                 {
                     Title = "Track A",
                     Artist = "A",
                     Name = "YouTube Music",
-                    State = WnpState.Playing,
+                    State = BrowserPlaybackState.Playing,
                     PositionSeconds = 45,
                     DurationSeconds = 180,
                 }
             };
-            using CompositeMediaSessionService composite = new(smtc, wnp);
+            using CompositeMediaSessionService composite = new(smtc, browser);
 
             int changed = 0;
             composite.Changed += (_, _) => changed++;
@@ -115,7 +114,39 @@ namespace MosaicShell.Core.Tests
 
             smtc.Set(new MediaSessionInfo(
                 "Track A", "A", "music.youtube.com-x!App", true, null, 0.5, 180));
-            _ = changed.Should().Be(2, "SMTC restart must raise Changed even when WNP timeline is stale");
+            _ = changed.Should().Be(2, "SMTC restart must raise Changed even when the browser timeline is stale");
+        }
+
+        [Fact]
+        public void Browser_tab_title_reaches_consumers_without_the_site_suffix_when_browser_is_silent()
+        {
+            SteppingMediaSessionService smtc = new();
+            StubBrowserMediaSource browser = new();
+            using CompositeMediaSessionService composite = new(smtc, browser);
+
+            smtc.Set(new MediaSessionInfo(
+                "JUST DANCE | YouTube Music", null, "music.youtube.com-x!App", true, null, 5, 108));
+
+            _ = composite.Current!.Title.Should().Be("JUST DANCE");
+        }
+
+        [Fact]
+        public void Suffixed_smtc_title_does_not_raise_changed_on_every_progress_tick()
+        {
+            SteppingMediaSessionService smtc = new();
+            StubBrowserMediaSource browser = new();
+            using CompositeMediaSessionService composite = new(smtc, browser);
+
+            int changed = 0;
+            composite.Changed += (_, _) => changed++;
+
+            smtc.Set(new MediaSessionInfo(
+                "JUST DANCE | YouTube Music", null, "music.youtube.com-x!App", true, null, 5, 108));
+            _ = changed.Should().Be(1);
+
+            smtc.Set(new MediaSessionInfo(
+                "JUST DANCE | YouTube Music", null, "music.youtube.com-x!App", true, null, 8, 108));
+            _ = changed.Should().Be(1, "the title did not change, only the suffix differs from the merged value");
         }
 
         private sealed class SteppingMediaSessionService : IMediaSessionService
@@ -174,14 +205,32 @@ namespace MosaicShell.Core.Tests
             public void Dispose() { }
         }
 
-        private sealed class StubWebNowPlayingService : IWebNowPlayingService
+        private sealed class StubBrowserMediaSource : IBrowserMediaSource
         {
-            public WnpPlayerSnapshot? Active { get; init; }
-            public int ConnectedClients => 0;
-            public int ListenPort => 0;
+            public BrowserPlayerSnapshot? Active { get; init; }
 #pragma warning disable CS0067
             public event EventHandler? Changed;
 #pragma warning restore CS0067
+            public Task SetLikedAsync(bool liked)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task SetDislikedAsync(bool disliked)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task ToggleShuffleAsync()
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task ToggleRepeatAsync()
+            {
+                return Task.CompletedTask;
+            }
+
             public void Dispose() { }
         }
     }

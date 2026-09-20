@@ -123,7 +123,7 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void Lagging_wnp_tick_must_not_rewind_playing_smtc()
+        public void Lagging_browser_tick_must_not_rewind_playing_smtc()
         {
             _ = MediaSessionChangePolicy.ResolvePlayingPosition(
                     committedSeconds: 40,

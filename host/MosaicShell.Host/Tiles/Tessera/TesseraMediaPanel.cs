@@ -41,7 +41,7 @@ namespace MosaicShell.Host.Tiles.Tessera
 
         private static Control Fluent(TesseraFlyoutViewModel vm)
         {
-            const double mediaW = TesseraFluentMetrics.MediaWidth - 16;
+            const double mediaW = TesseraFluentMetrics.MediaWidth;
             const double h = TesseraFluentMetrics.Height;
             Border art = AlbumArt(vm, 56);
             art.Margin = new Thickness(14, 14, 0, 0);
