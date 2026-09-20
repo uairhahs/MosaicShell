@@ -26,6 +26,14 @@ namespace MosaicShell.Core.Services.BrowserUi
         /// </summary>
         string? PlayerTitle();
 
+        /// <summary>
+        /// The value of the player's progress bar, or null when the page has none. Only whether it moves matters: a
+        /// browser stops updating the page of a window it cannot see (covered by another window, or minimised), and a
+        /// progress bar that stands still while the track plays is how that shows. The buttons stay in the tree then,
+        /// and press, but what they report has stopped following the page.
+        /// </summary>
+        double? PlayerProgress();
+
         /// <summary>The toggle buttons in the window's page. Costly, so asked for only after <see cref="PlayerTitle"/> matched.</summary>
         IReadOnlyList<UiToggle> Toggles();
     }

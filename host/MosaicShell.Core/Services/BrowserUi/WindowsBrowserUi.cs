@@ -93,10 +93,35 @@ namespace MosaicShell.Core.Services.BrowserUi
 
             public string? PlayerTitle()
             {
-                IUIAutomation automation = owner.Automation;
-                IUIAutomationCondition isTitle = automation.CreatePropertyCondition(UIA_PROPERTY_ID.UIA_ClassNamePropertyId, YouTubeMusicControls.PlayerTitleClass);
-                IUIAutomationElement? title = automation.ElementFromHandle(handle).FindFirst(TreeScope.TreeScope_Descendants, isTitle);
+                IUIAutomationElement? title = TitleElement(owner.Automation);
                 return title is null ? null : Text(title, UIA_PROPERTY_ID.UIA_NamePropertyId);
+            }
+
+            /// <summary>
+            /// The player bar's progress bar. Measured: the title and the bar are both direct children of the player bar,
+            /// and the bar is its only progress bar (the volume control is a slider).
+            /// </summary>
+            public double? PlayerProgress()
+            {
+                IUIAutomation automation = owner.Automation;
+                IUIAutomationElement? title = TitleElement(automation);
+                IUIAutomationElement? playerBar = title is null ? null : automation.RawViewWalker.GetParentElement(title);
+                if (playerBar is null)
+                {
+                    return null;
+                }
+
+                IUIAutomationCondition isProgressBar = automation.CreatePropertyCondition(UIA_PROPERTY_ID.UIA_ControlTypePropertyId, (int)UIA_CONTROLTYPE_ID.UIA_ProgressBarControlTypeId);
+                IUIAutomationElement? progress = playerBar.FindFirst(TreeScope.TreeScope_Descendants, isProgressBar);
+                return progress?.GetCurrentPattern(UIA_PATTERN_ID.UIA_RangeValuePatternId) is IUIAutomationRangeValuePattern range
+                    ? range.CurrentValue
+                    : null;
+            }
+
+            private IUIAutomationElement? TitleElement(IUIAutomation automation)
+            {
+                IUIAutomationCondition isTitle = automation.CreatePropertyCondition(UIA_PROPERTY_ID.UIA_ClassNamePropertyId, YouTubeMusicControls.PlayerTitleClass);
+                return automation.ElementFromHandle(handle).FindFirst(TreeScope.TreeScope_Descendants, isTitle);
             }
 
             public IReadOnlyList<UiToggle> Toggles()

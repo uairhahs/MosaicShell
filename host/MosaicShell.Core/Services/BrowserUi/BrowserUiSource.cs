@@ -10,13 +10,22 @@ namespace MosaicShell.Core.Services.BrowserUi
     /// </summary>
     /// <remarks>
     /// The accessibility tree holds only the page a window is showing, so a player in a background tab is not seen and
-    /// reports nothing; the flyout then simply has no rating for it. Nothing is read unless a browser session is playing.
+    /// reports nothing; the flyout then simply has no rating for it. A window the browser has stopped updating (covered
+    /// by other windows, or minimised) keeps its buttons in the tree with the state they had, so it is treated the same
+    /// way: see <see cref="StallAfter"/>. Nothing is read unless a browser session is playing.
     /// Every call into <see cref="IBrowserUi"/> happens on a thread-pool thread, never the caller's, so a slow or hung
     /// browser cannot stall the Host's UI thread.
     /// </remarks>
     public sealed class BrowserUiSource : IBrowserMediaSource
     {
         public static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
+
+        /// <summary>
+        /// How long a playing page's progress may stand still before its window is taken to be one the browser has
+        /// stopped updating. Playback advances the bar every second, so this is a few ticks, not one, to ride out a
+        /// stall while the track buffers.
+        /// </summary>
+        public static readonly TimeSpan StallAfter = TimeSpan.FromSeconds(3);
 
         private static readonly TimeSpan CommandRecheck = TimeSpan.FromMilliseconds(400);
 
@@ -35,6 +44,10 @@ namespace MosaicShell.Core.Services.BrowserUi
         private ITimer? _recheck;
         private bool _recheckPending;
         private BrowserPlayerSnapshot? _active;
+
+        /// <summary>The player's progress as last seen, and when it last changed. Guarded by <see cref="_readGate"/>, like every read.</summary>
+        private (double Value, DateTimeOffset At)? _progressSeen;
+
         private bool _disposed;
 
         public BrowserUiSource(IBrowserUi ui, Func<MediaSessionInfo?> session, TimeProvider clock)
@@ -195,7 +208,8 @@ namespace MosaicShell.Core.Services.BrowserUi
                     .OrderByDescending(w => w.Title.Contains(track, StringComparison.OrdinalIgnoreCase)))
                 {
                     if (MediaTitleNormalizer.LooselyMatch(window.PlayerTitle(), session.Title)
-                        && YouTubeMusicControls.Find(window.Toggles()) is { Rating: { } rating } controls)
+                        && YouTubeMusicControls.Find(window.Toggles()) is { Rating: { } rating } controls
+                        && PageIsUpdating(window, session.IsPlaying))
                     {
                         return (Present(session, track, rating), controls);
                     }
@@ -207,6 +221,33 @@ namespace MosaicShell.Core.Services.BrowserUi
             {
                 return (null, null);
             }
+        }
+
+        /// <summary>
+        /// False when the window's page is one its browser has stopped updating, whose buttons therefore no longer say
+        /// what the page says (see <see cref="IUiWindow.PlayerProgress"/>). Only a playing page can show it: while it plays
+        /// its progress moves every second, so a bar that has not moved for <see cref="StallAfter"/> is frozen. A paused
+        /// page stands still anyway, so it is read as it is, and the wait starts again when it plays. A playing page
+        /// with no progress bar cannot be shown to be updating, so it is not trusted either. Called only from
+        /// <see cref="Read"/>, which the read gate serializes.
+        /// </summary>
+        private bool PageIsUpdating(IUiWindow window, bool playing)
+        {
+            double? progress = window.PlayerProgress();
+            DateTimeOffset now = _clock.GetUtcNow();
+            if (progress is null)
+            {
+                _progressSeen = null;
+                return !playing;
+            }
+
+            if (!playing || _progressSeen is not { } seen || seen.Value != progress)
+            {
+                _progressSeen = (progress.Value, now);
+                return true;
+            }
+
+            return now - seen.At < StallAfter;
         }
 
         private static BrowserPlayerSnapshot Present(MediaSessionInfo session, string track, BrowserRating rating)

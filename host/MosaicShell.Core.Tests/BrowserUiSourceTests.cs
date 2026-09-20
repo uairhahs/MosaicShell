@@ -34,7 +34,7 @@ namespace MosaicShell.Core.Tests
 
         private (BrowserUiSource Source, FakeUi Ui) Build(MediaSessionInfo? session)
         {
-            FakeUi ui = new();
+            FakeUi ui = new(_clock);
             _current = session;
             BrowserUiSource source = new(ui, () => _current, _clock);
             _disposables.Add(source);
@@ -179,6 +179,104 @@ namespace MosaicShell.Core.Tests
             source.Refresh();
 
             _ = source.Active.Should().BeNull();
+        }
+
+        // A browser stops updating the page of a window it cannot see (covered by another window, or minimised): the
+        // buttons are still in the tree and a press still reaches the page, but their state no longer follows it.
+        // Measured in Edge 2026-09-20: with the window covered the like state stayed Off for 15 s while the page said
+        // liked, and the seek slider stood still while the track played on. A window that is only unfocused is fine.
+
+        [Fact]
+        public void A_page_that_stops_updating_is_not_trusted_once_it_is_seen_to_be_stuck()
+        {
+            (BrowserUiSource source, FakeUi ui) = Build(Session("Humid"));
+            FakeWindow window = FakeWindow.YouTubeMusic("Humid");
+            ui.Windows.Add(window);
+            source.Refresh();
+            int changes = 0;
+            source.Changed += (_, _) => changes++;
+            window.Frozen = true;
+
+            _clock.Advance(BrowserUiSource.PollInterval);
+            _ = source.Active.Should().NotBeNull("it has not stood still for long enough to be sure it is stuck rather than slow");
+
+            _clock.Advance(BrowserUiSource.StallAfter);
+            _ = source.Active.Should().BeNull("the like state of a page that is not updating may no longer be the page's");
+            _ = changes.Should().BeGreaterThanOrEqualTo(1);
+        }
+
+        [Fact]
+        public void The_rating_returns_when_the_window_is_visible_again()
+        {
+            (BrowserUiSource source, FakeUi ui) = Build(Session("Humid"));
+            FakeWindow window = FakeWindow.YouTubeMusic("Humid", like: UiToggleState.On);
+            ui.Windows.Add(window);
+            source.Refresh();
+            window.Frozen = true;
+            _clock.Advance(BrowserUiSource.StallAfter + BrowserUiSource.PollInterval);
+            _ = source.Active.Should().BeNull();
+
+            window.Frozen = false;
+            _clock.Advance(BrowserUiSource.PollInterval);
+
+            _ = source.Active!.Rating.Should().Be(BrowserRating.Liked);
+        }
+
+        [Fact]
+        public void A_paused_player_is_read_however_long_its_page_stands_still()
+        {
+            // Nothing moves on a paused page, so standing still says nothing about whether the browser is updating it.
+            (BrowserUiSource source, FakeUi ui) = Build(Session("Humid", playing: false));
+            FakeWindow window = FakeWindow.YouTubeMusic("Humid", like: UiToggleState.On);
+            ui.Windows.Add(window);
+            source.Refresh();
+            window.Frozen = true;
+
+            _clock.Advance(TimeSpan.FromMinutes(5));
+
+            _ = source.Active!.Rating.Should().Be(BrowserRating.Liked);
+        }
+
+        [Fact]
+        public void A_page_that_has_just_resumed_is_not_taken_for_a_stuck_one()
+        {
+            (BrowserUiSource source, FakeUi ui) = Build(Session("Humid", playing: false));
+            FakeWindow window = FakeWindow.YouTubeMusic("Humid", like: UiToggleState.On);
+            window.Frozen = true; // a paused page's progress stands still
+            ui.Windows.Add(window);
+            _clock.Advance(TimeSpan.FromMinutes(5));
+            _current = Session("Humid", playing: true);
+
+            source.Refresh();
+
+            _ = source.Active.Should().NotBeNull("the wait for movement starts when the player starts playing, not when the page last moved");
+        }
+
+        [Fact]
+        public void A_playing_page_with_no_progress_bar_cannot_be_shown_to_be_updating()
+        {
+            (BrowserUiSource source, FakeUi ui) = Build(Session("Humid"));
+            ui.Windows.Add(FakeWindow.YouTubeMusic("Humid", hasProgress: false));
+
+            source.Refresh();
+
+            _ = source.Active.Should().BeNull("with no way to tell a frozen page from a live one, nothing is claimed");
+        }
+
+        [Fact]
+        public async Task Nothing_is_pressed_on_a_page_that_is_not_updating()
+        {
+            (BrowserUiSource source, FakeUi ui) = Build(Session("Humid"));
+            FakeWindow window = FakeWindow.YouTubeMusic("Humid");
+            ui.Windows.Add(window);
+            source.Refresh();
+            window.Frozen = true;
+            _clock.Advance(BrowserUiSource.StallAfter + BrowserUiSource.PollInterval);
+
+            await source.SetLikedAsync(true);
+            await source.SetDislikedAsync(true);
+
+            _ = window.Presses.Should().BeEmpty("the button's state is stale, so pressing it could undo the very like the user asked for");
         }
 
         [Fact]
@@ -432,7 +530,7 @@ namespace MosaicShell.Core.Tests
         public void Through_the_composite_the_flyout_gets_the_real_rating_without_any_extension()
         {
             FakeSmtc smtc = new();
-            FakeUi ui = new();
+            FakeUi ui = new(_clock);
             ui.Windows.Add(FakeWindow.YouTubeMusic("Humid", dislike: UiToggleState.On));
             BrowserUiSource source = new(ui, () => smtc.Current, _clock);
             using CompositeMediaSessionService composite = new(smtc, source);
@@ -444,7 +542,7 @@ namespace MosaicShell.Core.Tests
             _ = composite.Current.Capabilities.Should().Be(BrowserMediaCapabilities.Rating | BrowserMediaCapabilities.Dislike);
         }
 
-        private sealed class FakeUi : IBrowserUi
+        private sealed class FakeUi(TimeProvider clock) : IBrowserUi
         {
             private int _windowCalls;
 
@@ -462,6 +560,11 @@ namespace MosaicShell.Core.Tests
                 _ = Interlocked.Increment(ref _windowCalls);
                 Entered.Set();
                 _ = Hold?.Wait(TimeSpan.FromSeconds(10));
+                foreach (FakeWindow window in Windows.OfType<FakeWindow>())
+                {
+                    window.Clock ??= clock;
+                }
+
                 return Throw ? throw new InvalidOperationException("the element is gone") : [.. Windows];
             }
         }
@@ -479,11 +582,34 @@ namespace MosaicShell.Core.Tests
             public string? PlayerTitle { get; init; }
             public int PlayerTitleCalls { get; private set; }
 
-            public static FakeWindow YouTubeMusic(string track, UiToggleState like = UiToggleState.Off, UiToggleState dislike = UiToggleState.Off, string? windowTitle = null, string? playerTitle = null)
+            /// <summary>Set by the fake browser, so the page's progress bar ticks with the test's clock.</summary>
+            public TimeProvider? Clock { get; set; }
+
+            public bool HasProgress { get; init; }
+
+            private double? _frozenAt;
+
+            /// <summary>
+            /// A page its browser no longer updates, as when its window is covered or minimised: the controls stay, and
+            /// the progress stops where it was. Measured in Edge, the like state stops following the page too.
+            /// </summary>
+            public bool Frozen
+            {
+                get => _frozenAt is not null;
+                set => _frozenAt = value ? Progress() : null;
+            }
+
+            private double Progress()
+            {
+                return Math.Floor((Clock?.GetUtcNow() ?? DateTimeOffset.UnixEpoch).ToUnixTimeMilliseconds() / 1000d);
+            }
+
+            public static FakeWindow YouTubeMusic(string track, UiToggleState like = UiToggleState.Off, UiToggleState dislike = UiToggleState.Off, string? windowTitle = null, string? playerTitle = null, bool hasProgress = true)
             {
                 return new FakeWindow(windowTitle ?? (track + " | YouTube Music - Personal - Microsoft Edge"))
                 {
                     HasControls = true,
+                    HasProgress = hasProgress,
                     Like = like,
                     Dislike = dislike,
                     PlayerTitle = playerTitle ?? track,
@@ -494,6 +620,11 @@ namespace MosaicShell.Core.Tests
             {
                 PlayerTitleCalls++;
                 return PlayerTitle;
+            }
+
+            double? IUiWindow.PlayerProgress()
+            {
+                return HasProgress ? _frozenAt ?? Progress() : null;
             }
 
             public IReadOnlyList<UiToggle> Toggles()

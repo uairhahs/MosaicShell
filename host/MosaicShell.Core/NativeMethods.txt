@@ -4,6 +4,7 @@ IUIAutomationElement
 IUIAutomationElementArray
 IUIAutomationCondition
 IUIAutomationTogglePattern
+IUIAutomationRangeValuePattern
 IUIAutomationTreeWalker
 IUIAutomationCacheRequest
 TreeScope
