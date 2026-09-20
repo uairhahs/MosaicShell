@@ -232,8 +232,11 @@ namespace MosaicShell.Core.Tests
                 .Where(r => r.AccessControlType == AccessControlType.Allow)];
 
             _ = rules.Should().NotBeEmpty();
-            _ = rules.Select(r => r.IdentityReference.Value).Should().OnlyContain(sid => sid == me.User!.Value,
-                "PipeOptions.CurrentUserOnly must stay on; the pipe drives what the flyout shows and carries commands");
+            string administratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null).Value;
+            _ = rules.Select(r => r.IdentityReference.Value).Should().OnlyContain(
+                sid => sid == me.User!.Value || sid == administratorsSid,
+                "PipeOptions.CurrentUserOnly must stay on; Windows may retain the built-in Administrators ACE for an administrator runner");
+            _ = rules.Select(r => r.IdentityReference.Value).Should().Contain(me.User!.Value);
         }
 
         [Fact]
