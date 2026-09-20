@@ -4,7 +4,7 @@ using MosaicShell.Core.Services;
 namespace MosaicShell.Core.Capabilities.Platform
 {
     /// <summary>
-    /// Shared media signal normalization. SMTC/WNP polling lives in <see cref="IMediaSessionService"/>;
+    /// Shared media signal normalization. SMTC polling lives in <see cref="IMediaSessionService"/>;
     /// this layer classifies Changed vs Progress and track boundaries for capabilities.
     /// </summary>
     public sealed class MediaSessionPlatform(IMediaSessionService media) : IDisposable

@@ -2,33 +2,38 @@
 
 ## How JaxCore got YTM covers
 
-YourFlyouts **Auto** mode used **WebNowPlaying**: a browser extension reads
-`navigator.mediaSession.metadata.artwork` on the page (YouTube Music site script),
-downloads the image, and sends PNG bytes to an adapter over WebSocket.
-
-That is **not** Windows SMTC `Thumbnail`. The YT Music PWA often leaves SMTC
-`Thumbnail` null while still exposing Media Session artwork in-page - which is why
-JaxCore showed art and SMTC-only hosts did not.
+YourFlyouts used a Rainmeter media plugin fed by a browser extension. The extension read
+`navigator.mediaSession.metadata.artwork` on the page, downloaded the image and sent it to Rainmeter over a local
+socket.
 
 ## What MosaicShell does now
 
-1. **SMTC** (`WindowsMediaSessionService`) - title/timeline/transport for the OS session.
-2. **WebNowPlaying Redux host** (`WebNowPlayingReduxHost`, WNPLIB revision **3**) -
-   listens on `ws://127.0.0.1:5468/` - the built-in **CLI** adapter port
-   ([WebNowPlaying-CLI](https://github.com/keifufu/WebNowPlaying-CLI)).
-3. **`CompositeMediaSessionService`** - overlays WNP cover (and browser title/artist)
-   when SMTC has no thumbnail.
+Edge and Chrome publish a page's Media Session to Windows' own media session (SMTC), and that carries the title,
+artist and cover, for tabs and for installed web apps alike, with nothing installed. SMTC has no like state, and the
+browser stops updating what it exposes about a window it cannot see, so two browser sources sit beside it.
 
-### One-time setup
+1. **SMTC** (`WindowsMediaSessionService`) supplies title, artist, cover, timeline and transport.
+2. **`CompositeMediaSessionService`** merges SMTC with the browser sources, in order of preference.
+3. **`BrowserMediaSource`**, fed by the Grout browser extension (a separate project) over native messaging, a relay
+   executable and a per-user pipe. The extension reads the page itself, in the page's own world, so it works whatever
+   the window is doing (covered, minimised, another tab) and it supplies like and dislike, and the artist and cover
+   when SMTC lacks them. The Host registers the native messaging host for the current user at every start
+   (`NativeHostRegistration`), so the extension is the only thing to install. See
+   `host/MosaicShell.Core/Services/BrowserBridge/`.
+4. **`BrowserUiSource`**, the fallback when the extension is not connected, reads YouTube Music's like and dislike
+   buttons through UI Automation. It needs nothing installed but only sees a window that is on screen (a covered or
+   minimised window's tree is frozen, measured 2026-09-20; Chromium treats such a window as hidden), so it offers
+   nothing rather than a state that may be stale. It is asked to read only while the extension has no player
+   (`BrowserSourceStack.FallbackSession`), so no browser is made to build an accessibility tree needlessly.
 
-1. Install the [WebNowPlaying](https://chromewebstore.google.com/detail/webnowplaying/jfakgfcdgpghbbefmdfjkbdlibjgnbli) extension (Chrome/Edge).
-2. Enable the built-in **CLI** adapter (port **5468**).
-3. Keep MosaicShell Host running.
-4. Play YouTube Music in that browser - flyout album art should populate.
+### When the artist and cover are missing
 
-**Do not** also run `wnpcli start-daemon` while Host is listening on 5468 (same port).
+A browser extension that replaces `navigator.mediaSession` (measured with KDE's Plasma Integration, whose page script
+redefines `metadata` and `playbackState` without calling the browser's own) stops the browser receiving the page's
+metadata, so Windows falls back to the page title with no artist and no cover. Grout reads the metadata in the page's
+own world, where the shim's copy is what the page set, so it is not starved. Without Grout, turn such an extension off.
 
 ## Flags
 
-- `tessera_media_wnp` = true (adapter wired)
+- `tessera_media_browser` = true (browser like and dislike read by the Grout extension, or through UI Automation without it)
 - `tessera_media_smtc_only` = false
