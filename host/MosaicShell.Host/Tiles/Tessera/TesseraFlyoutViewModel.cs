@@ -204,8 +204,10 @@ namespace MosaicShell.Host.Tiles.Tessera
             }
         }
 
+        // Offered only when the active browser player declares it: the like buttons were read from the page, so a
+        // player that has not been read (a background tab, a page without them) has no dislike to press.
         public bool SupportsMediaDislike =>
-            MediaLikePolicy.SupportsDislike(Services.Media.Current?.AppId);
+            Services.Media.Current?.Capabilities.HasFlag(BrowserMediaCapabilities.Dislike) == true;
 
         public async Task ToggleDislikeAsync(Material.Icons.Avalonia.MaterialIcon? icon = null)
         {

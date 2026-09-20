@@ -24,7 +24,7 @@ namespace MosaicShell.Core.Services
         public const int TimelinePollMs = 500;
 
         /// <summary>
-        /// Sticky SMTC/WNP repeats must not pull a playing scrubber backward.
+        /// Sticky SMTC repeats must not pull a playing scrubber backward.
         /// Hide/show tween overlap is a separate Host cancel; this is the timeline clock.
         /// </summary>
         public const bool MustNotRewindPlayingScrubber = true;
@@ -98,7 +98,7 @@ namespace MosaicShell.Core.Services
 
         /// <summary>
         /// Commit a playing position. Sticky repeats keep the ahead clock; real skips
-        /// and forward seeks still land. Small lagging ticks (WNP vs extrapolated SMTC)
+        /// and forward seeks still land. Small lagging ticks (a browser source vs extrapolated SMTC)
         /// must not jump the scrubber backward.
         /// </summary>
         public static double ResolvePlayingPosition(

@@ -280,16 +280,6 @@ namespace MosaicShell.Host.Capabilities
 
                     double progress = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(
                         entrance, step, steps, ease);
-                    #region agent log
-                    if (step == 0 || step == 5 || step == 10 || step == steps)
-                    {
-                        TesseraFlyoutDiagnostics.AgentLog(
-                            "B",
-                            "FlyoutMotionController.PumpPhase2StepsAsync",
-                            "phase2 tick",
-                            new { entrance, ease, step, steps, progress, slots = slots.Count });
-                    }
-                    #endregion
                     foreach ((MotionContext? ctx, List<TesseraRevealHost>? hosts) in slots)
                     {
                         ApplyPhase2Progress(ctx, hosts, progress, entrance);

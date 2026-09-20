@@ -21,7 +21,7 @@ Runtime is host-only; `Tiles/Tessera` is a native install stub. B0 is **not** fu
 | `tessera_os_acrylic_win11_eval`    | **true** - Win11 OS acrylic trial (single-shell + H3 stacked N-window); hub toggle or `--tessera-os-acrylic`; frost remains alpha default. See [tessera-os-acrylic-spike.md](tessera-os-acrylic-spike.md) |
 | `tessera_fluent_yourflyouts`       | **true** - Fluent / Win11 / Center tightened for Host identity (compact, soft frost, optional baked wash)                                                                                                 |
 | `tessera_media_smtc_only`          | **false** - SMTC is not the only media path                                                                                                                                                               |
-| `tessera_media_wnp`                | **true** - WebNowPlaying host on CLI port **5468**                                                                                                                                                        |
+| `tessera_media_wnp`                | **true** - like and dislike read by the Grout extension, or through UI Automation without it                                                                                                                                                     
 | `tile_tessera_mvp`                 | Armed flyouts + named styles (Host path)                                                                                                                                                                  |
 
 References: [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts) (OSD / ShellHook).
@@ -32,7 +32,7 @@ References: [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [Mo
 - Full color/size DLC beyond Host settings pages
 - Brightness / airplane caveats on some Win11 builds (see YourFlyouts README)
 - Vendor laptop OEM HUDs unsupported
-- Multi-player Auto NowPlaying outside WNP + SMTC
+- Multi-player Auto NowPlaying outside SMTC
 - Radial remains a lighter Host layout (`TesseraLayoutCoverage.IsApproximate`) but is visually signed off with the rest of the catalog
 
 Screenshot proof checklist and process: [`screenshots/README.md`](screenshots/README.md).
@@ -60,7 +60,7 @@ Screenshot proof checklist and process: [`screenshots/README.md`](screenshots/RE
 - SMTC title / artist (and thumbnail when present)
 - Working prev / play-pause / next via `IMediaSessionService`
 - StyleCatalog style reflected in chrome
-- No WebNowPlaying required on the Phono path
+- Media on the Phono path is SMTC only
 
 ### Pulse (`tile_pulse_mvp`)
 

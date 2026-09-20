@@ -1318,10 +1318,13 @@ namespace MosaicShell.Host.Capabilities
             TransparencyLevelHint = ParseTransparencyHints(
                 TesseraFlyoutWindowPolicy.ResolveTransparencyHints(_material));
 
-            byte shellAlpha = TesseraFlyoutWindowPolicy.ResolveWindowBackgroundAlpha(_material);
             Background = TesseraFlyoutWindowPolicy.WindowBackgroundBrushIsTransparent
                 ? Brushes.Transparent
-                : new SolidColorBrush(Color.FromArgb(shellAlpha, 0x11, 0x11, 0x1b));
+                : new SolidColorBrush(Color.FromArgb(
+                    TesseraFlyoutWindowPolicy.ResolveWindowBackgroundAlpha(_material),
+                    0x11,
+                    0x11,
+                    0x1b));
 
             byte fallbackAlpha = TesseraFlyoutWindowPolicy.ResolveCompositionFallbackAlpha(_material);
             TransparencyBackgroundFallback = fallbackAlpha == 0
