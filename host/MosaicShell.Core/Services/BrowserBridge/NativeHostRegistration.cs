@@ -48,10 +48,26 @@ namespace MosaicShell.Core.Services.BrowserBridge
         public const string HostName = "com.mosaicshell.grout";
 
         /// <summary>
-        /// The extensions allowed to start the relay, by ID. The first is the ID an unpacked copy gets from the key in
-        /// its manifest; the store IDs are added here when the extension is listed. Never a wildcard.
+        /// The ID an unpacked copy of Grout got from its own manifest key before the store listing existed. Grout now
+        /// ships the store's key, so new unpacked builds have <see cref="WebStoreExtensionId"/>; this one stays so an
+        /// earlier unpacked copy, such as one loaded from an old release zip, is not locked out.
         /// </summary>
-        public static IReadOnlyList<string> AllowedExtensionIds { get; } = ["aaffcapodpfecchmelidkkhgiaamijpe"];
+        public const string LegacyUnpackedExtensionId = "aaffcapodpfecchmelidkkhgiaamijpe";
+
+        /// <summary>
+        /// The ID the Chrome Web Store assigned to the published copy of Grout
+        /// (https://chromewebstore.google.com/detail/grout/pcjkacalabdgejinbmfdejicfhlonnpf). It is also the ID of an
+        /// unpacked build, because Grout's manifest carries the store's public key. Edge uses the same ID for the
+        /// store copy; a listing in Edge Add-ons would get another and needs its own entry.
+        /// </summary>
+        public const string WebStoreExtensionId = "pcjkacalabdgejinbmfdejicfhlonnpf";
+
+        /// <summary>
+        /// The extensions allowed to start the relay, by ID: the published store copy and the earlier unpacked copy.
+        /// A copy the browser does not find here is refused, and Grout reports that MosaicShell does not trust it.
+        /// Never a wildcard.
+        /// </summary>
+        public static IReadOnlyList<string> AllowedExtensionIds { get; } = [WebStoreExtensionId, LegacyUnpackedExtensionId];
 
         /// <summary>Where each supported browser looks up native messaging hosts, under HKEY_CURRENT_USER.</summary>
         private static readonly string[] BrowserKeys =
