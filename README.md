@@ -69,15 +69,17 @@ See [host/README.md](host/README.md) and [`.github/docs/parity.md`](.github/docs
 
 Windows learns a browser's artist and cover from the page's Media Session, which the browser passes on. A browser
 extension that replaces the page's Media Session hides it from the browser, so Windows only gets the page title.
-KDE's **Plasma Integration** extension does this. Install the **Grout** extension (below), which reads the page
-itself and is not affected, or turn the other extension off in `edge://extensions` and reload the page.
+KDE's **Plasma Integration** extension does this. Install the **Grout** extension (see the next section), which reads
+the page itself and is not affected, or turn the other extension off in `edge://extensions` and reload the page.
 
 ### YouTube Music: heart and thumbs-down
 
 With the **Grout** browser extension installed, the heart and thumbs-down show and change the real state of the
 track whatever the browser window is doing: covered by other windows, minimised, or in another tab. MosaicShell
 registers Grout's connection for your account when it starts, so installing the extension is the only step, and it
-needs no administrator rights. Grout runs only on YouTube Music, YouTube, Spotify and SoundCloud, and talks only
+needs no administrator rights. Get Grout from its
+[Chrome Web Store listing](https://chromewebstore.google.com/detail/grout/pcjkacalabdgejinbmfdejicfhlonnpf); Edge
+installs it from the same page once you allow extensions from other stores. Grout runs only on YouTube Music, YouTube, Spotify and SoundCloud, and talks only
 to MosaicShell on your computer.
 
 Without Grout, MosaicShell falls back to reading the player's buttons through Windows accessibility, which needs
