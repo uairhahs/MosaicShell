@@ -61,6 +61,31 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public void The_published_store_copy_of_Grout_is_allowed_to_start_the_relay()
+        {
+            _ = NativeHostRegistration.Register(Relay(), DataDir(), _registry);
+
+            using JsonDocument manifest = JsonDocument.Parse(File.ReadAllText(_registry.Values[EdgeKey]));
+            string[] origins = [.. manifest.RootElement.GetProperty("allowed_origins").EnumerateArray().Select(o => o.GetString()!)];
+            _ = origins.Should().Contain("chrome-extension://pcjkacalabdgejinbmfdejicfhlonnpf/",
+                "the web store assigns its own ID, and a copy the manifest does not name is refused with 'does not trust this copy of Grout'");
+            _ = origins.Should().Contain("chrome-extension://aaffcapodpfecchmelidkkhgiaamijpe/", "an unpacked copy made before the store key was added must not be locked out");
+        }
+
+        [Fact]
+        public void Every_allowed_extension_id_is_a_well_formed_browser_extension_id()
+        {
+            _ = NativeHostRegistration.AllowedExtensionIds.Should().OnlyHaveUniqueItems();
+            string[] malformed = [.. NativeHostRegistration.AllowedExtensionIds.Where(id => !IsWellFormedExtensionId(id))];
+            _ = malformed.Should().BeEmpty("a browser extension ID is 32 letters from a to p, so anything else can never match a real extension");
+        }
+
+        private static bool IsWellFormedExtensionId(string id)
+        {
+            return id.Length == 32 && id.All(c => c is >= 'a' and <= 'p');
+        }
+
+        [Fact]
         public void Edge_and_Chrome_are_pointed_at_the_manifest_for_the_current_user_only()
         {
             _ = NativeHostRegistration.Register(Relay(), DataDir(), _registry);
