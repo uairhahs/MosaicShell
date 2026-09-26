@@ -4,6 +4,8 @@ using Avalonia.Input;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using MosaicShell.Core.HostPlatform;
+using MosaicShell.Core.Services;
 using MosaicShell.Host.ViewModels;
 
 namespace MosaicShell.Host.Views
@@ -102,7 +104,7 @@ namespace MosaicShell.Host.Views
             }
         }
 
-        private void RequestFractionApply(string reason, bool force, int deferPasses)
+        private void RequestFractionApply(string reason, bool force, int deferPasses, int settleRetries = 0)
         {
             int gen = ++_applyGeneration;
             _suppressCapture = true;
@@ -118,7 +120,7 @@ namespace MosaicShell.Host.Views
                             return;
                         }
 
-                        ApplyFractionToCurrentScreen(force || pass > 0, reason, pass);
+                        ApplyFractionToCurrentScreen(force || pass > 0, reason, pass, settleRetries);
                         if (pass == deferPasses - 1)
                         {
                             // One more tick later, allow user captures again.
@@ -137,7 +139,7 @@ namespace MosaicShell.Host.Views
             }
         }
 
-        private void ApplyFractionToCurrentScreen(bool force, string reason, int pass)
+        private void ApplyFractionToCurrentScreen(bool force, string reason, int pass, int settleRetries)
         {
             if (_applying)
             {
@@ -171,9 +173,11 @@ namespace MosaicShell.Host.Views
                 return;
             }
 
-            if (!scalingSettled && pass == 0)
+            // Capped: mixed-DPI straddling can keep the scalings apart forever (runaway loop once
+            // filled host-size.log to 160 GB).
+            if (HostWindowFractionPolicy.ShouldWaitForScaleSettle(scalingSettled, pass, settleRetries))
             {
-                RequestFractionApply(reason + "+wait-scale", force: true, deferPasses: 2);
+                RequestFractionApply(reason, force: true, deferPasses: 2, settleRetries + 1);
                 return;
             }
 
@@ -195,7 +199,7 @@ namespace MosaicShell.Host.Views
 
                 SyncLastSeenScreen(screen);
                 Log(
-                    $"{reason} pass={pass} force={force} settled={scalingSettled} " +
+                    $"{reason} pass={pass} retries={settleRetries} force={force} settled={scalingSettled} " +
                     $"frac={_fracW:0.###}x{_fracH:0.###} " +
                     $"workPx={work.Width}x{work.Height} scale={scaling:0.##} desk={desktopScale:0.##} " +
                     $"→ {Width:0}x{Height:0}dip");
@@ -286,20 +290,7 @@ namespace MosaicShell.Host.Views
 
         private static void Log(string message)
         {
-            try
-            {
-                string dir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "MosaicShell", "Cache");
-                _ = Directory.CreateDirectory(dir);
-                File.AppendAllText(
-                    Path.Combine(dir, "host-size.log"),
-                    $"{DateTime.Now:HH:mm:ss.fff} {message}{Environment.NewLine}");
-            }
-            catch
-            {
-                // ignore
-            }
+            DiagnosticLog.Append("host-size.log", message);
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
