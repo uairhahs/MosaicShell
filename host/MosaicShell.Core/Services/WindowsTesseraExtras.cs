@@ -159,13 +159,7 @@ namespace MosaicShell.Core.Services
 
         private static void TryLog(string line)
         {
-            try
-            {
-                AppPaths.EnsureLayout();
-                string path = Path.Combine(AppPaths.CacheDirectory, "lockkeys.log");
-                File.AppendAllText(path, $"{DateTime.Now:HH:mm:ss.fff} {line}{Environment.NewLine}");
-            }
-            catch { /* soft-fail */ }
+            DiagnosticLog.Append("lockkeys.log", line);
         }
 
         public void Dispose()

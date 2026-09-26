@@ -1,27 +1,15 @@
 using MosaicShell.Core;
 using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.Services;
 
 namespace MosaicShell.Host.Capabilities
 {
-    /// <summary>Append-only Tessera flyout log under %LocalAppData%/MosaicShell/Cache/flyout.log.</summary>
+    /// <summary>Tessera flyout log under %LocalAppData%/MosaicShell/Cache/flyout.log, size-capped by <see cref="DiagnosticLog"/>.</summary>
     internal static class TesseraFlyoutDiagnostics
     {
-        private static readonly string LogPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "MosaicShell", "Cache", "flyout.log");
-
         public static void Log(string message)
         {
-            try
-            {
-                AppPaths.EnsureLayout();
-                File.AppendAllText(LogPath, $"{DateTime.Now:HH:mm:ss.fff} {message}{Environment.NewLine}");
-            }
-            catch
-            {
-                // ignore
-            }
-
+            DiagnosticLog.Append("flyout.log", message);
             Console.WriteLine($"[Tessera flyout] {message}");
         }
 
