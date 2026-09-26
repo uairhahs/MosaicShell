@@ -23,11 +23,12 @@ It continues the JaxCore idea of a modular desktop (forked from [Jax-Core/JaxCor
 
 ## Prerequisites
 
-| Requirement | Minimum                                                                                                                           |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| OS          | Windows 10 x64 or later                                                                                                           |
-| .NET        | Not required for the release Setup (self-contained Host). Desktop Runtime 10.0 only if you build framework-dependent from source. |
-| RAM         | 6 GB                                                                                                                              |
+| Requirement  | Minimum                                                                                                                              |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| OS           | Windows 10 version 2004 (build 19041) or later, x64                                                                                  |
+| .NET Runtime | 10.0. The Host is self-contained, but Mosaicist, which installs the default modules (Setup and the portable zip both use it), is not |
+| .NET SDK     | 10.0, only to build from source                                                                                                      |
+| Browser      | Optional: Edge or Chrome 116 or later, for the Grout extension                                                                       |
 
 ## Install
 

@@ -401,13 +401,7 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
         /// than only the Hub-side confirmation that the settings file was written.</summary>
         private static void TryLog(string line)
         {
-            try
-            {
-                AppPaths.EnsureLayout();
-                string path = Path.Combine(AppPaths.CacheDirectory, "flyout.log");
-                File.AppendAllText(path, $"{DateTime.Now:HH:mm:ss.fff} [TesseraCapability] {line}{Environment.NewLine}");
-            }
-            catch { /* soft-fail */ }
+            DiagnosticLog.Append("flyout.log", $"[TesseraCapability] {line}");
         }
 
         private void StartLockKeysHook()
