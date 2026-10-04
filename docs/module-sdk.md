@@ -1,6 +1,6 @@
 # Module SDK (third-party tiles)
 
-MosaicShell discovers modules from `%LocalAppData%\MosaicShell\Modules\{Id}\` (override via app paths). First-party tiles still ship as repo stubs under `Tiles/{Id}/`; third-party modules install as a **package** (folder or zip).
+MosaicShell discovers modules from `%LocalAppData%\MosaicShell\Modules\{Id}\` (set `MOSAICSHELL_HOME` to move the whole data folder). First-party tiles still ship as repo stubs under `Tiles/{Id}/`; third-party modules install as a **package** (folder or zip).
 
 ## Folder layout
 
@@ -39,7 +39,7 @@ Modules/MyTile/
 | Platform (flyout routing, media signals) | `ICapabilityContext`, `CapabilityFlyoutSession`, `MediaSessionPlatform` | `MosaicShell.Core` |
 | Overlay / flyout / config                | `IHostUiBridge`, `IFlyoutPresenter`, `FlyoutRequest`                    | `MosaicShell.Core` |
 | Armed background logic                   | `IModuleCapability`, `ICapabilityFactory`                               | `MosaicShell.Core` |
-| Tile chrome UI                           | `ITileViewFactory` → Avalonia `Control`                                 | `MosaicShell.Host` |
+| Tile chrome UI                           | `ITileViewFactory`, returning an Avalonia `Control`                     | `MosaicShell.Host` |
 
 Full platform guide: [`capability-platform.md`](capability-platform.md).
 
@@ -51,7 +51,7 @@ IModuleCapability Create(ModuleManifest manifest, ICapabilityContext context);
 
 Use `context.Flyouts.Route(...)` for flyouts; do not call `IFlyoutPresenter` directly for routed sessions. Use `context.Media.Acquire()` / `Signal` for media instead of duplicating SMTC polls.
 
-Built-in factories always win on id collision. External DLLs load best-effort when arming (`capability`/`module.dll`) or when showing an overlay (`module`/`tile.dll`).
+Built-in factories always win on id collision. External DLLs load best-effort: arming looks for `module.dll`, then `capability.dll`; showing an overlay looks for `module.dll`, then `tile.dll`.
 
 `IHostUiBridge.PreviewFlyout(FlyoutRequest)` is module-agnostic; build the request in your module (see `TesseraFlyoutRequestBuilder` as a first-party example).
 

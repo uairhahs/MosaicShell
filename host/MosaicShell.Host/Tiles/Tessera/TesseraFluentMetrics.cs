@@ -29,7 +29,7 @@ namespace MosaicShell.Host.Tiles.Tessera
     public static class TesseraSquareMetrics
     {
         public const double Size = 128;
-        public const double CornerRadius = 24;
+        public const double CornerRadius = TesseraStackedPlacementSpec.SquareCornerRadiusDip;
         public const double GlyphSize = 28;
         public const double PercentSize = 20;
     }

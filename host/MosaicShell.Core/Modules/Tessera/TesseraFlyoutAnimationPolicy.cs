@@ -104,15 +104,45 @@ namespace MosaicShell.Core.Modules.Tessera
         public const bool StackedPhase2MustNotBeMediaSlotOnly = true;
 
         /// <summary>
-        /// Rainmeter YourFlyouts moves the skin HWND. Avalonia SoftFrost/OS acrylic repaints every
-        /// <c>Position</c> step and reads clunky; Host slides via <see cref="MustAnimateRenderTransform"/>.
+        /// What the phase 1 slide moves. YourFlyouts moves the skin window. An OS acrylic window's
+        /// blur belongs to the HWND, so sliding only its content (RenderTransform) moved the card's
+        /// border across a still blurred pane; that window moves as a whole. A window that paints
+        /// its own background (SoftFrost) slides its content, which carries the background with it.
         /// </summary>
-        public const bool Phase1MustUseWindowPosition = true;
+        public static TesseraSlideTarget ResolvePhase1SlideTarget(bool osAcrylicBackdrop)
+        {
+            return osAcrylicBackdrop ? TesseraSlideTarget.WindowPosition : TesseraSlideTarget.RenderTransform;
+        }
 
-        public const bool MustAnimateWindowPosition = false;
+        /// <summary>
+        /// Where a window that slides as a whole starts its entrance, relative to its rest position,
+        /// in physical pixels; (0, 0) when the window does not slide. The window must already be
+        /// there when it is shown: shown at rest, it jumped to this offset when phase 1 began and
+        /// slid back (the Modern Flyouts jiggle, 2026-10-04).
+        /// </summary>
+        public static (int Dx, int Dy) ResolveWindowEntranceStartOffsetPx(
+            int ani, string? aniDir, int displacementPx, bool osAcrylicBackdrop)
+        {
+            return ShouldSlide(ani) && ResolvePhase1SlideTarget(osAcrylicBackdrop) == TesseraSlideTarget.WindowPosition
+                ? ResolveSlideOffsetPx(aniDir, displacementPx)
+                : (0, 0);
+        }
 
-        /// <summary>Translate the whole flyout surface at a fixed anchor (GPU-friendly).</summary>
-        public const bool MustAnimateRenderTransform = true;
+        /// <summary>
+        /// Value at linear time <paramref name="linearT"/> (0..1) of a stepped run: the eased value at
+        /// each step (<see cref="InterpolateStepped"/>), straight-line between steps, as the keyframe
+        /// animation does. For drivers that are not Avalonia animations (window position).
+        /// </summary>
+        public static double SampleSteppedAt(
+            double from, double to, double linearT, int aniSteps, string? ease, bool entrance)
+        {
+            int steps = Math.Max(1, aniSteps);
+            double t = Math.Clamp(linearT, 0, 1) * steps;
+            int k = Math.Min((int)Math.Floor(t), steps - 1);
+            double a = InterpolateStepped(from, to, k, steps, ease, entrance);
+            double b = InterpolateStepped(from, to, k + 1, steps, ease, entrance);
+            return a + ((b - a) * (t - k));
+        }
 
         /// <summary>Host must not relayout mid-motion (prevents anchor snap).</summary>
         public const bool RelayoutMustDeferDuringMotion = true;
@@ -845,5 +875,15 @@ namespace MosaicShell.Core.Modules.Tessera
         }
 
         public static bool ExitMustMirrorEntrance => true;
+    }
+
+    /// <summary>What the phase 1 slide moves (<see cref="TesseraFlyoutAnimationPolicy.ResolvePhase1SlideTarget"/>).</summary>
+    public enum TesseraSlideTarget
+    {
+        /// <summary>The window content, by a TranslateTransform; the HWND stays put.</summary>
+        RenderTransform,
+
+        /// <summary>The HWND itself, with its acrylic backdrop and region.</summary>
+        WindowPosition,
     }
 }

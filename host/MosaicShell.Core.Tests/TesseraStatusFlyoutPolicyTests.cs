@@ -94,7 +94,9 @@ namespace MosaicShell.Core.Tests
         {
             _ = TesseraStatusFlyoutPolicy.MustRoundClipHwndBeforeReveal.Should().BeTrue();
             _ = TesseraStatusFlyoutPolicy.SoftFrostMustRoundClipHwnd.Should().BeTrue();
-            _ = TesseraStatusFlyoutPolicy.RoundClipMustApplySynchronouslyWhenHandleReady.Should().BeTrue();
+            _ = TesseraFlyoutHwndRegionSpec.ResolveBackdropClipWrite(
+                    StyleIds.Windows11, musicVisible: true, stackedRole: null, statusKind: true)
+                .Should().Be(TesseraBackdropClipWrite.Synchronous);
         }
 
         [Fact]

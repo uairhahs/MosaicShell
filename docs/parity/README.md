@@ -10,19 +10,19 @@ Living flags live in `host/MosaicShell.Core.Tests/HubParityBacklogTests.cs`. Ful
 
 Runtime is host-only; `Tiles/Tessera` is a native install stub. B0 is **not** full YourFlyouts parity.
 
-| Flag                               | Meaning                                                                                                                                                                                                   |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tessera_osd_flyout`               | Armed flyout + OSD suppress (+ ShellHook triggers)                                                                                                                                                        |
-| `tessera_named_styles`             | Style catalog JaxCore ids                                                                                                                                                                                 |
-| `tessera_locks_flight`             | Lock-key + airplane flyouts                                                                                                                                                                               |
-| `tessera_live_update_multimonitor` | Reuse/update window; monitor + anchor math                                                                                                                                                                |
-| `tessera_fluent_win11_kit`         | Fluent + Win11 transfer kit present                                                                                                                                                                       |
-| `tessera_layout_fidelity`          | **true** - all 11 StyleCatalog styles signed off; proofs in [`.github/res/Tessera/`](../../.github/res/Tessera/)                                                                                          |
-| `tessera_os_acrylic_win11_eval`    | **true** - Win11 OS acrylic trial (single-shell + H3 stacked N-window); hub toggle or `--tessera-os-acrylic`; frost remains alpha default. See [tessera-os-acrylic-spike.md](tessera-os-acrylic-spike.md) |
-| `tessera_fluent_yourflyouts`       | **true** - Fluent / Win11 / Center tightened for Host identity (compact, soft frost, optional baked wash)                                                                                                 |
-| `tessera_media_smtc_only`          | **false** - SMTC is not the only media path                                                                                                                                                               |
-| `tessera_media_wnp`                | **true** - like and dislike read by the Grout extension, or through UI Automation without it                                                                                                                                                     
-| `tile_tessera_mvp`                 | Armed flyouts + named styles (Host path)                                                                                                                                                                  |
+| Flag                               | Meaning                                                                                                                                                                                                  |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tessera_osd_flyout`               | Armed flyout + OSD suppress (+ ShellHook triggers)                                                                                                                                                       |
+| `tessera_named_styles`             | Style catalog JaxCore ids                                                                                                                                                                                |
+| `tessera_locks_flight`             | Lock-key + airplane flyouts                                                                                                                                                                              |
+| `tessera_live_update_multimonitor` | Reuse/update window; monitor + anchor math                                                                                                                                                               |
+| `tessera_fluent_win11_kit`         | Fluent + Win11 transfer kit present                                                                                                                                                                      |
+| `tessera_layout_fidelity`          | **true**: all 11 StyleCatalog styles signed off; proofs in [`.github/res/Tessera/`](../../.github/res/Tessera/)                                                                                          |
+| `tessera_os_acrylic_win11_eval`    | **true**: Win11 OS acrylic trial (single-shell + H3 stacked N-window); hub toggle or `--tessera-os-acrylic`; frost remains alpha default. See [tessera-os-acrylic-spike.md](tessera-os-acrylic-spike.md) |
+| `tessera_fluent_yourflyouts`       | **true**: Fluent / Win11 / Center tightened for Host identity (compact, soft frost, optional baked wash)                                                                                                 |
+| `tessera_media_smtc_only`          | **false**: SMTC is not the only media path                                                                                                                                                               |
+| `tessera_media_browser`            | **true**: browser players read by the Grout extension (title, artist, cover, like and dislike); UI Automation reads YouTube Music like and dislike without it                                            |
+| `tile_tessera_mvp`                 | Armed flyouts + named styles (Host path)                                                                                                                                                                 |
 
 References: [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts) (OSD / ShellHook).
 
@@ -32,8 +32,8 @@ References: [YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [Mo
 - Full color/size DLC beyond Host settings pages
 - Brightness / airplane caveats on some Win11 builds (see YourFlyouts README)
 - Vendor laptop OEM HUDs unsupported
-- Multi-player Auto NowPlaying outside SMTC
-- Radial remains a lighter Host layout (`TesseraLayoutCoverage.IsApproximate`) but is visually signed off with the rest of the catalog
+- Rainmeter-style multi-player Auto NowPlaying (sources are SMTC and the Grout extension)
+- Radial and PlainText remain lighter Host layouts (`TesseraLayoutCoverage.IsApproximate`) but are visually signed off with the rest of the catalog
 
 Screenshot proof checklist and process: [`screenshots/README.md`](screenshots/README.md).
 
@@ -57,14 +57,14 @@ Screenshot proof checklist and process: [`screenshots/README.md`](screenshots/RE
 
 ### Phono (`tile_phono_mvp`)
 
-- SMTC title / artist (and thumbnail when present)
+- Title / artist (and thumbnail when present) from the shared media service
 - Working prev / play-pause / next via `IMediaSessionService`
 - StyleCatalog style reflected in chrome
-- Media on the Phono path is SMTC only
+- Media comes from the same service as Tessera: SMTC, plus the Grout extension for browser players
 
 ### Pulse (`tile_pulse_mvp`)
 
-- Bars (or round) driven by `IAudioLevelService` bands/peak - not RNG
+- Bars (or round) driven by `IAudioLevelService` bands and peak, not RNG
 - `PulseSettings.VisualizerType` / style affects layout (Bar vs Round minimum)
 - Library Start opens overlay via TileRuntime
 
@@ -77,25 +77,25 @@ Screenshot proof checklist and process: [`screenshots/README.md`](screenshots/RE
 
 ## Desktop widget chrome
 
-Legacy Chrono/Phono/Pulse/Canvas had **no product title strip** - content filled the skin. Shared right-click Ctx offered Configure, Align, Z layer, Refresh, Unload.
+Legacy Chrono/Phono/Pulse/Canvas had **no product title strip**; content filled the skin. Shared right-click Ctx offered Configure, Align, Z layer, Refresh, Unload.
 
 Native overlays must match that shape:
 
-| Feature                                              | Status                                           |
-| ---------------------------------------------------- | ------------------------------------------------ |
-| Single chrome frame (no nested module title)         | **required** - content fills `TileOverlayWindow` |
-| Whole-surface drag                                   | **required** (skip interactive controls)         |
-| Right-click: Configure in Host                       | **required**                                     |
-| Right-click: Align (center / corners)                | **required**                                     |
-| Right-click: Z layer (desktop / normal / top)        | **required**                                     |
-| Right-click: Refresh / Unload                        | **required**                                     |
-| Widgets default desktop Z (Pulse was AlwaysOnTop=-2) | **required**                                     |
-| Position persist                                     | SessionStore                                     |
-| Style-driven layout fidelity                         | later (`layout_fidelity`)                        |
-| Phono AutoHide when idle                             | later                                            |
-| Canvas DynamicWindowSize / section toggles           | partial (settings)                               |
+| Feature                                              | Status                                          |
+| ---------------------------------------------------- | ----------------------------------------------- |
+| Single chrome frame (no nested module title)         | **required**: content fills `TileOverlayWindow` |
+| Whole-surface drag                                   | **required** (skip interactive controls)        |
+| Right-click: Configure in Host                       | **required**                                    |
+| Right-click: Align (center / corners)                | **required**                                    |
+| Right-click: Z layer (desktop / normal / top)        | **required**                                    |
+| Right-click: Refresh / Unload                        | **required**                                    |
+| Widgets default desktop Z (Pulse was AlwaysOnTop=-2) | **required**                                    |
+| Position persist                                     | SessionStore                                    |
+| Style-driven layout fidelity                         | later (`layout_fidelity`)                       |
+| Phono AutoHide when idle                             | later                                           |
+| Canvas DynamicWindowSize / section toggles           | partial (settings)                              |
 
-## Hotkey capability MVP bars (B3 - must all hold for `tile_*_mvp`)
+## Hotkey capability MVP bars (B3, must all hold for `tile_*_mvp`)
 
 Armed hotkey opens a **Host overlay** via bridge (same pattern as Mixdeck), not a placeholder flyout.
 
@@ -121,9 +121,9 @@ Armed hotkey opens a **Host overlay** via bridge (same pattern as Mixdeck), not 
 - `ShowMute` hides mute tile when false
 - StyleCatalog DEFAULT; Escape closes
 
-## Slate MVP bar (B4 - must hold for `tile_slate_mvp`)
+## Slate MVP bar (B4, must hold for `tile_slate_mvp`)
 
-- Arm starts idle watch with `SlateSettings.IdleSeconds` (clamped ≥30s)
+- Arm starts idle watch with `SlateSettings.IdleSeconds` (clamped to at least 30 s)
 - Idle opens Host overlay via bridge (not tiny flyout); live clock updates
 - When `HideOnFullscreen` is true, suppress idle show if fullscreen probe reports fullscreen
 - Disarm stops idle and hides overlay
