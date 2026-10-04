@@ -5,7 +5,7 @@ Rainmeter **Tessera** promised YourFlyouts-class volume / brightness / media / l
 ## Promised behavior
 
 - Volume, brightness, media, caps/num/scroll lock, and airplane-mode flyouts
-- Multiple named visual styles (Fluent, Win11, Center, Pixel, …)
+- Multiple named visual styles (Fluent, Win11, Center, Pixel and others)
 - Position anchors and multi-monitor placement
 - Media NowPlaying (including browser / plugin paths) with album art when available
 - Pixel layout deep-link into the volume mixer (Mixdeck)

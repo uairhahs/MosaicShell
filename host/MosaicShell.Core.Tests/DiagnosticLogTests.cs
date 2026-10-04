@@ -35,7 +35,7 @@ namespace MosaicShell.Core.Tests
             }
 
             long total = Directory.EnumerateFiles(_dir).Sum(static f => new FileInfo(f).Length);
-            _ = total.Should().BeLessThanOrEqualTo(2 * (cap + DiagnosticLog.MaxMessageChars + 64));
+            _ = total.Should().BeLessThanOrEqualTo(2 * (cap + DiagnosticLogFormat.MaxLineChars));
             _ = Directory.EnumerateFiles(_dir).Should().HaveCount(2, "one live file plus a single backup");
         }
 
@@ -62,7 +62,103 @@ namespace MosaicShell.Core.Tests
 
             DiagnosticLog.AppendTo(path, new string('z', DiagnosticLog.MaxMessageChars * 50), DiagnosticLog.MaxFileBytes);
 
-            _ = new FileInfo(path).Length.Should().BeLessThanOrEqualTo(DiagnosticLog.MaxMessageChars + 64);
+            _ = new FileInfo(path).Length.Should().BeLessThanOrEqualTo(DiagnosticLogFormat.MaxLineChars);
+        }
+
+        [Fact]
+        public void A_symbolic_link_in_place_of_a_log_file_is_not_followed()
+        {
+            string target = Path.Combine(_dir, "target.txt");
+            File.WriteAllText(target, "original");
+            string link = Path.Combine(_dir, "t.log");
+            try
+            {
+                _ = File.CreateSymbolicLink(link, target);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Creating a symbolic link needs Developer Mode or elevation; the refusal itself is
+                // still covered by IsReparsePoint below.
+                return;
+            }
+
+            DiagnosticLog.AppendTo(link, "redirected", 1024);
+
+            _ = File.ReadAllText(target).Should().Be("original");
+        }
+
+        [Fact]
+        public void Reparse_points_are_recognised_from_attributes()
+        {
+            _ = DiagnosticLog.IsReparsePoint(FileAttributes.Normal).Should().BeFalse();
+            _ = DiagnosticLog.IsReparsePoint(FileAttributes.Archive | FileAttributes.ReparsePoint).Should().BeTrue();
+        }
+
+        [Fact]
+        public void Every_literal_log_file_name_in_production_is_safe()
+        {
+            System.Text.RegularExpressions.Regex literal = new(@"DiagnosticLog\.Append\(\s*""([^""]*)""");
+            List<string> bad = [];
+            int seen = 0;
+
+            foreach (string file in SourceTree.EnumerateSources(ProductionProjects))
+            {
+                foreach (System.Text.RegularExpressions.Match m in literal.Matches(File.ReadAllText(file)))
+                {
+                    seen++;
+                    if (!DiagnosticLogFormat.IsSafeFileName(m.Groups[1].Value))
+                    {
+                        bad.Add($"{SourceTree.RelativeToHost(file)}: {m.Groups[1].Value}");
+                    }
+                }
+            }
+
+            _ = seen.Should().BePositive();
+            _ = bad.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Core_and_Host_do_not_write_to_the_console()
+        {
+            // Host is a windowed app: console output goes nowhere and is a synchronous write. Worker
+            // and Mosaicist are console tools and are excluded on purpose.
+            List<string> hits = ScanLines(["MosaicShell.Core", "MosaicShell.Host"], static line =>
+                line.Contains("Console.Write", StringComparison.Ordinal)
+                || line.Contains("Console.Out", StringComparison.Ordinal)
+                || line.Contains("Console.Error", StringComparison.Ordinal));
+
+            _ = hits.Should().BeEmpty("log through DiagnosticLog instead:\n" + string.Join('\n', hits));
+        }
+
+        [Fact]
+        public void Flyout_visibility_queries_do_not_log()
+        {
+            // IsVisible runs on every routing decision; logging it buried the decisions themselves.
+            List<string> hits = ScanLines(["MosaicShell.Host"], static line =>
+                line.Contains("Log($\"IsVisible", StringComparison.Ordinal));
+
+            _ = hits.Should().BeEmpty();
+        }
+
+        private static readonly string[] ProductionProjects =
+            ["MosaicShell.Core", "MosaicShell.Host", "MosaicShell.Worker", "MosaicShell.BrowserRelay", "Mosaicist"];
+
+        private static List<string> ScanLines(string[] projects, Func<string, bool> isViolation)
+        {
+            List<string> hits = [];
+            foreach (string file in SourceTree.EnumerateSources(projects))
+            {
+                string[] lines = File.ReadAllLines(file);
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    if (isViolation(lines[i]))
+                    {
+                        hits.Add($"{SourceTree.RelativeToHost(file)}:{i + 1}");
+                    }
+                }
+            }
+
+            return hits;
         }
 
         [Fact]

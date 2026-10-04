@@ -31,7 +31,7 @@ namespace MosaicShell.Core.Services
                 NativeHostRegistration.DefaultDataDirectory(),
                 new CurrentUserRegistry());
 
-            BrowserMediaSource extension = BrowserMediaSource.Create(() => session()?.Title);
+            BrowserMediaSource extension = BrowserMediaSource.Create(() => session()?.Title, () => session()?.AppId);
             BrowserUiSource fallback = new(new WindowsBrowserUi(), FallbackSession(extension, session), TimeProvider.System);
             return [extension, fallback];
         }

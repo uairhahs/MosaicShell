@@ -47,7 +47,7 @@ public interface ICapabilityContext
 
 ## Mosaic: many armed modules
 
-One `CapabilityDaemon` runs **every** armed capability in `capabilities.json` (Tessera + Mixdeck + Slate + …). That is the default mosaic model.
+One `CapabilityDaemon` runs **every** armed capability in `capabilities.json` (for example Tessera, Mixdeck and Slate together). That is the default mosaic model.
 
 `CapabilityStore.SaveArmed` accepts a list; Hub toggles add/remove ids without disarming others.
 
@@ -66,15 +66,20 @@ Tray icon remains; flyout presenter and IPC server start normally. Open Hub from
 Use when you want the daemon in a headless process and flyout UI on Host. **Not** a single-module limit; Worker restores **all** armed modules from `capabilities.json`.
 
 ```text
-1. Start Host (full or --tray-only) for tray, Hub, widgets, flyout IPC server
-2. MosaicShell.Worker.exe (acquires daemon mutex; runs every armed module)
-3. Host uses RemoteCapabilityHost so Hub arm/disarm still works (control IPC)
+1. MosaicShell.Worker.exe (acquires the daemon mutex; runs every armed module)
+2. Within 4 seconds, start Host (full or --tray-only) for tray, Hub, widgets and the flyout IPC server
+3. Host finds the mutex taken and uses RemoteCapabilityHost, so Hub arm/disarm still works (control IPC)
 4. Flyouts render on Host via MosaicShell.CapabilityFlyout.v1
 ```
 
+Order matters. Whichever process starts first owns the daemon, so a Host started first runs the
+capabilities itself and the Worker exits. Worker waits `CapabilityIpcPolicy.ConnectTimeoutMs` (4 s)
+for the Host's flyout server before giving up.
+
 Control plane pipe: `MosaicShell.CapabilityControl.v1`.
 
-Normal use: **Host only** with Tessera + Mixdeck + Slate armed together. Worker is optional.
+Normal use: **Host only** with Tessera, Mixdeck and Slate armed together. Worker is optional, and it
+has no browser media sources (Grout), so its media flyouts carry SMTC data only.
 
 Overlay hotkeys (Mixdeck) in Worker still need Host for overlay UI until overlay IPC exists.
 
@@ -91,7 +96,7 @@ dotnet run --project host/MosaicShell.Worker
 
 | Kind                                     | When                          |
 | ---------------------------------------- | ----------------------------- |
-| `MediaTrackBoundary`                     | SMTC track skip detected      |
+| `MediaTrackBoundary`                     | Track change detected         |
 | `MediaSessionChanged`                    | Metadata/session change       |
 | `MediaProgress`                          | Timeline tick                 |
 | `VolumeChanged`                          | Master volume changed         |
@@ -102,9 +107,10 @@ Subscribe from any armed capability via `context.Events.Subscribe(...)`.
 
 ## Platform policies (Core)
 
-Located under `host/MosaicShell.Core/Capabilities/Platform/`.
+Shared routing policies live under `host/MosaicShell.Core/Capabilities/Platform/`.
 
-Tessera types under `Modules/Tessera/Tessera*Policy.cs` are thin aliases for tests.
+Tessera-specific policies (`Modules/Tessera/Tessera*Policy.cs`) hold Tessera's own decisions, such as
+dismiss, focus dim, glass and stacked placement, and each has its own Core tests.
 
 ## IPC flyout protocol
 

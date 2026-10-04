@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Animation.Easings;
@@ -7,7 +8,9 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.Services;
 using MosaicShell.Host.Tiles.Tessera;
 
 namespace MosaicShell.Host.Capabilities
@@ -117,9 +120,10 @@ namespace MosaicShell.Host.Capabilities
             double yFrom = entrance ? dyRest : 0d;
             double yTo = entrance ? 0d : dyRest;
 
+            bool moves = slide && (Math.Abs(dxRest) > 0.01 || Math.Abs(dyRest) > 0.01);
+            TesseraSlideTarget target = TesseraFlyoutAnimationPolicy.ResolvePhase1SlideTarget(window.UsesOsAcrylicBackdrop());
             TranslateTransform? tt = null;
-            if (slide && TesseraFlyoutAnimationPolicy.MustAnimateRenderTransform
-                && (Math.Abs(dxRest) > 0.01 || Math.Abs(dyRest) > 0.01))
+            if (moves && target == TesseraSlideTarget.RenderTransform)
             {
                 tt = new TranslateTransform(xFrom, yFrom);
                 window.RenderTransform = tt;
@@ -148,8 +152,66 @@ namespace MosaicShell.Host.Capabilities
                 tasks.Add(AnimateSteppedAsync(window, TranslateTransform.YProperty, yFrom, yTo, ms, ease, steps, entrance,
                     cancellationToken: ctx.MotionToken));
             }
+            else if (moves && target == TesseraSlideTarget.WindowPosition)
+            {
+                // Physical pixels: the same displacement the DIP offset was derived from.
+                (int pxRest, int pyRest) = window.ResolveWindowSlideStartOffsetPx();
+                tasks.Add(AnimateWindowSlideAsync(
+                    window,
+                    entrance ? pxRest : 0, entrance ? 0 : pxRest,
+                    entrance ? pyRest : 0, entrance ? 0 : pyRest,
+                    ms, ease, steps, entrance, ctx.MotionToken));
+            }
 
             await Task.WhenAll(tasks).ConfigureAwait(true);
+        }
+
+        /// <summary>
+        /// Moves the window (with its acrylic backdrop and region) from its rest position by an
+        /// offset that runs the same stepped curve as the keyframe animations, sampled once per
+        /// rendered frame against elapsed time, so a late frame catches up instead of stretching
+        /// the run.
+        /// </summary>
+        private static Task AnimateWindowSlideAsync(
+            FlyoutWindow window,
+            double xFrom,
+            double xTo,
+            double yFrom,
+            double yTo,
+            int ms,
+            string ease,
+            int steps,
+            bool entrance,
+            CancellationToken cancellationToken)
+        {
+            TaskCompletionSource done = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            double duration = Math.Max(1, ms);
+            long started = Stopwatch.GetTimestamp();
+
+            void Frame(TimeSpan frameTime)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    _ = done.TrySetResult();
+                    return;
+                }
+
+                double t = Stopwatch.GetElapsedTime(started).TotalMilliseconds / duration;
+                window.ApplySlideOffsetPx(
+                    TesseraFlyoutAnimationPolicy.SampleSteppedAt(xFrom, xTo, t, steps, ease, entrance),
+                    TesseraFlyoutAnimationPolicy.SampleSteppedAt(yFrom, yTo, t, steps, ease, entrance));
+                if (t >= 1)
+                {
+                    _ = done.TrySetResult();
+                    return;
+                }
+
+                window.RequestAnimationFrame(Frame);
+            }
+
+            window.ApplySlideOffsetPx(xFrom, yFrom);
+            window.RequestAnimationFrame(Frame);
+            return done.Task;
         }
 
         private static async Task RunPhase2Async(MotionContext ctx, bool entrance)
@@ -269,6 +331,10 @@ namespace MosaicShell.Host.Capabilities
 
             int intervalMs = TesseraFlyoutAnimationPolicy.StepPresentationIntervalMs;
             CancellationToken token = slots[0].Ctx.MotionToken;
+            // A2 instrumentation (audit F05): elapsed time at each applied step, summarised once per run.
+            bool timed = TesseraFlyoutDiagnostics.IsEnabled(DiagnosticLogLevel.Debug);
+            long started = Stopwatch.GetTimestamp();
+            List<double>? stepElapsedMs = timed ? new(steps + 1) : null;
             try
             {
                 for (int step = 0; step <= steps; step++)
@@ -280,22 +346,41 @@ namespace MosaicShell.Host.Capabilities
 
                     double progress = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(
                         entrance, step, steps, ease);
+                    long applySpan = TesseraFlyoutDiagnostics.BeginSpan();
                     foreach ((MotionContext? ctx, List<TesseraRevealHost>? hosts) in slots)
                     {
                         ApplyPhase2Progress(ctx, hosts, progress, entrance);
                     }
 
+                    TesseraFlyoutDiagnostics.EndSpan(applySpan, $"phase2Apply step={step}");
+                    stepElapsedMs?.Add(Stopwatch.GetElapsedTime(started).TotalMilliseconds);
                     if (step >= steps)
                     {
                         break;
                     }
 
+                    // The wait itself: a resume much later than the interval means the UI thread was
+                    // busy elsewhere or the timer is coarse (F05).
+                    long delaySpan = TesseraFlyoutDiagnostics.BeginSpan();
                     await Task.Delay(intervalMs, token).ConfigureAwait(true);
+                    TesseraFlyoutDiagnostics.EndSpan(delaySpan, $"phase2Delay step={step}", thresholdMs: intervalMs + 12);
                 }
             }
             catch (OperationCanceledException)
             {
                 /* superseded show/hide */
+            }
+            finally
+            {
+                if (stepElapsedMs is not null)
+                {
+                    TesseraFlyoutDiagnostics.Log(
+                        DiagnosticLogLevel.Debug,
+                        FlyoutPhaseTiming.Format(
+                            slots[0].Ctx.Window.FlyoutRequest.StyleId,
+                            entrance,
+                            FlyoutPhaseTiming.Summarize(stepElapsedMs, steps, intervalMs)));
+                }
             }
         }
 

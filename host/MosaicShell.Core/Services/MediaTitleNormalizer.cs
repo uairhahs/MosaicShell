@@ -43,6 +43,15 @@ namespace MosaicShell.Core.Services
                 && string.Equals(StripSiteSuffix(a)!.Trim(), StripSiteSuffix(b)!.Trim(), StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// The bare site name ("YouTube Music") that a web app's page title shows between tracks. It
+        /// names no track: a merge must prefer any real title over it.
+        /// </summary>
+        public static bool IsSitePlaceholder(string? title)
+        {
+            return !string.IsNullOrWhiteSpace(title) && IsSiteName(title.Trim());
+        }
+
         private static bool IsSiteName(string tail)
         {
             foreach (string site in SiteSuffixes)

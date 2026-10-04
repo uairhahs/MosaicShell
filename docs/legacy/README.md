@@ -4,7 +4,7 @@ This folder documents **what the Rainmeter-era MosaicShell tiles promised** (use
 
 ## Why this exists
 
-As of supersession wave **B5**, this repository is **Host-only** (Avalonia + Mosaicist). The Rainmeter hub trees (`CoreShell/`, `S-Hub/`, `@Resources/`, `Accessories/`, `Ctx/`, `Core/`, `Main/`, `@Developer/`), classic install scripts (`RunMosaicist.ps1`, `RMSKIN.ini`, …), and full Rainmeter skin trees under `Tiles/` were removed from the working tree.
+As of supersession wave **B5**, this repository is **Host-only** (Avalonia + Mosaicist). The Rainmeter hub trees (`CoreShell/`, `S-Hub/`, `@Resources/`, `Accessories/`, `Ctx/`, `Core/`, `Main/`, `@Developer/`), classic install scripts (`RunMosaicist.ps1`, `RMSKIN.ini` and others), and full Rainmeter skin trees under `Tiles/` were removed from the working tree.
 
 Install stubs remain at `Tiles/{Id}/` (`module.native.json` + README) so Mosaicist can still populate `Modules/{Id}` for the Host.
 

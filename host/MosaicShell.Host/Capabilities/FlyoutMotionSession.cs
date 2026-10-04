@@ -15,6 +15,35 @@ namespace MosaicShell.Host.Capabilities
             return RunAsync(windows, entrance: true);
         }
 
+        /// <summary>
+        /// Before an entrance is shown: every window the show plan slides in phase 1 is held at the
+        /// slide's start pose, so the first frame on screen is where the slide begins.
+        /// </summary>
+        public static void ArmEntranceStartPose(IReadOnlyList<FlyoutWindow> windows)
+        {
+            if (windows.Count == 0)
+            {
+                return;
+            }
+
+            FlyoutRequest request = windows[0].FlyoutRequest;
+            bool showMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(request.Payload);
+            bool stacked = windows.Any(static w => w.StackedRole is not null);
+            TesseraFlyoutMotionPlan plan = TesseraFlyoutMotionPlan.ResolveShow(request.Ani, request.StyleId, showMedia, stacked);
+            foreach (TesseraFlyoutMotionStep step in plan.Steps)
+            {
+                if (step.Kind != TesseraFlyoutMotionStepKind.Phase1)
+                {
+                    continue;
+                }
+
+                foreach (FlyoutWindow window in Filter(windows, step))
+                {
+                    window.ArmEntranceStartPose();
+                }
+            }
+        }
+
         public static Task RunHideAsync(IReadOnlyList<FlyoutWindow> windows)
         {
             return RunAsync(windows, entrance: false);

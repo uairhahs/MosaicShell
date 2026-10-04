@@ -1,4 +1,4 @@
-# Tessera OS acrylic spike (H1–H4)
+# Tessera OS acrylic spike (H1 to H4)
 
 Alpha ships **Skia frost** (default). This spike proves Window-level `AcrylicBlur` + `WinUICompositionBackdropCornerRadius` on a **single-shell** flyout only.
 
@@ -52,7 +52,7 @@ Win11 manual pass on `--tessera-os-acrylic`: eligible single-shell styles look g
 
 **H1 code scope is done.** Remaining visual gaps above are **H2 validation or style fidelity**, not H1 blockers.
 
-## H2 — Manual evaluation checklist (before ship)
+## H2: Manual evaluation checklist (before ship)
 
 **Status: PASS (2026-08-23, Win11).** Recorded results are summarized in the tables below.
 
@@ -66,7 +66,7 @@ These tables summarize the recorded evaluation; they are not a published raw scr
 | --------------------------- | ----------------- | ------------------------------------- | ------------------------------------------ |
 | Cold Show / first arm       | No black flash    | No black flash through settle         | Pass (occasional flash; faster than frost) |
 | Try now (config)            | Frost preview OK  | Single-shell live acrylic             | Pass                                       |
-| Rapid restyle / volume pump | No stacked black  | No ~1s acrylic brush death            | Pass                                       |
+| Rapid restyle / volume pump | No stacked black  | No 1 s acrylic brush death            | Pass                                       |
 | Material You (no strip)     | Frost             | Acrylic if eligible                   | Pass                                       |
 | Fluent + media strip        | Frost (stacked)   | **Must stay frost** (not eligible)    | Pass                                       |
 | Software rendering fallback | Frost presentable | Frost fallback if acrylic unavailable | Pass (`--tessera-software-render`)         |
@@ -75,19 +75,19 @@ These tables summarize the recorded evaluation; they are not a published raw scr
 
 These affect frost baseline too. Fix or accept before alpha glass sign-off; they do **not** block trying H3 if Win11 acrylic rows pass.
 
-| Check                       | Notes                                                                   | 2026-08-23 informal                                                   |
-| --------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| Radial volume arc live sync | Ring `%` / arc should follow keys, wheel, and pump while flyout visible | **Pass** — Arc sweep invalidates visual on change (2026-08-23 verify) |
-| Radial + media strip        | Stacked layout; always frost/acrylic-ineligible                         | Pass (arc sync fixed)                                                 |
-| Meter/Amber inner glass     | No GPU shimmer on live flyout                                           | Pass (inner Skia suppressed)                                          |
+| Check                       | Notes                                                                   | 2026-08-23 informal                                                  |
+| --------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Radial volume arc live sync | Ring `%` / arc should follow keys, wheel, and pump while flyout visible | **Pass**: arc sweep invalidates visual on change (2026-08-23 verify) |
+| Radial + media strip        | Stacked layout; always frost/acrylic-ineligible                         | Pass (arc sync fixed)                                                |
+| Meter/Amber inner glass     | No GPU shimmer on live flyout                                           | Pass (inner Skia suppressed)                                         |
 
-**Fail any required Win11 acrylic row → skip H3, go to H4 kill.** Alpha is unaffected (flag off).
+**If any required Win11 acrylic row fails, skip H3 and go to the H4 kill.** Alpha is unaffected (flag off).
 
-**Pass all required Win11 acrylic rows → H3 decision** (stacked cards fork). Style fidelity rows can stay open on a separate track.
+**If every required Win11 acrylic row passes, make the H3 decision** (stacked cards fork). Style fidelity rows can stay open on a separate track.
 
 **H2 signed 2026-08-23.** H3 decision recorded below.
 
-## H3 — Stacked cards (only if H2 passes)
+## H3: Stacked cards (only if H2 passes)
 
 **Decision (2026-08-23): option (a) N FlyoutWindows.**
 
@@ -104,9 +104,11 @@ CoreUI multi-tile shells follow the same fork (phase 2 after volume+media strip)
 
 **Phase 1 (Host, signed off 2026-08-23):** split stacked volume+media into `Tessera:vol` + `Tessera:media` HWNDs under `--tessera-os-acrylic`. Win11 manual sign-off rows in [tessera-os-acrylic-h3-n-windows.md](tessera-os-acrylic-h3-n-windows.md) **PASS** (Meter, Gnome, Compact, Modern Flyouts).
 
-Do not start H4 ship until product decides persisted opt-in vs kill; visual eval is complete on Win11.
+Visual evaluation is complete on Win11, and H4 shipped as a persisted hub opt-in (see below).
 
-## H4 — Ship or kill
+## H4: Ship or kill
+
+**Outcome: Ship.** The Hub **Windows 11 OS acrylic** toggle persists `UseOsAcrylic` (default off, so frost stays the default look) and is the only opt-in once Win11 sign-off is recorded; `--tessera-os-acrylic` is ignored after that. Both `Available` kill switches remain `true`.
 
 | Outcome  | Action                                                                                                    |
 | -------- | --------------------------------------------------------------------------------------------------------- |
@@ -117,8 +119,8 @@ Do **not** flip `tessera_layout_fidelity` or any Hub `*_mvp` flag for acrylic. G
 
 ## Core contracts
 
-- [`TesseraOsAcrylicTrialPolicy`](../../host/MosaicShell.Core/Modules/Tessera/TesseraOsAcrylicTrialPolicy.cs) — single-shell acrylic
-- [`TesseraOsAcrylicStackedPolicy`](../../host/MosaicShell.Core/Modules/Tessera/TesseraOsAcrylicStackedPolicy.cs) — H3 N-window stacked acrylic
-- [`TesseraFlyoutOutsideClickPolicy`](../../host/MosaicShell.Core/Modules/Tessera/TesseraFlyoutOutsideClickPolicy.cs) — union bounds
-- [`TesseraFlyoutGlassPolicy`](../../host/MosaicShell.Core/Modules/Tessera/TesseraFlyoutGlassPolicy.cs) — `OsAcrylic` mode
+- [`TesseraOsAcrylicTrialPolicy`](../../host/MosaicShell.Core/Modules/Tessera/TesseraOsAcrylicTrialPolicy.cs): single-shell acrylic
+- [`TesseraOsAcrylicStackedPolicy`](../../host/MosaicShell.Core/Modules/Tessera/TesseraOsAcrylicStackedPolicy.cs): H3 N-window stacked acrylic
+- [`TesseraFlyoutOutsideClickPolicy`](../../host/MosaicShell.Core/Modules/Tessera/TesseraFlyoutOutsideClickPolicy.cs): union bounds
+- [`TesseraFlyoutGlassPolicy`](../../host/MosaicShell.Core/Modules/Tessera/TesseraFlyoutGlassPolicy.cs): `OsAcrylic` mode
 - Tests: [`TesseraOsAcrylicTrialPolicyTests`](../../host/MosaicShell.Core.Tests/TesseraOsAcrylicTrialPolicyTests.cs), [`TesseraOsAcrylicStackedPolicyTests`](../../host/MosaicShell.Core.Tests/TesseraOsAcrylicStackedPolicyTests.cs), [`TesseraOsAcrylicSignOffPolicyTests`](../../host/MosaicShell.Core.Tests/TesseraOsAcrylicSignOffPolicyTests.cs)
