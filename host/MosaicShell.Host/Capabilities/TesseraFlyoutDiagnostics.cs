@@ -1,22 +1,36 @@
-using MosaicShell.Core;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 
 namespace MosaicShell.Host.Capabilities
 {
-    /// <summary>Tessera flyout log under %LocalAppData%/MosaicShell/Cache/flyout.log, size-capped by <see cref="DiagnosticLog"/>.</summary>
+    /// <summary>
+    /// Tessera flyout log under %LocalAppData%/MosaicShell/Cache/flyout.log. Every call only queues
+    /// (see <see cref="DiagnosticLog"/>), so it is safe on the UI thread.
+    /// </summary>
     internal static class TesseraFlyoutDiagnostics
     {
+        private const string FileName = "flyout.log";
+
+        public static bool IsEnabled(DiagnosticLogLevel level)
+        {
+            return DiagnosticLog.IsEnabled(level);
+        }
+
         public static void Log(string message)
         {
-            DiagnosticLog.Append("flyout.log", message);
-            Console.WriteLine($"[Tessera flyout] {message}");
+            Log(DiagnosticLogLevel.Info, message);
+        }
+
+        public static void Log(DiagnosticLogLevel level, string message)
+        {
+            DiagnosticLog.Append(FileName, level, message);
         }
 
         public static void LogException(string context, Exception ex)
         {
-            Log($"EXCEPTION {context} {ex.GetType().Name}: {ex.Message}");
-            Log(ex.StackTrace ?? "(no stack)");
+            // One entry: the stack trace's line breaks are escaped, so it cannot interleave with
+            // lines from other threads.
+            Log(DiagnosticLogLevel.Error, $"EXCEPTION {context} {ex.GetType().Name}: {ex.Message}\n{ex.StackTrace ?? "(no stack)"}");
         }
 
 

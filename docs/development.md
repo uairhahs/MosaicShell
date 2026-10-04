@@ -53,6 +53,12 @@ dotnet run --project host/MosaicShell.Host
 
 **Diagnosis vs proof:** `flyout.log`, screenshots, and “it crashed when I opened config” tell you _what_ broke. They do **not** replace a failing Core test before the fix.
 
+**Logs:** every on-disk log goes through `DiagnosticLog` (Core) into `%LocalAppData%\MosaicShell\Cache\`. A log
+call only queues; a background writer does the file I/O, so logging is safe on the UI thread. Debug builds record
+`Debug` lines, including the flyout routing and media trace; release builds record `Info` and above unless
+`MOSAICSHELL_LOG_LEVEL=debug` is set. Pass untrusted text (titles, exception messages) as the message; the writer
+escapes line breaks and control characters. Log file names must be a bare `name.log`.
+
 **Parity honesty:** do not flip `*_mvp` or `*_layout_fidelity` in Hub tests without the documented bar and proofs in [`parity/`](parity/).
 
 ---
@@ -79,7 +85,7 @@ dotnet run --project host/MosaicShell.Host
 ### Bad pattern (creates debt)
 
 - Patch `MainWindow.axaml` with `#585B70` hard-coded while Core already defines the thumb.
-- Fix a crash only in Host with no Core assertion that would fail if someone reintroduces string→brush binding.
+- Fix a crash only in Host with no Core assertion that would fail if someone reintroduces string-to-brush binding.
 - Copy Tessera SoftFrost flags into `Program.cs` instead of mapping through `Win32HostCompositionPolicy`.
 
 ---
@@ -88,7 +94,7 @@ dotnet run --project host/MosaicShell.Host
 
 `TesseraFlyoutStyleProfile` (`TesseraFlyoutTweenTargetCatalog.ResolveProfile`) is the single source
 of truth for "what does style X do". A new fact about a style (host kind, region needs, stacked
-layout kind, corner radius, rest size, …) is a **new field on the profile**, not a new
+layout kind, corner radius, rest size, and so on) is a **new field on the profile**, not a new
 `switch (styleId)` in another file. Full field list and the migration inventory:
 [`tessera-style-profile.md`](tessera-style-profile.md).
 
@@ -125,4 +131,4 @@ When contributing UI polish, glass, or tile configuration:
 3. Cite the Core type in the PR description (“Host reads `HostScrollbarChromeSpec`”).
 4. Run `dotnet test host/MosaicShell.Core.Tests` before claiming done.
 
-If a change cannot be expressed as a Core contract, stop and redesign, that is usually a smell that Host is accumulating debt.
+If a change cannot be expressed as a Core contract, stop and redesign; that is usually a sign that Host is accumulating debt.

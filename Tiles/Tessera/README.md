@@ -19,10 +19,14 @@ Host: Library → Tessera → Arm. Triggers on the system volume, brightness, an
 
 ## Browser media (YouTube Music)
 
-Title, artist and cover come from Windows' media session, which Edge and Chrome feed from the page, so nothing needs
-installing. Like and dislike for YouTube Music are read from the player's buttons through Windows accessibility.
-If the flyout shows only a title, a browser extension that replaces the page's Media Session (for example KDE Plasma
-Integration) is probably turned on; turn it off.
+For browser tabs and installed web apps (PWAs), install the **Grout** browser extension. Grout reads the title,
+artist, cover and like state from the player page itself, so the flyout stays accurate whether the window is covered,
+minimised or in another tab. If the flyout shows a missing or wrong title, artist or cover for a web player, install
+Grout; that is the supported fix.
+
+Without Grout, title, artist and cover come from Windows' media session, which Edge and Chrome feed from the page, and
+like and dislike for YouTube Music are read from the player's buttons through Windows accessibility. Both are less
+reliable for web apps.
 
 Details: [`docs/parity/smtc-album-art.md`](../../docs/parity/smtc-album-art.md).
 

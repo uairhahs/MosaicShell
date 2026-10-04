@@ -48,7 +48,11 @@ namespace MosaicShell.Host.Capabilities
             _hostUi = hostUi;
             // Core decides Present/Patch/SoftRefresh but owns no logging; route its trace into the
             // same file so a decision and the Host state that produced it interleave in order.
-            FlyoutTrace.Sink = Log;
+            // The trace runs on every media tick and names tracks, so it is Debug: left unwired
+            // below that level, FlyoutTrace.IsEnabled lets Core skip building the messages.
+            FlyoutTrace.Sink = TesseraFlyoutDiagnostics.IsEnabled(DiagnosticLogLevel.Debug)
+                ? static message => TesseraFlyoutDiagnostics.Log(DiagnosticLogLevel.Debug, message)
+                : null;
             Log(RunBanner.Format(
                 DateTimeOffset.Now,
                 Environment.ProcessId,
@@ -291,32 +295,16 @@ namespace MosaicShell.Host.Capabilities
 
         public bool IsVisible(string moduleId)
         {
+            // Not logged: this runs on every routing decision, and the decision itself is traced.
             if (ModuleIds.IsTessera(moduleId) && IsStackedTesseraVisible())
             {
-                Log($"IsVisible {moduleId} => True (stacked)");
                 return true;
             }
 
-            bool result;
-            string tag;
             lock (_gate)
             {
-                // Snapshot inside the lock, log outside it: this runs on every routing decision
-                // and the log call does file IO.
-                if (_windows.TryGetValue(moduleId, out FlyoutWindow? w))
-                {
-                    result = w.IsFlyoutSessionShowing;
-                    tag = w.MotionStateTag;
-                }
-                else
-                {
-                    result = false;
-                    tag = "no-window";
-                }
+                return _windows.TryGetValue(moduleId, out FlyoutWindow? w) && w.IsFlyoutSessionShowing;
             }
-
-            Log($"IsVisible {moduleId} => {result} {tag}");
-            return result;
         }
 
         public TesseraFlyoutSessionSnapshot GetSessionSnapshot(string moduleId)

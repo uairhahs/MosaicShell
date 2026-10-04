@@ -66,12 +66,12 @@ See [host/README.md](host/README.md) and [`.github/docs/parity.md`](.github/docs
 
 ## Known issues
 
-### The flyout shows only the track title, with no artist or cover
+### Browser media: Grout
 
-Windows learns a browser's artist and cover from the page's Media Session, which the browser passes on. A browser
-extension that replaces the page's Media Session hides it from the browser, so Windows only gets the page title.
-KDE's **Plasma Integration** extension does this. Install the **Grout** extension (see the next section), which reads
-the page itself and is not affected, or turn the other extension off in `edge://extensions` and reload the page.
+If the media flyout shows a missing or wrong title, artist or cover for a browser tab or an installed web app (PWA),
+install **Grout**, MosaicShell's own companion extension. Grout reads the title, artist and cover straight from the
+player page, which is more reliable than what the browser reports to Windows (YouTube Music in particular often
+reports a site-suffixed title or no artist). Get it from the link in the next section.
 
 ### YouTube Music: heart and thumbs-down
 
@@ -91,6 +91,31 @@ than a wrong state. The fallback does not work when:
 - **The window is covered or minimised.** The buttons come back a few seconds after the window is visible again.
 - **The player is in a background tab.** Only the tab being shown can be read.
 - **The window is narrow.** YouTube Music takes the buttons out of its player bar in a narrow window.
+
+---
+
+## Troubleshooting and logs
+
+MosaicShell writes diagnostic logs to `%LocalAppData%\MosaicShell\Cache\` (for example `flyout.log` for the
+Tessera flyouts). Logs stay on your computer; nothing is uploaded. Attach the relevant log when you open an issue.
+
+- Every line carries the date, time, a per-run id and a level (`DEBUG`, `INFO`, `WARN`, `ERROR`), so runs can be
+  told apart.
+- Each log is capped at 4 MB plus one `.1.log` backup, so logs never grow without bound.
+- Release builds record `INFO` and above. The detailed flyout trace is `DEBUG`, and it includes track titles and
+  artists, so it is off unless you ask for it.
+
+| Environment variable    | Effect                                                                                                     |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `MOSAICSHELL_LOG_LEVEL` | `debug`, `info`, `warning` or `error`. Set `debug` to record the detailed flyout trace in a release build. |
+| `MOSAICSHELL_HOME`      | Moves the whole data folder (settings, modules and logs) from `%LocalAppData%\MosaicShell`.                |
+
+To capture a detailed trace once, start the Host from PowerShell:
+
+```powershell
+$env:MOSAICSHELL_LOG_LEVEL = "debug"
+& "$env:LocalAppData\Programs\MosaicShell\Host\MosaicShell.Host.exe"
+```
 
 ---
 
