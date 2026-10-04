@@ -17,6 +17,7 @@ defaults:
 jobs:
   build-and-release:
     name: Build Setup.exe and publish release
+    if: github.ref == 'refs/heads/main'
     runs-on: windows-latest
 
     steps:
@@ -230,7 +231,14 @@ jobs:
 
           gh release create $name $setup $alias $zip $sums `
             --title "MosaicShell $name" `
+            --latest `
+            --generate-notes `
             --notes @"
+          > **Early release:** Some sections have not been fully tested, and parts of the experience still need polish. Expect rough edges.
+
+          ## What's included
+          This release contains the latest combined changes merged to main.
+
           ## Install
           Download **MosaicShell-Setup-$name.exe** and run it (per-user, no admin required).
 
@@ -244,7 +252,6 @@ jobs:
           To verify by hand: ``Get-FileHash .\MosaicShell-Setup-$name.exe -Algorithm SHA256``.
 
           ## Update
-          In Host: Settings / Check updates downloads the latest Setup, verifies its SHA-256, and runs it silently.
+          In Host: Settings / Check updates downloads the latest stable Setup, verifies its SHA-256, and runs it silently.
           "@ `
-            --prerelease `
             --target "${{ github.sha }}"
