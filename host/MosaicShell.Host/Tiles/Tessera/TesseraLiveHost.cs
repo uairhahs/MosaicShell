@@ -95,6 +95,19 @@ namespace MosaicShell.Host.Tiles.Tessera
 
         public void ApplyLive(HostServices services, FlyoutRequest request)
         {
+            long span = MosaicShell.Host.Capabilities.TesseraFlyoutDiagnostics.BeginSpan();
+            try
+            {
+                ApplyLiveCore(services, request);
+            }
+            finally
+            {
+                MosaicShell.Host.Capabilities.TesseraFlyoutDiagnostics.EndSpan(span, $"applyLive kind={request.Kind}");
+            }
+        }
+
+        private void ApplyLiveCore(HostServices services, FlyoutRequest request)
+        {
             TesseraLiveBindings b = Bindings;
             if (request.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
                 || request.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase))

@@ -2,6 +2,16 @@ using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Core.Modules.Tessera
 {
+    /// <summary>How the layout's rest round clip reaches the HWND region.</summary>
+    public enum TesseraBackdropClipWrite
+    {
+        /// <summary>The reveal owns this window's region; the layout clip writes nothing.</summary>
+        None,
+
+        /// <summary>Written at once (when the HWND exists), before the next frame.</summary>
+        Synchronous,
+    }
+
     /// <summary>
     /// Win32 region for Fancy media chrome without SetWindowPos.
     /// Physical conversion only; Host calls CreateRoundRectRgn / SetWindowRgn.
@@ -191,6 +201,38 @@ namespace MosaicShell.Core.Modules.Tessera
                     && !TesseraFlyoutTweenTargetCatalog.StylePhase2WithoutMediaStrip(styleId));
         }
 
+        /// <summary>
+        /// The reveal writes this window's region (the same gate <c>SyncRevealRegion</c> uses), so no
+        /// other writer may.
+        /// </summary>
+        public static bool RevealOwnsWindowRegion(
+            string? styleId,
+            bool musicVisible,
+            TesseraStackedPanelRole? stackedRole)
+        {
+            return StyleNeedsRevealRegion(styleId, musicVisible, stackedRole)
+                || StyleNeedsStrokeBRegion(styleId, musicVisible);
+        }
+
+        /// <summary>
+        /// How the layout's rest round clip is written. One owner per window: where the reveal owns
+        /// the region the clip writes nothing (a posted rest clip landing between reveal writes made
+        /// the Modern media card flicker); elsewhere it writes synchronously, so a new window has its
+        /// round clip before its first frame (a posted one left a square acrylic pane for a frame;
+        /// on status chips, posting at the reveal's Loaded priority raced a black rectangular frame).
+        /// Status chips always get theirs, since their reveal runs on opacity, not on the region.
+        /// </summary>
+        public static TesseraBackdropClipWrite ResolveBackdropClipWrite(
+            string? styleId,
+            bool musicVisible,
+            TesseraStackedPanelRole? stackedRole,
+            bool statusKind)
+        {
+            return !statusKind && RevealOwnsWindowRegion(styleId, musicVisible, stackedRole)
+                ? TesseraBackdropClipWrite.None
+                : TesseraBackdropClipWrite.Synchronous;
+        }
+
         public static double ResolveRegionHeightDip(
             double progress,
             bool phase2Engaged,
@@ -285,6 +327,90 @@ namespace MosaicShell.Core.Modules.Tessera
             int cap = Math.Max(1, Math.Min(w, h) / 2);
             int r = Math.Clamp(CornerRadiusPx, 1, cap);
             return (w, h, r);
+        }
+
+        /// <summary>
+        /// The radius a single-shell window's region must use: the card's own outer radius from the
+        /// style profile, not a generic value, so the region and the drawn card corners coincide.
+        /// </summary>
+        public static double ResolveSingleShellCornerRadiusDip(string? styleId)
+        {
+            return TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).VolumeCornerRadiusDip;
+        }
+
+        /// <summary>
+        /// The physical HWND region for a flyout whose content is scaled by the user's flyout scale.
+        /// <para>
+        /// Window extents (<paramref name="restWidthWindowDip"/>, <paramref name="restHeightWindowDip"/>)
+        /// are measured, so they already include the flyout scale, while the reveal math uses style
+        /// constants in layout units. Mixing the two cut the bottom off scaled flyouts (Windows 11,
+        /// Modern media). So: convert the window extents to layout units, resolve the reveal region
+        /// there, then scale the region and the radius back by the flyout scale and the monitor scale.
+        /// </para>
+        /// </summary>
+        public static (int WidthPx, int HeightPx, int CornerRadiusPx) ResolveWindowRegionPhysical(
+            string? styleId,
+            TesseraStackedPanelRole? stackedRole,
+            double progress,
+            bool phase2Engaged,
+            bool musicVisible,
+            double restWidthWindowDip,
+            double restHeightWindowDip,
+            double cornerRadiusDip,
+            double contentScale,
+            double monitorScale)
+        {
+            double s = NormalizeScale(contentScale);
+            RevealRegionDip layout = ResolveRevealRegionDip(
+                styleId,
+                stackedRole,
+                progress,
+                phase2Engaged,
+                musicVisible,
+                restWidthWindowDip / s,
+                restHeightWindowDip / s);
+            return ResolveRenderableRoundRectPhysical(layout.WidthDip * s, layout.HeightDip * s, cornerRadiusDip * s, monitorScale);
+        }
+
+        /// <summary>
+        /// True when the reveal has the window fully collapsed: the region must then be empty, not
+        /// the 2 px renderable floor, which left a thin acrylic bar on screen through the exit fade
+        /// (and before phase 2 on entrance). Host applies an explicit empty region, never a no-op,
+        /// so the old failure the floor guarded against (a skipped write leaving the rest region in
+        /// place) cannot come back.
+        /// </summary>
+        public static bool IsCollapsedWindowRegion(
+            string? styleId,
+            TesseraStackedPanelRole? stackedRole,
+            double progress,
+            bool phase2Engaged,
+            bool musicVisible,
+            double restWidthWindowDip,
+            double restHeightWindowDip,
+            double contentScale)
+        {
+            double s = NormalizeScale(contentScale);
+            RevealRegionDip layout = ResolveRevealRegionDip(
+                styleId,
+                stackedRole,
+                progress,
+                phase2Engaged,
+                musicVisible,
+                restWidthWindowDip / s,
+                restHeightWindowDip / s);
+            return layout.WidthDip <= MinRenderableRegionDip || layout.HeightDip <= MinRenderableRegionDip;
+        }
+
+        /// <summary>A layout-unit corner radius in physical pixels, after the flyout and monitor scales.</summary>
+        public static int ResolveCornerRadiusPx(double cornerRadiusDip, double contentScale, double monitorScale)
+        {
+            double monitor = monitorScale > 0.1 ? monitorScale : 1.0;
+            return Math.Max(1, (int)Math.Round(Math.Max(0, cornerRadiusDip) * NormalizeScale(contentScale) * monitor));
+        }
+
+        private static double NormalizeScale(double contentScale)
+        {
+            return double.IsFinite(contentScale) && contentScale > 0.1 ? contentScale : 1.0;
         }
 
         private static RevealRegionDip HorizontalMediaRegion(double widthDip, double restHeightDip)

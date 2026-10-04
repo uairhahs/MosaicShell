@@ -13,7 +13,27 @@ namespace MosaicShell.Worker
         public static async Task<int> Main()
         {
             AppPaths.EnsureLayout();
+            DiagnosticLog.Start(
+                AppPaths.CacheDirectory,
+                DiagnosticLogLevels.Resolve(Environment.GetEnvironmentVariable(DiagnosticLogLevels.EnvironmentVariable), IsDebugBuild));
+            try
+            {
+                return await RunAsync().ConfigureAwait(false);
+            }
+            finally
+            {
+                DiagnosticLog.Stop();
+            }
+        }
 
+#if DEBUG
+        private const bool IsDebugBuild = true;
+#else
+        private const bool IsDebugBuild = false;
+#endif
+
+        private static async Task<int> RunAsync()
+        {
             using CapabilityDaemonCoordinator coordinator = new();
             if (!coordinator.TryAcquireOwner())
             {

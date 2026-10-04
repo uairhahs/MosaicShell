@@ -149,7 +149,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 body = new StackPanel { Spacing = gap, Width = w - (gap * 2), Children = { top, reveal } };
             }
 
-            return TesseraChrome.GlassTinted(body, 8, TesseraStylePalette.CoreUi.ShellBrush,
+            return TesseraChrome.GlassTinted(body, TesseraStackedPlacementSpec.CoreUiShellCornerRadiusDip, TesseraStylePalette.CoreUi.ShellBrush,
                 new Thickness(gap), w, useSharedBackdrop: true);
 
         }

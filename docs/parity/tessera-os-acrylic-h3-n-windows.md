@@ -68,7 +68,7 @@ Same presenter/session rules as phase 1.
 | --------------------------------------------------------- | ---------------------------------------------- |
 | One FocusDim per Tessera session                          | Existing `SyncFocusDim`                        |
 | All flyout slots above FocusDim                           | `PresentMustRestackAllSlots`                   |
-| Outside click outside union → transient dismiss all slots | `TesseraFlyoutOutsideClickPolicy`              |
+| A click outside the union transiently dismisses all slots | `TesseraFlyoutOutsideClickPolicy`              |
 | Transient dismiss hides all slots, does not Close         | `TransientDismissMustHideAllSlots` + live-sync |
 | Each slot reuses its own HWND                             | `MustReuseRegisteredFlyoutHwndPerSlot`         |
 | Volume slot owns live pump                                | `LiveHostOwner`                                |
@@ -89,7 +89,7 @@ The recorded sign-off results are summarized below:
 | Live pump                   | Media timeline advances; volume keys/wheel update volume slot          | Pass       |
 | Rapid volume drag           | No dispatcher flood; no acrylic brush death                            | Pass       |
 | Restyle / Try now           | Slot HWNDs reuse; no orphan SoftFrost stack                            | Pass       |
-| Frost fallback              | Flag off or `--tessera-software-render` → stacked frost unchanged      | Pass       |
+| Frost fallback              | Flag off or `--tessera-software-render`: stacked frost unchanged       | Pass       |
 
 ## TDD loop per phase
 
@@ -101,4 +101,4 @@ The recorded sign-off results are summarized below:
 ## Related
 
 - Spike tracker: [tessera-os-acrylic-spike.md](tessera-os-acrylic-spike.md)
-- H2 evaluation: [single-shell evaluation results](tessera-os-acrylic-spike.md#h2--manual-evaluation-checklist-before-ship)
+- H2 evaluation: [single-shell evaluation results](tessera-os-acrylic-spike.md#h2-manual-evaluation-checklist-before-ship)

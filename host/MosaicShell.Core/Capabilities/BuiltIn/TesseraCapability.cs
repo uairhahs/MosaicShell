@@ -165,15 +165,19 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                     visible,
                     Flyouts.OpenKind);
 
-                FlyoutTrace.Write(
-                    $"media signal kind={signal.Kind} boundary={signal.IsTrackBoundary} "
-                    + $"visible={visible} openKind={(string.IsNullOrEmpty(Flyouts.OpenKind) ? "-" : Flyouts.OpenKind)} "
-                    + $"action={action} app={Trim(current?.AppId)} art={current?.ThumbnailPng?.Length ?? -1} "
-                    + $"pos={current?.PositionSeconds ?? -1:0.#}/{current?.DurationSeconds ?? -1:0.#} "
-                    + $"artist=[{Trim(current?.Artist)}] title=[{Trim(current?.Title)}]");
-                if (FlyoutTrace.IsEnabled && Services.Media is IMediaSourceDiagnostics sources)
+                if (FlyoutTrace.IsEnabled)
                 {
-                    FlyoutTrace.Write("media sources " + sources.DescribeSources());
+                    // Runs on every progress tick; skip building the line when nothing records it.
+                    FlyoutTrace.Write(
+                        $"media signal kind={signal.Kind} boundary={signal.IsTrackBoundary} "
+                        + $"visible={visible} openKind={(string.IsNullOrEmpty(Flyouts.OpenKind) ? "-" : Flyouts.OpenKind)} "
+                        + $"action={action} app={Trim(current?.AppId)} art={current?.ThumbnailPng?.Length ?? -1} "
+                        + $"pos={current?.PositionSeconds ?? -1:0.#}/{current?.DurationSeconds ?? -1:0.#} "
+                        + $"artist=[{Trim(current?.Artist)}] title=[{Trim(current?.Title)}]");
+                    if (Services.Media is IMediaSourceDiagnostics sources)
+                    {
+                        FlyoutTrace.Write("media sources " + sources.DescribeSources());
+                    }
                 }
 
                 if (action == MediaFlyoutAction.PresentMediaFlyout

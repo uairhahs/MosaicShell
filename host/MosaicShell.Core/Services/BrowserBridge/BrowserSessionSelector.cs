@@ -17,16 +17,22 @@ namespace MosaicShell.Core.Services.BrowserBridge
         public static readonly TimeSpan StalenessTimeout = TimeSpan.FromMinutes(2);
 
         /// <summary>
-        /// Ranks by, in order: audible playback, silent playback, paused, stopped; then agreement with the title
-        /// Windows reports; then the newest report; then the lowest connection and tab id so the answer does not
-        /// depend on enumeration order. A stopped tab with no title has nothing to show and is never chosen.
+        /// Ranks by, in order: the site Windows is playing (when known); audible playback, silent playback, paused,
+        /// stopped; then agreement with the title Windows reports; then the newest report; then the lowest connection
+        /// and tab id so the answer does not depend on enumeration order. A stopped tab with no title has nothing to show and is never chosen.
+        /// The site comes from the web app Windows reports as the current session, when its app id names one: mid-skip
+        /// the playing tab can briefly report stopped, and another site's paused tab must not take over the flyout for
+        /// that moment (2026-10-04: a paused YouTube video replaced YouTube Music).
         /// </summary>
-        public static BrowserSessionEntry? Select(IEnumerable<BrowserSessionEntry> entries, DateTimeOffset now, string? smtcTitle)
+        public static BrowserSessionEntry? Select(
+            IEnumerable<BrowserSessionEntry> entries, DateTimeOffset now, string? smtcTitle, string? smtcSite = null)
         {
             return entries
                 .Where(e => now - e.LastHeard <= StalenessTimeout)
                 .Where(e => !(e.Report.PlaybackState == BrowserPlaybackState.Stopped && string.IsNullOrWhiteSpace(e.Report.Title)))
-                .OrderBy(e => Tier(e.Report))
+                .OrderByDescending(e => smtcSite is not null
+                    && string.Equals(BrowserSiteNames.FromOrigin(e.Report.Origin), smtcSite, StringComparison.OrdinalIgnoreCase))
+                .ThenBy(e => Tier(e.Report))
                 .ThenByDescending(e => MediaTitleNormalizer.LooselyMatch(smtcTitle, e.Report.Title))
                 .ThenByDescending(e => e.UpdatedAt)
                 .ThenBy(e => e.ConnectionId)

@@ -74,12 +74,6 @@ namespace MosaicShell.Core.Modules.Tessera
         public const bool SoftFrostMustRoundClipHwnd = true;
 
         /// <summary>
-        /// <c>SetWindowRgn</c> must run synchronously when the HWND exists. Posting it at the same
-        /// Loaded priority as Opacity reveal races a black rectangular frame.
-        /// </summary>
-        public const bool RoundClipMustApplySynchronouslyWhenHandleReady = true;
-
-        /// <summary>
         /// Media→CapsLock: never size/clip with <c>Max(Bounds, Desired)</c>. Stale media Bounds
         /// keep a black acrylic rectangle around the chip after kind handoff.
         /// </summary>

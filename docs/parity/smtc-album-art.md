@@ -26,12 +26,13 @@ browser stops updating what it exposes about a window it cannot see, so two brow
    nothing rather than a state that may be stale. It is asked to read only while the extension has no player
    (`BrowserSourceStack.FallbackSession`), so no browser is made to build an accessibility tree needlessly.
 
-### When the artist and cover are missing
+### When the title, artist or cover is wrong or missing
 
-A browser extension that replaces `navigator.mediaSession` (measured with KDE's Plasma Integration, whose page script
-redefines `metadata` and `playbackState` without calling the browser's own) stops the browser receiving the page's
-metadata, so Windows falls back to the page title with no artist and no cover. Grout reads the metadata in the page's
-own world, where the shim's copy is what the page set, so it is not starved. Without Grout, turn such an extension off.
+For a browser tab or an installed web app (PWA), the fix is Grout. SMTC only carries what the browser passes on, and
+that can be a site-suffixed page title with no artist or cover (for example when another extension replaces
+`navigator.mediaSession`). Grout reads the metadata in the page's own world, so it is not affected, and
+`CompositeMediaSessionService` prefers it whenever it has a player. Treat any flyout metadata problem for a web player
+as "install or check Grout" before anything else.
 
 ## Flags
 

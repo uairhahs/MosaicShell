@@ -94,11 +94,11 @@ namespace MosaicShell.Core.Services.BrowserBridge
             }
         }
 
-        public BrowserSessionEntry? Select(string? smtcTitle)
+        public BrowserSessionEntry? Select(string? smtcTitle, string? smtcSite = null)
         {
             lock (_gate)
             {
-                return BrowserSessionSelector.Select(Snapshot(), clock.GetUtcNow(), smtcTitle);
+                return BrowserSessionSelector.Select(Snapshot(), clock.GetUtcNow(), smtcTitle, smtcSite);
             }
         }
 
