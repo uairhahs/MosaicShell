@@ -107,6 +107,10 @@ namespace MosaicShell.Host.Tiles.Tessera
 
                 double available = TesseraMarqueeSpec.AvailableWidth(maxWidth, viewport.GrantedWidth);
                 lastAvailable = available;
+                // A scrolling title leaves the full-text block hidden behind the trimmed copy, and a
+                // hidden control measures as 0 wide; measuring it hidden collapsed the next title to
+                // Width 0 (blank). Show it first. Nothing renders between here and ShowTrimmed below.
+                ShowTrimmed(false);
                 textBlock.Width = double.NaN;
                 textBlock.Measure(Size.Infinity);
                 // Measuring only computes DesiredSize; the next layout pass would still arrange

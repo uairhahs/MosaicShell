@@ -51,6 +51,16 @@ dotnet build host/MosaicShell.Host
 dotnet run --project host/MosaicShell.Host
 ```
 
+**Host tests:** `host/MosaicShell.Host.Tests` runs the flyout presenter under Avalonia headless (xunit v3,
+`[AvaloniaFact]`), with no desktop session. Derive tests from `HeadlessHostTest` so settings and logs resolve under
+a temp root, and use `HeadlessPump` to let timers and the entrance fade complete. The project builds the Host in
+Release so a running Debug Host is not stopped. Behavior still belongs in a Core contract first; Host tests prove
+the wiring.
+
+```powershell
+dotnet test host/MosaicShell.Host.Tests --configuration Release
+```
+
 **Diagnosis vs proof:** `flyout.log`, screenshots, and “it crashed when I opened config” tell you _what_ broke. They do **not** replace a failing Core test before the fix.
 
 **Logs:** every on-disk log goes through `DiagnosticLog` (Core) into `%LocalAppData%\MosaicShell\Cache\`. A log

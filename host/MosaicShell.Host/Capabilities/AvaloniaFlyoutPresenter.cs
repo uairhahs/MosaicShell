@@ -712,8 +712,9 @@ namespace MosaicShell.Host.Capabilities
             }
             else if (window.ClusterOriginX is null)
             {
-                // Single-shell volume/media acrylic: process-wide radius; clear per-window override.
-                window.BackdropCornerRadiusDip = TesseraOsAcrylicTrialPolicy.SpikeCornerRadius;
+                // Single-shell: the region uses the card's own outer radius (Square 24, CoreUI 8,
+                // Radial 10, others 12), so no acrylic shows outside the card's corners.
+                window.BackdropCornerRadiusDip = TesseraFlyoutHwndRegionSpec.ResolveSingleShellCornerRadiusDip(request.StyleId);
             }
 
             window.FinishLayout();
@@ -736,6 +737,18 @@ namespace MosaicShell.Host.Capabilities
                 $"scaling={window.RenderScaling:0.##} " +
                 $"hint={string.Join('|', window.TransparencyLevelHint)} " +
                 $"actual={window.ActualTransparencyLevel} layered={layered}");
+            if (TesseraFlyoutDiagnostics.IsEnabled(DiagnosticLogLevel.Debug))
+            {
+                // A2 (audit H3): an outgoing window that outlives its replacement shows up here.
+                (int total, int visibleWindows) = Win32WindowChrome.CountProcessTopLevelWindows();
+                int tracked;
+                lock (_gate)
+                {
+                    tracked = _windows.Count;
+                }
+
+                Log(DiagnosticLogLevel.Debug, $"present hwnds total={total} visible={visibleWindows} tracked={tracked}");
+            }
 
             if (ModuleIds.IsTessera(request.ModuleId))
             {
@@ -986,6 +999,11 @@ namespace MosaicShell.Host.Capabilities
         private static void Log(string message)
         {
             TesseraFlyoutDiagnostics.Log(message);
+        }
+
+        private static void Log(DiagnosticLogLevel level, string message)
+        {
+            TesseraFlyoutDiagnostics.Log(level, message);
         }
     }
 }

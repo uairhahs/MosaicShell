@@ -287,6 +287,61 @@ namespace MosaicShell.Core.Modules.Tessera
             return (w, h, r);
         }
 
+        /// <summary>
+        /// The radius a single-shell window's region must use: the card's own outer radius from the
+        /// style profile, not a generic value, so the region and the drawn card corners coincide.
+        /// </summary>
+        public static double ResolveSingleShellCornerRadiusDip(string? styleId)
+        {
+            return TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).VolumeCornerRadiusDip;
+        }
+
+        /// <summary>
+        /// The physical HWND region for a flyout whose content is scaled by the user's flyout scale.
+        /// <para>
+        /// Window extents (<paramref name="restWidthWindowDip"/>, <paramref name="restHeightWindowDip"/>)
+        /// are measured, so they already include the flyout scale, while the reveal math uses style
+        /// constants in layout units. Mixing the two cut the bottom off scaled flyouts (Windows 11,
+        /// Modern media). So: convert the window extents to layout units, resolve the reveal region
+        /// there, then scale the region and the radius back by the flyout scale and the monitor scale.
+        /// </para>
+        /// </summary>
+        public static (int WidthPx, int HeightPx, int CornerRadiusPx) ResolveWindowRegionPhysical(
+            string? styleId,
+            TesseraStackedPanelRole? stackedRole,
+            double progress,
+            bool phase2Engaged,
+            bool musicVisible,
+            double restWidthWindowDip,
+            double restHeightWindowDip,
+            double cornerRadiusDip,
+            double contentScale,
+            double monitorScale)
+        {
+            double s = NormalizeScale(contentScale);
+            RevealRegionDip layout = ResolveRevealRegionDip(
+                styleId,
+                stackedRole,
+                progress,
+                phase2Engaged,
+                musicVisible,
+                restWidthWindowDip / s,
+                restHeightWindowDip / s);
+            return ResolveRenderableRoundRectPhysical(layout.WidthDip * s, layout.HeightDip * s, cornerRadiusDip * s, monitorScale);
+        }
+
+        /// <summary>A layout-unit corner radius in physical pixels, after the flyout and monitor scales.</summary>
+        public static int ResolveCornerRadiusPx(double cornerRadiusDip, double contentScale, double monitorScale)
+        {
+            double monitor = monitorScale > 0.1 ? monitorScale : 1.0;
+            return Math.Max(1, (int)Math.Round(Math.Max(0, cornerRadiusDip) * NormalizeScale(contentScale) * monitor));
+        }
+
+        private static double NormalizeScale(double contentScale)
+        {
+            return double.IsFinite(contentScale) && contentScale > 0.1 ? contentScale : 1.0;
+        }
+
         private static RevealRegionDip HorizontalMediaRegion(double widthDip, double restHeightDip)
         {
             double h = restHeightDip > 1 ? restHeightDip : MinRenderableRegionDip;

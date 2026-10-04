@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Animation.Easings;
@@ -7,7 +8,9 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.Services;
 using MosaicShell.Host.Tiles.Tessera;
 
 namespace MosaicShell.Host.Capabilities
@@ -269,6 +272,10 @@ namespace MosaicShell.Host.Capabilities
 
             int intervalMs = TesseraFlyoutAnimationPolicy.StepPresentationIntervalMs;
             CancellationToken token = slots[0].Ctx.MotionToken;
+            // A2 instrumentation (audit F05): elapsed time at each applied step, summarised once per run.
+            bool timed = TesseraFlyoutDiagnostics.IsEnabled(DiagnosticLogLevel.Debug);
+            long started = Stopwatch.GetTimestamp();
+            List<double>? stepElapsedMs = timed ? new(steps + 1) : null;
             try
             {
                 for (int step = 0; step <= steps; step++)
@@ -285,6 +292,7 @@ namespace MosaicShell.Host.Capabilities
                         ApplyPhase2Progress(ctx, hosts, progress, entrance);
                     }
 
+                    stepElapsedMs?.Add(Stopwatch.GetElapsedTime(started).TotalMilliseconds);
                     if (step >= steps)
                     {
                         break;
@@ -296,6 +304,18 @@ namespace MosaicShell.Host.Capabilities
             catch (OperationCanceledException)
             {
                 /* superseded show/hide */
+            }
+            finally
+            {
+                if (stepElapsedMs is not null)
+                {
+                    TesseraFlyoutDiagnostics.Log(
+                        DiagnosticLogLevel.Debug,
+                        FlyoutPhaseTiming.Format(
+                            slots[0].Ctx.Window.FlyoutRequest.StyleId,
+                            entrance,
+                            FlyoutPhaseTiming.Summarize(stepElapsedMs, steps, intervalMs)));
+                }
             }
         }
 

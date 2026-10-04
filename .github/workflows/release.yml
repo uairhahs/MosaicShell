@@ -36,9 +36,14 @@ jobs:
           "name=$name" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           Write-Host "Release tag: $name"
 
-      - name: Test
+      - name: Test (Core)
         working-directory: host
         run: dotnet test MosaicShell.Core.Tests --configuration Release --nologo
+
+      # Separate step: a multi-line pwsh step only fails on the last command's exit code.
+      - name: Test (Host, Avalonia headless)
+        working-directory: host
+        run: dotnet test MosaicShell.Host.Tests --configuration Release --nologo
 
       - name: Install Inno Setup 7.1
         run: |

@@ -66,6 +66,13 @@ namespace MosaicShell.Host.Capabilities
 
         internal FlyoutRequest FlyoutRequest { get; private set; }
 
+        /// <summary>
+        /// Media-strip presence of the request the current content was built from. A live patch
+        /// replaces <see cref="FlyoutRequest"/> without rebuilding, so the two can disagree (audit
+        /// F02); the relayout trace logs both.
+        /// </summary>
+        private bool _builtShowMedia;
+
         /// <summary>H3 stacked acrylic: lock HWND client area to signed placement DIP sizes.</summary>
         public double? StackedPanelWidthDip { get; set; }
         public double? StackedPanelHeightDip { get; set; }
@@ -73,6 +80,7 @@ namespace MosaicShell.Host.Capabilities
         public FlyoutWindow(FlyoutRequest request, Control content, HostServices services)
         {
             FlyoutRequest = request;
+            _builtShowMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(request.Payload);
             WindowId = Interlocked.Increment(ref _nextWindowId);
             _services = services;
             ApplyFlyoutMaterial(TesseraFlyoutMaterialFactory.FromPayload(request.Payload, request.StyleId, request.Kind));
@@ -248,22 +256,23 @@ namespace MosaicShell.Host.Capabilities
                 double signedH = StackedPanelHeightDip ?? (_signedRevealRestHeightDip > 1 ? _signedRevealRestHeightDip : 0);
                 double restW = TesseraFlyoutHwndRegionSpec.ResolveRestExtentDip(signedW, Bounds.Width);
                 double restH = TesseraFlyoutHwndRegionSpec.ResolveRestExtentDip(signedH, Bounds.Height);
-                TesseraFlyoutHwndRegionSpec.RevealRegionDip region = TesseraFlyoutHwndRegionSpec.ResolveRevealRegionDip(
+                double scale = ResolveMonitorScale();
+                double radiusDip = BackdropCornerRadiusDip
+                                ?? TesseraFlyoutHwndRegionSpec.ResolveSingleShellCornerRadiusDip(FlyoutRequest.StyleId);
+
+                // Rest extents are measured (they include the flyout scale); the reveal math is in
+                // layout units. The spec converts between the two so the region covers the card.
+                (int WidthPx, int HeightPx, int CornerRadiusPx) = TesseraFlyoutHwndRegionSpec.ResolveWindowRegionPhysical(
                     FlyoutRequest.StyleId,
                     StackedRole,
                     progress,
                     engaged,
                     showMedia,
                     restW,
-                    restH);
-                double scale = ResolveMonitorScale();
-                double radiusDip = BackdropCornerRadiusDip
-                                ?? (TesseraFlyoutHwndRegionSpec.StyleNeedsStrokeBRegion(FlyoutRequest.StyleId, showMedia)
-                                    ? TesseraStackedPlacementSpec.Win11CornerRadiusDip
-                                    : 10);
-
-                (int WidthPx, int HeightPx, int CornerRadiusPx) = TesseraFlyoutHwndRegionSpec.ResolveRenderableRoundRectPhysical(
-                    region.WidthDip, region.HeightDip, radiusDip, scale);
+                    restH,
+                    radiusDip,
+                    TesseraFlyoutRequestBuilder.FlyoutScaleFromPayload(FlyoutRequest.Payload),
+                    scale);
 
                 if (StackedRole == TesseraStackedPanelRole.Media)
                 {
@@ -486,6 +495,7 @@ namespace MosaicShell.Host.Capabilities
             }
 
             FlyoutRequest = request;
+            _builtShowMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(request.Payload);
             ApplyFlyoutMaterial(TesseraFlyoutMaterialFactory.FromPayload(request.Payload, request.StyleId, request.Kind));
             // Invalidate any posted SoftFrost reveal from the previous surface.
             _revealGeneration++;
@@ -778,6 +788,19 @@ namespace MosaicShell.Host.Capabilities
                 double scale = screen?.Scaling > 0.1 ? screen.Scaling : (Screens?.Primary?.Scaling ?? 1.0);
                 int w = Math.Max(1, (int)Math.Ceiling(dipW * scale));
                 int h = Math.Max(1, (int)Math.Ceiling(dipH * scale));
+                if (TesseraFlyoutDiagnostics.IsEnabled(DiagnosticLogLevel.Debug))
+                {
+                    // A2 (audit F02, H4): sizes that feed the region, and whether the built content
+                    // still matches the request after live patches.
+                    bool requestedShowMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(FlyoutRequest.Payload);
+                    TesseraFlyoutDiagnostics.Log(
+                        DiagnosticLogLevel.Debug,
+                        $"relayout w{WindowId} kind={FlyoutRequest.Kind} style={FlyoutRequest.StyleId} " +
+                        $"bounds={Bounds.Width:0.#}x{Bounds.Height:0.#} desired={DesiredSize.Width:0.#}x{DesiredSize.Height:0.#} " +
+                        $"client={dipW:0.#}x{dipH:0.#}dip {w}x{h}px scale={scale:0.##} " +
+                        $"showMedia requested={requestedShowMedia} built={_builtShowMedia}" +
+                        (requestedShowMedia != _builtShowMedia ? " DIVERGED" : ""));
+                }
 
                 int xPad = Math.Clamp(FlyoutRequest.XPad, 0, 200);
                 int yPad = Math.Clamp(FlyoutRequest.YPad, 0, 200);
@@ -833,7 +856,11 @@ namespace MosaicShell.Host.Capabilities
             Win32Properties.SetWindowCornerPreference(
                 this,
                 Win32Properties.WindowCornerPreference.DoNotRound);
-            int radiusPx = Math.Max(1, (int)Math.Round(radiusDip * scale));
+            // The card radius is in layout units, so it scales with the flyout scale like the card.
+            int radiusPx = TesseraFlyoutHwndRegionSpec.ResolveCornerRadiusPx(
+                radiusDip,
+                TesseraFlyoutRequestBuilder.FlyoutScaleFromPayload(FlyoutRequest.Payload),
+                scale);
             bool sync = status && TesseraStatusFlyoutPolicy.RoundClipMustApplySynchronouslyWhenHandleReady;
             Win32WindowChrome.ApplyRoundRectRegion(this, widthPx, heightPx, radiusPx, applySynchronously: sync);
         }

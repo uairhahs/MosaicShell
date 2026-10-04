@@ -1,10 +1,13 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.Services;
 
 namespace MosaicShell.Host.Capabilities
 {
@@ -324,13 +327,83 @@ namespace MosaicShell.Host.Capabilities
                     return;
                 }
 
+                long seq = RequestRegionWrite(window);
                 _ = SetWindowRgn(handle, IntPtr.Zero, true);
+                LogRegionApplied(window, seq, handle, "clear", "sync", 0, 0, 0);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[Win32 region clear] {ex.Message}");
             }
         }
+
+        // A2 instrumentation (audit H2): one tracker per window orders its region writes, so a posted
+        // write that lands after a newer one is logged as stale. Only active when Debug logging is on.
+        private static readonly ConditionalWeakTable<Window, FlyoutRegionWriteTracker> RegionTrackers = [];
+
+        private static long RequestRegionWrite(Window window)
+        {
+            return TesseraFlyoutDiagnostics.IsEnabled(DiagnosticLogLevel.Debug)
+                ? RegionTrackers.GetValue(window, static _ => new FlyoutRegionWriteTracker()).Request()
+                : 0;
+        }
+
+        private static void LogRegionApplied(Window window, long seq, nint handle, string op, string mode, int widthPx, int heightPx, int radiusPx)
+        {
+            if (seq == 0 || !RegionTrackers.TryGetValue(window, out FlyoutRegionWriteTracker? tracker))
+            {
+                return;
+            }
+
+            bool stale = tracker.Applied(seq);
+            TesseraFlyoutDiagnostics.Log(
+                stale ? DiagnosticLogLevel.Warning : DiagnosticLogLevel.Debug,
+                $"region seq={seq} op={op} mode={mode} hwnd=0x{handle:X} size={widthPx}x{heightPx} r={radiusPx} " +
+                $"stale={stale} staleTotal={tracker.StaleCount}");
+        }
+
+        /// <summary>Top-level windows owned by this process, all and visible (A2: orphan windows, audit H3).</summary>
+        public static (int Total, int Visible) CountProcessTopLevelWindows()
+        {
+            if (!OperatingSystem.IsWindows())
+            {
+                return (0, 0);
+            }
+
+            uint pid = (uint)Environment.ProcessId;
+            int total = 0;
+            int visible = 0;
+            _ = EnumWindows(
+                (hWnd, lParam) =>
+                {
+                    _ = GetWindowThreadProcessId(hWnd, out uint owner);
+                    if (owner == pid)
+                    {
+                        total++;
+                        if (IsWindowVisible(hWnd))
+                        {
+                            visible++;
+                        }
+                    }
+
+                    return true;
+                },
+                IntPtr.Zero);
+            return (total, visible);
+        }
+
+        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool EnumWindows(EnumWindowsProc callback, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool IsWindowVisible(IntPtr hWnd);
 
         /// <summary>
         /// Clip stacked OS acrylic flyouts to pill/card geometry. HWND backdrop is rectangular;
@@ -350,6 +423,9 @@ namespace MosaicShell.Host.Capabilities
             {
                 return;
             }
+
+            long seq = RequestRegionWrite(window);
+            string mode = "posted";
 
             void Apply()
             {
@@ -372,6 +448,7 @@ namespace MosaicShell.Host.Capabilities
                     }
 
                     _ = SetWindowRgn(handle, rgn, redrawClient);
+                    LogRegionApplied(window, seq, handle, "apply", mode, widthPx, heightPx, radius);
                 }
                 catch (Exception ex)
                 {
@@ -384,6 +461,7 @@ namespace MosaicShell.Host.Capabilities
                 nint handle = window.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
                 if (handle != IntPtr.Zero)
                 {
+                    mode = "sync";
                     Apply();
                     return;
                 }
