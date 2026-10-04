@@ -43,6 +43,13 @@ namespace MosaicShell.Host.Capabilities
         private double _signedRevealRestHeightDip;
         private int _stackedShowGeneration;
         private CancellationTokenSource _motionCts = new();
+        private const int MotionFrameSamplerTailMs = 300;
+        private const int MotionFrameSamplerMaxMs = 5000;
+        private long _frameSamplerStart;
+        private long _frameSamplerTailUntil;
+        private string? _lastFrameSample;
+        private bool _entranceStartPoseArmed;
+        private bool _hasRestPosition;
 
         /// <summary>Fades with flyout content; acrylic HWND stays opaque until Hide.</summary>
         internal Panel MotionSurface { get; } = new();
@@ -116,6 +123,7 @@ namespace MosaicShell.Host.Capabilities
             PointerWheelChanged += OnWheel;
             Opened += (_, _) =>
             {
+                StartMotionFrameSampler("opened");
                 Relayout();
                 EnsureLivePump();
             };
@@ -218,8 +226,7 @@ namespace MosaicShell.Host.Capabilities
             }
 
             bool showMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(FlyoutRequest.Payload);
-            if (!TesseraFlyoutHwndRegionSpec.StyleNeedsRevealRegion(FlyoutRequest.StyleId, showMedia, StackedRole)
-                && !TesseraFlyoutHwndRegionSpec.StyleNeedsStrokeBRegion(FlyoutRequest.StyleId, showMedia))
+            if (!TesseraFlyoutHwndRegionSpec.RevealOwnsWindowRegion(FlyoutRequest.StyleId, showMedia, StackedRole))
             {
                 return;
             }
@@ -282,6 +289,20 @@ namespace MosaicShell.Host.Capabilities
                 Win32Properties.SetWindowCornerPreference(
                     this,
                     Win32Properties.WindowCornerPreference.DoNotRound);
+                if (TesseraFlyoutHwndRegionSpec.IsCollapsedWindowRegion(
+                        FlyoutRequest.StyleId,
+                        StackedRole,
+                        progress,
+                        engaged,
+                        showMedia,
+                        restW,
+                        restH,
+                        TesseraFlyoutRequestBuilder.FlyoutScaleFromPayload(FlyoutRequest.Payload)))
+                {
+                    Win32WindowChrome.ApplyEmptyRegion(this);
+                    return;
+                }
+
                 Win32WindowChrome.ApplyRoundRectRegion(
                     this,
                     WidthPx,
@@ -500,6 +521,7 @@ namespace MosaicShell.Host.Capabilities
             // Invalidate any posted SoftFrost reveal from the previous surface.
             _revealGeneration++;
             SupersedeMotion();
+            _entranceStartPoseArmed = false;
             if (TesseraFlyoutAnimationPolicy.MotionAnimatingMustClearOnSupersede)
             {
                 _motionAnimating = false;
@@ -613,6 +635,7 @@ namespace MosaicShell.Host.Capabilities
             try
             {
                 SetPhase(TesseraFlyoutPhase.Entering);
+                FlyoutMotionSession.ArmEntranceStartPose([this]);
                 FinishLayout();
                 RevealAfterLayout();
             }
@@ -712,6 +735,7 @@ namespace MosaicShell.Host.Capabilities
             }
 
             _relayouting = true;
+            long relayoutSpan = TesseraFlyoutDiagnostics.BeginSpan();
             try
             {
                 InvalidateMeasure();
@@ -835,6 +859,7 @@ namespace MosaicShell.Host.Capabilities
             finally
             {
                 _relayouting = false;
+                TesseraFlyoutDiagnostics.EndSpan(relayoutSpan, $"relayout w{WindowId}");
             }
         }
 
@@ -861,11 +886,28 @@ namespace MosaicShell.Host.Capabilities
                 radiusDip,
                 TesseraFlyoutRequestBuilder.FlyoutScaleFromPayload(FlyoutRequest.Payload),
                 scale);
-            bool sync = status && TesseraStatusFlyoutPolicy.RoundClipMustApplySynchronouslyWhenHandleReady;
-            Win32WindowChrome.ApplyRoundRectRegion(this, widthPx, heightPx, radiusPx, applySynchronously: sync);
+            TesseraBackdropClipWrite write = TesseraFlyoutHwndRegionSpec.ResolveBackdropClipWrite(
+                FlyoutRequest.StyleId,
+                TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(FlyoutRequest.Payload),
+                StackedRole,
+                status);
+            if (write == TesseraBackdropClipWrite.None)
+            {
+                return;
+            }
+
+            Win32WindowChrome.ApplyRoundRectRegion(this, widthPx, heightPx, radiusPx, applySynchronously: true);
         }
 
-        private bool UsesOsAcrylicBackdrop()
+        /// <summary>Phase 1 slide on the HWND: rest position plus an offset in physical pixels.</summary>
+        internal void ApplySlideOffsetPx(double dx, double dy)
+        {
+            Position = new PixelPoint(
+                _restPosition.X + (int)Math.Round(dx),
+                _restPosition.Y + (int)Math.Round(dy));
+        }
+
+        internal bool UsesOsAcrylicBackdrop()
         {
             return _material.TransparencyHints.Any(static hint =>
                 hint.Equals("AcrylicBlur", StringComparison.OrdinalIgnoreCase));
@@ -890,10 +932,103 @@ namespace MosaicShell.Host.Capabilities
         private void CommitRestPosition(PixelPoint rest)
         {
             _restPosition = rest;
+            _hasRestPosition = true;
             if (!_motionAnimating)
             {
-                Position = rest;
+                Position = _entranceStartPoseArmed ? EntranceStartPosition() : rest;
             }
+        }
+
+        /// <summary>
+        /// The window will run a phase 1 entrance that slides the window itself: hold it at the
+        /// slide's start pose from now on (including relayouts before motion begins), so it is never
+        /// shown at rest first. Shown at rest, the pane jumped to the start offset when phase 1 began
+        /// and slid back, which read as a jiggle. Cleared when motion begins, on a rebuild and on hide.
+        /// </summary>
+        internal void ArmEntranceStartPose()
+        {
+            if (ResolveWindowSlideStartOffsetPx() == (0, 0))
+            {
+                return;
+            }
+
+            _entranceStartPoseArmed = true;
+            if (!_motionAnimating && _hasRestPosition)
+            {
+                Position = EntranceStartPosition();
+            }
+        }
+
+        internal (int Dx, int Dy) ResolveWindowSlideStartOffsetPx()
+        {
+            return TesseraFlyoutAnimationPolicy.ResolveWindowEntranceStartOffsetPx(
+                FlyoutRequest.Ani, FlyoutRequest.AniDir, FlyoutRequest.AnimationDisplacement, UsesOsAcrylicBackdrop());
+        }
+
+        private PixelPoint EntranceStartPosition()
+        {
+            (int dx, int dy) = ResolveWindowSlideStartOffsetPx();
+            return new PixelPoint(_restPosition.X + dx, _restPosition.Y + dy);
+        }
+
+        /// <summary>
+        /// Debug only. One line per rendered frame, written only when something changed, from the
+        /// window opening (or a motion run starting) until 300 ms after the motion ends, 5 s at most.
+        /// Records what Avalonia thinks (translate, position, bounds, opacity) beside what the OS has
+        /// (frame rectangle, region, layered alpha). Added for Modern Flyouts shaking while it slides
+        /// in on a cold summon, which the per-write region and phase 2 lines could not explain.
+        /// </summary>
+        private void StartMotionFrameSampler(string reason)
+        {
+            if (!TesseraFlyoutDiagnostics.IsEnabled(DiagnosticLogLevel.Debug))
+            {
+                return;
+            }
+
+            _frameSamplerTailUntil = Environment.TickCount64 + MotionFrameSamplerTailMs;
+            if (_frameSamplerStart != 0)
+            {
+                return;
+            }
+
+            _frameSamplerStart = Environment.TickCount64;
+            _lastFrameSample = null;
+            TesseraFlyoutDiagnostics.Log(
+                DiagnosticLogLevel.Debug, $"motion frames start w{WindowId} reason={reason} {MotionStateTag}");
+            RequestAnimationFrame(SampleMotionFrame);
+        }
+
+        private void SampleMotionFrame(TimeSpan _)
+        {
+            long now = Environment.TickCount64;
+            long elapsed = now - _frameSamplerStart;
+            if (_motionAnimating)
+            {
+                _frameSamplerTailUntil = now + MotionFrameSamplerTailMs;
+            }
+
+            string translate = RenderTransform is TranslateTransform tt ? $"{tt.X:0.#},{tt.Y:0.#}" : "-";
+            string motion = !_motionAnimating ? "none" : _motionEntrance ? "entering" : "exiting";
+            string sample =
+                $"tt={translate} pos={Position.X},{Position.Y} bounds={Bounds.Width:0.#}x{Bounds.Height:0.#} " +
+                $"op={Opacity:0.##}/{MotionSurface.Opacity:0.##} motion={motion} p2={(Phase2Animating ? 1 : 0)} " +
+                Win32WindowChrome.DescribeNativeFrame(this);
+            if (!string.Equals(sample, _lastFrameSample, StringComparison.Ordinal))
+            {
+                _lastFrameSample = sample;
+                TesseraFlyoutDiagnostics.Log(
+                    DiagnosticLogLevel.Debug,
+                    $"motion frame w{WindowId} role={StackedRole?.ToString() ?? "single"} t={elapsed} {sample}");
+            }
+
+            if (!IsVisible || now > _frameSamplerTailUntil || elapsed > MotionFrameSamplerMaxMs)
+            {
+                TesseraFlyoutDiagnostics.Log(DiagnosticLogLevel.Debug, $"motion frames stop w{WindowId} t={elapsed}");
+                _frameSamplerStart = 0;
+                return;
+            }
+
+            RequestAnimationFrame(SampleMotionFrame);
         }
 
         private Task RunEntranceAnimationAsync()
@@ -940,8 +1075,12 @@ namespace MosaicShell.Host.Capabilities
             }
 
             _motionStartTicks = Environment.TickCount64;
+            StartMotionFrameSampler(entrance ? "entrance" : "exit");
             EnsureStatusRoundClipBeforeReveal();
-            Position = _restPosition;
+            // An armed entrance keeps its start pose (phase 1 begins there); anything else re-seeds
+            // from rest.
+            Position = entrance && _entranceStartPoseArmed ? EntranceStartPosition() : _restPosition;
+            _entranceStartPoseArmed = false;
             _motionEntrance = entrance;
             if (entrance)
             {
@@ -1307,6 +1446,7 @@ namespace MosaicShell.Host.Capabilities
 
         private void FinishTransientHide(bool notify)
         {
+            _entranceStartPoseArmed = false;
             SetPhase(TesseraFlyoutPhase.Hidden);
             RenderTransform = null;
             Opacity = 1;

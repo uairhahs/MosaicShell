@@ -147,6 +147,7 @@ namespace MosaicShell.Host.Capabilities
                 return;
             }
 
+            long span = TesseraFlyoutDiagnostics.BeginSpan();
             switch (work.Kind)
             {
                 case TesseraFlyoutIngressKind.SoftRefresh:
@@ -159,6 +160,8 @@ namespace MosaicShell.Host.Capabilities
                     SafeShowOrUpdate(work.Request, work.ResetDismiss, allowLivePatch: false);
                     break;
             }
+
+            TesseraFlyoutDiagnostics.EndSpan(span, $"ingress kind={work.Kind}");
         }
 
         public void SoftRefresh(FlyoutRequest request)
@@ -789,10 +792,12 @@ namespace MosaicShell.Host.Capabilities
             {
                 try
                 {
+                    long span = TesseraFlyoutDiagnostics.BeginSpan();
                     flyout.Topmost = true;
                     _focusDim?.Topmost = true;
 
                     bool ok = Win32WindowChrome.TryStackAbove(flyout, _focusDim, out string? detail);
+                    TesseraFlyoutDiagnostics.EndSpan(span, $"zorder when={when}");
                     Log($"z-order {when} ok={ok} {detail}");
                 }
                 catch (Exception ex)
@@ -819,6 +824,7 @@ namespace MosaicShell.Host.Capabilities
             if (_focusDim is null)
             {
                 _focusDim = new FocusDimWindow(request.MonitorIndex);
+                _focusDim.PrepareBeforeShow();
                 // Show dim BEFORE the flyout (caller order) so the flyout is the later topmost peer.
                 _focusDim.Show();
                 _focusDim.FadeIn();

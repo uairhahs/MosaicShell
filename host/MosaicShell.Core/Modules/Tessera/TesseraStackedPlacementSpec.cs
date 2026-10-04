@@ -96,6 +96,13 @@ namespace MosaicShell.Core.Modules.Tessera
 
         public const double RadialShellCornerRadiusDip = 10;
 
+        /// <summary>
+        /// PlainText's card is a slanted quadrilateral with square, mitred corners and an accent
+        /// outline on the top, left and bottom. Any rounding here came only from the region, which
+        /// cut that outline at the left corners into light fragments.
+        /// </summary>
+        public const double PlainTextShellCornerRadiusDip = 0;
+
         public const double RadialClusterWidthDip = 480;
         public const double RadialColumnGapDip = 14;
         public const double RadialVolumeWidthDip = 180;

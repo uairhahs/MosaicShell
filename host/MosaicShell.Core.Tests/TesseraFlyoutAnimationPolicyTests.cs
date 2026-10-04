@@ -64,9 +64,72 @@ namespace MosaicShell.Core.Tests
             _ = TesseraFlyoutAnimationPolicy.DefaultDisplacementPx.Should().Be(30);
             _ = TesseraFlyoutAnimationPolicy.DefaultEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseOutQuart);
             _ = TesseraFlyoutAnimationPolicy.FancyPauseMs.Should().Be(100);
-            _ = TesseraFlyoutAnimationPolicy.MustAnimateRenderTransform.Should().BeTrue();
-            _ = TesseraFlyoutAnimationPolicy.MustAnimateWindowPosition.Should().BeFalse();
-            _ = TesseraFlyoutAnimationPolicy.Phase1MustUseWindowPosition.Should().BeTrue();
+        }
+
+        [Fact]
+        public void An_os_acrylic_window_slides_as_a_whole_so_its_blur_moves_with_the_card()
+        {
+            // Modern Flyouts, 2026-10-04 (motion frame trace, run ff725208): the content slid 30 dip
+            // by RenderTransform inside an acrylic pane that stayed put, so the card's border travelled
+            // across a still blurred pane (the "shake while sliding"). YourFlyouts moves the skin window.
+            _ = TesseraFlyoutAnimationPolicy.ResolvePhase1SlideTarget(osAcrylicBackdrop: true)
+                .Should().Be(TesseraSlideTarget.WindowPosition);
+        }
+
+        [Fact]
+        public void A_sliding_acrylic_window_starts_its_entrance_at_the_slide_offset()
+        {
+            // Modern Flyouts, 2026-10-04 (run c585c57c): the volume pane was shown at rest, then the
+            // slide began 30 px to the left and travelled back, so the visible pane jumped left and
+            // returned (the jiggle). The start pose has to be in place before the pane is shown.
+            (int dx, int dy) = TesseraFlyoutAnimationPolicy.ResolveSlideOffsetPx("left", 30);
+
+            _ = TesseraFlyoutAnimationPolicy.ResolveWindowEntranceStartOffsetPx(ani: 2, "left", 30, osAcrylicBackdrop: true)
+                .Should().Be((dx, dy));
+            _ = (dx, dy).Should().NotBe((0, 0), "premise: the left slide has an offset");
+        }
+
+        [Theory]
+        [InlineData(2, false)]
+        [InlineData(0, true)]
+        public void No_window_start_offset_when_the_window_does_not_slide(int ani, bool osAcrylic)
+        {
+            _ = TesseraFlyoutAnimationPolicy.ResolveWindowEntranceStartOffsetPx(ani, "left", 30, osAcrylic)
+                .Should().Be((0, 0));
+        }
+
+        [Fact]
+        public void A_window_that_paints_its_own_background_slides_its_content()
+        {
+            _ = TesseraFlyoutAnimationPolicy.ResolvePhase1SlideTarget(osAcrylicBackdrop: false)
+                .Should().Be(TesseraSlideTarget.RenderTransform);
+        }
+
+        [Fact]
+        public void Stepped_sample_matches_the_keyframes_and_interpolates_between_them()
+        {
+            const int steps = 4;
+            string ease = TesseraFlyoutAnimationPolicy.EaseOutQuart;
+            for (int k = 0; k <= steps; k++)
+            {
+                double key = TesseraFlyoutAnimationPolicy.InterpolateStepped(30, 0, k, steps, ease, entrance: true);
+                _ = TesseraFlyoutAnimationPolicy.SampleSteppedAt(30, 0, k / (double)steps, steps, ease, entrance: true)
+                    .Should().BeApproximately(key, 1e-9);
+            }
+
+            double a = TesseraFlyoutAnimationPolicy.InterpolateStepped(30, 0, 1, steps, ease, entrance: true);
+            double b = TesseraFlyoutAnimationPolicy.InterpolateStepped(30, 0, 2, steps, ease, entrance: true);
+            _ = TesseraFlyoutAnimationPolicy.SampleSteppedAt(30, 0, 1.5 / steps, steps, ease, entrance: true)
+                .Should().BeApproximately((a + b) / 2, 1e-9);
+        }
+
+        [Theory]
+        [InlineData(-0.5, 30)]
+        [InlineData(1.5, 0)]
+        public void Stepped_sample_clamps_outside_the_run(double linearT, double expected)
+        {
+            _ = TesseraFlyoutAnimationPolicy.SampleSteppedAt(30, 0, linearT, 4, TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: true)
+                .Should().BeApproximately(expected, 1e-9);
         }
 
         [Fact]

@@ -74,6 +74,25 @@ namespace MosaicShell.Host.Capabilities
             }
         }
 
+        /// <summary>
+        /// Everything that decides how the dim first appears, done before <c>Show</c>: monitor
+        /// bounds, layered alpha and click-through. Done only in <c>Opened</c> (after the window was
+        /// already on screen), the dim flashed for a frame as an opaque dark box at Avalonia's
+        /// default size and place before it was moved, sized and made translucent (reported
+        /// 2026-10-04), and it often kept that default size (1920x1011 on a 2560 wide monitor).
+        /// The HWND exists from construction, so the Win32 styles can be set now.
+        /// </summary>
+        public void PrepareBeforeShow()
+        {
+            PlaceOnMonitor(_monitorIndex);
+            if (TesseraFocusDimPolicy.UseConstantLayeredAlpha)
+            {
+                _ = Win32WindowChrome.ApplySubtleDim(this, TesseraFocusDimPolicy.ResolveLayeredAlpha());
+            }
+
+            Win32WindowChrome.ApplyClickThroughNow(this);
+        }
+
         public void FadeIn()
         {
             ApplyDimChrome();
@@ -137,6 +156,30 @@ namespace MosaicShell.Host.Capabilities
         private const uint SwpNoMove = 0x0002;
         private const uint SwpNoSize = 0x0001;
         private const uint SwpNoActivate = 0x0010;
+
+        /// <summary>Same styles as <see cref="ApplyClickThrough"/>, applied at once (before Show).</summary>
+        public static void ApplyClickThroughNow(Window window)
+        {
+            try
+            {
+                nint handle = window.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+                if (handle == IntPtr.Zero)
+                {
+                    return;
+                }
+
+                nint current = GetWindowLongPtr(handle, GwlExStyle);
+                nint next = current | WsExLayered | WsExTransparent | WsExNoActivate | WsExToolWindow;
+                if (next != current)
+                {
+                    _ = SetWindowLongPtr(handle, GwlExStyle, next);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Win32 click-through] {ex.Message}");
+            }
+        }
 
         public static void ApplyClickThrough(Window window)
         {
@@ -328,8 +371,12 @@ namespace MosaicShell.Host.Capabilities
                 }
 
                 long seq = RequestRegionWrite(window);
+                if (!TryBeginRegionWrite(window, seq, handle, "clear", "sync", 0, 0, 0))
+                {
+                    return;
+                }
+
                 _ = SetWindowRgn(handle, IntPtr.Zero, true);
-                LogRegionApplied(window, seq, handle, "clear", "sync", 0, 0, 0);
             }
             catch (Exception ex)
             {
@@ -337,29 +384,75 @@ namespace MosaicShell.Host.Capabilities
             }
         }
 
-        // A2 instrumentation (audit H2): one tracker per window orders its region writes, so a posted
-        // write that lands after a newer one is logged as stale. Only active when Debug logging is on.
-        private static readonly ConditionalWeakTable<Window, FlyoutRegionWriteTracker> RegionTrackers = [];
-
-        private static long RequestRegionWrite(Window window)
+        /// <summary>
+        /// Clips the window to nothing: an explicit empty region (not a cleared one, which shows the
+        /// whole window, and not a skipped write, which leaves the previous region). Used when a
+        /// reveal is fully collapsed, so no sliver of the acrylic backdrop stays on screen.
+        /// </summary>
+        public static void ApplyEmptyRegion(Window window)
         {
-            return TesseraFlyoutDiagnostics.IsEnabled(DiagnosticLogLevel.Debug)
-                ? RegionTrackers.GetValue(window, static _ => new FlyoutRegionWriteTracker()).Request()
-                : 0;
-        }
-
-        private static void LogRegionApplied(Window window, long seq, nint handle, string op, string mode, int widthPx, int heightPx, int radiusPx)
-        {
-            if (seq == 0 || !RegionTrackers.TryGetValue(window, out FlyoutRegionWriteTracker? tracker))
+            if (!OperatingSystem.IsWindows())
             {
                 return;
             }
 
-            bool stale = tracker.Applied(seq);
-            TesseraFlyoutDiagnostics.Log(
-                stale ? DiagnosticLogLevel.Warning : DiagnosticLogLevel.Debug,
-                $"region seq={seq} op={op} mode={mode} hwnd=0x{handle:X} size={widthPx}x{heightPx} r={radiusPx} " +
-                $"stale={stale} staleTotal={tracker.StaleCount}");
+            try
+            {
+                nint handle = window.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+                if (handle == IntPtr.Zero)
+                {
+                    return;
+                }
+
+                long seq = RequestRegionWrite(window);
+                if (!TryBeginRegionWrite(window, seq, handle, "empty", "sync", 0, 0, 0))
+                {
+                    return;
+                }
+
+                nint rgn = CreateRectRgn(0, 0, 0, 0);
+                if (rgn == IntPtr.Zero)
+                {
+                    return;
+                }
+
+                // SetWindowRgn owns the handle from here, success or not.
+                _ = SetWindowRgn(handle, rgn, true);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Win32 region empty] {ex.Message}");
+            }
+        }
+
+        [DllImport("gdi32.dll", SetLastError = true)]
+        private static extern IntPtr CreateRectRgn(int left, int top, int right, int bottom);
+
+        // Audit H2: some region writes apply synchronously and some are posted, so an older posted
+        // write can arrive after a newer one. One tracker per window numbers every write when it is
+        // requested and refuses an older one when it arrives, so a stale region never reaches the
+        // screen (it made the Modern media card flicker on a cold show). Always on; logging is Debug.
+        private static readonly ConditionalWeakTable<Window, FlyoutRegionWriteTracker> RegionTrackers = [];
+
+        private static long RequestRegionWrite(Window window)
+        {
+            return RegionTrackers.GetValue(window, static _ => new FlyoutRegionWriteTracker()).Request();
+        }
+
+        /// <summary>True when write <paramref name="seq"/> is still the newest and may be applied.</summary>
+        private static bool TryBeginRegionWrite(Window window, long seq, nint handle, string op, string mode, int widthPx, int heightPx, int radiusPx)
+        {
+            FlyoutRegionWriteTracker tracker = RegionTrackers.GetValue(window, static _ => new FlyoutRegionWriteTracker());
+            bool apply = tracker.TryApply(seq);
+            if (TesseraFlyoutDiagnostics.IsEnabled(DiagnosticLogLevel.Debug))
+            {
+                TesseraFlyoutDiagnostics.Log(
+                    DiagnosticLogLevel.Debug,
+                    $"region seq={seq} op={op} mode={mode} hwnd=0x{handle:X} size={widthPx}x{heightPx} r={radiusPx} " +
+                    $"{(apply ? "applied" : "dropped-stale")} droppedTotal={tracker.StaleCount}");
+            }
+
+            return apply;
         }
 
         /// <summary>Top-level windows owned by this process, all and visible (A2: orphan windows, audit H3).</summary>
@@ -391,6 +484,107 @@ namespace MosaicShell.Host.Capabilities
                 IntPtr.Zero);
             return (total, visible);
         }
+
+        /// <summary>
+        /// Debug only: every visible top-level window of this process as
+        /// <c>hwnd WxH@x,y layered=0|1 "title"</c>. Added to explain why entrances with the focus dim
+        /// on render at 40 to 70 ms a frame only after some point in a run (a leaked or extra visible
+        /// window would show here).
+        /// </summary>
+        public static string DescribeVisibleProcessWindows()
+        {
+            if (!OperatingSystem.IsWindows())
+            {
+                return "n/a";
+            }
+
+            uint pid = (uint)Environment.ProcessId;
+            List<string> rows = [];
+            _ = EnumWindows(
+                (hWnd, lParam) =>
+                {
+                    _ = GetWindowThreadProcessId(hWnd, out uint owner);
+                    if (owner != pid || !IsWindowVisible(hWnd))
+                    {
+                        return true;
+                    }
+
+                    string size = GetWindowRect(hWnd, out NativeRect r)
+                        ? $"{r.Right - r.Left}x{r.Bottom - r.Top}@{r.Left},{r.Top}"
+                        : "?";
+                    bool layered = (GetWindowLongPtr(hWnd, GwlExStyle) & WsExLayered) != 0;
+                    System.Text.StringBuilder title = new(64);
+                    _ = GetWindowText(hWnd, title, title.Capacity);
+                    rows.Add($"{hWnd:X} {size} layered={(layered ? 1 : 0)} \"{title}\"");
+                    return true;
+                },
+                IntPtr.Zero);
+            return $"{rows.Count} [{string.Join("; ", rows)}]";
+        }
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder text, int maxCount);
+
+        /// <summary>
+        /// The window as the OS has it: frame rectangle, region box and layered alpha. Diagnostic
+        /// only (motion frame sampler), so a failure reads as "?" rather than throwing.
+        /// </summary>
+        internal static string DescribeNativeFrame(Window window)
+        {
+            if (!OperatingSystem.IsWindows())
+            {
+                return "native=n/a";
+            }
+
+            try
+            {
+                nint handle = window.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+                if (handle == IntPtr.Zero)
+                {
+                    return "native=nohwnd";
+                }
+
+                string rect = GetWindowRect(handle, out NativeRect r)
+                    ? $"{r.Left},{r.Top} {r.Right - r.Left}x{r.Bottom - r.Top}"
+                    : "?";
+                int rgnType = GetWindowRgnBox(handle, out NativeRect box);
+                string rgn = rgnType is NullRegion or RegionError
+                    ? "none"
+                    : $"{box.Left},{box.Top} {box.Right - box.Left}x{box.Bottom - box.Top}";
+                string alpha = GetLayeredWindowAttributes(handle, out _, out byte a, out uint flags)
+                    && (flags & LwaAlpha) != 0
+                    ? a.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    : "-";
+                return $"native={rect} rgn={rgn} alpha={alpha}";
+            }
+            catch (Exception ex)
+            {
+                return $"native=? ({ex.GetType().Name})";
+            }
+        }
+
+        private const int RegionError = 0;
+        private const int NullRegion = 1;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct NativeRect
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetWindowRect(IntPtr hWnd, out NativeRect rect);
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowRgnBox(IntPtr hWnd, out NativeRect rect);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetLayeredWindowAttributes(IntPtr hWnd, out uint crKey, out byte bAlpha, out uint dwFlags);
 
         private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
@@ -441,6 +635,13 @@ namespace MosaicShell.Host.Capabilities
                     heightPx = Math.Max(heightPx, TesseraFlyoutHwndRegionSpec.MinRenderableRegionPx);
 
                     int radius = Math.Clamp(cornerRadiusPx, 1, Math.Min(widthPx, heightPx) / 2);
+                    // Checked before creating the region: SetWindowRgn takes ownership of the
+                    // handle, so a dropped write must not create one.
+                    if (!TryBeginRegionWrite(window, seq, handle, "apply", mode, widthPx, heightPx, radius))
+                    {
+                        return;
+                    }
+
                     nint rgn = CreateRoundRectRgn(0, 0, widthPx + 1, heightPx + 1, radius * 2, radius * 2);
                     if (rgn == IntPtr.Zero)
                     {
@@ -448,7 +649,6 @@ namespace MosaicShell.Host.Capabilities
                     }
 
                     _ = SetWindowRgn(handle, rgn, redrawClient);
-                    LogRegionApplied(window, seq, handle, "apply", mode, widthPx, heightPx, radius);
                 }
                 catch (Exception ex)
                 {

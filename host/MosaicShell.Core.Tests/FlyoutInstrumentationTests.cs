@@ -65,22 +65,37 @@ namespace MosaicShell.Core.Tests
             long a = t.Request();
             long b = t.Request();
 
-            _ = t.Applied(a).Should().BeFalse();
-            _ = t.Applied(b).Should().BeFalse();
+            _ = t.TryApply(a).Should().BeTrue();
+            _ = t.TryApply(b).Should().BeTrue();
             _ = t.StaleCount.Should().Be(0);
         }
 
         [Fact]
-        public void An_older_write_landing_after_a_newer_one_is_stale()
+        public void An_older_write_arriving_after_a_newer_one_is_refused()
         {
+            // Modern Flyouts cold show, 2026-10-04: posted full-card regions requested before the
+            // reveal's synchronous collapsed region landed after it, so the media card flipped
+            // collapsed, full, collapsed, full before phase 2 (the reported "jiggle").
             FlyoutRegionWriteTracker t = new();
             long posted = t.Request();
             long sync = t.Request();
 
-            _ = t.Applied(sync).Should().BeFalse();
-            _ = t.Applied(posted).Should().BeTrue("the posted write overwrote a newer region");
+            _ = t.TryApply(sync).Should().BeTrue();
+            _ = t.TryApply(posted).Should().BeFalse("an older region must never replace a newer one");
             _ = t.StaleCount.Should().Be(1);
-            _ = t.LastApplied.Should().Be(sync, "a stale write does not move the high-water mark");
+            _ = t.LastApplied.Should().Be(sync, "a refused write does not move the high-water mark");
+        }
+
+        [Fact]
+        public void A_write_requested_after_the_last_applied_one_is_still_accepted()
+        {
+            FlyoutRegionWriteTracker t = new();
+            long first = t.Request();
+            _ = t.TryApply(first).Should().BeTrue();
+
+            long later = t.Request();
+
+            _ = t.TryApply(later).Should().BeTrue();
         }
 
         [Fact]

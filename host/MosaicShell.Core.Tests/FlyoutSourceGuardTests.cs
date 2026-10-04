@@ -65,8 +65,6 @@ namespace MosaicShell.Core.Tests
             ["TesseraFlyoutAnimationPolicy.cs:InterpolateForward"] = D3,
             ["TesseraFlyoutAnimationPolicy.cs:InvertEaseVariant"] = D3,
             ["TesseraFlyoutAnimationPolicy.cs:MinPerceptiblePhaseDurationMs"] = D3,
-            ["TesseraFlyoutAnimationPolicy.cs:MustAnimateWindowPosition"] = D3,
-            ["TesseraFlyoutAnimationPolicy.cs:Phase1MustUseWindowPosition"] = D3,
             ["TesseraFlyoutAnimationPolicy.cs:Phase2MustNotMutateLayoutMeasure"] = D3,
             ["TesseraFlyoutAnimationPolicy.cs:Phase2MustNotResizeHwnd"] = D3,
             ["TesseraFlyoutAnimationPolicy.cs:Phase2MustPumpEachAniStepOnDispatcher"] = D3,

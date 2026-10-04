@@ -14,6 +14,7 @@ namespace MosaicShell.Host
             DiagnosticLog.Start(
                 AppPaths.CacheDirectory,
                 DiagnosticLogLevels.Resolve(Environment.GetEnvironmentVariable(DiagnosticLogLevels.EnvironmentVariable), IsDebugBuild));
+            Capabilities.ProcessPowerThrottling.OptOutAndLog();
             try
             {
                 _ = BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

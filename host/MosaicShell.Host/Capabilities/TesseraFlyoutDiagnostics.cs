@@ -26,6 +26,34 @@ namespace MosaicShell.Host.Capabilities
             DiagnosticLog.Append(FileName, level, message);
         }
 
+        /// <summary>
+        /// Debug only: start a timed span for UI-thread work. Returns 0 when Debug is off, so the
+        /// matching <see cref="EndSpan"/> costs nothing.
+        /// </summary>
+        public static long BeginSpan()
+        {
+            return IsEnabled(DiagnosticLogLevel.Debug) ? System.Diagnostics.Stopwatch.GetTimestamp() : 0;
+        }
+
+        /// <summary>
+        /// Logs <c>slow name=… ms=…</c> when the span took at least <paramref name="thresholdMs"/>.
+        /// Added to attribute the UI-thread stalls seen in the motion frame trace (frames 50 to 200 ms
+        /// apart during entrances that change track).
+        /// </summary>
+        public static void EndSpan(long started, string name, double thresholdMs = 4)
+        {
+            if (started == 0)
+            {
+                return;
+            }
+
+            double ms = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+            if (ms >= thresholdMs)
+            {
+                Log(DiagnosticLogLevel.Debug, $"slow {name} ms={ms:0.0}");
+            }
+        }
+
         public static void LogException(string context, Exception ex)
         {
             // One entry: the stack trace's line breaks are escaped, so it cannot interleave with

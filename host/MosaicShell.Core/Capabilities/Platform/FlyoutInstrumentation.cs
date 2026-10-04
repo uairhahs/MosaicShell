@@ -53,9 +53,10 @@ namespace MosaicShell.Core.Capabilities.Platform
 
     /// <summary>
     /// Orders HWND region writes for one window. Some writes apply synchronously and some are
-    /// posted, so an older posted write can land after a newer synchronous one and leave a stale
-    /// region on screen (audit H2). Each write takes a sequence number when requested; applying a
-    /// number lower than the last applied one is reported as stale. Thread-safe.
+    /// posted, so an older posted write can arrive after a newer synchronous one (audit H2). Each
+    /// write takes a sequence number when requested; <see cref="TryApply"/> refuses a number lower
+    /// than the last applied one, so the caller drops it instead of putting an old region back on
+    /// screen (that made the Modern Flyouts media card flicker on a cold show). Thread-safe.
     /// </summary>
     public sealed class FlyoutRegionWriteTracker
     {
@@ -81,19 +82,22 @@ namespace MosaicShell.Core.Capabilities.Platform
             return Interlocked.Increment(ref _next);
         }
 
-        /// <summary>Records that write <paramref name="seq"/> reached the window; true when it was stale.</summary>
-        public bool Applied(long seq)
+        /// <summary>
+        /// Call just before applying write <paramref name="seq"/>. True: apply it (it becomes the
+        /// newest applied). False: a newer write already reached the window, so drop this one.
+        /// </summary>
+        public bool TryApply(long seq)
         {
             lock (_gate)
             {
                 if (seq < _lastApplied)
                 {
                     StaleCount++;
-                    return true;
+                    return false;
                 }
 
                 _lastApplied = seq;
-                return false;
+                return true;
             }
         }
     }
