@@ -8,13 +8,12 @@ Outstanding work after the Inno Setup release path. Packaging: [`packaging/READM
 
 ## Outstanding tasks
 
-| Priority | Task                                    | Notes                                                                                          |
-| -------- | --------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| High     | Smoke Setup (unsigned is fine)          | Install Setup from a release run, confirm Tessera/Mixdeck, Check Updates                       |
-| Low      | Enable Azure Trusted Signing later      | Optional; ~monthly fee. Checklist in release-signing.md. CI auto-signs when secrets/vars exist |
-| Medium   | Background update check on Host startup | Today: Settings / Check Updates only                                                           |
-| Medium   | WinGet package id                       | Manifest pointing at Setup.exe                                                                 |
-| Low      | Rebuild Host after icon regen           | Multi-size `mosaicshell.ico` is on disk; need a fresh Host/Setup build for tray/taskbar        |
+| Priority | Task                                    | Notes                                                                                         |
+| -------- | --------------------------------------- | --------------------------------------------------------------------------------------------- |
+| High     | Smoke Setup (unsigned is fine)          | Install Setup from a release run, confirm Tessera/Mixdeck, Check Updates                      |
+| Low      | Enable Azure Trusted Signing later      | Optional; monthly fee. Checklist in release-signing.md. CI auto-signs when secrets/vars exist |
+| Medium   | Background update check on Host startup | Today: Settings / Check Updates only                                                          |
+| Medium   | WinGet package id                       | Manifest pointing at Setup.exe                                                                |
 
 When an item ships, remove or strike it here.
 

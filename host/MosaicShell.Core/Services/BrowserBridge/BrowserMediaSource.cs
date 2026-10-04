@@ -9,6 +9,7 @@ namespace MosaicShell.Core.Services.BrowserBridge
         private readonly BrowserSessionHub _hub;
         private readonly BrowserArtworkFetcher _fetcher;
         private readonly Func<string?> _smtcTitle;
+        private readonly Func<string?> _smtcAppId;
         private readonly IDisposable[] _owned;
 
         /// <summary>
@@ -16,10 +17,18 @@ namespace MosaicShell.Core.Services.BrowserBridge
         /// matches it is shown. Anything in <paramref name="owned"/> is disposed with the source.
         /// </summary>
         public BrowserMediaSource(BrowserSessionHub hub, BrowserArtworkFetcher fetcher, Func<string?> smtcTitle, params IDisposable[] owned)
+            : this(hub, fetcher, smtcTitle, static () => null, owned)
+        {
+        }
+
+        /// <summary><paramref name="smtcAppId"/> is Windows' current app id; a web app's site ranks its tab first.</summary>
+        public BrowserMediaSource(
+            BrowserSessionHub hub, BrowserArtworkFetcher fetcher, Func<string?> smtcTitle, Func<string?> smtcAppId, params IDisposable[] owned)
         {
             _hub = hub;
             _fetcher = fetcher;
             _smtcTitle = smtcTitle;
+            _smtcAppId = smtcAppId;
             _owned = owned;
             _hub.Changed += OnChanged;
             _fetcher.Fetched += OnChanged;
@@ -29,7 +38,7 @@ namespace MosaicShell.Core.Services.BrowserBridge
         {
             get
             {
-                BrowserSessionEntry? entry = _hub.Select(_smtcTitle());
+                BrowserSessionEntry? entry = SelectEntry();
                 return entry is null ? null : ToSnapshot(entry.Report, CoverFor(entry.Report));
             }
         }
@@ -37,13 +46,18 @@ namespace MosaicShell.Core.Services.BrowserBridge
         public event EventHandler? Changed;
 
         /// <summary>The source, its pipe and its artwork cache, listening for the extension's relay.</summary>
-        public static BrowserMediaSource Create(Func<string?> smtcTitle)
+        public static BrowserMediaSource Create(Func<string?> smtcTitle, Func<string?> smtcAppId)
         {
             BrowserSessionHub hub = new(TimeProvider.System);
             BrowserArtworkFetcher fetcher = new();
             BrowserPipeServer server = new(BrowserPipeServer.PipeNameForCurrentUser(), hub, BrowserSessionHub.DefaultMaxConnections + 1);
             server.Start();
-            return new BrowserMediaSource(hub, fetcher, smtcTitle, server, fetcher);
+            return new BrowserMediaSource(hub, fetcher, smtcTitle, smtcAppId, server, fetcher);
+        }
+
+        private BrowserSessionEntry? SelectEntry()
+        {
+            return _hub.Select(_smtcTitle(), BrowserSessionPolicy.SiteNameOfApp(_smtcAppId()));
         }
 
         public Task SetLikedAsync(bool liked)
@@ -113,7 +127,7 @@ namespace MosaicShell.Core.Services.BrowserBridge
 
         private Task Send(BrowserCommandAction action)
         {
-            if (_hub.Select(_smtcTitle()) is { } entry)
+            if (SelectEntry() is { } entry)
             {
                 _ = _hub.SendCommand(entry, action);
             }

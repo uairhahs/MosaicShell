@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using MosaicShell.Core.Modules.Tessera;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {
@@ -102,14 +103,14 @@ namespace MosaicShell.Host.Tiles.Tessera
 
         private static Control RadialVolumeWrap(Control inner)
         {
-            return TesseraChrome.Glass(inner, 10, new Thickness(TesseraStyleMetrics.RadialPad, 14));
+            return TesseraChrome.Glass(inner, TesseraStackedPlacementSpec.RadialShellCornerRadiusDip, new Thickness(TesseraStyleMetrics.RadialPad, 14));
         }
 
         private static Control RadialMediaWrap(Control media)
         {
             media.HorizontalAlignment = HorizontalAlignment.Right;
             media.VerticalAlignment = VerticalAlignment.Center;
-            return TesseraStackedBuildContext.IsActive ? media : TesseraChrome.Glass(media, 10, new Thickness(12, 14));
+            return TesseraStackedBuildContext.IsActive ? media : TesseraChrome.Glass(media, TesseraStackedPlacementSpec.RadialShellCornerRadiusDip, new Thickness(12, 14));
         }
     }
 }

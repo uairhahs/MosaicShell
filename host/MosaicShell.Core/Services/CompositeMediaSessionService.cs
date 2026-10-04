@@ -9,6 +9,14 @@ namespace MosaicShell.Core.Services
         private readonly IMediaSessionService _smtc;
         private readonly IBrowserMediaSource[] _browser;
 
+        // Which source's title changed last. On a web app's track change the extension and Windows
+        // disagree for 100 to 300 ms, and only the order says which one is current.
+        private long _titleSequence;
+        private string? _lastSmtcTitle;
+        private long _smtcTitleAt;
+        private string? _lastBrowserTitle;
+        private long _browserTitleAt;
+
         /// <summary>Browser sources are listed in order of preference; the first with an active player is used.</summary>
         public CompositeMediaSessionService(IMediaSessionService smtc, params IBrowserMediaSource[] browserSources)
         {
@@ -152,7 +160,8 @@ namespace MosaicShell.Core.Services
             MediaSessionInfo? smtc = _smtc.Current;
             BrowserPlayerSnapshot? browser = ActiveBrowserPlayer();
             MediaSessionInfo? prev = Current;
-            MediaSessionInfo? next = Merge(smtc, browser);
+            bool browserNewer = TrackTitleOrder(smtc, browser);
+            MediaSessionInfo? next = Merge(smtc, browser, browserNewer);
             Current = next;
 
             if (prev is null && next is null)
@@ -162,9 +171,10 @@ namespace MosaicShell.Core.Services
 
             bool raiseChanged = false;
 
-            if (prev is not null && smtc is not null)
+            if (prev is not null && smtc is not null && !browserNewer)
             {
                 if (!string.IsNullOrWhiteSpace(smtc.Title)
+                    && !MediaTitleNormalizer.IsSitePlaceholder(smtc.Title)
                     && !string.Equals(
                         prev.Title, MediaTitleNormalizer.StripSiteSuffix(smtc.Title), StringComparison.Ordinal))
                 {
@@ -220,7 +230,37 @@ namespace MosaicShell.Core.Services
             }
         }
 
-        internal static MediaSessionInfo? Merge(MediaSessionInfo? smtc, BrowserPlayerSnapshot? browser)
+        /// <summary>
+        /// Records which source's title changed last and returns true when the browser's did. A placeholder from
+        /// Windows ("YouTube Music") is not a title, so it changes nothing.
+        /// </summary>
+        private bool TrackTitleOrder(MediaSessionInfo? smtc, BrowserPlayerSnapshot? browser)
+        {
+            string? smtcTitle = MediaTitleNormalizer.IsSitePlaceholder(smtc?.Title)
+                ? _lastSmtcTitle
+                : MediaTitleNormalizer.StripSiteSuffix(smtc?.Title);
+            if (!string.Equals(smtcTitle, _lastSmtcTitle, StringComparison.OrdinalIgnoreCase))
+            {
+                _lastSmtcTitle = smtcTitle;
+                _smtcTitleAt = ++_titleSequence;
+            }
+
+            string? browserTitle = browser?.Title;
+            if (!string.Equals(browserTitle, _lastBrowserTitle, StringComparison.OrdinalIgnoreCase))
+            {
+                _lastBrowserTitle = browserTitle;
+                _browserTitleAt = ++_titleSequence;
+            }
+
+            return _browserTitleAt > _smtcTitleAt;
+        }
+
+        /// <summary>
+        /// Windows' session with the browser player laid over it. <paramref name="browserTitleIsNewer"/>: the
+        /// browser's title changed after Windows' did; when Windows' session is the web app of the browser player's
+        /// own site, the newer of the two titles is the current track.
+        /// </summary>
+        internal static MediaSessionInfo? Merge(MediaSessionInfo? smtc, BrowserPlayerSnapshot? browser, bool browserTitleIsNewer = false)
         {
             if (smtc is null && browser is null)
             {
@@ -245,14 +285,21 @@ namespace MosaicShell.Core.Services
             byte[]? thumb = PickCover(smtc.ThumbnailPng, browser?.CoverPng, smtc.AppId);
             string? title = MediaTitleNormalizer.StripSiteSuffix(smtc.Title);
             string? artist = smtc.Artist;
+            // The bare "YouTube Music" a web app shows between tracks names no track.
+            string? smtcTitle = MediaTitleNormalizer.IsSitePlaceholder(smtc.Title) ? null : smtc.Title;
+            bool sameSite = browser is not null
+                && BrowserSessionPolicy.SiteNameOfApp(smtc.AppId) is { } appSite
+                && string.Equals(appSite, browser.Name, StringComparison.OrdinalIgnoreCase);
             if (browser is not null && !string.IsNullOrWhiteSpace(browser.Title)
                 && (BrowserSessionPolicy.LooksLikeBrowserSession(smtc.AppId)
-                    || MediaTitleNormalizer.LooselyMatch(smtc.Title, browser.Title)))
+                    || MediaTitleNormalizer.LooselyMatch(smtcTitle, browser.Title)))
             {
-                // Use the browser title and artist when SMTC is empty or still agrees with it.
-                // Do not keep a stale browser title when SMTC already advanced to a new track;
-                // that swallowed Media.Changed and blocked Tessera media flyouts.
-                if (string.IsNullOrWhiteSpace(smtc.Title) || MediaTitleNormalizer.LooselyMatch(smtc.Title, browser.Title))
+                // Use the browser title and artist when SMTC has none, still agrees with it, or (same site) is
+                // the older of the two. Do not keep a stale browser title when SMTC already advanced to a new
+                // track; that swallowed Media.Changed and blocked Tessera media flyouts.
+                if (string.IsNullOrWhiteSpace(smtcTitle)
+                    || MediaTitleNormalizer.LooselyMatch(smtcTitle, browser.Title)
+                    || (sameSite && browserTitleIsNewer))
                 {
                     title = browser.Title;
                     if (!string.IsNullOrWhiteSpace(browser.Artist))

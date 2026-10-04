@@ -7,6 +7,7 @@ using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Host.Tiles.Tessera;
 using MosaicShell.Core.Modules;
+using MosaicShell.Core.Services;
 
 namespace MosaicShell.Host.Capabilities
 {
@@ -168,6 +169,7 @@ namespace MosaicShell.Host.Capabilities
             Log($"stacked revive kind={request.Kind} style={request.StyleId}");
             ApplyStackedPlacement(request);
             SyncFocusDim(request);
+            FlyoutMotionSession.ArmEntranceStartPose(windows);
 
             foreach (FlyoutWindow window in windows)
             {
@@ -265,6 +267,12 @@ namespace MosaicShell.Host.Capabilities
 
             ApplyStackedPlacement(request);
             SyncFocusDim(request);
+            bool play = TesseraFlyoutLiveSyncPolicy.ShouldPlayShowAnimationAfterApplyRequest(
+                reuseWasVisible, TesseraFlyoutWindowPolicy.HideUntilCompositionReady);
+            if (play)
+            {
+                FlyoutMotionSession.ArmEntranceStartPose(newWindows);
+            }
 
             foreach (FlyoutWindow window in newWindows)
             {
@@ -277,8 +285,6 @@ namespace MosaicShell.Host.Capabilities
             }
 
             PresentStackedFlyout(request, newWindows);
-            bool play = TesseraFlyoutLiveSyncPolicy.ShouldPlayShowAnimationAfterApplyRequest(
-                reuseWasVisible, TesseraFlyoutWindowPolicy.HideUntilCompositionReady);
             PlayStackedShowAnimation(request, newWindows, play);
 
             ScheduleStackedPlacementRefresh();
@@ -764,6 +770,11 @@ namespace MosaicShell.Host.Capabilities
             }
 
             Log($"stacked presented slots={windows.Count} focusDim={TesseraFocusDimPolicy.EnabledFromPayload(request.Payload)}");
+            if (TesseraFlyoutDiagnostics.IsEnabled(DiagnosticLogLevel.Debug))
+            {
+                TesseraFlyoutDiagnostics.Log(
+                    DiagnosticLogLevel.Debug, $"visible windows {Win32WindowChrome.DescribeVisibleProcessWindows()}");
+            }
             ScheduleStackedOutsideClickArm(windows);
         }
 

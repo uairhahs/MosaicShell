@@ -365,6 +365,9 @@ namespace MosaicShell.Host.Tiles.Tessera
                 _mediaLeaf.Opacity = TesseraFlyoutAnimatedTargetSpec.ResolveClippedMediaLeafOpacity(p, music);
                 _mediaLeaf.RenderTransform = null;
                 _mediaLeaf.MaxHeight = double.IsNaN(FullMediaHeight) ? double.PositiveInfinity : FullMediaHeight;
+                // Same as Modern: centred in the shrinking clip host, the panel drifted down as the
+                // reveal grew. Anchored to the top, the reveal uncovers it in place.
+                _mediaLeaf.VerticalAlignment = VerticalAlignment.Top;
             }
         }
 
@@ -483,6 +486,11 @@ namespace MosaicShell.Host.Tiles.Tessera
         {
             ApplyMediaMask(p, music);
             _mediaLeaf?.RenderTransform = null;
+            // The clip host shrinks with p and the card keeps its full height. A stretch-aligned
+            // child taller than its slot is arranged centred, so the card sat half the hidden
+            // height above the top and drifted down as the reveal grew ("the media card shifts").
+            // Anchored to the top, the reveal uncovers a card that stays put.
+            _mediaLeaf?.VerticalAlignment = VerticalAlignment.Top;
 
             if (_mediaClipHost is not null
                 && !double.IsNaN(FullMediaHeight)

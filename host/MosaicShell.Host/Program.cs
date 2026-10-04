@@ -1,5 +1,7 @@
 using Avalonia;
+using MosaicShell.Core;
 using MosaicShell.Core.HostPlatform;
+using MosaicShell.Core.Services;
 
 namespace MosaicShell.Host
 {
@@ -9,9 +11,27 @@ namespace MosaicShell.Host
         public static int Main(string[] args)
         {
             Core.Capabilities.Platform.HostLaunchOptions.Apply(args);
-            _ = BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+            DiagnosticLog.Start(
+                AppPaths.CacheDirectory,
+                DiagnosticLogLevels.Resolve(Environment.GetEnvironmentVariable(DiagnosticLogLevels.EnvironmentVariable), IsDebugBuild));
+            Capabilities.ProcessPowerThrottling.OptOutAndLog();
+            try
+            {
+                _ = BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+            }
+            finally
+            {
+                DiagnosticLog.Stop();
+            }
+
             return 0;
         }
+
+#if DEBUG
+        private const bool IsDebugBuild = true;
+#else
+        private const bool IsDebugBuild = false;
+#endif
 
         public static AppBuilder BuildAvaloniaApp()
         {

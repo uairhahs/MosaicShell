@@ -48,7 +48,11 @@ namespace MosaicShell.Host.Capabilities
             _hostUi = hostUi;
             // Core decides Present/Patch/SoftRefresh but owns no logging; route its trace into the
             // same file so a decision and the Host state that produced it interleave in order.
-            FlyoutTrace.Sink = Log;
+            // The trace runs on every media tick and names tracks, so it is Debug: left unwired
+            // below that level, FlyoutTrace.IsEnabled lets Core skip building the messages.
+            FlyoutTrace.Sink = TesseraFlyoutDiagnostics.IsEnabled(DiagnosticLogLevel.Debug)
+                ? static message => TesseraFlyoutDiagnostics.Log(DiagnosticLogLevel.Debug, message)
+                : null;
             Log(RunBanner.Format(
                 DateTimeOffset.Now,
                 Environment.ProcessId,
@@ -143,6 +147,7 @@ namespace MosaicShell.Host.Capabilities
                 return;
             }
 
+            long span = TesseraFlyoutDiagnostics.BeginSpan();
             switch (work.Kind)
             {
                 case TesseraFlyoutIngressKind.SoftRefresh:
@@ -155,6 +160,8 @@ namespace MosaicShell.Host.Capabilities
                     SafeShowOrUpdate(work.Request, work.ResetDismiss, allowLivePatch: false);
                     break;
             }
+
+            TesseraFlyoutDiagnostics.EndSpan(span, $"ingress kind={work.Kind}");
         }
 
         public void SoftRefresh(FlyoutRequest request)
@@ -291,32 +298,16 @@ namespace MosaicShell.Host.Capabilities
 
         public bool IsVisible(string moduleId)
         {
+            // Not logged: this runs on every routing decision, and the decision itself is traced.
             if (ModuleIds.IsTessera(moduleId) && IsStackedTesseraVisible())
             {
-                Log($"IsVisible {moduleId} => True (stacked)");
                 return true;
             }
 
-            bool result;
-            string tag;
             lock (_gate)
             {
-                // Snapshot inside the lock, log outside it: this runs on every routing decision
-                // and the log call does file IO.
-                if (_windows.TryGetValue(moduleId, out FlyoutWindow? w))
-                {
-                    result = w.IsFlyoutSessionShowing;
-                    tag = w.MotionStateTag;
-                }
-                else
-                {
-                    result = false;
-                    tag = "no-window";
-                }
+                return _windows.TryGetValue(moduleId, out FlyoutWindow? w) && w.IsFlyoutSessionShowing;
             }
-
-            Log($"IsVisible {moduleId} => {result} {tag}");
-            return result;
         }
 
         public TesseraFlyoutSessionSnapshot GetSessionSnapshot(string moduleId)
@@ -724,8 +715,9 @@ namespace MosaicShell.Host.Capabilities
             }
             else if (window.ClusterOriginX is null)
             {
-                // Single-shell volume/media acrylic: process-wide radius; clear per-window override.
-                window.BackdropCornerRadiusDip = TesseraOsAcrylicTrialPolicy.SpikeCornerRadius;
+                // Single-shell: the region uses the card's own outer radius (Square 24, CoreUI 8,
+                // Radial 10, others 12), so no acrylic shows outside the card's corners.
+                window.BackdropCornerRadiusDip = TesseraFlyoutHwndRegionSpec.ResolveSingleShellCornerRadiusDip(request.StyleId);
             }
 
             window.FinishLayout();
@@ -748,6 +740,18 @@ namespace MosaicShell.Host.Capabilities
                 $"scaling={window.RenderScaling:0.##} " +
                 $"hint={string.Join('|', window.TransparencyLevelHint)} " +
                 $"actual={window.ActualTransparencyLevel} layered={layered}");
+            if (TesseraFlyoutDiagnostics.IsEnabled(DiagnosticLogLevel.Debug))
+            {
+                // A2 (audit H3): an outgoing window that outlives its replacement shows up here.
+                (int total, int visibleWindows) = Win32WindowChrome.CountProcessTopLevelWindows();
+                int tracked;
+                lock (_gate)
+                {
+                    tracked = _windows.Count;
+                }
+
+                Log(DiagnosticLogLevel.Debug, $"present hwnds total={total} visible={visibleWindows} tracked={tracked}");
+            }
 
             if (ModuleIds.IsTessera(request.ModuleId))
             {
@@ -788,10 +792,12 @@ namespace MosaicShell.Host.Capabilities
             {
                 try
                 {
+                    long span = TesseraFlyoutDiagnostics.BeginSpan();
                     flyout.Topmost = true;
                     _focusDim?.Topmost = true;
 
                     bool ok = Win32WindowChrome.TryStackAbove(flyout, _focusDim, out string? detail);
+                    TesseraFlyoutDiagnostics.EndSpan(span, $"zorder when={when}");
                     Log($"z-order {when} ok={ok} {detail}");
                 }
                 catch (Exception ex)
@@ -818,6 +824,7 @@ namespace MosaicShell.Host.Capabilities
             if (_focusDim is null)
             {
                 _focusDim = new FocusDimWindow(request.MonitorIndex);
+                _focusDim.PrepareBeforeShow();
                 // Show dim BEFORE the flyout (caller order) so the flyout is the later topmost peer.
                 _focusDim.Show();
                 _focusDim.FadeIn();
@@ -998,6 +1005,11 @@ namespace MosaicShell.Host.Capabilities
         private static void Log(string message)
         {
             TesseraFlyoutDiagnostics.Log(message);
+        }
+
+        private static void Log(DiagnosticLogLevel level, string message)
+        {
+            TesseraFlyoutDiagnostics.Log(level, message);
         }
     }
 }

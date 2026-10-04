@@ -1,6 +1,6 @@
 # Architecture
 
-MosaicShell is a **tray host process** written in Avalonia + Windows APIs only: no Rainmeter bridge, no `.ini` interpreter. It runs armed capabilities (background HUD/OSD behaviors) and widget overlays (desktop tiles) in one process. It is not a separate Windows service today: everything runs in-process with shared platform services owned by `CapabilityDaemon`.
+MosaicShell is a **tray host process** written with Avalonia and Windows APIs only: no Rainmeter bridge, no `.ini` interpreter. It runs armed capabilities (background HUD/OSD behaviors) and widget overlays (desktop tiles) in one process. It is not a separate Windows service today: everything runs in-process with shared platform services owned by `CapabilityDaemon`.
 
 This page supersedes `docs/native-rewrite.md` and `docs/architecture-native.md`; both are now folded in here.
 
@@ -27,7 +27,7 @@ MosaicShell.Host (tray, Avalonia UI thread)
 | `MosaicShell.Worker.exe`           | Headless daemon; flyouts via IPC to Host                                 |
 | `Mosaicist.exe`                    | Install CLI (`install-module`, `install-package`): Core only, no Host UI |
 
-`CapabilityStore` persists a **list** of armed module ids; one daemon runs Tessera, Mixdeck, Slate, and any other armed capabilities together, and that's the normal mode. Worker requires Host running as the IPC server, and the two must not both own the daemon at once: start Worker first (or exit Host) when splitting them.
+`CapabilityStore` persists a **list** of armed module ids; one daemon runs Tessera, Mixdeck, Slate, and any other armed capabilities together, and that's the normal mode. Whichever process starts first owns the daemon; a Host that starts second controls the Worker's daemon over IPC instead. Worker also needs Host's flyout IPC server, and waits only `ConnectTimeoutMs` (4 s) for it, so when splitting them start Worker and then Host straight away. Worker has no browser media sources (Grout), so its media flyouts carry SMTC data only.
 
 ## Dependency hierarchy
 
@@ -60,7 +60,7 @@ Every behavior change that affects chrome, policy, parity, or capability shape i
 | Widget     | `ITileViewFactory` + `TileRuntime`               | Chrono, Canvas          |
 | Hybrid     | Both                                             | (future)                |
 
-- **Widgets** = `TileRuntime` overlays (`ITileViewFactory` / `TileViewRegistry`), driven by `TileSurfaceFactory` -> `LiveTilesA`.
+- **Widgets** = `TileRuntime` overlays (`ITileViewFactory` / `TileViewRegistry`); `TileSurfaceFactory` builds the views in `LiveTilesA`.
 - **Capabilities** = `IModuleCapability` armed in-process; complex flyout/media routing lives in Core platform (`Capabilities/Platform/*`), not duplicated per module.
 - **Settings** = JSON via `ModuleSettingsStore`.
 - **Styles** = `StyleCatalog` (JaxCore-derived ids) mapped to per-module Avalonia layout factories.
@@ -68,7 +68,7 @@ Every behavior change that affects chrome, policy, parity, or capability shape i
 
 ### Install stubs and arming
 
-All ten catalog modules (Tessera, Mixdeck, Chrono, Phono, Pulse, Canvas, Inlay, Chord, Substrate, Slate) use a `Tiles/{Id}/` stub: `module.native.json` + README, nothing else. `ModuleInstaller` copies that stub (or an external package) into `%LocalAppData%\MosaicShell\Modules\{Id}`; `ModuleCatalog.IsInstalled` is just "does that directory exist." Arming a capability adds its id to `CapabilityStore`'s persisted list.
+All ten catalog modules (Tessera, Mixdeck, Chrono, Phono, Pulse, Canvas, Inlay, Chord, Substrate, Slate) use a `Tiles/{Id}/` stub: `module.native.json` and a README, nothing else. `ModuleInstaller` copies that stub (or an external package) into `%LocalAppData%\MosaicShell\Modules\{Id}`; `ModuleCatalog.IsInstalled` is just "does that directory exist." Arming a capability adds its id to `CapabilityStore`'s persisted list.
 
 ## Event flow (Tessera example)
 
@@ -80,7 +80,7 @@ OS (volume key, SMTC, shell hook)
   -> IFlyoutPresenter (Host Avalonia)
 ```
 
-Media timeline polling is owned by `IMediaSessionService` + `MediaSessionPlatform`, one place, not duplicated per module. OSD suppression uses `WindowsShellFlyoutHook` (ModernFlyouts-compatible SHELLHOOK decode) alongside the audio/brightness change sources.
+Media timeline polling is owned by `IMediaSessionService` and `MediaSessionPlatform`, in one place, not duplicated per module. OSD suppression uses `WindowsShellFlyoutHook` (ModernFlyouts-compatible SHELLHOOK decode) alongside the audio/brightness change sources.
 
 ## Tessera (the flagship capability)
 
@@ -93,7 +93,7 @@ Runtime: `TesseraCapability` (thin) plus `Capabilities/Platform/*` (Core platfor
 | Area                    | Status                                                                                                                  |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | Flyout kinds            | `vol`, `bright`, `media`, `locks`, `flight`                                                                             |
-| Media backend           | SMTC (title, artist, cover) + the Grout browser extension, or UI Automation without it (YouTube Music like and dislike) |
+| Media backend           | SMTC, plus the Grout extension for browser tabs and web apps (title, artist, cover, like); UI Automation like fallback  |
 | Layouts                 | All 11 catalog styles visually signed off (`tessera_layout_fidelity`); Radial and PlainText remain lighter Host layouts |
 | Placement               | Default top-left; 9-point `Position`; re-anchors after measure                                                          |
 | Settings                | Host Tessera panel: flyout scale %, soft frost / baked frost / focus dim                                                |
@@ -112,9 +112,9 @@ Motion runs in two phases. Phase 1 is a window-level slide and fade driven by Av
 - Full appearance DLC (colors/sizes beyond what Host settings expose) is not implemented.
 - Brightness / airplane-mode control has the same Win11-build caveats YourFlyouts itself documents upstream.
 - Vendor laptop OEM OSDs (Dell/HP, and others) are not suppressed.
-- Only SMTC (plus the browser like-button read) is a supported NowPlaying source: no Rainmeter-style multi-player `Auto` detection.
+- NowPlaying sources are SMTC and the Grout browser extension (with a UI Automation like-button fallback); there is no Rainmeter-style multi-player `Auto` detection.
 
-External references: [Jax-Core/YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [ModernFlyouts-Community/ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts) (OSD/ShellHook). Browser media and album art: see `docs/parity/smtc-album-art.md`.
+External references: [Jax-Core/YourFlyouts](https://github.com/Jax-Core/YourFlyouts) (visual), [ModernFlyouts-Community/ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts) (OSD/ShellHook). Browser media and album art: see `docs/parity/smtc-album-art.md`. Any wrong or missing title, artist or cover from a browser tab or web app (PWA) is answered by Grout.
 
 ## Other modules
 
@@ -124,7 +124,7 @@ The remaining nine catalog modules follow the same shape (thin `Tiles/{Id}` stub
 | --------- | ------------------- | ----------------------------------------------------------------- |
 | Mixdeck   | Capability          | Per-app audio session overlay (mute + volume slider), MVP         |
 | Chrono    | Widget              | Live clock/date overlay via `TileRuntime`, MVP                    |
-| Phono     | Widget              | SMTC now-playing overlay with transport controls, MVP             |
+| Phono     | Widget              | Now-playing overlay (SMTC and Grout) with transport controls, MVP |
 | Pulse     | Widget              | Audio-level visualizer (bar/round) from `IAudioLevelService`, MVP |
 | Canvas    | Widget              | CPU/RAM/disk/host system metrics overlay, MVP                     |
 | Inlay     | Capability (hotkey) | Hotkey-triggered launcher overlay, MVP                            |

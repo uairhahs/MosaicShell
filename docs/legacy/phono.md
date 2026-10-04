@@ -11,4 +11,4 @@ Rainmeter **Phono** promised a desktop **media player widget**.
 
 ## Host today
 
-Native Phono widget via SMTC only. See parity `tile_phono_mvp`. Install stub: [`Tiles/Phono`](../../Tiles/Phono).
+Native Phono widget fed by the shared media service (SMTC, plus the Grout extension for browser players). See parity `tile_phono_mvp`. Install stub: [`Tiles/Phono`](../../Tiles/Phono).

@@ -732,6 +732,19 @@ namespace MosaicShell.Host.Tiles.Tessera
                 return null;
             }
 
+            long span = MosaicShell.Host.Capabilities.TesseraFlyoutDiagnostics.BeginSpan();
+            try
+            {
+                return TryCreateBitmapCore(bytes, decodeWidth);
+            }
+            finally
+            {
+                MosaicShell.Host.Capabilities.TesseraFlyoutDiagnostics.EndSpan(span, $"artDecode bytes={bytes.Length} width={decodeWidth}", thresholdMs: 0);
+            }
+        }
+
+        private static Bitmap? TryCreateBitmapCore(byte[] bytes, int decodeWidth)
+        {
             try
             {
                 string tmp = Path.Combine(Path.GetTempPath(), $"mosaic-art-{Guid.NewGuid():N}.img");

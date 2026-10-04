@@ -7,19 +7,19 @@ layouts are published in [the Tessera proof gallery](../../.github/res/Tessera/)
 Static screenshots do not establish animation parity; the comparison below still requires
 captured frames from a running YourFlyouts instance.
 
-Target on-desktop scale: flyouts are a small fraction of the screen (~1/5 width max). YourFlyouts used heavy acrylic; MosaicShell Host may keep soft frost / its own material language.
+Target on-desktop scale: flyouts are a small fraction of the screen (at most about a fifth of its width). YourFlyouts used heavy acrylic; MosaicShell Host may keep soft frost / its own material language.
 
 ## Animation parity sign-off (Fancy / Ani=2)
 
 Do **not** mark Tessera animation Hub parity until manual compare passes for:
 
-| Style      | Phase 1 (slide/fade)                 | Phase 2 (media reveal)                | Reference              |
-| ---------- | ------------------------------------ | ------------------------------------- | ---------------------- |
-| Fluent     | Whole surface ~40ms stepped OutQuart | Media width grows after 100ms pause   | `yf01.png`, `yf02.png` |
-| Windows 11 | Same                                 | Media clip height grows vertically    | `yf03.png`             |
-| Gnome      | Same                                 | Scale 0.5..1 + opacity on media pill  | layout gallery         |
-| PlainText  | Same                                 | Media block fades/clips in place      | layout gallery         |
-| Radial     | Same                                 | Ring arc sweeps to level; media fades | layout gallery         |
+| Style      | Phase 1 (slide/fade)                        | Phase 2 (media reveal)                 | Reference              |
+| ---------- | ------------------------------------------- | -------------------------------------- | ---------------------- |
+| Fluent     | Whole surface, about 40 ms stepped OutQuart | Media width grows after a 100 ms pause | `yf01.png`, `yf02.png` |
+| Windows 11 | Same                                        | Media clip height grows vertically     | `yf03.png`             |
+| Gnome      | Same                                        | Scale 0.5..1 + opacity on media pill   | layout gallery         |
+| PlainText  | Same                                        | Media block fades/clips in place       | layout gallery         |
+| Radial     | Same                                        | Ring arc sweeps to level; media fades  | layout gallery         |
 
 Media reveal is fade/clip only across every style; none of them run an independent slide on the media content. An earlier PlainText/Meter/MaterialYou/Radial revision _did_ slide the media panel on top of the phase-1 window motion, but that was a bug (the two motions disagreed in direction whenever the window's own slide wasn't "from the right"), not a deliberate parity choice, and was removed. Radial (upstream Smouti) is no longer a phase-2 no-op: Host addresses its volume ring and side media directly even though Smouti.inc comments its own TweenNode1 binders out. Its row above still needs its own manual compare pass before it can be marked signed off, same as any other style.
 
