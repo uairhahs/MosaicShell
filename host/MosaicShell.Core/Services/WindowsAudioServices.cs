@@ -5,38 +5,81 @@ namespace MosaicShell.Core.Services
     public sealed class WindowsAudioService : IAudioService
     {
         private readonly MMDeviceEnumerator _enum = new();
-        private readonly MMDevice _device;
+        private readonly MMDeviceNotificationClient _deviceEvents;
+        private readonly DefaultEndpointBinding<MMDevice> _endpoint;
         private bool _disposed;
 
         public WindowsAudioService()
         {
-            _device = _enum.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-            _lastVol = _device.AudioEndpointVolume.MasterVolumeLevelScalar;
-            _lastMute = _device.AudioEndpointVolume.Mute;
-            _device.AudioEndpointVolume.OnVolumeNotification += OnVol;
+            // The default device is not fixed for the process: at log-on it may not exist yet, and it can change later
+            _endpoint = new DefaultEndpointBinding<MMDevice>(ResolveDefault, OnBound, OnUnbound);
+            _deviceEvents = _enum.CreateNotificationClient(useSynchronizationContext: false);
+            _deviceEvents.DefaultDeviceChanged += (_, _) => Rebind();
+            _deviceEvents.DeviceAdded += (_, _) => Rebind();
+            _deviceEvents.DeviceRemoved += (_, _) => Rebind();
+            _deviceEvents.DeviceStateChanged += (_, _) => Rebind();
+            _ = _endpoint.Run(_ => 0, 0);
         }
 
         public double MasterVolume
         {
-            get => _device.AudioEndpointVolume.MasterVolumeLevelScalar;
+            get => _endpoint.Run(d => (double)d.AudioEndpointVolume.MasterVolumeLevelScalar, 0d);
             set
             {
                 float v = (float)VolumePercent.Quantize(value);
-                float cur = _device.AudioEndpointVolume.MasterVolumeLevelScalar;
-                if (Math.Abs(cur - v) < 0.004f) // <0.5% - already there
+                _ = _endpoint.Run(d =>
                 {
-                    return;
-                }
-                // Pre-arm filter so our own write's notification doesn't look like an external change
-                _lastVol = v;
-                _device.AudioEndpointVolume.MasterVolumeLevelScalar = v;
+                    float cur = d.AudioEndpointVolume.MasterVolumeLevelScalar;
+                    if (Math.Abs(cur - v) < 0.004f) // <0.5% - already there
+                    {
+                        return 0;
+                    }
+                    // Pre-arm filter so our own write's notification doesn't look like an external change
+                    _lastVol = v;
+                    d.AudioEndpointVolume.MasterVolumeLevelScalar = v;
+                    return 0;
+                }, 0);
             }
         }
 
         public bool IsMuted
         {
-            get => _device.AudioEndpointVolume.Mute;
-            set => _device.AudioEndpointVolume.Mute = value;
+            get => _endpoint.Run(d => d.AudioEndpointVolume.Mute, false);
+            set => _ = _endpoint.Run(d =>
+            {
+                d.AudioEndpointVolume.Mute = value;
+                return 0;
+            }, 0);
+        }
+
+        private MMDevice? ResolveDefault()
+        {
+            return _enum.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+        }
+
+        private void OnBound(MMDevice device)
+        {
+            _lastVol = device.AudioEndpointVolume.MasterVolumeLevelScalar;
+            _lastMute = device.AudioEndpointVolume.Mute;
+            device.AudioEndpointVolume.OnVolumeNotification += OnVol;
+        }
+
+        private void OnUnbound(MMDevice device)
+        {
+            try { device.AudioEndpointVolume.OnVolumeNotification -= OnVol; } catch { /* ignore */ }
+            device.Dispose();
+        }
+
+        // Runs on the Windows audio worker thread, which must not call back into the audio stack: flag, then rebind off-thread
+        private void Rebind()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _endpoint.MarkStale();
+            _ = Task.Run(() => _endpoint.Run(_ => 0, 0));
         }
 
         public event EventHandler? Changed;
@@ -69,8 +112,8 @@ namespace MosaicShell.Core.Services
             }
 
             _disposed = true;
-            try { _device.AudioEndpointVolume.OnVolumeNotification -= OnVol; } catch { /* ignore */ }
-            _device.Dispose();
+            _deviceEvents.Dispose();
+            _endpoint.Dispose();
             _enum.Dispose();
         }
     }
@@ -78,19 +121,38 @@ namespace MosaicShell.Core.Services
     public sealed class WindowsAppAudioService : IAppAudioService
     {
         private readonly MMDeviceEnumerator _enum = new();
-        private readonly MMDevice _device;
+        private readonly MMDeviceNotificationClient _deviceEvents;
+        private readonly DefaultEndpointBinding<MMDevice> _endpoint;
 
         public WindowsAppAudioService()
         {
-            _device = _enum.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            _endpoint = new DefaultEndpointBinding<MMDevice>(
+                () => _enum.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia),
+                null,
+                device => device.Dispose());
+            _deviceEvents = _enum.CreateNotificationClient(useSynchronizationContext: false);
+            _deviceEvents.DefaultDeviceChanged += (_, _) => _endpoint.MarkStale();
+            _deviceEvents.DeviceAdded += (_, _) => _endpoint.MarkStale();
+            _deviceEvents.DeviceRemoved += (_, _) => _endpoint.MarkStale();
+            _deviceEvents.DeviceStateChanged += (_, _) => _endpoint.MarkStale();
         }
 
         public event EventHandler? SessionsChanged;
 
+        private SessionCollection? Sessions()
+        {
+            return _endpoint.Run(d => d.AudioSessionManager.Sessions, null);
+        }
+
         public IReadOnlyList<AppAudioSession> GetSessions()
         {
             List<AppAudioSession> list = [];
-            SessionCollection managers = _device.AudioSessionManager.Sessions;
+            SessionCollection? managers = Sessions();
+            if (managers is null)
+            {
+                return list;
+            }
+
             for (int i = 0; i < managers.Count; i++)
             {
                 using AudioSessionControl s = managers[i];
@@ -148,7 +210,12 @@ namespace MosaicShell.Core.Services
 
         private IEnumerable<AudioSessionControl> Enumerate()
         {
-            SessionCollection managers = _device.AudioSessionManager.Sessions;
+            SessionCollection? managers = Sessions();
+            if (managers is null)
+            {
+                yield break;
+            }
+
             for (int i = 0; i < managers.Count; i++)
             {
                 yield return managers[i];
@@ -157,7 +224,8 @@ namespace MosaicShell.Core.Services
 
         public void Dispose()
         {
-            _device.Dispose();
+            _deviceEvents.Dispose();
+            _endpoint.Dispose();
             _enum.Dispose();
         }
     }
