@@ -27,7 +27,7 @@ MosaicShell.Host (tray, Avalonia UI thread)
 | `MosaicShell.Worker.exe`           | Headless daemon; flyouts via IPC to Host                                 |
 | `Mosaicist.exe`                    | Install CLI (`install-module`, `install-package`): Core only, no Host UI |
 
-`CapabilityStore` persists a **list** of armed module ids; one daemon runs Tessera, Mixdeck, Slate, and any other armed capabilities together, and that's the normal mode. Whichever process starts first owns the daemon; a Host that starts second controls the Worker's daemon over IPC instead. Worker also needs Host's flyout IPC server, and waits only `ConnectTimeoutMs` (4 s) for it, so when splitting them start Worker and then Host straight away. Worker has no browser media sources (Grout), so its media flyouts carry SMTC data only.
+`CapabilityStore` persists a **list** of armed module ids; one daemon runs Tessera, Mixdeck, Slate, and any other armed capabilities together, and that's the normal mode. Whichever process starts first owns the daemon; a Host that starts second controls the Worker's daemon over IPC instead. Worker also needs Host's flyout IPC server and keeps retrying for 2 minutes, so start Host within that time after Worker. Worker has no browser media sources (Grout), so its media flyouts carry SMTC data only.
 
 ## Dependency hierarchy
 

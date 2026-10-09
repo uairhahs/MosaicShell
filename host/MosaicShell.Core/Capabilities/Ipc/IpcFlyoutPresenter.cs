@@ -28,12 +28,53 @@ namespace MosaicShell.Core.Capabilities.Ipc
             }
         }
 
+        /// <summary>
+        /// Keeps trying <see cref="ConnectAsync"/> until Host's flyout pipe accepts, so the Worker no longer has to
+        /// start within one attempt of Host.
+        /// </summary>
+        /// <param name="window">How long to keep trying before giving up with a <see cref="TimeoutException"/>.</param>
+        /// <param name="cancellationToken">Stops waiting; throws <see cref="OperationCanceledException"/>.</param>
+        /// <param name="pipeName">Override for tests only.</param>
+        /// <param name="attemptTimeoutMs">How long one attempt waits for the pipe. Tests shorten it.</param>
+        /// <param name="retryDelayMs">Pause between attempts. Tests shorten it.</param>
+        public async Task ConnectWithRetryAsync(
+            TimeSpan window,
+            CancellationToken cancellationToken = default,
+            string pipeName = CapabilityIpcPolicy.PipeName,
+            int attemptTimeoutMs = CapabilityIpcPolicy.ConnectTimeoutMs,
+            int retryDelayMs = CapabilityIpcPolicy.ConnectRetryDelayMs)
+        {
+            long deadline = Environment.TickCount64 + (long)window.TotalMilliseconds;
+            while (true)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                try
+                {
+                    await ConnectAsync(cancellationToken, pipeName, attemptTimeoutMs).ConfigureAwait(false);
+                    return;
+                }
+                catch (Exception ex) when (ex is OperationCanceledException or TimeoutException or IOException
+                                           && !cancellationToken.IsCancellationRequested)
+                {
+                    if (Environment.TickCount64 >= deadline)
+                    {
+                        throw new TimeoutException(
+                            $"Host's flyout pipe did not appear within {window.TotalSeconds:0} s.", ex);
+                    }
+                }
+
+                await Task.Delay(retryDelayMs, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
         /// <param name="cancellationToken">Cancels the connect attempt.</param>
         /// <param name="pipeName">Override for tests only; production callers use the default so
         /// Worker and Host agree on <see cref="CapabilityIpcPolicy.PipeName"/>.</param>
+        /// <param name="attemptTimeoutMs">How long this attempt waits for the pipe.</param>
         public async Task ConnectAsync(
             CancellationToken cancellationToken = default,
-            string pipeName = CapabilityIpcPolicy.PipeName)
+            string pipeName = CapabilityIpcPolicy.PipeName,
+            int attemptTimeoutMs = CapabilityIpcPolicy.ConnectTimeoutMs)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
             NamedPipeClientStream pipe = new(
@@ -42,9 +83,17 @@ namespace MosaicShell.Core.Capabilities.Ipc
                 PipeDirection.InOut,
                 PipeOptions.Asynchronous);
 
-            using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            linked.CancelAfter(CapabilityIpcPolicy.ConnectTimeoutMs);
-            await pipe.ConnectAsync(linked.Token).ConfigureAwait(false);
+            try
+            {
+                using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                linked.CancelAfter(attemptTimeoutMs);
+                await pipe.ConnectAsync(linked.Token).ConfigureAwait(false);
+            }
+            catch
+            {
+                pipe.Dispose();
+                throw;
+            }
 
             ClientConnection conn = new(pipe, OnServerMessage);
             lock (_gate)

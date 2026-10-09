@@ -171,9 +171,9 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                     FlyoutTrace.Write(
                         $"media signal kind={signal.Kind} boundary={signal.IsTrackBoundary} "
                         + $"visible={visible} openKind={(string.IsNullOrEmpty(Flyouts.OpenKind) ? "-" : Flyouts.OpenKind)} "
-                        + $"action={action} app={Trim(current?.AppId)} art={current?.ThumbnailPng?.Length ?? -1} "
+                        + $"action={action} app={MediaSignalTraceText.Text(current?.AppId)} art={MediaSignalTraceText.Art(current?.ThumbnailPng)} "
                         + $"pos={current?.PositionSeconds ?? -1:0.#}/{current?.DurationSeconds ?? -1:0.#} "
-                        + $"artist=[{Trim(current?.Artist)}] title=[{Trim(current?.Title)}]");
+                        + $"artist=[{MediaSignalTraceText.Text(current?.Artist)}] title=[{MediaSignalTraceText.Text(current?.Title)}]");
                     if (Services.Media is IMediaSourceDiagnostics sources)
                     {
                         FlyoutTrace.Write("media sources " + sources.DescribeSources());
@@ -274,14 +274,6 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
         private static double StepVolume(double current, int deltaPercent)
         {
             return VolumePercent.Step(current, deltaPercent);
-        }
-
-        /// <summary>Short, single-line track title for <see cref="FlyoutTrace"/> output.</summary>
-        private static string Trim(string? title)
-        {
-            return string.IsNullOrWhiteSpace(title)
-                ? "-"
-                : title.Length <= 28 ? title : title[..28];
         }
 
         private void PresentMediaFlyout(

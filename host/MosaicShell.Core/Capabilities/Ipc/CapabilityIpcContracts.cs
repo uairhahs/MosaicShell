@@ -8,6 +8,13 @@ namespace MosaicShell.Core.Capabilities.Ipc
     {
         public const string PipeName = "MosaicShell.CapabilityFlyout.v1";
         public const int ConnectTimeoutMs = 4000;
+
+        /// <summary>Pause between the Worker's connection attempts while Host is not listening yet.</summary>
+        public const int ConnectRetryDelayMs = 500;
+
+        /// <summary>How long the Worker keeps waiting for Host's flyout pipe before it gives up.</summary>
+        public const int WorkerConnectWindowMs = 120_000;
+
         public const int MaxMessageBytes = 256 * 1024;
     }
 
