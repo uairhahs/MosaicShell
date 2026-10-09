@@ -67,14 +67,14 @@ Use when you want the daemon in a headless process and flyout UI on Host. **Not*
 
 ```text
 1. MosaicShell.Worker.exe (acquires the daemon mutex; runs every armed module)
-2. Within 4 seconds, start Host (full or --tray-only) for tray, Hub, widgets and the flyout IPC server
+2. Within 2 minutes, start Host (full or --tray-only) for tray, Hub, widgets and the flyout IPC server
 3. Host finds the mutex taken and uses RemoteCapabilityHost, so Hub arm/disarm still works (control IPC)
 4. Flyouts render on Host via MosaicShell.CapabilityFlyout.v1
 ```
 
 Order matters. Whichever process starts first owns the daemon, so a Host started first runs the
-capabilities itself and the Worker exits. Worker waits `CapabilityIpcPolicy.ConnectTimeoutMs` (4 s)
-for the Host's flyout server before giving up.
+capabilities itself and the Worker exits. A Worker started first retries the connection to the Host's flyout
+server every half second and gives up after `CapabilityIpcPolicy.WorkerConnectWindowMs` (2 minutes).
 
 Control plane pipe: `MosaicShell.CapabilityControl.v1`.
 

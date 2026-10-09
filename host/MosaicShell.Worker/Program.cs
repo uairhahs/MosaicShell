@@ -47,17 +47,18 @@ namespace MosaicShell.Worker
             using HostServices services = HostServices.CreateWindowsDefaults();
             using IpcFlyoutPresenter flyouts = new();
 
-            Console.WriteLine("MosaicShell Worker: connecting flyout IPC to Host...");
+            Console.WriteLine("MosaicShell Worker: waiting for Host's flyout IPC (start Host; gives up after 2 minutes)...");
             try
             {
-                await flyouts.ConnectAsync().ConfigureAwait(false);
+                await flyouts.ConnectWithRetryAsync(TimeSpan.FromMilliseconds(CapabilityIpcPolicy.WorkerConnectWindowMs))
+                    .ConfigureAwait(false);
                 Console.WriteLine("Connected to Host flyout presenter.");
             }
             catch (Exception ex)
             {
                 Console.Error.WriteLine(
                     "Could not connect to MosaicShell Host flyout IPC ({0}). " +
-                    "Start Host first (tray-only: MosaicShell.Host.exe --tray-only).",
+                    "Start Host (tray-only: MosaicShell.Host.exe --tray-only) while the Worker is waiting.",
                     ex.Message);
                 return 1;
             }
