@@ -1,0 +1,6 @@
+calls: show=1 update=0 softRefresh=0
+decisions: ColdBuild
+pipeline: presents=1 patches=0 rebuilds=0 revives=0
+motion: enter,exit
+restarts: motion=1 superseded=0 marquee=2
+maxVisibleProcessWindows: 0
