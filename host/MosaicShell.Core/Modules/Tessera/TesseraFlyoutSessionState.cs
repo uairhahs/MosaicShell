@@ -121,7 +121,7 @@ namespace MosaicShell.Core.Modules.Tessera
 
         /// <summary>
         /// CapabilityFlyoutSession already chose Show / Update / SoftRefresh.
-        /// Host must not call <see cref="TesseraFlyoutLiveSyncPolicy.ResolveAction"/> again.
+        /// Host must not re-resolve it; the one resolver is <see cref="MosaicShell.Core.Capabilities.Platform.FlyoutResolver"/>.
         /// </summary>
         public const bool HostMustExecutePresenterCommandWithoutReResolve = true;
 
