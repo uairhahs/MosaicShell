@@ -73,25 +73,6 @@ namespace MosaicShell.Core.Tests
                 .Should().BeFalse();
         }
 
-        [Theory]
-        [InlineData(false, "vol", "vol", "Meter", "Meter", TesseraFlyoutSyncAction.Present)]
-        [InlineData(true, "vol", "vol", "Meter", "Meter", TesseraFlyoutSyncAction.Patch)]
-        [InlineData(true, "vol", "bright", "Meter", "Meter", TesseraFlyoutSyncAction.Present)]
-        [InlineData(true, "vol", "vol", "Meter", "Fluent", TesseraFlyoutSyncAction.Present)]
-        [InlineData(true, "vol", "media", "Meter", "Meter", TesseraFlyoutSyncAction.Present)]
-        public void Visible_same_kind_and_style_patches_otherwise_presents(
-            bool visible,
-            string openKind,
-            string nextKind,
-            string openStyle,
-            string nextStyle,
-            TesseraFlyoutSyncAction expected)
-        {
-            _ = TesseraFlyoutLiveSyncPolicy
-                .ResolveAction(visible, openKind, nextKind, openStyle, nextStyle)
-                .Should().Be(expected);
-        }
-
         [Fact]
         public void Coalesce_flushes_immediately_after_idle_then_at_most_max_hz()
         {

@@ -100,7 +100,6 @@ namespace MosaicShell.Core.Tests
             ["TesseraFlyoutLiveSyncPolicy.cs:PatchImpliesWin32Restack"] = D3,
             ["TesseraFlyoutLiveSyncPolicy.cs:PumpMayAdvanceMediaTimeline"] = D3,
             ["TesseraFlyoutLiveSyncPolicy.cs:PumpMayWriteVolumeBindings"] = D3,
-            ["TesseraFlyoutLiveSyncPolicy.cs:ResolveAction"] = D3,
             ["TesseraFlyoutMotionPlan.cs:MotionKinds"] = D3,
             ["TesseraFlyoutOutsideClickPolicy.cs:BoundsSnapshotOnUiThreadOnly"] = D3,
             ["TesseraFlyoutOutsideClickPolicy.cs:MustUseUnionBounds"] = D3,

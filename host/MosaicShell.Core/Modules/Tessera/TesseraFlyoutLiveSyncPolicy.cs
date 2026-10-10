@@ -121,25 +121,6 @@ namespace MosaicShell.Core.Modules.Tessera
                 ? hasLiveHost && !isFallbackContent
                 : !isFallbackContent;
         }
-
-        /// <summary>
-        /// Visible + same kind/style → Patch. Otherwise Present (cold show or structural change).
-        /// </summary>
-        public static TesseraFlyoutSyncAction ResolveAction(
-            bool isVisible,
-            string openKind,
-            string nextKind,
-            string? openStyle,
-            string? nextStyle)
-        {
-            return !isVisible
-                ? TesseraFlyoutSyncAction.Present
-                : !string.Equals(openKind, nextKind, StringComparison.OrdinalIgnoreCase)
-                ? TesseraFlyoutSyncAction.Present
-                : !string.Equals(openStyle ?? "", nextStyle ?? "", StringComparison.OrdinalIgnoreCase)
-                ? TesseraFlyoutSyncAction.Present
-                : TesseraFlyoutSyncAction.Patch;
-        }
     }
 
     /// <summary>

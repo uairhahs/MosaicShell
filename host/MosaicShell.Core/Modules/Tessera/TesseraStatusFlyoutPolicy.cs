@@ -4,7 +4,7 @@ namespace MosaicShell.Core.Modules.Tessera
 {
     /// <summary>
     /// Ephemeral status flyouts (caps/airplane). Warm toggles Patch in place (dismiss timer
-    /// reset via TryApplyLive); cold/hidden sessions Present/revive via TesseraFlyoutRefreshPolicy.
+    /// reset via TryApplyLive); cold/hidden sessions Present/revive via FlyoutResolver.
     /// Status must never share volume/media stacked HWNDs (H3 acrylic): one chip, one window.
     /// </summary>
     public static class TesseraStatusFlyoutPolicy
