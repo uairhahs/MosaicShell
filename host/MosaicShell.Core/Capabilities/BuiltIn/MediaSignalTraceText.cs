@@ -17,12 +17,7 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
         /// <summary>Length and a short content hash, so a different picture of the same size shows as a change.</summary>
         public static string Art(byte[]? png)
         {
-            if (png is null)
-            {
-                return "-";
-            }
-
-            return $"{png.Length}:{Convert.ToHexString(SHA256.HashData(png))[..8].ToLowerInvariant()}";
+            return png is null ? "-" : $"{png.Length}:{Convert.ToHexString(SHA256.HashData(png))[..8].ToLowerInvariant()}";
         }
     }
 }
