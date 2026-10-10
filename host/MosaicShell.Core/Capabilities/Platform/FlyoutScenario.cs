@@ -34,21 +34,45 @@ namespace MosaicShell.Core.Capabilities.Platform
         TesseraFlyoutPhase? Phase = null,
         string? TracePrefix = null)
     {
-        public static FlyoutScenarioStep Show(FlyoutRequest request) => new(FlyoutScenarioStepKind.Show, request);
+        public static FlyoutScenarioStep Show(FlyoutRequest request)
+        {
+            return new(FlyoutScenarioStepKind.Show, request);
+        }
 
-        public static FlyoutScenarioStep Update(FlyoutRequest request) => new(FlyoutScenarioStepKind.Update, request);
+        public static FlyoutScenarioStep Update(FlyoutRequest request)
+        {
+            return new(FlyoutScenarioStepKind.Update, request);
+        }
 
-        public static FlyoutScenarioStep SoftRefresh(FlyoutRequest request) => new(FlyoutScenarioStepKind.SoftRefresh, request);
+        public static FlyoutScenarioStep SoftRefresh(FlyoutRequest request)
+        {
+            return new(FlyoutScenarioStepKind.SoftRefresh, request);
+        }
 
-        public static FlyoutScenarioStep Hide() => new(FlyoutScenarioStepKind.Hide);
+        public static FlyoutScenarioStep Hide()
+        {
+            return new(FlyoutScenarioStepKind.Hide);
+        }
 
-        public static FlyoutScenarioStep WaitShown() => new(FlyoutScenarioStepKind.WaitShown);
+        public static FlyoutScenarioStep WaitShown()
+        {
+            return new(FlyoutScenarioStepKind.WaitShown);
+        }
 
-        public static FlyoutScenarioStep WaitPhase(TesseraFlyoutPhase phase) => new(FlyoutScenarioStepKind.WaitPhase, Phase: phase);
+        public static FlyoutScenarioStep WaitPhase(TesseraFlyoutPhase phase)
+        {
+            return new(FlyoutScenarioStepKind.WaitPhase, Phase: phase);
+        }
 
-        public static FlyoutScenarioStep WaitHidden() => new(FlyoutScenarioStepKind.WaitHidden);
+        public static FlyoutScenarioStep WaitHidden()
+        {
+            return new(FlyoutScenarioStepKind.WaitHidden);
+        }
 
-        public static FlyoutScenarioStep WaitTrace(string tracePrefix) => new(FlyoutScenarioStepKind.WaitTrace, TracePrefix: tracePrefix);
+        public static FlyoutScenarioStep WaitTrace(string tracePrefix)
+        {
+            return new(FlyoutScenarioStepKind.WaitTrace, TracePrefix: tracePrefix);
+        }
     }
 
     /// <summary>A named, scripted sequence of presenter calls: the fixed input of a flyout baseline.</summary>
