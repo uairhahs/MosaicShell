@@ -46,7 +46,7 @@ namespace MosaicShell.Host.Tests
         {
             FlyoutScenario scenario = FlyoutScenarios.All(style).Single(s => s.Name == scenarioName);
 
-            string[] runs = [.. Enumerable.Range(0, Repeats).Select(_ => FlyoutScenarioDriver.Run(scenario).ToGolden())];
+            string[] runs = [.. Enumerable.Range(0, Repeats).Select(_ => FlyoutScenarioDriver.Run(scenario, FlyoutPipelineMode.Legacy).ToGolden())];
 
             runs.Distinct().Should().ContainSingle(
                 $"'{scenarioName}' in {style} must replay the same way every time, but the runs were:\n{string.Join("\n---\n", runs)}");
@@ -61,6 +61,38 @@ namespace MosaicShell.Host.Tests
 
             File.Exists(path).Should().BeTrue($"no baseline at {path}; record it with {RecordVariable}=1");
             runs[0].Should().Be(File.ReadAllText(path).ReplaceLineEndings("\n"), $"the recorded baseline for '{scenarioName}' in {style}");
+        }
+
+        [AvaloniaTheory]
+        [MemberData(nameof(Cases))]
+        public void Shadow_mode_executes_the_legacy_path_and_reports_no_unexplained_disagreement(string style, string scenarioName)
+        {
+            FlyoutScenario scenario = FlyoutScenarios.All(style).Single(s => s.Name == scenarioName);
+
+            FlyoutScenarioDriver.ScenarioReplay replay = FlyoutScenarioDriver.Replay(scenario, FlyoutPipelineMode.Shadow);
+
+            replay.Summary.ToGolden().Should().Be(
+                File.ReadAllText(GoldenPath(style, scenarioName)).ReplaceLineEndings("\n"),
+                "shadow mode must not change what the presenter does");
+            replay.ShadowDisagreements.Where(d => d.EndsWith("ledger=none", StringComparison.Ordinal)).Should().BeEmpty(
+                "every disagreement must map to a row of the deliberate-changes ledger");
+        }
+
+        [AvaloniaTheory]
+        [MemberData(nameof(Cases))]
+        public void Next_mode_replays_without_a_diff_unless_shadow_names_a_ledger_row(string style, string scenarioName)
+        {
+            FlyoutScenario scenario = FlyoutScenarios.All(style).Single(s => s.Name == scenarioName);
+            int disagreements = FlyoutScenarioDriver.Replay(scenario, FlyoutPipelineMode.Shadow).ShadowDisagreements.Count;
+
+            string next = FlyoutScenarioDriver.Run(scenario, FlyoutPipelineMode.Next).ToGolden();
+
+            if (disagreements == 0)
+            {
+                next.Should().Be(
+                    File.ReadAllText(GoldenPath(style, scenarioName)).ReplaceLineEndings("\n"),
+                    "the unified resolver agrees with the legacy one on every request of this scenario");
+            }
         }
 
         private static string GoldenPath(string style, string scenarioName, [CallerFilePath] string thisFile = "")

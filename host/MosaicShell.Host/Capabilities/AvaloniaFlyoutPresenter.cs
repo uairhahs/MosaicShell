@@ -41,11 +41,21 @@ namespace MosaicShell.Host.Capabilities
         private readonly TesseraFlyoutIngressQueue _ingress = new();
         private DispatcherTimer? _deferredIngress;
         private bool _ingressFlushDeferred;
+        private readonly FlyoutPipelineMode _pipelineMode;
 
-        public AvaloniaFlyoutPresenter(HostServices services, IHostUiBridge? hostUi = null)
+        /// <param name="pipelineMode">
+        /// Which resolver executes the single-window ingress decision. Null reads
+        /// <see cref="FlyoutPipelineModes.EnvironmentVariable"/> once, here, and defaults to shadow; tests pass it.
+        /// </param>
+        public AvaloniaFlyoutPresenter(
+            HostServices services,
+            IHostUiBridge? hostUi = null,
+            FlyoutPipelineMode? pipelineMode = null)
         {
             _services = services;
             _hostUi = hostUi;
+            _pipelineMode = pipelineMode
+                ?? FlyoutPipelineModes.Parse(Environment.GetEnvironmentVariable(FlyoutPipelineModes.EnvironmentVariable));
             // Core decides Present/Patch/SoftRefresh but owns no logging; route its trace into the
             // same file so a decision and the Host state that produced it interleave in order.
             // The trace runs on every media tick and names tracks, so it is Debug: left unwired
@@ -58,6 +68,7 @@ namespace MosaicShell.Host.Capabilities
                 Environment.ProcessId,
                 typeof(AvaloniaFlyoutPresenter).Assembly
                     .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion));
+            Log($"flyout pipeline mode={_pipelineMode}");
         }
 
         public void AttachHostUi(IHostUiBridge hostUi)
@@ -437,8 +448,24 @@ namespace MosaicShell.Host.Capabilities
                 _ = _windows.TryGetValue(request.ModuleId, out FlyoutWindow? existing);
                 reuse = existing;
                 reuseWasVisible = existing?.IsFlyoutSessionShowing ?? false;
-                decision = FlyoutIngressPolicy.Resolve(BuildIngressState(existing, request, allowLivePatch));
+                FlyoutPipelineChoice choice = FlyoutPipelineSwitch.Choose(
+                    _pipelineMode,
+                    BuildIngressState(existing, request, allowLivePatch),
+                    existing?.BuiltStructure,
+                    FlyoutStructureKey.From(request, TesseraFlyoutSessionMode.Single));
+                decision = choice.Executed;
                 Log($"ingress decision={decision} kind={request.Kind} style={request.StyleId}");
+                if (choice.Disagreement is { } disagreement)
+                {
+                    Log($"pipeline shadow disagreement {disagreement.ToTraceText()} kind={request.Kind} style={request.StyleId}");
+                }
+
+                // Until C4 gives the window a revive-during-exit path, the two decisions only the unified resolver
+                // makes run on the closest existing executor: rebuild the content in place and present again.
+                if (decision is FlyoutIngressDecision.RebuildStructure or FlyoutIngressDecision.ReviveDuringExit)
+                {
+                    decision = FlyoutIngressDecision.RebuildInPlace;
+                }
 
                 switch (decision)
                 {

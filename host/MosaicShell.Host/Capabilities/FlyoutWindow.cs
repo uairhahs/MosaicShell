@@ -80,6 +80,12 @@ namespace MosaicShell.Host.Capabilities
         /// </summary>
         private bool _builtShowMedia;
 
+        /// <summary>
+        /// What the current content was built from, as a single-window flyout. Set on construction and on a rebuild,
+        /// never on a live patch, so the pipeline shadow can tell when a request no longer fits the content (F02).
+        /// </summary>
+        internal FlyoutStructureKey BuiltStructure { get; private set; }
+
         /// <summary>H3 stacked acrylic: lock HWND client area to signed placement DIP sizes.</summary>
         public double? StackedPanelWidthDip { get; set; }
         public double? StackedPanelHeightDip { get; set; }
@@ -88,6 +94,7 @@ namespace MosaicShell.Host.Capabilities
         {
             FlyoutRequest = request;
             _builtShowMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(request.Payload);
+            BuiltStructure = FlyoutStructureKey.From(request, TesseraFlyoutSessionMode.Single);
             WindowId = Interlocked.Increment(ref _nextWindowId);
             _services = services;
             ApplyFlyoutMaterial(TesseraFlyoutMaterialFactory.FromPayload(request.Payload, request.StyleId, request.Kind));
@@ -517,6 +524,7 @@ namespace MosaicShell.Host.Capabilities
 
             FlyoutRequest = request;
             _builtShowMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(request.Payload);
+            BuiltStructure = FlyoutStructureKey.From(request, TesseraFlyoutSessionMode.Single);
             ApplyFlyoutMaterial(TesseraFlyoutMaterialFactory.FromPayload(request.Payload, request.StyleId, request.Kind));
             // Invalidate any posted SoftFrost reveal from the previous surface.
             _revealGeneration++;
