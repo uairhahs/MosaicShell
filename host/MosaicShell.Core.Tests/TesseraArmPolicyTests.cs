@@ -5,11 +5,6 @@ namespace MosaicShell.Core.Tests
 {
     public class TesseraArmPolicyTests
     {
-        [Fact]
-        public void Keyboard_hooks_must_install_on_host_message_pump_thread()
-        {
-            _ = TesseraArmPolicy.MustInstallKeyboardHooksOnHostMessagePumpThread.Should().BeTrue();
-        }
 
         [Theory]
         [InlineData("LegacyVolumeKeys", true)]

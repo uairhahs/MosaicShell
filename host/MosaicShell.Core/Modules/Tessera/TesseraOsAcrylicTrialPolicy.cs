@@ -25,10 +25,6 @@ namespace MosaicShell.Core.Modules.Tessera
         public static bool OsSupportsWinUiAcrylic =>
             OperatingSystem.IsWindowsVersionAtLeast(10, 0, 17134);
 
-        /// <summary>True when the OS reports Windows 11+ (22000). H2 sign-off target.</summary>
-        public static bool OsIsWindows11PrimaryTarget =>
-            OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000);
-
         public static bool IsStackedMultiPanel(IReadOnlyDictionary<string, string>? payload)
         {
             return payload is not null && payload.TryGetValue("showMediaStrip", out string? raw) && raw is "1" or "true" or "True" or "on" or "On";

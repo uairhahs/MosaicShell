@@ -6,7 +6,6 @@ namespace MosaicShell.Core.Modules.Tessera
     /// </summary>
     public static class TesseraEasePreviewSpec
     {
-        public const bool MustReplayWhenEaseOrStepsChange = true;
 
         public const double TrackWidthDip = 220;
         public const double TrackHeightDip = 22;

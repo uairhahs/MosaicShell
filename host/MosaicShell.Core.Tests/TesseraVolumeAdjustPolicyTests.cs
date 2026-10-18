@@ -5,11 +5,6 @@ namespace MosaicShell.Core.Tests
 {
     public class TesseraVolumeAdjustPolicyTests
     {
-        [Fact]
-        public void Volume_controls_must_clear_drag_on_pointer_capture_lost()
-        {
-            _ = TesseraVolumeAdjustPolicy.MustClearDragOnPointerCaptureLost.Should().BeTrue();
-        }
 
         [Fact]
         public void User_adjust_grace_matches_ring_and_track_mark_window()

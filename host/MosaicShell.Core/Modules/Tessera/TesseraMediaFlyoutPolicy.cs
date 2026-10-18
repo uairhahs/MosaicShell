@@ -9,8 +9,6 @@ namespace MosaicShell.Core.Modules.Tessera
     /// </summary>
     public static class TesseraMediaFlyoutPolicy
     {
-        public const int ArmedTimelinePollMs = 500;
-        public static bool MustPollTimelineWhileArmed => false;
 
         public static TesseraMediaChangeAction Resolve(
             bool enableMediaFlyouts,

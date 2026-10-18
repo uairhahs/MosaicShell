@@ -49,8 +49,6 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Timeline_poll_owned_by_host_services_not_tessera_module()
         {
-            _ = TesseraMediaFlyoutPolicy.MustPollTimelineWhileArmed.Should().BeFalse(
-                "CapabilityDaemon MediaSessionPlatform + IMediaSessionService own polling");
             _ = MediaSessionChangePolicy.MustPollTimelineIndependentlyOfFlyout.Should().BeTrue();
             _ = MediaSessionChangePolicy.TimelinePollMs.Should().BePositive();
         }

@@ -13,9 +13,9 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Smouti_supports_phase2_via_ring_and_side_media()
         {
-            _ = TesseraFlyoutRevealSpec.StyleIsPhase2NoOp(TesseraFlyoutRevealSpec.StyleSmouti).Should().BeFalse();
+            _ = TesseraFlyoutRevealSpec.StyleIsPhase2NoOp("smouti").Should().BeFalse();
             _ = TesseraFlyoutRevealSpec.StyleIsPhase2NoOp(StyleIds.Radial).Should().BeFalse();
-            _ = TesseraFlyoutRevealSpec.StyleSupportsPhase2(TesseraFlyoutRevealSpec.StyleSmouti).Should().BeTrue();
+            _ = TesseraFlyoutRevealSpec.StyleSupportsPhase2("smouti").Should().BeTrue();
             _ = TesseraFlyoutRevealSpec.StyleSupportsPhase2(StyleIds.Radial).Should().BeTrue();
 
             // An unrecognised style still has nothing to drive.
@@ -46,10 +46,8 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Square_supports_phase2_without_media_strip()
         {
-            _ = TesseraFlyoutRevealSpec.StyleSupportsPhase2(TesseraFlyoutRevealSpec.StyleSquare).Should().BeTrue();
-            _ = TesseraFlyoutRevealSpec.StylePhase2WithoutMediaStrip(TesseraFlyoutRevealSpec.StyleSquare).Should().BeTrue();
-            _ = TesseraFlyoutRevealSpec.UsesDedicatedRevealBinder(TesseraFlyoutRevealSpec.StyleFluent).Should().BeTrue();
-            _ = TesseraFlyoutRevealSpec.UsesDedicatedRevealBinder("unknown").Should().BeFalse();
+            _ = TesseraFlyoutRevealSpec.StyleSupportsPhase2("square").Should().BeTrue();
+            _ = TesseraFlyoutRevealSpec.StylePhase2WithoutMediaStrip("square").Should().BeTrue();
         }
 
         [Fact]

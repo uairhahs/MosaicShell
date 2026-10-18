@@ -6,7 +6,6 @@ namespace MosaicShell.Core.Modules.Tessera
     /// </summary>
     public static class TesseraArmPolicy
     {
-        public const bool MustInstallKeyboardHooksOnHostMessagePumpThread = true;
 
         public static bool RequiresHostThreadForStart(string hookServiceId)
         {

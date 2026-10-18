@@ -102,7 +102,6 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Media_to_status_must_not_keep_stale_media_bounds()
         {
-            _ = TesseraStatusFlyoutPolicy.StatusLayoutMustPreferDesiredSizeOverStaleBounds.Should().BeTrue();
             _ = TesseraStatusFlyoutPolicy.StackedToStatusMustHideSlotsBeforeStatusReveal.Should().BeTrue();
             _ = TesseraStatusFlyoutPolicy.MustRecreateHwndAfterMediaShell.Should().BeTrue();
             _ = TesseraStatusFlyoutPolicy

@@ -5,10 +5,6 @@ namespace MosaicShell.Core.Modules.Tessera
     /// <summary>Parse Tessera appearance accent (#RRGGBB). Empty = use system accent.</summary>
     public static class TesseraAccentColor
     {
-        public static bool IsConfigured(string? input)
-        {
-            return TryParse(input, out _, out _, out _);
-        }
 
         public static bool TryParse(string? input, out byte r, out byte g, out byte b)
         {

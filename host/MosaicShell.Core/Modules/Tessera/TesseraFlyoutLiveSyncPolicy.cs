@@ -20,17 +20,6 @@ namespace MosaicShell.Core.Modules.Tessera
 
         public static TimeSpan MinFlushInterval { get; } = TimeSpan.FromMilliseconds(1000.0 / MaxRefreshHz);
 
-        public const bool PatchImpliesPresent = false;
-        public const bool PatchImpliesWin32Restack = false;
-        public const bool PatchImpliesOutsideClickRearm = false;
-
-        /// <summary>
-        /// Host dictionary Closed handlers must only Remove when the closing window is still
-        /// the registered instance. Otherwise a superseded flyout's Closed unregisters the
-        /// live session and rapid Try now stacks orphan SoftFrost HWNDs.
-        /// </summary>
-        public const bool ClosedMustOnlyUnregisterSameInstance = true;
-
         /// <summary>
         /// While a flyout HWND is registered, Host must ApplyRequest/Show on that instance,
         /// never Close()+new. SoftFrost composition surfaces overlap and stack when recreated.
@@ -54,12 +43,6 @@ namespace MosaicShell.Core.Modules.Tessera
         {
             return windowVisible && opacity > MinVisibleOpacity;
         }
-
-        /// <summary>Live pump may call Media.PumpTimeline while visible.</summary>
-        public const bool PumpMayAdvanceMediaTimeline = true;
-
-        /// <summary>Volume bindings have a single owner: coalesced Patch, not the pump.</summary>
-        public const bool PumpMayWriteVolumeBindings = false;
 
         /// <summary>
         /// YourFlyouts Execute 1 only when hidden (mToggle=0). Visible rebuilds swap
@@ -93,19 +76,6 @@ namespace MosaicShell.Core.Modules.Tessera
         {
             return reuseWasVisible;
         }
-
-        /// <summary>
-        /// Host must merge high-frequency Update calls before Post/Invoke; coalesce inside ShowOrUpdateCore alone
-        /// still floods the dispatcher (see flyout.log volume-drag bursts).
-        /// </summary>
-        public const bool MustCoalesceBeforeUiPost = true;
-
-        /// <summary>
-        /// Hub Try now is one Show. Volume/brightness keys fire many Shows in one burst.
-        /// Uncoalesced Present stomps generation-gated SoftFrost reveal, so live pops
-        /// while Try now animates. Non-status Show must use the same dispatch gate as Update.
-        /// </summary>
-        public const bool NonStatusShowMustCoalesceThroughUpdateGate = true;
 
         /// <summary>
         /// SoftRefresh shares the patch coalescer; rejected flushes must defer last-value retry.

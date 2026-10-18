@@ -12,12 +12,6 @@ namespace MosaicShell.Core.Modules.Tessera
         /// </summary>
         public const bool SessionOwnsAutoDismissClock = true;
 
-        /// <summary>
-        /// Host IPC server must echo <see cref="TesseraFlyoutSessionSnapshot"/> after apply
-        /// so Worker <c>IsVisible</c> matches opacity / session showing, not Show-optimistic.
-        /// </summary>
-        public const bool IpcMustEchoSessionSnapshot = true;
-
         public static bool WindowMustSuppressAutoDismiss(bool sessionOwnsClock)
         {
             return sessionOwnsClock;

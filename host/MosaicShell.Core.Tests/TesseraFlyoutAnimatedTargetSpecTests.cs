@@ -37,8 +37,6 @@ namespace MosaicShell.Core.Tests
                 TesseraFluentLayoutSpec.VolumeWidthDip + TesseraFluentLayoutSpec.DividerColumnWidthDip);
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveFluentVisibleShellWidthDip(0, musicVisible: true)
                 .Should().Be(collapsed);
-            _ = TesseraFlyoutAnimatedTargetSpec.ResolveFluentStackedMediaRegionWidthDip(0, musicVisible: true)
-                .Should().Be(0);
             double rest = TesseraFluentLayoutSpec.VolumeWidthDip + TesseraFluentLayoutSpec.MediaWidthDip;
             _ = collapsed.Should().BeLessThan(rest * 0.3);
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveFluentVisibleShellWidthDip(1, musicVisible: true)
@@ -128,31 +126,12 @@ namespace MosaicShell.Core.Tests
 
         [Theory]
         [InlineData(0, 0)]
-        [InlineData(0.5, 112.5)]
-        [InlineData(1, 225)]
-        public void Win11_shell_clip_height_matches_xor_formula(double p, double expectedDip)
-        {
-            _ = TesseraFlyoutAnimatedTargetSpec.ResolveWin11ShellClipHeightDip(50, 175, p, musicVisible: true)
-                .Should().Be(expectedDip);
-        }
-
-        [Theory]
-        [InlineData(0, 0)]
         [InlineData(0.5, 0.5)]
         [InlineData(1, 1)]
         public void Win11_volume_fill_opacity_tracks_tweenNode1(double p, double expected)
         {
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveWin11VolumeFillOpacityFactor(p, musicVisible: true)
                 .Should().Be(expected);
-        }
-
-        [Fact]
-        public void Fluent_shell_width_static_when_music_visible()
-        {
-            _ = TesseraFlyoutAnimatedTargetSpec.ResolveFluentShellWidthDip(72, 340, musicVisible: true)
-                .Should().Be(412);
-            _ = TesseraFlyoutAnimatedTargetSpec.ResolveFluentShellWidthDip(72, 340, musicVisible: false)
-                .Should().Be(72);
         }
 
         [Theory]
@@ -177,11 +156,6 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void CoreUi_media_clip_only_no_leaf_slide_or_fade()
         {
-            _ = TesseraFlyoutAnimatedTargetSpec.CoreUiMediaMustClipOnly.Should().BeTrue();
-            _ = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaSlideOffsetDip(388, 0, true)
-                .Should().Be(0);
-            _ = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaSlideOffsetDip(388, 0.5, true)
-                .Should().Be(0);
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaContentOpacityFactor(0, true)
                 .Should().Be(1);
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaContentOpacityFactor(0.5, true)
@@ -189,29 +163,10 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void CoreUi_rest_clip_host_width_is_wrapped_row_not_art_column()
-        {
-            _ = TesseraCoreUiLayoutSpec.MediaLayoutMustUseWrappedRowWidth.Should().BeTrue();
-            _ = TesseraCoreUiLayoutSpec.PlayButtonCornerRadiusDip.Should().Be(TesseraCoreUiLayoutSpec.PlayButtonDip / 2);
-            double row = TesseraCoreUiLayoutSpec.InnerRowWidthDip;
-            double art = TesseraCoreUiLayoutSpec.ArtColumnWidthDip;
-            _ = row.Should().Be(388);
-            _ = art.Should().Be(324);
-            _ = row.Should().BeGreaterThan(art);
-            _ = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiWrappedRowLayoutWidthDip(true)
-                .Should().Be(row);
-            _ = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaLayoutWidthDip(row, true)
-                .Should().Be(row);
-        }
-
-        [Fact]
         public void Media_overlay_is_container_mask_not_covering_white()
         {
-            _ = TesseraFlyoutAnimatedTargetSpec.MediaOverlayIsContainerMaskNotCover.Should().BeTrue();
             _ = TesseraFlyoutAnimatedTargetSpec.MediaCoverOverlayMaxAlpha.Should().Be(0);
             _ = TesseraFlyoutAnimatedTargetSpec.Win11VolumeControlsStayOpaque.Should().BeTrue();
-            _ = TesseraFlyoutAnimatedTargetSpec.Win11XorFrostMustNotPaintCoverOverlay.Should().BeTrue();
-            _ = TesseraFlyoutAnimatedTargetSpec.GnomeVolumeMustNotUseContentScale.Should().BeTrue();
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaOverlayAlpha(1, musicVisible: true)
                 .Should().Be(0);
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveWin11MediaOverlayAlpha(1, musicVisible: true)
@@ -231,9 +186,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Fluent_animated_meters_dissolve_with_tween_node1()
         {
-            _ = TesseraFlyoutAnimatedTargetSpec.AnimatedMediaMustDissolveWithTweenNode1.Should().BeTrue();
             _ = TesseraFlyoutAnimatedTargetSpec.ClippedMediaLeafMustStayOpaque.Should().BeTrue();
-            _ = TesseraFlyoutAnimatedTargetSpec.FluentVolumeStaysOpaqueDuringPhase2.Should().BeTrue();
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaContentOpacity(0, musicVisible: true)
                 .Should().Be(1);
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaContentOpacity(0.5, musicVisible: true)
@@ -322,8 +275,6 @@ namespace MosaicShell.Core.Tests
                 .Should().Be(0);
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaLayoutWidthDip(panelW, false)
                 .Should().Be(panelW);
-            _ = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiWrappedRowLayoutWidthDip(true)
-                .Should().Be(TesseraCoreUiLayoutSpec.InnerRowWidthDip);
         }
     }
 }

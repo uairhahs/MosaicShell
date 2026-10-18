@@ -138,7 +138,6 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Session_snapshot_round_trips_through_message_frame()
         {
-            _ = TesseraFlyoutDismissCoordinator.IpcMustEchoSessionSnapshot.Should().BeTrue();
             TesseraFlyoutSessionState session = new();
             _ = session.Begin(TesseraFlyoutSessionMode.Stacked, "vol", "Fluent");
             TesseraFlyoutSessionSnapshot snap = session.Snapshot(effectivelyShowing: false);

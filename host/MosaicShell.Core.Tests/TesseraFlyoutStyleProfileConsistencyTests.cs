@@ -119,7 +119,7 @@ namespace MosaicShell.Core.Tests
                 return;
             }
 
-            _ = TesseraFlyoutTweenTargetCatalog.TryResolveMediaRestSizeDip(styleId, out double w, out double h)
+            _ = TweenCatalogTestSupport.TryResolveMediaRestSizeDip(styleId, out double w, out double h)
                 .Should().BeTrue($"{styleId} animates a media meter");
             _ = (w > 1 || h > 1).Should().BeTrue();
         }

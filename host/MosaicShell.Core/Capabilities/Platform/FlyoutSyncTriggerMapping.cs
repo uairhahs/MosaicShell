@@ -18,12 +18,5 @@ namespace MosaicShell.Core.Capabilities.Platform
                 _ => FlyoutSyncTrigger.Volume,
             };
         }
-
-        public static FlyoutSyncAction ToPlatform(TesseraFlyoutSyncAction action)
-        {
-            return action == TesseraFlyoutSyncAction.Present
-                ? FlyoutSyncAction.Present
-                : FlyoutSyncAction.Patch;
-        }
     }
 }

@@ -9,13 +9,6 @@ namespace MosaicShell.Core.Modules.Tessera
         /// <summary>Rainmeter uses <c>#MediaW#*#TweenNode1#+1</c> to avoid zero-width clip.</summary>
         public const double MediaClipWidthEpsilonDip = 1;
 
-        /// <summary>
-        /// YourFlyouts MediaC <c>Fill Color 255,255,255,(255*p)</c> is a Rainmeter container mask
-        /// (children become visible as alpha rises). It is not a white sheet composited over art.
-        /// Host must clip/fade content; covering overlay paint alpha stays 0.
-        /// </summary>
-        public const bool MediaOverlayIsContainerMaskNotCover = true;
-
         /// <summary>Peak Host overlay paint if a frost wash is drawn; 0 disables covering white.</summary>
         public const double MediaCoverOverlayMaxAlpha = 0;
 
@@ -25,20 +18,8 @@ namespace MosaicShell.Core.Modules.Tessera
         /// </summary>
         public const bool Win11VolumeControlsStayOpaque = true;
 
-        /// <summary>
-        /// YF MediaB XOR is frost-in-growing-shell, not a white sheet. Host must not paint a cover overlay.
-        /// Avalonia clip and Win32 region use StrokeB (<see cref="ResolveWin11BorderHeightDip"/>).
-        /// </summary>
-        public const bool Win11XorFrostMustNotPaintCoverOverlay = true;
-
-        /// <summary>YF MediaC grows as a container; Host clips in place (no leaf slide).</summary>
-        public const bool CoreUiMediaMustClipOnly = true;
-
         /// <summary>Pixel.inc <c>#ColumnW#</c>. Host Material You column aliases this.</summary>
         public const double MaterialYouColumnWidthDip = 60;
-
-        /// <summary>YF VolumeB fill alpha, not ScaleTransform. MediaB keeps scale.</summary>
-        public const bool GnomeVolumeMustNotUseContentScale = true;
 
         public static double ResolveFluentDividerHeightFactor(double progress, bool musicVisible)
         {
@@ -77,15 +58,6 @@ namespace MosaicShell.Core.Modules.Tessera
             return musicVisible ? ClampProgress(progress) : 0;
         }
 
-        /// <summary>
-        /// YourFlyouts MediaC fill alpha is a container mask. Host must fade media content with
-        /// TweenNode1. Leaving the leaf at 1 paints a fully rendered card behind the clip on show.
-        /// </summary>
-        public const bool AnimatedMediaMustDissolveWithTweenNode1 = true;
-
-        /// <summary>YF VolumeB Group=Standard. TweenNode1 does not fade the volume column.</summary>
-        public const bool FluentVolumeStaysOpaqueDuringPhase2 = true;
-
         /// <summary>Fluent divider rest stroke opacity (Host Line.Opacity while music is visible).</summary>
         public const double FluentDividerRestOpacity = 0.55;
 
@@ -115,15 +87,6 @@ namespace MosaicShell.Core.Modules.Tessera
                 : FluentDividerOpacityMustStayRestWhileMusicVisible
                 ? FluentDividerRestOpacity
                 : FluentDividerRestOpacity * ClampProgress(progress);
-        }
-
-        /// <summary>Fluent StrokeB static width when music visible (not Animated).</summary>
-        public static double ResolveFluentShellWidthDip(
-            double volumeWidth,
-            double mediaWidth,
-            bool musicVisible)
-        {
-            return musicVisible ? volumeWidth + mediaWidth : volumeWidth;
         }
 
         /// <summary>
@@ -170,18 +133,6 @@ namespace MosaicShell.Core.Modules.Tessera
                    + ResolveFluentMediaClipWidthDip(TesseraFluentLayoutSpec.MediaWidthDip, p, true);
         }
 
-        /// <summary>Stacked Fluent media HWND width. 0 at p=0 so Host can hide rest-sized frost.</summary>
-        public static double ResolveFluentStackedMediaRegionWidthDip(double progress, bool musicVisible)
-        {
-            if (!musicVisible)
-            {
-                return 0;
-            }
-
-            double p = ClampProgress(progress);
-            return p <= 0 ? 0 : ResolveFluentMediaClipWidthDip(TesseraFluentLayoutSpec.MediaWidthDip, p, true);
-        }
-
         /// <summary>Rest measure for Fluent MediaC (YourFlyouts skin width, not TweenNode1).</summary>
         public static double ResolveFluentMediaLayoutWidthDip(double fullMediaWidth, bool musicVisible)
         {
@@ -207,27 +158,12 @@ namespace MosaicShell.Core.Modules.Tessera
             return fullPanelWidth;
         }
 
-        /// <summary>Wrapped media+transport row (inner width), never the art column alone.</summary>
-        public static double ResolveCoreUiWrappedRowLayoutWidthDip(bool musicVisible)
-        {
-            return musicVisible ? TesseraCoreUiLayoutSpec.InnerRowWidthDip : 0;
-        }
-
         public static double ResolveCoreUiMediaClipWidthDip(
             double fullPanelWidth,
             double progress,
             bool musicVisible)
         {
             return !musicVisible ? fullPanelWidth : fullPanelWidth * ClampProgress(progress);
-        }
-
-        public static double ResolveCoreUiMediaSlideOffsetDip(
-            double fullPanelWidth,
-            double progress,
-            bool musicVisible)
-        {
-            _ = (fullPanelWidth, progress, musicVisible);
-            return 0;
         }
 
         public static double ResolveWin11BorderHeightDip(
@@ -237,15 +173,6 @@ namespace MosaicShell.Core.Modules.Tessera
             bool musicVisible)
         {
             return !musicVisible ? volumeHeight : volumeHeight + (mediaHeight * ClampProgress(progress));
-        }
-
-        public static double ResolveWin11ShellClipHeightDip(
-            double volumeHeight,
-            double mediaHeight,
-            double progress,
-            bool musicVisible)
-        {
-            return !musicVisible ? volumeHeight : (volumeHeight + mediaHeight) * ClampProgress(progress);
         }
 
         public static double ResolveWin11VolumeFillOpacityFactor(double progress, bool musicVisible)
@@ -294,11 +221,6 @@ namespace MosaicShell.Core.Modules.Tessera
         public static double ResolveCoreUiVolumeBarScaleFactor(double progress, bool musicVisible)
         {
             return musicVisible ? ClampProgress(progress) : 1;
-        }
-
-        public static double ResolveCoreUiMediaSlideWidthFactor(double progress, bool musicVisible)
-        {
-            return musicVisible ? ClampProgress(progress) : 0;
         }
 
         public static double ResolveCoreUiMediaOverlayAlpha(double progress, bool musicVisible)
