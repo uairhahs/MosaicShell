@@ -293,15 +293,6 @@ namespace MosaicShell.Core.Modules.Tessera
             return NormalizeAniSteps(aniSteps) * StepPresentationIntervalMs;
         }
 
-        /// <summary>Fancy entrance total when media strip is shown (phase overlap, no show pause).</summary>
-        public static int ResolveFancyEntranceDurationMs(int aniSteps, string? ease = null)
-        {
-            int phase = ResolvePhaseDurationMs(aniSteps);
-            int wait = ResolveInterPhaseWaitMs(entrance: true);
-            int overlap = ResolvePhase2ShowOverlapMs(ease ?? DefaultEase, aniSteps);
-            return phase + wait + Math.Max(0, phase - overlap);
-        }
-
         /// <summary>Normalized 0..1 TweenNode progress for stepped motion keyframes.</summary>
         public static double ResolveNormalizedTweenProgress(int step, int aniSteps, string? ease, bool entrance)
         {
