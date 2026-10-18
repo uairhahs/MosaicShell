@@ -378,9 +378,9 @@ namespace MosaicShell.Core.Tests
         {
             const int steps = 20;
             string showEase = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(
-                TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: true);
+                TesseraFlyoutAnimationPolicy.EaseInOutQuart, entrance: true);
             string hideEase = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(
-                TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: false);
+                TesseraFlyoutAnimationPolicy.EaseInOutQuart, entrance: false);
             double row = TesseraCoreUiLayoutSpec.InnerRowWidthDip;
             double showMid = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(
                 entrance: true, 10, steps, showEase);
@@ -390,7 +390,7 @@ namespace MosaicShell.Core.Tests
             double hideClip = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaClipWidthDip(row, hideEarly, true);
             double showScale = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiVolumeBarScaleFactor(showMid, true);
             _ = showEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseInOutQuart);
-            _ = hideEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseOutQuart);
+            _ = hideEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseInOutQuart);
             _ = showMid.Should().BeApproximately(0.5, 0.05);
             _ = showClip.Should().BeApproximately(row * showMid, 0.5);
             _ = showScale.Should().BeApproximately(showMid, 0.02);

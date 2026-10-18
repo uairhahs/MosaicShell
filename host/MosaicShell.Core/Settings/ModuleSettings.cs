@@ -40,7 +40,7 @@ namespace MosaicShell.Core.Settings
         public int YPad { get; set; } = 20;
         public int AutoDismissMs { get; set; } = 2000;
         /// <summary>0 = fade, 1 = fast slide+fade, 2 = fancy slide+fade</summary>
-        public int Ani { get; set; } = 2;
+        public int Ani { get; set; } = TesseraFlyoutAnimationPolicy.DefaultAni;
         /// <summary>Left/Right/Top/Bottom</summary>
         public string AniDir { get; set; } = "Left";
         /// <summary>Linear, InCubic, OutCubic, InOutCubic, InQuart, OutQuart, InOutQuart (YourFlyouts Easetype).</summary>
