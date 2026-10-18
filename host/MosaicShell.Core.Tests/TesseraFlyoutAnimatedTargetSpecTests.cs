@@ -72,9 +72,9 @@ namespace MosaicShell.Core.Tests
             _ = TesseraFlyoutAnimationPolicy.Phase2MustShareOneVsyncProgressAcrossStackedSlots.Should().BeTrue();
             const int steps = 20;
             string showEase = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(
-                TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: true);
+                TesseraFlyoutAnimationPolicy.EaseInOutQuart, entrance: true);
             string hideEase = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(
-                TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: false);
+                TesseraFlyoutAnimationPolicy.EaseInOutQuart, entrance: false);
             double pShowMid = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(
                 entrance: true, 10, steps, showEase);
             double pHideEarly = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(
@@ -88,7 +88,7 @@ namespace MosaicShell.Core.Tests
                 FluentMediaW, pHideEarly, musicVisible: true);
 
             _ = showEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseInOutQuart);
-            _ = hideEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseOutQuart);
+            _ = hideEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseInOutQuart);
             _ = pShowMid.Should().BeApproximately(0.5, 0.05);
             _ = (dividerShow / FluentInnerH).Should().BeApproximately(pShowMid, 0.01);
             _ = ((mediaShow - TesseraFlyoutAnimatedTargetSpec.MediaClipWidthEpsilonDip) / FluentMediaW)

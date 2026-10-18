@@ -43,6 +43,8 @@ namespace MosaicShell.Host.Capabilities
         private bool _ingressFlushDeferred;
         private readonly FlyoutPipelineMode _pipelineMode;
 
+        /// <param name="services">The host services the flyouts read.</param>
+        /// <param name="hostUi">The Host UI bridge, or null until <see cref="AttachHostUi"/>.</param>
         /// <param name="pipelineMode">
         /// Which resolver executes the single-window ingress decision. Null reads
         /// <see cref="FlyoutPipelineModes.EnvironmentVariable"/> once, here, and defaults to shadow; tests pass it.

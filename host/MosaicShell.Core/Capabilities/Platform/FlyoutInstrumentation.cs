@@ -3,49 +3,44 @@ using System.Globalization;
 namespace MosaicShell.Core.Capabilities.Platform
 {
     /// <summary>
-    /// Measured phase 2 pacing. Phase 2 waits a fixed interval between steps with no correction for
-    /// time already spent (audit F05), so the planned duration (steps times interval) and the real
-    /// one can differ; this summarises one run from the elapsed time at each applied step.
+    /// Measured phase 2 pacing. Phase 2 follows rendered frames against elapsed time, so the planned and the measured
+    /// duration should agree; this summarises one run from the elapsed time at each applied frame, which shows a stall.
     /// </summary>
     public static class FlyoutPhaseTiming
     {
         public readonly record struct Summary(
-            int StepsRun,
-            int StepsPlanned,
+            int FramesRun,
             double PlannedMs,
             double TotalMs,
             double MeanGapMs,
             double MaxGapMs,
             bool Completed);
 
-        /// <param name="stepElapsedMs">Elapsed time when each step was applied, first step first.</param>
-        /// <param name="plannedSteps">Step count; a full run applies <c>plannedSteps + 1</c> values (0 to N).</param>
-        /// <param name="intervalMs">Planned wait between consecutive steps.</param>
-        public static Summary Summarize(IReadOnlyList<double> stepElapsedMs, int plannedSteps, int intervalMs)
+        /// <param name="frameElapsedMs">Elapsed time when each frame was applied, first frame first.</param>
+        /// <param name="plannedMs">The duration the run was meant to take; a run is complete once a frame lands at or after it.</param>
+        public static Summary SummarizeFrames(IReadOnlyList<double> frameElapsedMs, double plannedMs)
         {
-            int planned = Math.Max(0, plannedSteps) + 1;
-            double plannedMs = Math.Max(0, plannedSteps) * (double)intervalMs;
-            if (stepElapsedMs.Count == 0)
+            if (frameElapsedMs.Count == 0)
             {
-                return new Summary(0, planned, plannedMs, 0, 0, 0, Completed: false);
+                return new Summary(0, plannedMs, 0, 0, 0, Completed: false);
             }
 
             double maxGap = 0;
-            for (int i = 1; i < stepElapsedMs.Count; i++)
+            for (int i = 1; i < frameElapsedMs.Count; i++)
             {
-                maxGap = Math.Max(maxGap, stepElapsedMs[i] - stepElapsedMs[i - 1]);
+                maxGap = Math.Max(maxGap, frameElapsedMs[i] - frameElapsedMs[i - 1]);
             }
 
-            double total = stepElapsedMs[^1] - stepElapsedMs[0];
-            double meanGap = stepElapsedMs.Count > 1 ? total / (stepElapsedMs.Count - 1) : 0;
-            return new Summary(stepElapsedMs.Count, planned, plannedMs, total, meanGap, maxGap, stepElapsedMs.Count >= planned);
+            double total = frameElapsedMs[^1] - frameElapsedMs[0];
+            double meanGap = frameElapsedMs.Count > 1 ? total / (frameElapsedMs.Count - 1) : 0;
+            return new Summary(frameElapsedMs.Count, plannedMs, total, meanGap, maxGap, frameElapsedMs[^1] >= plannedMs);
         }
 
         public static string Format(string? styleId, bool entrance, Summary s)
         {
             return string.Create(
                 CultureInfo.InvariantCulture,
-                $"phase2 style={styleId} entrance={entrance} steps={s.StepsRun}/{s.StepsPlanned} " +
+                $"phase2 style={styleId} entrance={entrance} frames={s.FramesRun} " +
                 $"planned={s.PlannedMs:0}ms actual={s.TotalMs:0}ms gapMean={s.MeanGapMs:0.0}ms gapMax={s.MaxGapMs:0.0}ms " +
                 $"completed={s.Completed}");
         }

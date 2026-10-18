@@ -52,6 +52,8 @@ namespace MosaicShell.Core.Modules.Tessera
         public const string DefaultEase = EaseOutQuart;
 
         /// <summary>YourFlyouts <c>AniSteps=20</c>.</summary>
+        public const int DefaultAni = 2;
+
         public const int DefaultAniSteps = 20;
 
         /// <summary>
@@ -60,6 +62,12 @@ namespace MosaicShell.Core.Modules.Tessera
         /// every easing family looks like a pop.
         /// </summary>
         public const int StepPresentationIntervalMs = 16;
+
+        /// <summary>
+        /// The shortest time between two phase 2 updates, in milliseconds. The value applied comes from elapsed time, so this
+        /// is only a floor that keeps an idle UI thread from being spun: a late update catches up, it does not stretch the run.
+        /// </summary>
+        public const int Phase2UpdateIntervalMs = 4;
 
         /// <summary>Ani2 Fancy pause between phase 1 and phase 2 (Ani2.inc Wait 100).</summary>
         public const int FancyPauseMs = 100;
@@ -261,39 +269,6 @@ namespace MosaicShell.Core.Modules.Tessera
             return (DefaultEaseFamily, DefaultEaseVariant);
         }
 
-        /// <summary>
-        /// InOut of the selected family. Linear is unchanged. Entrance uses this so the
-        /// first quarter stays near the hide pose and the last quarter settles into rest.
-        /// Pure In* dumps the remaining travel into the final frames.
-        /// </summary>
-        public static string ResolveInOutEase(string? ease)
-        {
-            string id = NormalizeEase(ease);
-            if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
-            {
-                return EaseLinear;
-            }
-
-            (string? family, string _) = SplitEase(id);
-            return ComposeEase(family, "InOut");
-        }
-
-        /// <summary>
-        /// Out of the selected family. Linear is unchanged. Hide uses this so In* never
-        /// runs on the reverse clock (end-slam of a card already on screen).
-        /// </summary>
-        public static string ResolveOutEase(string? ease)
-        {
-            string id = NormalizeEase(ease);
-            if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
-            {
-                return EaseLinear;
-            }
-
-            (string? family, string _) = SplitEase(id);
-            return ComposeEase(family, "Out");
-        }
-
         /// <summary>Compose Hub family + variant into canonical ease id.</summary>
         public static string ComposeEase(string? family, string? variant)
         {
@@ -453,31 +428,21 @@ namespace MosaicShell.Core.Modules.Tessera
 
         public sealed record FlyoutAnimationPhase(FlyoutAnimationPhaseKind Kind, int StepCount = 0, int WaitMs = 0);
 
-        /// <summary>Entrance uses InOut of the selected family, not a pure In* slam.</summary>
-        public const bool Phase1EntranceMustUseInOutFamily = true;
-
+        /// <summary>
+        /// The curve phase 1 plays: exactly the one chosen, entering and leaving. The Hub preview draws the same curve, so
+        /// what you pick is what you see. (Entrances used to be remapped to the InOut form of the chosen family, which made
+        /// every Out* curve play as the same symmetric S and the settings look identical.)
+        /// </summary>
         public static string ResolvePhase1MotionEase(string? ease, bool entrance)
         {
-            string id = NormalizeEase(ease);
-            return entrance && Phase1EntranceMustUseInOutFamily ? ResolveInOutEase(id) : id;
+            _ = entrance;
+            return NormalizeEase(ease);
         }
 
         public static string ResolvePhase1OpacityEase(string? ease, bool entrance)
         {
             return ResolvePhase1MotionEase(ease, entrance);
         }
-
-        /// <summary>
-        /// Show may run In* or InOut* of the selected family. Out* forward is a start-slam
-        /// after volume has sat; remap it to InOut* (mid-band), never InvertEaseVariant (In*).
-        /// </summary>
-        public const bool Phase2ShowMustUseInOrInOutFamily = true;
-
-        /// <summary>
-        /// Hide may run Out* or InOut* of the selected family. In* on hide dumps travel
-        /// into the last frames of a card already on screen.
-        /// </summary>
-        public const bool Phase2HideMustUseOutOrInOutFamily = true;
 
         /// <summary>Show progress band that must be occupied for a fraction of phase 2.</summary>
         public const double Phase2ShowMidBandMin = 0.15;
@@ -603,24 +568,24 @@ namespace MosaicShell.Core.Modules.Tessera
             return InterpolateStepped(from, to, step, aniSteps, ease, entrance);
         }
 
+        /// <summary>
+        /// The reveal progress at linear time <paramref name="linearT"/> (0..1) of the run, for a driver that samples once
+        /// per rendered frame: the stepped value at each step, straight-line between steps, so a high refresh rate sees a
+        /// smooth run and a late frame catches up instead of stretching it. Equals
+        /// <see cref="ResolvePhase2RevealProgress"/> at every whole step.
+        /// </summary>
+        public static double ResolvePhase2RevealProgressAt(bool entrance, double linearT, int aniSteps, string? ease)
+        {
+            double from = entrance ? 0d : 1d;
+            double to = entrance ? 1d : 0d;
+            return SampleSteppedAt(from, to, linearT, aniSteps, ease, entrance);
+        }
+
+        /// <summary>The curve phase 2 plays: the chosen one, as in phase 1.</summary>
         public static string ResolvePhase2MotionEase(string? ease, bool entrance)
         {
-            string id = NormalizeEase(ease);
-            if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
-            {
-                return EaseLinear;
-            }
-
-            (string _, string? variant) = SplitEase(id);
-            return entrance
-                ? Phase2ShowMustUseInOrInOutFamily
-                    && variant.Equals("Out", StringComparison.OrdinalIgnoreCase)
-                    ? ResolveInOutEase(id)
-                    : id
-                : Phase2HideMustUseOutOrInOutFamily
-                && variant.Equals("In", StringComparison.OrdinalIgnoreCase)
-                ? ResolveOutEase(id)
-                : id;
+            _ = entrance;
+            return NormalizeEase(ease);
         }
 
         public static bool Phase2RequiresAnimatedLayout(int ani, string? styleId, bool showMediaStrip)

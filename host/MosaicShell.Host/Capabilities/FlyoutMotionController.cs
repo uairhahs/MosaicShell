@@ -318,6 +318,16 @@ namespace MosaicShell.Host.Capabilities
             }
         }
 
+        /// <summary>
+        /// Runs the reveal against elapsed time. It used to apply one lump per 16 ms <c>Task.Delay</c> and count steps, so a
+        /// late wake-up stretched the run (714 ms against 384 planned, audit F05) and the reveal moved in visible jumps. Now
+        /// every wake-up reads the clock, takes the interpolated progress for that moment and applies it, so a late tick
+        /// catches up and the duration is the planned one. Each value waits for the layout and render work it queued, so
+        /// updates run as fast as the UI thread can draw them and never pile up (asking every 8 ms made the cadence worse,
+        /// about 14 updates an entrance against 20). Frame callbacks (<c>RequestAnimationFrame</c>) delivered only 16 a
+        /// second while two acrylic windows repainted. The system timer is raised to 1 ms for the run so the short floor
+        /// between updates is short. All slots share one clock and one progress value (a stacked cluster reveals in step).
+        /// </summary>
         private static async Task PumpPhase2StepsAsync(
             IReadOnlyList<(MotionContext Ctx, List<TesseraRevealHost> Hosts)> slots,
             string ease,
@@ -329,41 +339,50 @@ namespace MosaicShell.Host.Capabilities
                 return;
             }
 
-            int intervalMs = TesseraFlyoutAnimationPolicy.StepPresentationIntervalMs;
             CancellationToken token = slots[0].Ctx.MotionToken;
-            // A2 instrumentation (audit F05): elapsed time at each applied step, summarised once per run.
+            double durationMs = Math.Max(1, TesseraFlyoutAnimationPolicy.ResolvePhaseDurationMs(steps));
             bool timed = TesseraFlyoutDiagnostics.IsEnabled(DiagnosticLogLevel.Debug);
+            List<double>? frameElapsedMs = timed ? [] : null;
+            List<double>? applyCostMs = timed ? [] : null;
+            using MotionTimerResolution timerScope = MotionTimerResolution.Begin();
             long started = Stopwatch.GetTimestamp();
-            List<double>? stepElapsedMs = timed ? new(steps + 1) : null;
             try
             {
-                for (int step = 0; step <= steps; step++)
+                while (true)
                 {
                     if (slots.Any(static s => s.Ctx.IsCancelled() || s.Ctx.MotionToken.IsCancellationRequested))
                     {
                         return;
                     }
 
-                    double progress = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(
-                        entrance, step, steps, ease);
+                    double elapsed = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+                    double t = Math.Min(1, elapsed / durationMs);
+                    double progress = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgressAt(entrance, t, steps, ease);
                     long applySpan = TesseraFlyoutDiagnostics.BeginSpan();
+                    long applyStart = Stopwatch.GetTimestamp();
                     foreach ((MotionContext? ctx, List<TesseraRevealHost>? hosts) in slots)
                     {
                         ApplyPhase2Progress(ctx, hosts, progress, entrance);
                     }
 
-                    TesseraFlyoutDiagnostics.EndSpan(applySpan, $"phase2Apply step={step}");
-                    stepElapsedMs?.Add(Stopwatch.GetElapsedTime(started).TotalMilliseconds);
-                    if (step >= steps)
+                    applyCostMs?.Add(Stopwatch.GetElapsedTime(applyStart).TotalMilliseconds);
+                    TesseraFlyoutDiagnostics.EndSpan(applySpan, $"phase2Apply t={t:0.00}");
+                    frameElapsedMs?.Add(elapsed);
+                    if (t >= 1)
                     {
                         break;
                     }
 
-                    // The wait itself: a resume much later than the interval means the UI thread was
-                    // busy elsewhere or the timer is coarse (F05).
-                    long delaySpan = TesseraFlyoutDiagnostics.BeginSpan();
-                    await Task.Delay(intervalMs, token).ConfigureAwait(true);
-                    TesseraFlyoutDiagnostics.EndSpan(delaySpan, $"phase2Delay step={step}", thresholdMs: intervalMs + 12);
+                    // Wait for the layout and render work this value queued before asking for the next one, so updates
+                    // never pile up behind the UI thread; then keep a short floor so an idle UI thread cannot spin us.
+                    await Dispatcher.UIThread.InvokeAsync(static () => { }, DispatcherPriority.Render);
+                    double spent = Stopwatch.GetElapsedTime(started).TotalMilliseconds - elapsed;
+                    if (spent < TesseraFlyoutAnimationPolicy.Phase2UpdateIntervalMs)
+                    {
+                        await Task.Delay(
+                            Math.Max(1, (int)Math.Ceiling(TesseraFlyoutAnimationPolicy.Phase2UpdateIntervalMs - spent)), token)
+                            .ConfigureAwait(true);
+                    }
                 }
             }
             catch (OperationCanceledException)
@@ -372,14 +391,17 @@ namespace MosaicShell.Host.Capabilities
             }
             finally
             {
-                if (stepElapsedMs is not null)
+                if (frameElapsedMs is not null)
                 {
                     TesseraFlyoutDiagnostics.Log(
                         DiagnosticLogLevel.Debug,
                         FlyoutPhaseTiming.Format(
                             slots[0].Ctx.Window.FlyoutRequest.StyleId,
                             entrance,
-                            FlyoutPhaseTiming.Summarize(stepElapsedMs, steps, intervalMs)));
+                            FlyoutPhaseTiming.SummarizeFrames(frameElapsedMs, durationMs))
+                        + (applyCostMs is { Count: > 0 }
+                            ? $" applyMeanMs={applyCostMs.Average():0.0} applyMaxMs={applyCostMs.Max():0.0}"
+                            : string.Empty));
                 }
             }
         }
