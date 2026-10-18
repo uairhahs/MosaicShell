@@ -22,6 +22,49 @@ namespace MosaicShell.Core.Tests
             return actions.Select(a => a.Kind);
         }
 
+        // ---- found by mutation testing (2026-10-18): each of these survived a changed operator ----
+
+        [Fact]
+        public void Beginning_an_entrance_during_an_exit_ends_the_exit()
+        {
+            FlyoutWindowLifecycle lifecycle = Shown();
+            _ = lifecycle.Dismiss(1);
+            lifecycle.ExitInFlight.Should().BeTrue();
+
+            _ = lifecycle.BeginEntrance(0.4, FlyoutMotionDriver.Window);
+
+            lifecycle.ExitInFlight.Should().BeFalse("the exit was cancelled by the new entrance");
+            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Entering);
+        }
+
+        [Fact]
+        public void An_exit_completion_with_the_current_generation_is_ignored_unless_the_flyout_is_exiting()
+        {
+            FlyoutWindowLifecycle lifecycle = Shown();
+            int generation = lifecycle.Dismiss(1).Single().Generation;
+            _ = lifecycle.BeginEntrance(0.5, FlyoutMotionDriver.Window);
+            // BeginEntrance bumped the generation, so replay a completion that carries the new one but arrives out of phase.
+            int current = lifecycle.Dismiss(0.5).Single().Generation;
+            _ = lifecycle.BeginEntrance(0.5, FlyoutMotionDriver.Window);
+
+            lifecycle.CompleteExit(generation).Should().BeEmpty("a completion from a superseded exit is stale");
+            lifecycle.CompleteExit(current).Should().BeEmpty("an old exit cannot hide an entering flyout");
+            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Entering);
+        }
+
+        [Fact]
+        public void An_exit_completion_with_a_stale_generation_is_ignored_while_the_flyout_is_still_exiting()
+        {
+            FlyoutWindowLifecycle lifecycle = Shown();
+            int stale = lifecycle.Dismiss(1).Single().Generation;
+            lifecycle.Supersede();
+
+            lifecycle.CompleteExit(stale).Should().BeEmpty();
+
+            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Exiting);
+            lifecycle.ExitInFlight.Should().BeTrue();
+        }
+
         // ---- ordinary paths ----
 
         [Fact]
