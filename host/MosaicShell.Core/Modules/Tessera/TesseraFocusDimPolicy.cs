@@ -19,15 +19,6 @@ namespace MosaicShell.Core.Modules.Tessera
         /// </summary>
         public const bool UseConstantLayeredAlpha = true;
 
-        /// <summary>When <see cref="UseConstantLayeredAlpha"/>, composition fallback brush alpha must stay 0.</summary>
-        public const byte MaxCompositionFallbackAlpha = 0;
-
-        /// <summary>Contract: overlay is visual-only and must not block or steal pointer input.</summary>
-        public const bool MustPassThroughInput = true;
-
-        /// <summary>Contract: any outside click clears dim + flyout immediately (no fade).</summary>
-        public const bool InstantDismissOnOutsideClick = true;
-
         /// <summary>
         /// Auto-dismiss / TransientDismiss must close FocusDim in the same turn as the flyout Hide.
         /// Outside-click already does; timer dismiss must not leave the dim orphaned.

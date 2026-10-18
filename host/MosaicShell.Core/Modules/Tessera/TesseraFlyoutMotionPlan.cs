@@ -89,22 +89,6 @@ namespace MosaicShell.Core.Modules.Tessera
                 TesseraFlyoutAnimationPolicy.StackedHideMustFinishPhase2BeforeAnySlotPhase1);
         }
 
-        public static IReadOnlyList<TesseraFlyoutMotionStepKind> MotionKinds(TesseraFlyoutMotionPlan plan)
-        {
-            List<TesseraFlyoutMotionStepKind> kinds = [];
-            foreach (TesseraFlyoutMotionStep step in plan.Steps)
-            {
-                if (step.Kind is TesseraFlyoutMotionStepKind.Begin or TesseraFlyoutMotionStepKind.Complete)
-                {
-                    continue;
-                }
-
-                kinds.Add(step.Kind);
-            }
-
-            return kinds;
-        }
-
         public static bool SlotParticipates(
             TesseraFlyoutMotionStep step,
             int ani,

@@ -28,8 +28,6 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Must_never_block_input_or_linger_on_click()
         {
-            _ = TesseraFocusDimPolicy.MustPassThroughInput.Should().BeTrue();
-            _ = TesseraFocusDimPolicy.InstantDismissOnOutsideClick.Should().BeTrue();
             _ = TesseraFocusDimPolicy.InstantDismissMustCloseFocusDim.Should().BeTrue();
             _ = TesseraFocusDimPolicy.ShouldCloseFocusDimOnTransientDismiss().Should().BeTrue();
         }
@@ -39,7 +37,6 @@ namespace MosaicShell.Core.Tests
         {
             // High-alpha Transparent FallbackBrush under RedirectionSurface paints a black fill.
             _ = TesseraFocusDimPolicy.UseConstantLayeredAlpha.Should().BeTrue();
-            _ = TesseraFocusDimPolicy.MaxCompositionFallbackAlpha.Should().Be(0);
             _ = TesseraFocusDimPolicy.ResolveLayeredAlpha()
                 .Should().Be(TesseraFocusDimPolicy.OverlayAlpha);
             _ = TesseraFocusDimPolicy.ResolveLayeredAlpha()

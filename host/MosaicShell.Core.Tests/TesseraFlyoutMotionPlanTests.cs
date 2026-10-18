@@ -5,6 +5,12 @@ namespace MosaicShell.Core.Tests
 {
     public class TesseraFlyoutMotionPlanTests
     {
+        private static IReadOnlyList<TesseraFlyoutMotionStepKind> MotionKinds(TesseraFlyoutMotionPlan plan)
+        {
+            return [.. plan.Steps.Select(static s => s.Kind)
+                .Where(static k => k is not (TesseraFlyoutMotionStepKind.Begin or TesseraFlyoutMotionStepKind.Complete))];
+        }
+
         [Fact]
         public void Host_must_execute_one_plan_for_single_and_stacked()
         {
@@ -86,9 +92,9 @@ namespace MosaicShell.Core.Tests
             {
                 TesseraFlyoutMotionPlan show = TesseraFlyoutMotionPlan.ResolveShow(2, "Fluent", true, stacked);
                 TesseraFlyoutMotionPlan hide = TesseraFlyoutMotionPlan.ResolveHide(2, "Fluent", true, stacked);
-                _ = TesseraFlyoutMotionPlan.MotionKinds(hide)
+                _ = MotionKinds(hide)
                     .Should()
-                    .Equal(TesseraFlyoutMotionPlan.MotionKinds(show).Reverse());
+                    .Equal(MotionKinds(show).Reverse());
             }
         }
 
@@ -157,9 +163,9 @@ namespace MosaicShell.Core.Tests
                 TesseraFlyoutMotionStepKind.Phase1,
                 TesseraFlyoutMotionStepKind.Complete,
             ]);
-            _ = TesseraFlyoutMotionPlan.MotionKinds(hide)
+            _ = MotionKinds(hide)
                 .Should()
-                .Equal(TesseraFlyoutMotionPlan.MotionKinds(show).Reverse());
+                .Equal(MotionKinds(show).Reverse());
         }
     }
 }

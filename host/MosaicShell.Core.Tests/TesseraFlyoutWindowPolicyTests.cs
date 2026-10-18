@@ -17,7 +17,6 @@ namespace MosaicShell.Core.Tests
             _ = TesseraFlyoutWindowPolicy.MustRequestOpaqueToolWindow.Should().BeFalse();
             _ = TesseraFlyoutWindowPolicy.SoftFrostCompositionFallbackAlpha.Should().Be(0);
             _ = TesseraFlyoutWindowPolicy.PresentableLayeredAlpha.Should().Be(255);
-            _ = TesseraFlyoutWindowPolicy.ForbidDebugTitleChrome.Should().BeTrue();
             _ = TesseraFlyoutWindowPolicy.HideUntilCompositionReady.Should().BeTrue(
                 "SoftFrost cold Show must hide until layout or Try now flashes a black HWND");
         }

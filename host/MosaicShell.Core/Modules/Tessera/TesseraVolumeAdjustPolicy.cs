@@ -5,12 +5,6 @@ namespace MosaicShell.Core.Modules.Tessera
     /// </summary>
     public static class TesseraVolumeAdjustPolicy
     {
-        /// <summary>
-        /// Win32 restack, outside-click, and focus changes can steal pointer capture mid-drag.
-        /// Host volume controls must clear drag state on capture lost or live ApplyLive stops
-        /// updating the ring/track (Radial arc appears frozen).
-        /// </summary>
-        public const bool MustClearDragOnPointerCaptureLost = true;
 
         /// <summary>Grace period after user input before ApplyLive may overwrite the control.</summary>
         public static TimeSpan UserAdjustGracePeriod { get; } = TimeSpan.FromMilliseconds(350);

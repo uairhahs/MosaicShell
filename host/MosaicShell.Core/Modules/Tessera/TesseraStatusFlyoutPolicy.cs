@@ -74,12 +74,6 @@ namespace MosaicShell.Core.Modules.Tessera
         public const bool SoftFrostMustRoundClipHwnd = true;
 
         /// <summary>
-        /// Media→CapsLock: never size/clip with <c>Max(Bounds, Desired)</c>. Stale media Bounds
-        /// keep a black acrylic rectangle around the chip after kind handoff.
-        /// </summary>
-        public const bool StatusLayoutMustPreferDesiredSizeOverStaleBounds = true;
-
-        /// <summary>
         /// Stacked volume/media→status: Opacity-hide slots before status Present. Close()-only
         /// leaves dying AcrylicBlur HWNDs that flash black under the CapsLock chip.
         /// </summary>

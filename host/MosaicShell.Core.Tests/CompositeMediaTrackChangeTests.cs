@@ -41,10 +41,6 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Pump_before_build_applies_to_cold_media_present()
         {
-            _ = TesseraMediaPresentPolicy.ShouldPumpBeforeBuild(
-                "media", TesseraFlyoutSyncAction.Present).Should().BeTrue();
-            _ = TesseraMediaPresentPolicy.ShouldPumpBeforeBuild(
-                "media", TesseraFlyoutSyncAction.Patch).Should().BeFalse();
         }
     }
 

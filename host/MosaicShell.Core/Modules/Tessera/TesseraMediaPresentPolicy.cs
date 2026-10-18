@@ -20,13 +20,6 @@ namespace MosaicShell.Core.Modules.Tessera
                     : FlyoutSyncAction.Patch);
         }
 
-        public static bool ShouldPumpBeforeBuild(string kind, TesseraFlyoutSyncAction action)
-        {
-            return MustPumpBeforeMediaPresent
-            && kind.Equals("media", StringComparison.OrdinalIgnoreCase)
-            && action == TesseraFlyoutSyncAction.Present;
-        }
-
         public static bool ShouldPumpBeforeShellMediaPresent => MediaPresentPolicy.ShouldPumpBeforeShellMediaPresent;
     }
 }

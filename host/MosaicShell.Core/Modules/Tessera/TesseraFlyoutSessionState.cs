@@ -115,15 +115,8 @@ namespace MosaicShell.Core.Modules.Tessera
 
     public static class TesseraFlyoutIngressPolicy
     {
-        public const bool HostMustUseSingleIngressQueue = true;
 
         public const bool SoftRefreshMustHonorSessionGeneration = true;
-
-        /// <summary>
-        /// CapabilityFlyoutSession already chose Show / Update / SoftRefresh.
-        /// Host must not re-resolve it; the one resolver is <see cref="MosaicShell.Core.Capabilities.Platform.FlyoutResolver"/>.
-        /// </summary>
-        public const bool HostMustExecutePresenterCommandWithoutReResolve = true;
 
         public static bool IsStale(
             int workGeneration,

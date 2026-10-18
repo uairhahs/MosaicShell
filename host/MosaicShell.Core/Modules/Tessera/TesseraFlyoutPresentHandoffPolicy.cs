@@ -30,12 +30,6 @@ namespace MosaicShell.Core.Modules.Tessera
         /// </summary>
         public const bool SoftRefreshMustHonorSessionGeneration = true;
 
-        /// <summary>
-        /// HideAll already posted to the UI thread must run Hide inline. Nested Hide Posts let a
-        /// later Show land between CloseStackedSession and the delayed Hide callbacks.
-        /// </summary>
-        public const bool HideAllMustRunHideSynchronouslyOnUiThread = true;
-
         public static bool ShouldPostHideToUiThread(bool alreadyOnUiThread)
         {
             return !alreadyOnUiThread;

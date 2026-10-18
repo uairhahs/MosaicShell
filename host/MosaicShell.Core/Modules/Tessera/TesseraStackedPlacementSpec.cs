@@ -15,8 +15,6 @@ namespace MosaicShell.Core.Modules.Tessera
         /// Must clear <see cref="MeterMediaMinContentHeightDip"/> so transport glyphs are not clipped.
         /// </summary>
         public const double MeterMediaHeightDip = 236;
-        /// <summary>Cluster height anchor (tallest Meter panel).</summary>
-        public const double MeterPanelHeightDip = MeterMediaHeightDip;
         public const float MeterVolumeCornerRadiusDip = 14f;
         public const float MeterMediaCornerRadiusDip = 16f;
         public const double MeterMediaArtDip = 120;
@@ -30,22 +28,6 @@ namespace MosaicShell.Core.Modules.Tessera
         public const double MeterMediaPadHorizontalDip = 14;
         public const double MeterMediaPadTopDip = 10;
         public const double MeterMediaPadBottomDip = 14;
-
-        /// <summary>
-        /// Vertical DIP budget for stacked Meter media: pad + art + title/artist + transport.
-        /// Host layout must fit inside <see cref="MeterMediaHeightDip"/>.
-        /// </summary>
-        public static double MeterMediaMinContentHeightDip =>
-            MeterMediaPadTopDip
-            + MeterMediaArtDip
-            + MeterMediaArtBottomMarginDip
-            + MeterMediaHeaderSpacingDip
-            + MeterMediaTitleLineDip
-            + MeterMediaHeaderSpacingDip
-            + MeterMediaArtistLineDip
-            + MeterMediaTransportTopMarginDip
-            + MeterMediaTransportBtnDip
-            + MeterMediaPadBottomDip;
 
         public const float GnomePillCornerRadiusDip = 28f;
 

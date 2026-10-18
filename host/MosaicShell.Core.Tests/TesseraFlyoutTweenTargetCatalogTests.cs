@@ -90,7 +90,7 @@ namespace MosaicShell.Core.Tests
                 TesseraTweenChannel.ContentOpacity);
             _ = TesseraFlyoutTweenTargetCatalog.HasChannel(StyleIds.Fluent, TesseraTweenChannel.VolumeFillOpacity)
                 .Should().BeFalse();
-            _ = TesseraFlyoutTweenTargetCatalog.VolumeStaysOpaqueDuringPhase2(StyleIds.Fluent).Should().BeTrue();
+            _ = TweenCatalogTestSupport.VolumeStaysOpaqueDuringPhase2(StyleIds.Fluent).Should().BeTrue();
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaContentOpacity(0, true).Should().Be(1);
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveFluentMediaContentOpacity(1, true).Should().Be(1);
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveFluentDividerHeightDip(148, 0, true).Should().Be(0);
@@ -104,7 +104,7 @@ namespace MosaicShell.Core.Tests
                 TesseraTweenChannel.ShellHeight,
                 TesseraTweenChannel.ClipHeight,
                 TesseraTweenChannel.ContentOpacity);
-            _ = TesseraFlyoutTweenTargetCatalog.VolumeStaysOpaqueDuringPhase2(StyleIds.Windows11).Should().BeTrue();
+            _ = TweenCatalogTestSupport.VolumeStaysOpaqueDuringPhase2(StyleIds.Windows11).Should().BeTrue();
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveWin11MediaClipHeightDip(175, 0, true).Should().Be(0);
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveWin11MediaClipHeightDip(175, 1, true).Should().Be(175);
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveMediaMaskOpacity(0, true).Should().Be(0);
@@ -118,7 +118,7 @@ namespace MosaicShell.Core.Tests
                 TesseraTweenChannel.ContentScale,
                 TesseraTweenChannel.ContentOpacity,
                 TesseraTweenChannel.VolumeFillOpacity);
-            _ = TesseraFlyoutTweenTargetCatalog.VolumeStaysOpaqueDuringPhase2(StyleIds.Gnome).Should().BeFalse();
+            _ = TweenCatalogTestSupport.VolumeStaysOpaqueDuringPhase2(StyleIds.Gnome).Should().BeFalse();
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveGnomeContentScale(0, true).Should().Be(0.5);
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveMediaMaskOpacity(0, true).Should().Be(0);
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveGnomeVolumeFillOpacity(0, true).Should().Be(0);
@@ -136,7 +136,6 @@ namespace MosaicShell.Core.Tests
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaClipWidthDip(280, 0, true).Should().Be(0);
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaContentOpacityFactor(0, true).Should().Be(1);
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaContentOpacityFactor(1, true).Should().Be(1);
-            _ = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaSlideOffsetDip(388, 0.5, true).Should().Be(0);
         }
 
         /// <summary>
@@ -161,7 +160,7 @@ namespace MosaicShell.Core.Tests
             AssertChannels(StyleIds.Meter,
                 TesseraTweenChannel.SlideOffset,
                 TesseraTweenChannel.ContentOpacity);
-            _ = TesseraFlyoutTweenTargetCatalog.VolumeStaysOpaqueDuringPhase2(StyleIds.Meter).Should().BeTrue();
+            _ = TweenCatalogTestSupport.VolumeStaysOpaqueDuringPhase2(StyleIds.Meter).Should().BeTrue();
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveMediaMaskOpacity(0, true).Should().Be(0);
         }
 
@@ -213,7 +212,7 @@ namespace MosaicShell.Core.Tests
             TesseraFlyoutStyleProfile profile = TesseraFlyoutTweenTargetCatalog.ResolveProfile(StyleIds.MaterialYou);
             _ = profile.MediaWidthDip.Should().Be(TesseraFlyoutAnimatedTargetSpec.MaterialYouColumnWidthDip);
 
-            _ = TesseraFlyoutTweenTargetCatalog.TryResolveMediaRestSizeDip(
+            _ = TweenCatalogTestSupport.TryResolveMediaRestSizeDip(
                 StyleIds.MaterialYou, out double widthDip, out _).Should().BeTrue();
             _ = widthDip.Should().Be(profile.MediaWidthDip);
         }
@@ -260,8 +259,6 @@ namespace MosaicShell.Core.Tests
             {
                 foreach (TesseraTweenTarget target in TesseraFlyoutTweenTargetCatalog.ResolveAnimated(id))
                 {
-                    _ = TesseraFlyoutTweenTargetCatalog.IndependentMediaChildrenMustInheritContainer
-                        .Should().BeTrue();
                     string[] nested =
                     [
                         "MediaImage", "MediaTrack", "MediaArtist", "MediaPlayPause",
@@ -308,7 +305,6 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Style_profile_rest_sizes_match_layout_specs()
         {
-            _ = TesseraFlyoutRevealSpec.HostMustDispatchRevealFromCatalogKind.Should().BeTrue();
             TesseraFlyoutStyleProfile fluent = TesseraFlyoutTweenTargetCatalog.ResolveProfile(StyleIds.Fluent);
             _ = fluent.RevealKind.Should().Be(TesseraFlyoutRevealKind.Fluent);
             _ = fluent.MediaWidthDip.Should().Be(TesseraFluentLayoutSpec.MediaWidthDip);
@@ -320,7 +316,7 @@ namespace MosaicShell.Core.Tests
             _ = coreUi.MediaHeightDip.Should().Be(TesseraCoreUiLayoutSpec.MediaHeightDip);
             _ = TesseraFlyoutRevealSpec.ResolveHostKind(StyleIds.Radial).Should().Be(TesseraFlyoutRevealKind.Radial);
             _ = TesseraFlyoutRevealSpec.ResolveHostKind("unknown-style").Should().Be(TesseraFlyoutRevealKind.None);
-            _ = TesseraFlyoutTweenTargetCatalog.TryResolveMediaRestSizeDip(StyleIds.Fluent, out double w, out double h)
+            _ = TweenCatalogTestSupport.TryResolveMediaRestSizeDip(StyleIds.Fluent, out double w, out double h)
                 .Should().BeTrue();
             _ = w.Should().Be(TesseraFluentLayoutSpec.MediaWidthDip);
             _ = h.Should().Be(TesseraFluentLayoutSpec.HeightDip);

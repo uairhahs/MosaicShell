@@ -8,14 +8,7 @@ namespace MosaicShell.Core.Modules.Tessera
         public const string StyleFluent = "fluent";
         public const string StyleWindows11 = "windows11";
         public const string StyleGnome = "gnome";
-        public const string StylePlainText = "plaintext";
         public const string StyleCoreUi = "coreui";
-        public const string StyleSquare = "square";
-        public const string StyleSmouti = "smouti";
-        public const string StyleMeter = "meter";
-        public const string StyleCompact = "compact";
-        public const string StyleModernFlyouts = "modernflyouts";
-        public const string StyleMaterialYou = "materialyou";
         public const string StyleRadial = "radial";
 
         /// <summary>
@@ -29,12 +22,6 @@ namespace MosaicShell.Core.Modules.Tessera
 
         /// <summary>Static Hub / exporter trees never run motion, so they must use rest.</summary>
         public const bool PreviewMustUseRestReveal = true;
-
-        /// <summary>Normalized TweenNode1 (0..1) from stepped tween value 0..100.</summary>
-        public static double NormalizeRevealProgress(double tweenNode1)
-        {
-            return Math.Clamp(tweenNode1, 0, 100) / 100.0;
-        }
 
         /// <summary>
         /// Initial TweenNode1 for a newly built reveal host.
@@ -108,19 +95,10 @@ namespace MosaicShell.Core.Modules.Tessera
             return TesseraFlyoutTweenTargetCatalog.StylePhase2WithoutMediaStrip(styleId);
         }
 
-        /// <summary>Known binders; Host must not take the legacy MaxWidth/MaxHeight path.</summary>
-        public static bool UsesDedicatedRevealBinder(string? styleId)
-        {
-            return StyleSupportsPhase2(styleId);
-        }
-
         public static bool StyleIsPhase2NoOp(string? styleId)
         {
             return TesseraFlyoutTweenTargetCatalog.StyleIsPhase2NoOp(styleId);
         }
-
-        /// <summary>Host ApplyReveal / wrap factory must switch on catalog kind, not a parallel style string table.</summary>
-        public const bool HostMustDispatchRevealFromCatalogKind = true;
 
         public static TesseraFlyoutRevealKind ResolveHostKind(string? styleId)
         {

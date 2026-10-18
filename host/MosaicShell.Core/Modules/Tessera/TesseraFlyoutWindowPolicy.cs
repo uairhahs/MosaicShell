@@ -16,9 +16,6 @@ namespace MosaicShell.Core.Modules.Tessera
         /// <summary>Transparent window brush when SoftFrost HWND is on.</summary>
         public const bool WindowBackgroundBrushIsTransparent = SoftFrostHwndReady;
 
-        /// <summary>Never wrap flyout content in a Host debug title / style banner.</summary>
-        public const bool ForbidDebugTitleChrome = true;
-
         /// <summary>
         /// LWA_ALPHA=255 forces an opaque layered window and kills soft frost.
         /// Only apply when SoftFrost HWND is off (opaque recovery recipe).

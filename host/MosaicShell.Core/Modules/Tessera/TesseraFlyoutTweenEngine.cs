@@ -88,18 +88,6 @@ namespace MosaicShell.Core.Modules.Tessera
             };
         }
 
-        public static double SampleNormalized(int clock, int durationSteps, string? easeType, bool entrance)
-        {
-            TesseraFlyoutStepTween tween = new(durationSteps, 0, 100, easeType);
-            int delta = entrance ? 1 : -1;
-            for (int i = 0; i < Math.Abs(clock); i++)
-            {
-                _ = tween.Advance(delta);
-            }
-
-            return Math.Clamp(tween.Value / 100.0, 0, 1);
-        }
-
         private static double Linear(double t, double b, double c, double d)
         {
             return (c * t / d) + b;

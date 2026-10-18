@@ -70,11 +70,6 @@ namespace MosaicShell.Core.Modules.Tessera
     /// </summary>
     public static class TesseraFlyoutTweenTargetCatalog
     {
-        /// <summary>
-        /// Album art, title, transport, and scrubber live inside MediaC. They must not get
-        /// their own TweenNode1 binders.
-        /// </summary>
-        public const bool IndependentMediaChildrenMustInheritContainer = true;
 
         public static IReadOnlyList<TesseraTweenTarget> ResolveAnimated(string? styleId)
         {
@@ -405,20 +400,6 @@ namespace MosaicShell.Core.Modules.Tessera
             }
 
             return false;
-        }
-
-        public static bool VolumeStaysOpaqueDuringPhase2(string? styleId)
-        {
-            return !HasChannel(styleId, TesseraTweenChannel.VolumeFillOpacity);
-        }
-
-        /// <summary>Rest media panel size for stacked HWND clip/slide binders. NaN when unused.</summary>
-        public static bool TryResolveMediaRestSizeDip(string? styleId, out double widthDip, out double heightDip)
-        {
-            TesseraFlyoutStyleProfile profile = ResolveProfile(styleId);
-            widthDip = profile.MediaWidthDip;
-            heightDip = profile.MediaHeightDip;
-            return profile.MediaWidthDip > 1 || profile.MediaHeightDip > 1;
         }
     }
 }

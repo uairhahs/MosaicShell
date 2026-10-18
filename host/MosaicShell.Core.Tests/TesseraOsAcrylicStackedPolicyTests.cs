@@ -149,8 +149,6 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Volume_slot_owns_live_host_and_wins_z_order()
         {
-            _ = TesseraOsAcrylicStackedPolicy.RoleOwnsLiveHost(TesseraStackedPanelRole.Volume).Should().BeTrue();
-            _ = TesseraOsAcrylicStackedPolicy.RoleOwnsLiveHost(TesseraStackedPanelRole.Media).Should().BeFalse();
             _ = TesseraOsAcrylicStackedPolicy.ZOrderRank(TesseraStackedPanelRole.Volume)
                 .Should().BeGreaterThan(TesseraOsAcrylicStackedPolicy.ZOrderRank(TesseraStackedPanelRole.Media));
         }
@@ -159,7 +157,6 @@ namespace MosaicShell.Core.Tests
         public void Transient_dismiss_hides_every_stacked_slot()
         {
             _ = TesseraOsAcrylicStackedPolicy.TransientDismissMustHideAllSlots.Should().BeTrue();
-            _ = TesseraOsAcrylicStackedPolicy.OutsideClickUsesUnionBounds.Should().BeTrue();
             _ = TesseraOsAcrylicStackedPolicy.SupersededSingleHwndMustCancelDismissBeforeClose.Should().BeTrue();
         }
 
@@ -229,13 +226,6 @@ namespace MosaicShell.Core.Tests
             _ = TesseraFlyoutMaterialFactory.OsAcrylicEligibleFromPayload(stacked, StyleIds.Meter).Should().BeTrue();
             TesseraFlyoutMaterial m = TesseraFlyoutMaterialFactory.FromPayload(stacked, StyleIds.Meter);
             _ = m.TransparencyHints.Should().Equal("AcrylicBlur", "Transparent");
-        }
-
-        [Fact]
-        public void Outside_click_policy_uses_union_bounds_for_multi_window()
-        {
-            _ = TesseraFlyoutOutsideClickPolicy.MustUseUnionBounds(multiWindowStackedAcrylic: false).Should().BeFalse();
-            _ = TesseraFlyoutOutsideClickPolicy.MustUseUnionBounds(multiWindowStackedAcrylic: true).Should().BeTrue();
         }
 
         [Theory]

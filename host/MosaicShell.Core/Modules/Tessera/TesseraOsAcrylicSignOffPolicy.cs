@@ -10,8 +10,6 @@ namespace MosaicShell.Core.Modules.Tessera
     /// </summary>
     public static class TesseraOsAcrylicSignOffPolicy
     {
-        /// <summary>UTC date of formal Win11 acrylic eval sign-off.</summary>
-        public const string SignedOffDate = "2026-08-23";
 
         /// <summary>H2: single-shell OsAcrylic on Win11 (--tessera-os-acrylic, showMediaStrip=0).</summary>
         public const bool H2Win11EvalSignedOff = true;
