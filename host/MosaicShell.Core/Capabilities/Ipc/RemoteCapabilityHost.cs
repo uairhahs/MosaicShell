@@ -109,9 +109,9 @@ namespace MosaicShell.Core.Capabilities.Ipc
             return Task.CompletedTask;
         }
 
-        public Task DisarmAllAsync(CancellationToken cancellationToken = default)
+        public Task DisarmAllAsync(bool persist = true, CancellationToken cancellationToken = default)
         {
-            _ = SendRequest(new CapabilityControlMessage(CapabilityControlMessageType.DisarmAll, NextId()));
+            _ = SendRequest(new CapabilityControlMessage(CapabilityControlMessageType.DisarmAll, NextId(), Persist: persist));
             return Task.CompletedTask;
         }
 

@@ -102,9 +102,10 @@ namespace MosaicShell.Core.Tests
 
             await client.RestoreAsync();
             await client.DisarmAllAsync();
+            await client.DisarmAllAsync(persist: false);
             client.Persist();
 
-            daemon.Calls.Should().Equal("Restore", "DisarmAll", "Persist");
+            daemon.Calls.Should().Equal("Restore", "DisarmAll persist=True", "DisarmAll persist=False", "Persist");
         }
 
         [Fact]
@@ -251,9 +252,9 @@ namespace MosaicShell.Core.Tests
                 return Task.CompletedTask;
             }
 
-            public Task DisarmAllAsync(CancellationToken cancellationToken = default)
+            public Task DisarmAllAsync(bool persist = true, CancellationToken cancellationToken = default)
             {
-                Record("DisarmAll");
+                Record($"DisarmAll persist={persist}");
                 return Task.CompletedTask;
             }
 
