@@ -46,6 +46,16 @@ namespace MosaicShell.Worker
 
             using HostServices services = HostServices.CreateWindowsDefaults();
             using IpcFlyoutPresenter flyouts = new();
+            WorkerCapabilityUiBridge ui = new(flyouts);
+            CapabilityRegistry registry = new();
+            BuiltInCapabilityFactories.RegisterAll(registry);
+            using CapabilityDaemon daemon = new(registry, services, ui);
+
+            // The control server comes up before the wait for Host's flyout pipe. Host connects to it once, at its own
+            // startup, before it opens the flyout pipe the Worker is waiting for; starting it after that wait left each
+            // side waiting for the other and Host without a control channel.
+            using CapabilityIpcControlServer controlServer = new(daemon);
+            controlServer.Start();
 
             Console.WriteLine("MosaicShell Worker: waiting for Host's flyout IPC (start Host; gives up after 2 minutes)...");
             try
@@ -63,12 +73,9 @@ namespace MosaicShell.Worker
                 return 1;
             }
 
-            WorkerCapabilityUiBridge ui = new(flyouts);
-            CapabilityRegistry registry = new();
-            BuiltInCapabilityFactories.RegisterAll(registry);
-            using CapabilityDaemon daemon = new(registry, services, ui);
-            using CapabilityIpcControlServer controlServer = new(daemon);
-            controlServer.Start();
+            // Host can restart while the Worker runs; reconnect to its new flyout pipe instead of losing flyouts.
+            using CancellationTokenSource stopReconnecting = new();
+            Task keepConnected = flyouts.KeepConnectedAsync(stopReconnecting.Token);
 
             await daemon.RestoreAsync().ConfigureAwait(false);
             IReadOnlyList<string> armed = daemon.ArmedModuleIds;
@@ -87,6 +94,8 @@ namespace MosaicShell.Worker
             _ = await Task.Run(Console.ReadLine).ConfigureAwait(false);
 
             await daemon.DisarmAllAsync().ConfigureAwait(false);
+            await stopReconnecting.CancelAsync().ConfigureAwait(false);
+            await keepConnected.ConfigureAwait(false);
             return 0;
         }
     }

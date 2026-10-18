@@ -58,18 +58,36 @@ namespace MosaicShell.Core.Capabilities.Ipc
                         PipeOptions.Asynchronous);
 
                     await pipe.WaitForConnectionAsync(_cts.Token).ConfigureAwait(false);
+                    ServerConnection connection = new(pipe, HandleClientMessage, _runOnUiThread);
                     lock (_gate)
                     {
                         _client?.Dispose();
-                        _client = new ServerConnection(pipe, HandleClientMessage, _runOnUiThread);
+                        _client = connection;
                     }
 
-                    _client.StartReadLoop();
+                    connection.StartReadLoop();
+
+                    // The pipe allows one instance, so the next one can only be opened once this client is gone and its
+                    // instance is disposed. Waiting here is what lets the next Worker connect after this one exits.
+                    await connection.Completion.WaitAsync(_cts.Token).ConfigureAwait(false);
+                    lock (_gate)
+                    {
+                        _client = ReferenceEquals(_client, connection) ? null : _client;
+                    }
+
+                    connection.Dispose();
                 }
                 catch (OperationCanceledException) { break; }
-                catch { /* retry */ }
+                catch
+                {
+                    // Pausing keeps a persistent failure (no pipe can be created) from becoming a busy loop.
+                    try { await Task.Delay(RetryDelayMs, _cts.Token).ConfigureAwait(false); }
+                    catch (OperationCanceledException) { break; }
+                }
             }
         }
+
+        private const int RetryDelayMs = 100;
 
         private void HandleClientMessage(CapabilityIpcMessage message)
         {
@@ -196,6 +214,9 @@ namespace MosaicShell.Core.Capabilities.Ipc
             {
                 _readLoop = Task.Run(ReadLoopAsync);
             }
+
+            /// <summary>Completes when the peer has disconnected or the connection was disposed.</summary>
+            public Task Completion => _readLoop ?? Task.CompletedTask;
 
             public void TrySend(CapabilityIpcMessage message)
             {
