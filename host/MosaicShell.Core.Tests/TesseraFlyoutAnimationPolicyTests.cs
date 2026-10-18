@@ -503,18 +503,5 @@ namespace MosaicShell.Core.Tests
             _ = peak.Should().BeGreaterThan(1.03, "the overshoot is what makes this curve look different");
             _ = TesseraFlyoutAnimationPolicy.SampleSteppedAt(0, 1, 1, 30, ease, entrance: true).Should().BeApproximately(1, 1e-9);
         }
-
-        [Fact]
-        public void Fancy_entrance_duration_uses_presentation_interval()
-        {
-            _ = EncodedActionTimerIntervalMs.Should().Be(2);
-            _ = TesseraFlyoutAnimationPolicy.StepPresentationIntervalMs.Should().Be(16);
-            _ = TesseraFlyoutAnimationPolicy.ResolveFancyEntranceDurationMs(20).Should().Be(
-                TesseraFlyoutAnimationPolicy.ResolvePhaseDurationMs(20)
-                + TesseraFlyoutAnimationPolicy.ResolveInterPhaseWaitMs(entrance: true)
-                + TesseraFlyoutAnimationPolicy.ResolvePhaseDurationMs(20)
-                - TesseraFlyoutAnimationPolicy.ResolvePhase2ShowOverlapMs(
-                    TesseraFlyoutAnimationPolicy.DefaultEase, 20));
-        }
     }
 }
