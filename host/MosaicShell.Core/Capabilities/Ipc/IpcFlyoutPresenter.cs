@@ -67,6 +67,46 @@ namespace MosaicShell.Core.Capabilities.Ipc
             }
         }
 
+        /// <summary>
+        /// Holds the connection to Host's flyout pipe for the life of the Worker: whenever it is down (Host not up yet, or
+        /// Host restarted), tries again until cancelled. Returns when <paramref name="cancellationToken"/> is cancelled.
+        /// </summary>
+        /// <param name="cancellationToken">Stops the loop; the task then completes without throwing.</param>
+        /// <param name="pipeName">Override for tests only.</param>
+        /// <param name="attemptTimeoutMs">How long one attempt waits for the pipe. Tests shorten it.</param>
+        /// <param name="retryDelayMs">Pause between checks and attempts. Tests shorten it.</param>
+        public async Task KeepConnectedAsync(
+            CancellationToken cancellationToken,
+            string pipeName = CapabilityIpcPolicy.PipeName,
+            int attemptTimeoutMs = CapabilityIpcPolicy.ConnectTimeoutMs,
+            int retryDelayMs = CapabilityIpcPolicy.ConnectRetryDelayMs)
+        {
+            while (!cancellationToken.IsCancellationRequested && !_disposed)
+            {
+                if (!IsConnected)
+                {
+                    try
+                    {
+                        await ConnectAsync(cancellationToken, pipeName, attemptTimeoutMs).ConfigureAwait(false);
+                    }
+                    catch (Exception ex) when (ex is OperationCanceledException or TimeoutException or IOException
+                                               or ObjectDisposedException)
+                    {
+                        // Host is not listening yet; try again after the pause.
+                    }
+                }
+
+                try
+                {
+                    await Task.Delay(retryDelayMs, cancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+            }
+        }
+
         /// <param name="cancellationToken">Cancels the connect attempt.</param>
         /// <param name="pipeName">Override for tests only; production callers use the default so
         /// Worker and Host agree on <see cref="CapabilityIpcPolicy.PipeName"/>.</param>
@@ -250,7 +290,10 @@ namespace MosaicShell.Core.Capabilities.Ipc
             private Task? _readLoop;
             private bool _disposed;
 
-            public bool IsConnected => !_disposed && _pipe.IsConnected;
+            private volatile bool _peerGone;
+
+            // A client pipe still reports connected after the server closes its end; the read loop is what notices.
+            public bool IsConnected => !_disposed && !_peerGone && _pipe.IsConnected;
 
             public void StartReadLoop()
             {
@@ -293,6 +336,7 @@ namespace MosaicShell.Core.Capabilities.Ipc
                 }
                 catch (OperationCanceledException) { /* shutdown */ }
                 catch { /* pipe closed */ }
+                finally { _peerGone = true; }
             }
 
             public void Dispose()

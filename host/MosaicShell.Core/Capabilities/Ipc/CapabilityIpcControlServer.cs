@@ -6,9 +6,12 @@ namespace MosaicShell.Core.Capabilities.Ipc
     /// <summary>
     /// Worker-side control plane: Host Hub arm/disarm requests against the local daemon.
     /// </summary>
-    public sealed class CapabilityIpcControlServer(ICapabilityHost daemon) : IDisposable
+    public sealed class CapabilityIpcControlServer(
+        ICapabilityHost daemon,
+        string pipeName = CapabilityIpcControlPolicy.PipeName) : IDisposable
     {
         private readonly ICapabilityHost _daemon = daemon;
+        private readonly string _pipeName = pipeName;
         private readonly CancellationTokenSource _cts = new();
         private Task? _acceptLoop;
         private ServerConnection? _client;
@@ -33,25 +36,43 @@ namespace MosaicShell.Core.Capabilities.Ipc
                 try
                 {
                     NamedPipeServerStream pipe = new(
-                        CapabilityIpcControlPolicy.PipeName,
+                        _pipeName,
                         PipeDirection.InOut,
                         1,
                         PipeTransmissionMode.Byte,
                         PipeOptions.Asynchronous);
 
                     await pipe.WaitForConnectionAsync(_cts.Token).ConfigureAwait(false);
+                    ServerConnection connection = new(pipe, HandleRequest);
                     lock (_gate)
                     {
                         _client?.Dispose();
-                        _client = new ServerConnection(pipe, HandleRequest);
+                        _client = connection;
                     }
 
-                    _client.StartReadLoop();
+                    connection.StartReadLoop();
+
+                    // The pipe allows one instance, so the next one can only be opened once this client is gone and its
+                    // instance is disposed. Waiting here is what lets the next Host connect after this one exits.
+                    await connection.Completion.WaitAsync(_cts.Token).ConfigureAwait(false);
+                    lock (_gate)
+                    {
+                        _client = ReferenceEquals(_client, connection) ? null : _client;
+                    }
+
+                    connection.Dispose();
                 }
                 catch (OperationCanceledException) { break; }
-                catch { /* retry */ }
+                catch
+                {
+                    // Pausing keeps a persistent failure (no pipe can be created) from becoming a busy loop.
+                    try { await Task.Delay(RetryDelayMs, _cts.Token).ConfigureAwait(false); }
+                    catch (OperationCanceledException) { break; }
+                }
             }
         }
+
+        private const int RetryDelayMs = 100;
 
         private CapabilityControlMessage HandleRequest(CapabilityControlMessage request)
         {
@@ -142,6 +163,9 @@ namespace MosaicShell.Core.Capabilities.Ipc
             {
                 _readLoop = Task.Run(ReadLoopAsync);
             }
+
+            /// <summary>Completes when the peer has disconnected or the connection was disposed.</summary>
+            public Task Completion => _readLoop ?? Task.CompletedTask;
 
             private async Task ReadLoopAsync()
             {

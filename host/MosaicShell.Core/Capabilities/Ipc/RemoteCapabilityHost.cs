@@ -30,14 +30,16 @@ namespace MosaicShell.Core.Capabilities.Ipc
             SendRequest(new CapabilityControlMessage(CapabilityControlMessageType.GetArmedIds, NextId()))
                 .StringList?.ToList() ?? [];
 
-        public bool TryConnect(CancellationToken cancellationToken = default)
+        public bool TryConnect(
+            CancellationToken cancellationToken = default,
+            string pipeName = CapabilityIpcControlPolicy.PipeName)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
             try
             {
                 NamedPipeClientStream pipe = new(
                     ".",
-                    CapabilityIpcControlPolicy.PipeName,
+                    pipeName,
                     PipeDirection.InOut,
                     PipeOptions.Asynchronous);
 
@@ -167,7 +169,10 @@ namespace MosaicShell.Core.Capabilities.Ipc
                 _readLoop = Task.Run(ReadLoopAsync);
             }
 
-            public bool IsConnected => !_disposed && _pipe.IsConnected;
+            private volatile bool _peerGone;
+
+            // A client pipe still reports connected after the server closes its end; the read loop is what notices.
+            public bool IsConnected => !_disposed && !_peerGone && _pipe.IsConnected;
 
             public CapabilityControlMessage SendRequest(CapabilityControlMessage request)
             {
@@ -212,6 +217,7 @@ namespace MosaicShell.Core.Capabilities.Ipc
                 }
                 catch (OperationCanceledException) { /* shutdown */ }
                 catch { /* pipe closed */ }
+                finally { _peerGone = true; }
             }
 
             public void Dispose()
