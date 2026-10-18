@@ -18,7 +18,36 @@ namespace MosaicShell.Host.Tests
     {
         private const int WaitTimeoutMs = 8000;
 
-        public static FlyoutTraceSummary Run(FlyoutScenario scenario)
+        /// <summary>The summary plus the raw trace lines it was parsed from.</summary>
+        internal sealed record ScenarioReplay(FlyoutTraceSummary Summary, string[] Lines)
+        {
+            /// <summary>Shadow-mode disagreements the presenter traced, as <c>legacy=… next=… ledger=…</c> text.</summary>
+            public IReadOnlyList<string> ShadowDisagreements
+            {
+                get
+                {
+                    const string marker = "pipeline shadow disagreement ";
+                    List<string> found = [];
+                    foreach (string line in Lines)
+                    {
+                        int at = line.IndexOf(marker, StringComparison.Ordinal);
+                        if (at >= 0)
+                        {
+                            found.Add(line[(at + marker.Length)..]);
+                        }
+                    }
+
+                    return found;
+                }
+            }
+        }
+
+        public static FlyoutTraceSummary Run(FlyoutScenario scenario, FlyoutPipelineMode mode = FlyoutPipelineMode.Legacy)
+        {
+            return Replay(scenario, mode).Summary;
+        }
+
+        public static ScenarioReplay Replay(FlyoutScenario scenario, FlyoutPipelineMode mode)
         {
             string logDirectory = Path.Combine(AppPaths.CacheDirectory, "baseline-" + Guid.NewGuid().ToString("N"));
             string logPath = Path.Combine(logDirectory, "flyout.log");
@@ -26,7 +55,7 @@ namespace MosaicShell.Host.Tests
             Exception? failure = null;
             try
             {
-                AvaloniaFlyoutPresenter presenter = new(HostServicesFakes.Create());
+                AvaloniaFlyoutPresenter presenter = new(HostServicesFakes.Create(), null, mode);
                 Dictionary<string, int> traceWaits = [];
                 foreach (FlyoutScenarioStep step in scenario.Steps)
                 {
@@ -50,7 +79,7 @@ namespace MosaicShell.Host.Tests
                 throw new InvalidOperationException($"{failure.Message}\nLast trace lines:\n{tail}", failure);
             }
 
-            return FlyoutTraceSummary.Parse(lines);
+            return new ScenarioReplay(FlyoutTraceSummary.Parse(lines), lines);
         }
 
         private static void Execute(
