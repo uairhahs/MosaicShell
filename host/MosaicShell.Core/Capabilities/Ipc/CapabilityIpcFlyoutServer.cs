@@ -57,10 +57,26 @@ namespace MosaicShell.Core.Capabilities.Ipc
                         PipeTransmissionMode.Byte,
                         PipeOptions.Asynchronous);
 
-                    await pipe.WaitForConnectionAsync(_cts.Token).ConfigureAwait(false);
+                    try
+                    {
+                        await pipe.WaitForConnectionAsync(_cts.Token).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        // A client may have connected as the server was disposed; closing the pipe is what tells it.
+                        pipe.Dispose();
+                        throw;
+                    }
+
                     ServerConnection connection = new(pipe, HandleClientMessage, _runOnUiThread);
                     lock (_gate)
                     {
+                        if (_disposed)
+                        {
+                            connection.Dispose();
+                            break;
+                        }
+
                         _client?.Dispose();
                         _client = connection;
                     }

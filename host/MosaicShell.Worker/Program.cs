@@ -93,7 +93,7 @@ namespace MosaicShell.Worker
             Console.WriteLine("Worker running. Press Enter to disarm all and exit.");
             _ = await Task.Run(Console.ReadLine).ConfigureAwait(false);
 
-            await daemon.DisarmAllAsync().ConfigureAwait(false);
+            await daemon.DisarmAllAsync(persist: false).ConfigureAwait(false);
             await stopReconnecting.CancelAsync().ConfigureAwait(false);
             await keepConnected.ConfigureAwait(false);
             return 0;

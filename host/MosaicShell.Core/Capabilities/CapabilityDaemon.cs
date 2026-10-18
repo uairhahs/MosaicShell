@@ -158,7 +158,7 @@ namespace MosaicShell.Core.Capabilities
             return true;
         }
 
-        public async Task DisarmAllAsync(CancellationToken cancellationToken = default)
+        public async Task DisarmAllAsync(bool persist = true, CancellationToken cancellationToken = default)
         {
             List<string> ids;
             lock (_gate)
@@ -171,7 +171,11 @@ namespace MosaicShell.Core.Capabilities
                 _ = await DisarmAsync(id, persist: false, cancellationToken).ConfigureAwait(false);
             }
 
-            Persist();
+            if (persist)
+            {
+                Persist();
+            }
+
             _ui.Flyouts.HideAll();
         }
 

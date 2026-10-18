@@ -221,7 +221,8 @@ namespace MosaicShell.Host
 
             if (_localDaemon is not null)
             {
-                await _localDaemon.DisarmAllAsync();
+                // Stop the modules but keep the saved armed list: it is what arms them again on the next start.
+                await _localDaemon.DisarmAllAsync(persist: false);
             }
 
             _ipcFlyoutServer?.Dispose();

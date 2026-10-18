@@ -135,6 +135,27 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public async Task Disarming_everything_without_persisting_keeps_the_saved_armed_list_for_the_next_start()
+        {
+            using (CapabilityDaemon first = CreateDaemon())
+            {
+                _ = await first.ArmAsync("Tessera");
+                _ = await first.ArmAsync("Inlay");
+
+                // What a clean shutdown does: stop everything, but leave the saved list as it was.
+                await first.DisarmAllAsync(persist: false);
+
+                first.ArmedModuleIds.Should().BeEmpty();
+                _flyouts.HideAllCalls.Should().Be(1);
+            }
+
+            CapabilityStore.Load().Armed.Should().BeEquivalentTo("Tessera", "Inlay");
+            using CapabilityDaemon second = CreateDaemon();
+            await second.RestoreAsync();
+            second.ArmedModuleIds.Should().BeEquivalentTo("Tessera", "Inlay");
+        }
+
+        [Fact]
         public async Task Persist_saves_exactly_the_armed_modules()
         {
             using CapabilityDaemon daemon = CreateDaemon();
