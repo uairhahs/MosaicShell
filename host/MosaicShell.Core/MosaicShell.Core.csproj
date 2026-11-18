@@ -29,6 +29,17 @@
     <AdditionalFiles Remove="NativeMethods.txt;NativeMethods.json" />
   </ItemGroup>
 
+  <!--
+    Linux services (MPRIS over D-Bus). Tmds.DBus.Protocol is the version Avalonia.FreeDesktop already ships, so the
+    Host carries one copy. The Windows build leaves Services/Linux out entirely.
+  -->
+  <ItemGroup Condition="'$(MosaicPortable)' == 'true'">
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.94.1" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(MosaicPortable)' != 'true'">
+    <Compile Remove="Services/Linux/**" />
+  </ItemGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="MosaicShell.Core.Tests" />
   </ItemGroup>

@@ -31,6 +31,11 @@
     <Compile Remove="WindowsAudioEndpointPolicyTests.cs" />
   </ItemGroup>
 
+  <!-- Tests of Core's Services/Linux, which the Windows build does not compile. -->
+  <ItemGroup Condition="'$(MosaicPortable)' != 'true'">
+    <Compile Remove="Linux/**" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\MosaicShell.Core\MosaicShell.Core.csproj" />
   </ItemGroup>
