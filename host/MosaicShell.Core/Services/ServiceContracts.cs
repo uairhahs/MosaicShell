@@ -156,6 +156,49 @@ namespace MosaicShell.Core.Services
             ShellFlyoutTriggers.Dispose();
         }
 
+        /// <summary>
+        /// The services for the OS this build runs on: the Windows set on Windows, otherwise
+        /// <see cref="CreateUnsupportedPlatformDefaults"/> until that platform has its own.
+        /// </summary>
+        /// <param name="browserSources">See <c>CreateWindowsDefaults</c>; ignored where there is no browser bridge.</param>
+        public static HostServices CreatePlatformDefaults(bool browserSources = false)
+        {
+#if WINDOWS
+            return CreateWindowsDefaults(browserSources);
+#else
+            _ = browserSources;
+            return CreateUnsupportedPlatformDefaults();
+#endif
+        }
+
+        /// <summary>
+        /// Every service present and inert: features report themselves unavailable rather than showing invented data.
+        /// For a platform with no implementations yet, so the Host can start and draw.
+        /// </summary>
+        public static HostServices CreateUnsupportedPlatformDefaults()
+        {
+            return new HostServices
+            {
+                Audio = new NullAudioService(),
+                AppAudio = new NullAppAudioService(),
+                Brightness = new NullBrightnessService(),
+                Media = new NullMediaSessionService(),
+                Hotkeys = new NullHotkeyService(),
+                Metrics = new NullSystemMetricsService(),
+                AudioLevels = new NullAudioLevelService(),
+                Autostart = new NullAutostartService(),
+                BrightnessChanges = new NullBrightnessChangeSource(),
+                OsdSuppressor = new NullNativeOsdSuppressor(),
+                LegacyVolumeKeys = new NullLegacyMediaKeyHook(),
+                Idle = new NullIdleService(),
+                Fullscreen = new NullFullscreenProbe(),
+                LockKeys = new NullLockKeysService(),
+                Airplane = new NullAirplaneModeService(),
+                AudioDevices = new NullAudioDeviceService(),
+                ShellFlyoutTriggers = new NullShellFlyoutTriggerSource(),
+            };
+        }
+
 #if WINDOWS
         /// <param name="browserSources">
         /// True only in the Host: it listens for the browser extension and falls back to reading the browser's like buttons
