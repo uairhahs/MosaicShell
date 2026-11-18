@@ -29,7 +29,7 @@ namespace MosaicShell.Core.Tests
             try { Directory.Delete(_root, true); } catch { /* ignore */ }
         }
 
-        [Fact]
+        [WindowsFact]
         public void Unified_shell_styles_use_single_hwnd_acrylic_with_media_strip()
         {
             Dictionary<string, string> stacked = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
@@ -47,7 +47,7 @@ namespace MosaicShell.Core.Tests
             _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Radial).Should().BeFalse();
         }
 
-        [Fact]
+        [WindowsFact]
         public void Split_styles_keep_n_window_path_and_block_single_shell()
         {
             Dictionary<string, string> stacked = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
@@ -58,7 +58,7 @@ namespace MosaicShell.Core.Tests
             _ = TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(stacked, StyleIds.Meter).Should().BeFalse();
         }
 
-        [Fact]
+        [WindowsFact]
         public void Stacked_acrylic_is_mutually_exclusive_with_single_shell_eligible_on_split_styles()
         {
             Dictionary<string, string> stacked = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
@@ -69,7 +69,7 @@ namespace MosaicShell.Core.Tests
             _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Meter).Should().BeTrue();
         }
 
-        [Fact]
+        [WindowsFact]
         public void Single_shell_stays_on_single_window_acrylic_path()
         {
             Dictionary<string, string> single = new() { ["showMediaStrip"] = "0", ["acrylic"] = "1" };
@@ -80,7 +80,7 @@ namespace MosaicShell.Core.Tests
             _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(single, StyleIds.Fluent).Should().BeFalse();
         }
 
-        [Fact]
+        [WindowsFact]
         public void Stacked_acrylic_requires_trial_opt_in_and_acrylic_setting()
         {
             Dictionary<string, string> stacked = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
@@ -95,7 +95,7 @@ namespace MosaicShell.Core.Tests
             _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(frost, StyleIds.Meter).Should().BeFalse();
         }
 
-        [Fact]
+        [WindowsFact]
         public void Stacked_acrylic_can_be_enabled_from_persisted_hub_setting()
         {
             Dictionary<string, string> stacked = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
@@ -217,7 +217,7 @@ namespace MosaicShell.Core.Tests
                 .Should().BeFalse();
         }
 
-        [Fact]
+        [WindowsFact]
         public void Stacked_volume_media_requests_acrylic_blur_on_each_hwnd()
         {
             HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);

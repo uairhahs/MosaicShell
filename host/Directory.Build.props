@@ -3,6 +3,17 @@
     <!-- Date-build tags (not semver). Overridden in release CI via /p:Version=yyyy.M.d-bN -->
     <Version>0.0.0-dev</Version>
   </PropertyGroup>
+  <!--
+    Target framework. Windows builds keep the Windows TFM (the WINDOWS symbol is defined there).
+    Any other OS builds the portable net10.0 TFM so Core and its tests compile on Linux.
+    Force either one with /p:MosaicPortable=true or /p:MosaicPortable=false.
+  -->
+  <PropertyGroup>
+    <MosaicPortable Condition="'$(MosaicPortable)' == '' and '$(OS)' != 'Windows_NT'">true</MosaicPortable>
+    <MosaicPortable Condition="'$(MosaicPortable)' == ''">false</MosaicPortable>
+    <MosaicTargetFramework Condition="'$(MosaicPortable)' == 'true'">net10.0</MosaicTargetFramework>
+    <MosaicTargetFramework Condition="'$(MosaicPortable)' != 'true'">net10.0-windows10.0.19041.0</MosaicTargetFramework>
+  </PropertyGroup>
   <PropertyGroup>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>

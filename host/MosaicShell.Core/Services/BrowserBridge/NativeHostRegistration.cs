@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using System.Security;
 using System.Text;
 using System.Text.Json;
@@ -17,6 +18,7 @@ namespace MosaicShell.Core.Services.BrowserBridge
         void DeleteTree(string subKey);
     }
 
+    [SupportedOSPlatform("windows")]
     public sealed class CurrentUserRegistry : IUserRegistry
     {
         public string? GetDefault(string subKey)

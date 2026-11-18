@@ -1,5 +1,7 @@
+#if WINDOWS
 using MosaicShell.Core.Services.BrowserBridge;
 using MosaicShell.Core.Services.BrowserUi;
+#endif
 
 namespace MosaicShell.Core.Services
 {
@@ -23,6 +25,7 @@ namespace MosaicShell.Core.Services
             return () => preferred.Active is null ? session() : null;
         }
 
+#if WINDOWS
         /// <summary>The extension source first, then the accessibility fallback, both reading Windows' current session.</summary>
         public static IBrowserMediaSource[] Create(Func<MediaSessionInfo?> session)
         {
@@ -35,5 +38,6 @@ namespace MosaicShell.Core.Services
             BrowserUiSource fallback = new(new WindowsBrowserUi(), FallbackSession(extension, session), TimeProvider.System);
             return [extension, fallback];
         }
+#endif
     }
 }

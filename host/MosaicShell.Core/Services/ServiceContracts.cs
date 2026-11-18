@@ -156,6 +156,7 @@ namespace MosaicShell.Core.Services
             ShellFlyoutTriggers.Dispose();
         }
 
+#if WINDOWS
         /// <param name="browserSources">
         /// True only in the Host: it listens for the browser extension and falls back to reading the browser's like buttons
         /// through the accessibility tree. The Worker and tests, which build their own services, must not each open the
@@ -197,5 +198,6 @@ namespace MosaicShell.Core.Services
                 ? new CompositeMediaSessionService(smtc, BrowserSourceStack.Create(() => smtc.Current))
                 : new CompositeMediaSessionService(smtc);
         }
+#endif
     }
 }
