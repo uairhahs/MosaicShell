@@ -262,45 +262,4 @@ namespace MosaicShell.Core.Services
             _enum.Dispose();
         }
     }
-
-    public sealed class NullLockKeysService : ILockKeysService
-    {
-        public bool IsActive { get; private set; }
-        public LockKeyState Caps => new(LockKeyKind.CapsLock, false);
-        public LockKeyState Num => new(LockKeyKind.NumLock, false);
-        public LockKeyState Scroll => new(LockKeyKind.ScrollLock, false);
-        public event EventHandler<LockKeyState>? Changed { add { } remove { } }
-        public void Start()
-        {
-            IsActive = true;
-        }
-
-        public void Stop()
-        {
-            IsActive = false;
-        }
-
-        public void Dispose() { }
-    }
-
-    public sealed class NullAirplaneModeService : IAirplaneModeService
-    {
-        public bool IsSupported => false;
-        public bool IsEnabled => false;
-        public event EventHandler? Changed { add { } remove { } }
-        public void Start() { }
-        public void Stop() { }
-        public void Dispose() { }
-    }
-
-    public sealed class NullAudioDeviceService : IAudioDeviceService
-    {
-        public IReadOnlyList<AudioOutputDevice> GetOutputDevices()
-        {
-            return [];
-        }
-
-        public void SetDefaultOutput(string deviceId) { }
-        public void Dispose() { }
-    }
 }
