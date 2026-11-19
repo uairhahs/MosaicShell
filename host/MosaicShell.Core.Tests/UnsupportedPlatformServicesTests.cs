@@ -4,7 +4,7 @@ using MosaicShell.Core.Services;
 namespace MosaicShell.Core.Tests
 {
     /// <summary>
-    /// The service set a platform without its own implementations gets (Linux, for now). Every member must exist,
+    /// The service set a platform without its own implementations gets (not Windows or Linux). Every member must exist,
     /// do nothing harmful, and say plainly that the feature is unavailable instead of inventing data.
     /// </summary>
     public class UnsupportedPlatformServicesTests
@@ -73,9 +73,9 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void Platform_defaults_use_the_unsupported_set_off_windows()
+        public void Platform_defaults_use_the_unsupported_set_where_there_is_no_platform_set()
         {
-            if (OperatingSystem.IsWindows())
+            if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
             {
                 return;
             }

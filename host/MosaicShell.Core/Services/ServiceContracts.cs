@@ -157,7 +157,7 @@ namespace MosaicShell.Core.Services
         }
 
         /// <summary>
-        /// The services for the OS this build runs on: the Windows set on Windows, otherwise
+        /// The services for the OS this build runs on: the Windows set on Windows, the Linux set on Linux, otherwise
         /// <see cref="CreateUnsupportedPlatformDefaults"/> until that platform has its own.
         /// </summary>
         /// <param name="browserSources">See <c>CreateWindowsDefaults</c>; ignored where there is no browser bridge.</param>
@@ -167,7 +167,7 @@ namespace MosaicShell.Core.Services
             return CreateWindowsDefaults(browserSources);
 #else
             _ = browserSources;
-            return CreateUnsupportedPlatformDefaults();
+            return OperatingSystem.IsLinux() ? CreateLinuxDefaults() : CreateUnsupportedPlatformDefaults();
 #endif
         }
 
@@ -177,12 +177,38 @@ namespace MosaicShell.Core.Services
         /// </summary>
         public static HostServices CreateUnsupportedPlatformDefaults()
         {
+            return CreateInert(new NullMediaSessionService());
+        }
+
+#if !WINDOWS
+        /// <summary>
+        /// Linux: media from MPRIS players on the session bus; every other service inert until it has a Linux
+        /// implementation. The browser bridge is not wired on Linux yet, so there are no browser sources.
+        /// </summary>
+        public static HostServices CreateLinuxDefaults()
+        {
+            return CreateInert(CreateLinuxMediaStack());
+        }
+
+        /// <summary>
+        /// MPRIS in the same composite that Windows wraps SMTC in, so both platforms merge and present by one path.
+        /// </summary>
+        /// <param name="busAddress">Null for the user's session bus; tests pass a private bus.</param>
+        public static IMediaSessionService CreateLinuxMediaStack(string? busAddress = null)
+        {
+            return new CompositeMediaSessionService(
+                new Mpris.MprisMediaSessionService(new Linux.DBusMprisBus(busAddress), new Mpris.MprisArtSource()));
+        }
+#endif
+
+        private static HostServices CreateInert(IMediaSessionService media)
+        {
             return new HostServices
             {
                 Audio = new NullAudioService(),
                 AppAudio = new NullAppAudioService(),
                 Brightness = new NullBrightnessService(),
-                Media = new NullMediaSessionService(),
+                Media = media,
                 Hotkeys = new NullHotkeyService(),
                 Metrics = new NullSystemMetricsService(),
                 AudioLevels = new NullAudioLevelService(),
