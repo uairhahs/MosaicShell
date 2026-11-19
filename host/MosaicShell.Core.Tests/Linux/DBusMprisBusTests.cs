@@ -1,6 +1,7 @@
 using FluentAssertions;
 using MosaicShell.Core.Services.Linux;
 using MosaicShell.Core.Services.Mpris;
+using Tmds.DBus.Protocol;
 
 namespace MosaicShell.Core.Tests.Linux
 {
@@ -177,6 +178,39 @@ namespace MosaicShell.Core.Tests.Linux
                 await service.SeekAsync(30);
                 _ = _player.SnapshotCalls().Should().Equal("SetPosition /fake/track/2 30000000");
             }
+        }
+
+        [LinuxBusFact]
+        public async Task Disposing_while_connecting_leaves_no_connection_behind()
+        {
+            // Services are disposed whenever the Host or Worker shuts down, which can be before the bus has connected.
+            // A connection that finishes connecting after Dispose would live on with nobody to close it.
+            using DBusConnection observer = new(_dbus!.Address);
+            await observer.ConnectAsync();
+            int before = await ClientCountAsync(observer);
+
+            DBusMprisBus bus = new(_dbus.Address);
+            Task connect = bus.ConnectAsync();
+            bus.Dispose();
+
+            // ConnectAsync must end (as disposed), not wait forever on a handshake that will never finish.
+            Func<Task> connecting = () => connect.WaitAsync(Patience);
+            _ = await connecting.Should().ThrowAsync<ObjectDisposedException>();
+
+            int after = await ClientCountAsync(observer);
+            for (DateTime until = DateTime.UtcNow + Patience; after != before && DateTime.UtcNow < until; after = await ClientCountAsync(observer))
+            {
+                await Task.Delay(20);
+            }
+
+            _ = after.Should().Be(before, "the half-open connection must be closed by Dispose");
+        }
+
+        /// <summary>Clients on the bus, by unique name (":1.N").</summary>
+        private static async Task<int> ClientCountAsync(DBusConnection connection)
+        {
+            string[] names = await connection.ListServicesAsync();
+            return names.Count(n => n.StartsWith(':'));
         }
 
         private sealed class NoArt : IMprisArtSource

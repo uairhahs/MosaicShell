@@ -8,7 +8,7 @@ namespace MosaicShell.Core.Services.Linux
     /// NameOwnerChanged for players arriving and leaving, and maps PropertiesChanged and Seeked, which arrive from a
     /// unique name such as ":1.858", back to the player's well-known name.
     /// </summary>
-    /// <param name="address">A bus address; null for the user's session bus. Tests pass a private bus.</param>
+    /// <param name="address">A bus address; null for the user's session bus, empty for none. Tests pass a private bus.</param>
     public sealed class DBusMprisBus(string? address = null) : IMprisBus
     {
         /// <summary>
@@ -22,9 +22,13 @@ namespace MosaicShell.Core.Services.Linux
         private const string DBusPath = "/org/freedesktop/DBus";
         private const string PropertiesInterface = "org.freedesktop.DBus.Properties";
 
-        private readonly string _address = address ?? DBusAddress.Session
-            ?? throw new InvalidOperationException("No D-Bus session bus address (DBUS_SESSION_BUS_ADDRESS is unset).");
+        // Checked in ConnectAsync, not here, so a machine without a session bus (a bare TTY, a container) still builds
+        // its services and simply has no media session.
+        private readonly string? _address = address ?? DBusAddress.Session;
         private readonly Lock _ownersGate = new();
+
+        // Guards _connection, _watches and _disposed, so a Dispose during ConnectAsync still closes everything.
+        private readonly Lock _lifetimeGate = new();
 
         // Unique name to the player names it owns. A process may own several (a browser with two windows).
         private readonly Dictionary<string, HashSet<string>> _owners = new(StringComparer.Ordinal);
@@ -39,12 +43,28 @@ namespace MosaicShell.Core.Services.Linux
 
         public async Task ConnectAsync()
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-            DBusConnection connection = new(_address);
-            await connection.ConnectAsync().ConfigureAwait(false);
-            _connection = connection;
+            if (string.IsNullOrEmpty(_address))
+            {
+                throw new InvalidOperationException("No D-Bus session bus address (DBUS_SESSION_BUS_ADDRESS is unset).");
+            }
 
-            _watches.Add(await connection.AddMatchAsync(
+            DBusConnection connection = new(_address);
+            lock (_lifetimeGate)
+            {
+                if (_disposed)
+                {
+                    connection.Dispose();
+                    throw new ObjectDisposedException(nameof(DBusMprisBus));
+                }
+
+                // Held before the handshake, not after it: a Dispose that lands mid-handshake must close it, or the
+                // connection finishes connecting with nobody left to close it.
+                _connection = connection;
+            }
+
+            await connection.ConnectAsync().ConfigureAwait(false);
+
+            Keep(await connection.AddMatchAsync(
                 new MatchRule
                 {
                     Type = MessageType.Signal,
@@ -70,7 +90,7 @@ namespace MosaicShell.Core.Services.Linux
                 emitOnCapturedContext: false,
                 ObserverFlags.None).ConfigureAwait(false));
 
-            _watches.Add(await connection.AddMatchAsync(
+            Keep(await connection.AddMatchAsync(
                 new MatchRule
                 {
                     Type = MessageType.Signal,
@@ -89,7 +109,7 @@ namespace MosaicShell.Core.Services.Linux
                 emitOnCapturedContext: false,
                 ObserverFlags.None).ConfigureAwait(false));
 
-            _watches.Add(await connection.AddMatchAsync(
+            Keep(await connection.AddMatchAsync(
                 new MatchRule
                 {
                     Type = MessageType.Signal,
@@ -227,20 +247,44 @@ namespace MosaicShell.Core.Services.Linux
 
         public void Dispose()
         {
-            if (_disposed)
+            IDisposable[] watches;
+            DBusConnection? connection;
+            lock (_lifetimeGate)
             {
-                return;
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _disposed = true;
+                watches = [.. _watches];
+                _watches.Clear();
+                connection = _connection;
+                _connection = null;
             }
 
-            _disposed = true;
-            foreach (IDisposable watch in _watches)
+            foreach (IDisposable watch in watches)
             {
                 watch.Dispose();
             }
 
-            _watches.Clear();
-            _connection?.Dispose();
-            _connection = null;
+            connection?.Dispose();
+        }
+
+        /// <summary>Keeps a signal watch for Dispose, or closes it at once when Dispose has already run.</summary>
+        private void Keep(IDisposable watch)
+        {
+            lock (_lifetimeGate)
+            {
+                if (!_disposed)
+                {
+                    _watches.Add(watch);
+                    return;
+                }
+            }
+
+            watch.Dispose();
+            throw new ObjectDisposedException(nameof(DBusMprisBus));
         }
 
         private void OnNameOwnerChanged(string name, string oldOwner, string newOwner)
