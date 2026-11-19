@@ -160,6 +160,53 @@
       <Setter Property="TextWrapping" Value="Wrap" />
       <Setter Property="Margin" Value="0,0,0,12" />
     </Style>
+    <!-- Motion looks -->
+    <Style Selector="Button.motionCard">
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Margin" Value="0,0,8,8" />
+    </Style>
+    <Style Selector="Button.motionCard /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="Button.motionCard:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.motionCard Border.motionFace">
+      <Setter Property="Background" Value="#181825" />
+      <Setter Property="BorderBrush" Value="#313244" />
+      <Setter Property="BorderThickness" Value="2" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="8" />
+    </Style>
+    <Style Selector="Button.motionCard:pointerover Border.motionFace">
+      <Setter Property="BorderBrush" Value="#585b70" />
+    </Style>
+    <Style Selector="Button.motionCard Border.motionFace.selected">
+      <Setter Property="BorderBrush" Value="#89b4fa" />
+      <Setter Property="Background" Value="#1e2233" />
+    </Style>
+    <Style Selector="Expander.motionFold /template/ ToggleButton#ExpanderHeader">
+      <Setter Property="Background" Value="#181825" />
+      <Setter Property="Foreground" Value="#cdd6f4" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="12,10" />
+    </Style>
+    <Style Selector="Expander.motionFold /template/ Border#ExpanderContent">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="RadioButton.motionDir">
+      <Setter Property="MinWidth" Value="84" />
+      <Setter Property="Margin" Value="0,0,6,0" />
+      <Setter Property="Padding" Value="10,6" />
+      <Setter Property="Foreground" Value="#cdd6f4" />
+    </Style>
     <!-- Readable NumericUpDown sizing -->
     <Style Selector="NumericUpDown.config">
       <Setter Property="MinWidth" Value="168" />
@@ -483,88 +530,150 @@
                     </StackPanel>
                   </Border>
 
-                  <Border Classes="section">
-                    <StackPanel Spacing="16">
-                      <StackPanel Spacing="4">
-                        <TextBlock Classes="sectionTitle" Text="Motion" />
-                        <TextBlock Classes="sectionHint" Text="{Binding TesseraAniStyleDescription}" />
-                      </StackPanel>
-
-                      <StackPanel Spacing="4">
-                        <TextBlock Text="Animation" Foreground="#a6adc8" FontSize="12" />
-                        <ComboBox HorizontalAlignment="Stretch"
-                                  ItemsSource="{Binding TesseraAniChoices}"
-                                  SelectedItem="{Binding SelectedTesseraAni}"
-                                  ToolTip.Tip="None: fade only. Fast: whole flyout slides in. Fancy: slide first, then media chrome grows in." />
-                      </StackPanel>
-
-                      <StackPanel Spacing="12" IsVisible="{Binding TesseraAniDirEnabled}">
-                        <TextBlock Text="Slide" FontSize="13" FontWeight="SemiBold" Foreground="#bac2de" />
-                        <Grid ColumnDefinitions="*,*">
-                          <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,8,0">
-                            <TextBlock Text="From edge" Foreground="#a6adc8" FontSize="12" />
-                            <ComboBox HorizontalAlignment="Stretch"
-                                      ItemsSource="{Binding TesseraAniDirOptions}"
-                                      SelectedItem="{Binding SelectedTesseraAniDir}"
-                                      ToolTip.Tip="Which screen edge the flyout travels from when it appears" />
-                          </StackPanel>
-                          <StackPanel Grid.Column="1" Spacing="4" Margin="8,0,0,0">
-                            <TextBlock Text="Travel distance" Foreground="#a6adc8" FontSize="12" />
-                            <NumericUpDown Classes="config" HorizontalAlignment="Stretch"
-                                           Minimum="10" Maximum="200" Increment="5"
-                                           FormatString="0"
-                                           Value="{Binding TesseraAnimationDisplacement}"
-                                           ToolTip.Tip="Slide distance in physical pixels (YourFlyouts default: 30)" />
-                            <TextBlock Text="pixels" FontSize="11" Foreground="#6c7086" />
-                          </StackPanel>
-                        </Grid>
-                      </StackPanel>
-
-                      <StackPanel Spacing="12" IsVisible="{Binding TesseraAniDirEnabled}">
-                        <TextBlock Text="Timing and easing" FontSize="13" FontWeight="SemiBold" Foreground="#bac2de" />
-                        <Grid ColumnDefinitions="*,*">
-                          <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,8,0">
-                            <TextBlock Text="Steps" Foreground="#a6adc8" FontSize="12" />
-                            <NumericUpDown Classes="config" HorizontalAlignment="Stretch"
-                                           Minimum="10" Maximum="40" Increment="1"
-                                           FormatString="0"
-                                           Value="{Binding TesseraAniSteps}"
-                                           ToolTip.Tip="Tween samples. Each step is one display frame (YourFlyouts default: 20)." />
-                            <TextBlock Text="{Binding TesseraAniPhaseDurationLabel}"
-                                       FontSize="11" Foreground="#6c7086" TextWrapping="Wrap" />
-                          </StackPanel>
-                          <StackPanel Grid.Column="1" Spacing="4" Margin="8,0,0,0">
-                            <TextBlock Text="Easing family" Foreground="#a6adc8" FontSize="12" />
-                            <ComboBox HorizontalAlignment="Stretch"
-                                      ItemsSource="{Binding TesseraEaseFamilies}"
-                                      SelectedItem="{Binding TesseraEaseFamily}"
-                                      ToolTip.Tip="Curve shape (Quart matches YourFlyouts default)" />
-                          </StackPanel>
-                        </Grid>
-                        <Grid ColumnDefinitions="*,*" IsVisible="{Binding TesseraEaseVariantEnabled}">
-                          <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,8,0">
-                            <TextBlock Text="Easing curve" Foreground="#a6adc8" FontSize="12" />
-                            <ComboBox HorizontalAlignment="Stretch"
-                                      ItemsSource="{Binding TesseraEaseVariants}"
-                                      SelectedItem="{Binding TesseraEaseVariant}"
-                                      ToolTip.Tip="In: slow start. Out: slow finish (YourFlyouts default). InOut: both." />
-                          </StackPanel>
-                          <StackPanel Grid.Column="1" Spacing="4" Margin="8,0,0,0" VerticalAlignment="Bottom">
-                            <TextBlock Text="Curve id" Foreground="#a6adc8" FontSize="12" />
-                            <TextBlock Text="{Binding TesseraAniEase}" FontSize="13" Foreground="#cdd6f4" />
-                          </StackPanel>
-                        </Grid>
-                        <StackPanel Spacing="4">
-                          <TextBlock Text="Easing preview" Foreground="#a6adc8" FontSize="12" />
-                          <TextBlock Text="{Binding TesseraAniEase}" FontSize="13" Foreground="#cdd6f4" />
-                          <tessera:TesseraEasePreview AniEase="{Binding TesseraAniEase}"
-                                                      AniSteps="{Binding TesseraAniSteps}"
-                                                      HorizontalAlignment="Stretch" />
+                  <Border x:Name="MotionSection" Classes="section">
+                    <StackPanel Spacing="14">
+                      <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel>
+                          <TextBlock Classes="sectionTitle" Text="Motion" />
+                          <TextBlock Classes="sectionHint" Margin="0"
+                                     Text="How the flyout arrives and leaves. Pick a look, then fine tune it below." />
                         </StackPanel>
-                        <TextBlock Text="{Binding TesseraAniFancyDurationLabel}"
-                                   IsVisible="{Binding TesseraMotionFancyEnabled}"
-                                   FontSize="11" Foreground="#6c7086" TextWrapping="Wrap" />
-                      </StackPanel>
+                        <Button Grid.Column="1" Classes="action" Content="Play on screen" VerticalAlignment="Top"
+                                Command="{Binding PreviewTesseraFlyoutCommand}"
+                                ToolTip.Tip="Save these settings and play a volume flyout on the desktop" />
+                      </Grid>
+
+                      <!-- What it will look like -->
+                      <Border Background="#11111b" CornerRadius="10" Padding="12">
+                        <Grid ColumnDefinitions="260,*">
+                          <tessera:TesseraMotionPreview Width="260" VerticalAlignment="Center"
+                                                        Ani="{Binding TesseraMotionCurrent.Ani}"
+                                                        AniSteps="{Binding TesseraMotionCurrent.AniSteps}"
+                                                        AniEase="{Binding TesseraMotionCurrent.AniEase}"
+                                                        AniDir="{Binding TesseraMotionCurrent.AniDir}"
+                                                        DisplacementPx="{Binding TesseraMotionCurrent.DisplacementPx}" />
+                          <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Spacing="4">
+                            <TextBlock Text="{Binding TesseraMotionPresetName}" FontSize="20" FontWeight="SemiBold" Foreground="#cdd6f4" />
+                            <TextBlock Text="{Binding TesseraMotionSummary}" FontSize="12" Foreground="#a6adc8" TextWrapping="Wrap" />
+                            <TextBlock FontSize="11" Foreground="#6c7086" TextWrapping="Wrap" Margin="0,6,0,0">
+                              <Run Text="{Binding TesseraMotionDurationLabel}" />
+                              <Run Text="·" />
+                              <Run Text="{Binding TesseraMotionDistanceLabel}" />
+                            </TextBlock>
+                          </StackPanel>
+                        </Grid>
+                      </Border>
+
+                      <!-- The looks, each playing live -->
+                      <ItemsControl ItemsSource="{Binding TesseraMotionPresetItems}">
+                        <ItemsControl.ItemsPanel>
+                          <ItemsPanelTemplate>
+                            <UniformGrid Columns="3" />
+                          </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:TesseraMotionPresetItem">
+                            <Button Classes="motionCard"
+                                    Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).SelectTesseraMotionPresetCommand}"
+                                    CommandParameter="{Binding}"
+                                    ToolTip.Tip="{Binding Description}">
+                              <Border Classes="motionFace" Classes.selected="{Binding IsSelected}">
+                                <StackPanel Spacing="6">
+                                  <tessera:TesseraMotionPreview IsHitTestVisible="False"
+                                                                Ani="{Binding Ani}"
+                                                                AniSteps="{Binding AniSteps}"
+                                                                AniEase="{Binding AniEase}"
+                                                                AniDir="{Binding AniDir}"
+                                                                DisplacementPx="{Binding DisplacementPx}" />
+                                  <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                             Foreground="#cdd6f4" HorizontalAlignment="Center" />
+                                </StackPanel>
+                              </Border>
+                            </Button>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+
+                      <Expander Classes="motionFold" Header="Fine tune" HorizontalAlignment="Stretch" Background="Transparent">
+                        <StackPanel Spacing="16" Margin="0,8,0,0">
+                          <StackPanel Orientation="Horizontal" Spacing="24">
+                            <ToggleSwitch OnContent="Slides in" OffContent="Fades only"
+                                          IsChecked="{Binding TesseraMotionSlides}"
+                                          ToolTip.Tip="Off: the flyout stays put and fades in and out" />
+                            <ToggleSwitch OnContent="Reveals the media strip" OffContent="No media reveal"
+                                          IsChecked="{Binding TesseraMotionRevealsMedia}"
+                                          IsEnabled="{Binding TesseraMotionRevealEnabled}"
+                                          ToolTip.Tip="After the slide, the media strip grows in beneath the volume bar" />
+                          </StackPanel>
+
+                          <StackPanel Spacing="4" IsEnabled="{Binding TesseraMotionSlides}">
+                            <Grid ColumnDefinitions="*,Auto">
+                              <TextBlock Text="Speed" Foreground="#a6adc8" FontSize="12" />
+                              <TextBlock Grid.Column="1" Text="{Binding TesseraMotionDurationLabel}" Foreground="#cdd6f4" FontSize="12" />
+                            </Grid>
+                            <Slider Minimum="160" Maximum="640" SmallChange="16" LargeChange="64" TickFrequency="16"
+                                    IsSnapToTickEnabled="True" Value="{Binding TesseraMotionDurationMs}" />
+                            <Grid ColumnDefinitions="*,*">
+                              <TextBlock Text="Faster" FontSize="11" Foreground="#6c7086" />
+                              <TextBlock Grid.Column="1" Text="Slower" FontSize="11" Foreground="#6c7086" HorizontalAlignment="Right" />
+                            </Grid>
+                          </StackPanel>
+
+                          <StackPanel Spacing="4" IsEnabled="{Binding TesseraMotionSlides}">
+                            <Grid ColumnDefinitions="*,Auto">
+                              <TextBlock Text="Distance" Foreground="#a6adc8" FontSize="12" />
+                              <TextBlock Grid.Column="1" Text="{Binding TesseraMotionDistanceLabel}" Foreground="#cdd6f4" FontSize="12" />
+                            </Grid>
+                            <Slider Minimum="10" Maximum="200" SmallChange="5" LargeChange="20" TickFrequency="5"
+                                    IsSnapToTickEnabled="True" Value="{Binding TesseraAnimationDisplacement}" />
+                            <Grid ColumnDefinitions="*,*">
+                              <TextBlock Text="Short" FontSize="11" Foreground="#6c7086" />
+                              <TextBlock Grid.Column="1" Text="Far" FontSize="11" Foreground="#6c7086" HorizontalAlignment="Right" />
+                            </Grid>
+                          </StackPanel>
+
+                          <StackPanel Spacing="6" IsEnabled="{Binding TesseraMotionSlides}">
+                            <TextBlock Text="Slides in from" Foreground="#a6adc8" FontSize="12" />
+                            <StackPanel Orientation="Horizontal">
+                              <RadioButton Classes="motionDir" GroupName="TesseraMotionFrom" Content="← Left"
+                                           IsChecked="{Binding TesseraMotionFromLeft}" />
+                              <RadioButton Classes="motionDir" GroupName="TesseraMotionFrom" Content="→ Right"
+                                           IsChecked="{Binding TesseraMotionFromRight}" />
+                              <RadioButton Classes="motionDir" GroupName="TesseraMotionFrom" Content="↑ Top"
+                                           IsChecked="{Binding TesseraMotionFromTop}" />
+                              <RadioButton Classes="motionDir" GroupName="TesseraMotionFrom" Content="↓ Bottom"
+                                           IsChecked="{Binding TesseraMotionFromBottom}" />
+                            </StackPanel>
+                          </StackPanel>
+
+                          <StackPanel Spacing="4">
+                            <TextBlock Text="Feel" Foreground="#a6adc8" FontSize="12" />
+                            <ComboBox MinWidth="220" HorizontalAlignment="Left"
+                                      ItemsSource="{Binding TesseraMotionCurves}"
+                                      SelectedItem="{Binding SelectedTesseraMotionCurve}"
+                                      ToolTip.Tip="How the movement speeds up and settles. The preview above plays exactly this curve." />
+                          </StackPanel>
+
+                          <Expander Classes="motionFold" Header="All curves" HorizontalAlignment="Stretch" Background="Transparent">
+                            <Grid ColumnDefinitions="*,*" Margin="0,8,0,0">
+                              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,8,0">
+                                <TextBlock Text="Family" Foreground="#a6adc8" FontSize="12" />
+                                <ComboBox HorizontalAlignment="Stretch"
+                                          ItemsSource="{Binding TesseraEaseFamilies}"
+                                          SelectedItem="{Binding TesseraEaseFamily}" />
+                              </StackPanel>
+                              <StackPanel Grid.Column="1" Spacing="4" Margin="8,0,0,0"
+                                          IsVisible="{Binding TesseraEaseVariantEnabled}">
+                                <TextBlock Text="Shape" Foreground="#a6adc8" FontSize="12" />
+                                <ComboBox HorizontalAlignment="Stretch"
+                                          ItemsSource="{Binding TesseraEaseVariants}"
+                                          SelectedItem="{Binding TesseraEaseVariant}"
+                                          ToolTip.Tip="In: slow start. Out: slow finish. InOut: both." />
+                              </StackPanel>
+                            </Grid>
+                          </Expander>
+                        </StackPanel>
+                      </Expander>
                     </StackPanel>
                   </Border>
 

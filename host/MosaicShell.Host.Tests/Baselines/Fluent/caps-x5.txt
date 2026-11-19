@@ -1,0 +1,6 @@
+calls: show=1 update=4 softRefresh=0
+decisions: ColdBuild,PatchActiveSession,PatchActiveSession,PatchActiveSession,PatchActiveSession
+pipeline: presents=1 patches=4 rebuilds=0 revives=0
+motion: enter
+restarts: motion=0 superseded=0 marquee=0
+maxVisibleProcessWindows: 0

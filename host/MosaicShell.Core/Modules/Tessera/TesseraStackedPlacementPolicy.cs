@@ -54,8 +54,6 @@ namespace MosaicShell.Core.Modules.Tessera
 
     {
 
-        public const double HorizontalGapDip = 12;
-
         public const double VerticalGapDip = 10;
 
         public const double FluentDividerDip = 3;

@@ -9,9 +9,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Ingress_and_session_contracts_are_armed()
         {
-            _ = TesseraFlyoutIngressPolicy.HostMustUseSingleIngressQueue.Should().BeTrue();
             _ = TesseraFlyoutIngressPolicy.SoftRefreshMustHonorSessionGeneration.Should().BeTrue();
-            _ = TesseraFlyoutIngressPolicy.HostMustExecutePresenterCommandWithoutReResolve.Should().BeTrue();
             _ = TesseraFlyoutPresentHandoffPolicy.SoftRefreshMustHonorSessionGeneration.Should().BeTrue();
         }
 

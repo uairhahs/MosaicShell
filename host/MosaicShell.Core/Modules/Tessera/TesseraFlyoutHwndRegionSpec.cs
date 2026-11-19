@@ -18,27 +18,6 @@ namespace MosaicShell.Core.Modules.Tessera
     /// </summary>
     public static class TesseraFlyoutHwndRegionSpec
     {
-        /// <summary>Animate HRGN in place. Do not SizeToContent / SetWindowPos per tick.</summary>
-        public const bool Phase2MustAnimateRegionHeightInPlace = true;
-
-        /// <summary>
-        /// Rest-sized SoftFrost/acrylic at TweenNode1=0 is the black media bay on show.
-        /// Host must clip HWND chrome to the visible reveal, matching the hide wipe.
-        /// </summary>
-        public const bool Phase2MustClipMediaChromeToRevealProgress = true;
-
-        /// <summary>
-        /// Do not skip SetWindowRgn when collapsed. Skipping leaves the rest-sized region
-        /// from Relayout (black hole next to volume).
-        /// </summary>
-        public const bool CollapsedRevealRegionMustHideRestChrome = true;
-
-        /// <summary>
-        /// Hide can zero stacked-media Opacity at a 1x1 region. Show must not: Avalonia
-        /// will not tick TweenNode1 on an Opacity-0 HWND, so CompleteMotion is the first
-        /// visible frame (divider and media pop). Hide starts visible, so it can dissolve.
-        /// </summary>
-        public const bool CollapsedShowRegionMustKeepWindowVisible = true;
 
         /// <summary>
         /// Win32 CreateRoundRectRgn / Host ApplyRoundRectRegion no-op below 2px. A 1x1
@@ -48,8 +27,6 @@ namespace MosaicShell.Core.Modules.Tessera
         public const int MinRenderableRegionPx = 2;
 
         public const double MinRenderableRegionDip = 2;
-
-        public const bool CollapsedMediaRegionMustStayRenderable = true;
 
         /// <summary>
         /// Hide shrinks HRGN over a client that was already painted at rest. Growing HRGN
@@ -93,35 +70,6 @@ namespace MosaicShell.Core.Modules.Tessera
                 ? TesseraFlyoutRevealSpec.RestRevealProgress
                 : TesseraFlyoutRevealSpec.FancyPhase2StartProgress;
         }
-
-        public static bool ShouldZeroWindowOpacityForCollapsedRegion(
-            bool stackedMedia,
-            bool hideChrome,
-            bool showMotionActive)
-        {
-            return stackedMedia && hideChrome && (!CollapsedShowRegionMustKeepWindowVisible || !showMotionActive);
-        }
-
-        /// <summary>
-        /// CoreUI MediaC clip is an inner Avalonia wipe. Single-HWND SetWindowRgn must stay
-        /// on the rest shell so volume/device tiles are not cropped from the origin.
-        /// </summary>
-        public const bool CoreUiSingleHwndMustKeepRestRegion = true;
-
-        /// <summary>
-        /// Rest pose must use the signed placement client, never a live Bounds sampled under
-        /// an active clip. Feeding the current region back as rest freezes a partial card.
-        /// </summary>
-        public const bool RestRevealMustUseSignedClientRegion = true;
-
-        /// <summary>
-        /// Host must take Max(host progresses), not FirstOrDefault. A newly attached host
-        /// at 0 must not collapse an already-open card.
-        /// </summary>
-        public const bool RevealRegionProgressMustUseMaxHost = true;
-
-        /// <summary>GDI CreateRoundRectRgn right/bottom are exclusive; Host adds this padding.</summary>
-        public const int RegionRectInclusivePaddingPx = 1;
 
         public readonly record struct RevealRegionDip(double WidthDip, double HeightDip, bool HideChrome);
 

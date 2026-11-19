@@ -25,6 +25,18 @@ namespace MosaicShell.Core.Capabilities.Platform
 
         /// <summary>Reuse the HWND but rebuild its content and present again.</summary>
         RebuildInPlace = 6,
+
+        /// <summary>
+        /// Same kind and style but a different structure (media strip, scale, material): a patch would leave the
+        /// content out of step with the request, so rebuild (F02). Produced by <see cref="FlyoutResolver"/> only.
+        /// </summary>
+        RebuildStructure = 7,
+
+        /// <summary>
+        /// A request arrived during an exit: cancel the exit and fade back in from the current opacity (F04).
+        /// Produced by <see cref="FlyoutResolver"/> only.
+        /// </summary>
+        ReviveDuringExit = 8,
     }
 
     /// <summary>Everything the ingress decision depends on, sampled once under the presenter lock.</summary>

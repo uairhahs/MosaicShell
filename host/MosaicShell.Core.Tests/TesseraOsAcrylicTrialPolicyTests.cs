@@ -138,13 +138,6 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void Windows11_primary_target_is_build_22000()
-        {
-            _ = TesseraOsAcrylicTrialPolicy.OsIsWindows11PrimaryTarget.Should().Be(
-                OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000));
-        }
-
-        [Fact]
         public void Material_stays_transparent_frost_when_trial_off()
         {
             TesseraFlyoutMaterial m = TesseraFlyoutMaterialFactory.Create(useAcrylic: true);

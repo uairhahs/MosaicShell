@@ -4,7 +4,7 @@ namespace MosaicShell.Core.Modules.Tessera
 {
     /// <summary>
     /// Ephemeral status flyouts (caps/airplane). Warm toggles Patch in place (dismiss timer
-    /// reset via TryApplyLive); cold/hidden sessions Present/revive via TesseraFlyoutRefreshPolicy.
+    /// reset via TryApplyLive); cold/hidden sessions Present/revive via FlyoutResolver.
     /// Status must never share volume/media stacked HWNDs (H3 acrylic): one chip, one window.
     /// </summary>
     public static class TesseraStatusFlyoutPolicy
@@ -72,12 +72,6 @@ namespace MosaicShell.Core.Modules.Tessera
         /// unclipped HWND corners paint solid black on first frames.
         /// </summary>
         public const bool SoftFrostMustRoundClipHwnd = true;
-
-        /// <summary>
-        /// Media→CapsLock: never size/clip with <c>Max(Bounds, Desired)</c>. Stale media Bounds
-        /// keep a black acrylic rectangle around the chip after kind handoff.
-        /// </summary>
-        public const bool StatusLayoutMustPreferDesiredSizeOverStaleBounds = true;
 
         /// <summary>
         /// Stacked volume/media→status: Opacity-hide slots before status Present. Close()-only

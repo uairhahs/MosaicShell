@@ -27,9 +27,6 @@ namespace MosaicShell.Core.Modules.Tessera
         public const string MediaSlotSuffix = "media";
         public const string DeviceSlotSuffix = "device";
 
-        /// <summary>Default corner radius when style/role has no dedicated pill metric.</summary>
-        public const float PanelCornerRadius = TesseraOsAcrylicTrialPolicy.SpikeCornerRadius;
-
         /// <summary>
         /// Win32 region clip radius for stacked OS acrylic HWNDs. Caps design radius (owned by
         /// the profile - ADR-0001) at half the shorter client edge so capsules (GNOME pill, Meter
@@ -49,12 +46,6 @@ namespace MosaicShell.Core.Modules.Tessera
 
             return Math.Min(design, cap);
         }
-
-        /// <summary>
-        /// Stacked acrylic uses the same trial flag as single-shell. Frost remains alpha default.
-        /// </summary>
-        public static bool TrialRequested =>
-            TesseraOsAcrylicTrialPolicy.Available && TesseraOsAcrylicTrialPolicy.IsTrialRequested();
 
         public static bool IsVolumeMediaStripStacked(IReadOnlyDictionary<string, string>? payload)
         {
@@ -200,17 +191,6 @@ namespace MosaicShell.Core.Modules.Tessera
             };
         }
 
-        /// <summary>Volume panel owns TesseraLiveHost and the live pump.</summary>
-        public static TesseraStackedPanelRole LiveHostOwner => TesseraStackedPanelRole.Volume;
-
-        public static bool RoleOwnsLiveHost(TesseraStackedPanelRole role)
-        {
-            return role == LiveHostOwner;
-        }
-
-        /// <summary>Outside-click dismiss must union bounds from every visible slot.</summary>
-        public const bool OutsideClickUsesUnionBounds = true;
-
         /// <summary>Transient dismiss / Hide must affect every slot in the session.</summary>
         public const bool TransientDismissMustHideAllSlots = true;
 
@@ -250,9 +230,6 @@ namespace MosaicShell.Core.Modules.Tessera
 
         /// <summary>Each slot reuses its own registered HWND (SoftFrost overlap rule).</summary>
         public const bool MustReuseRegisteredFlyoutHwndPerSlot = true;
-
-        /// <summary>Present restacks every slot above FocusDim after layout.</summary>
-        public const bool PresentMustRestackAllSlots = true;
 
         /// <summary>
         /// Meter volume spine is 28 DIP. Stacked cluster relayout must not use the 40 DIP

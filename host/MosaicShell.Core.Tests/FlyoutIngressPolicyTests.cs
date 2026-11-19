@@ -231,5 +231,26 @@ namespace MosaicShell.Core.Tests
                 }
             }
         }
+
+        [Theory]
+        [InlineData(FlyoutIngressDecision.PatchActiveSession)]
+        [InlineData(FlyoutIngressDecision.PatchVisibleCoalesced)]
+        [InlineData(FlyoutIngressDecision.ReviveHidden)]
+        public void A_patch_that_misses_falls_back_to_rebuilding_in_place(FlyoutIngressDecision attempted)
+        {
+            FlyoutIngressPolicy.OnPatchMissed(attempted).Should().Be(FlyoutIngressDecision.RebuildInPlace);
+        }
+
+        [Theory]
+        [InlineData(FlyoutIngressDecision.ColdBuild)]
+        [InlineData(FlyoutIngressDecision.CloseThenColdBuild)]
+        [InlineData(FlyoutIngressDecision.RecreateHwnd)]
+        [InlineData(FlyoutIngressDecision.RebuildInPlace)]
+        [InlineData(FlyoutIngressDecision.RebuildStructure)]
+        [InlineData(FlyoutIngressDecision.ReviveDuringExit)]
+        public void A_decision_that_was_not_a_patch_is_left_as_it_was(FlyoutIngressDecision attempted)
+        {
+            FlyoutIngressPolicy.OnPatchMissed(attempted).Should().Be(attempted);
+        }
     }
 }

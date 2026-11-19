@@ -52,10 +52,9 @@ namespace MosaicShell.Core.Modules.Tessera
         public const string DefaultEase = EaseOutQuart;
 
         /// <summary>YourFlyouts <c>AniSteps=20</c>.</summary>
-        public const int DefaultAniSteps = 20;
+        public const int DefaultAni = 2;
 
-        /// <summary>ActionTimer Repeat delay in Ani1/Ani2.inc (below a 60 Hz frame).</summary>
-        public const int EncodedActionTimerIntervalMs = 2;
+        public const int DefaultAniSteps = 20;
 
         /// <summary>
         /// Wall-clock per tween tick. One 60 Hz frame so 20 steps present 20 distinct
@@ -64,8 +63,11 @@ namespace MosaicShell.Core.Modules.Tessera
         /// </summary>
         public const int StepPresentationIntervalMs = 16;
 
-        /// <summary>Below this, In vs Out and Bounce vs Linear are not readable on a 60 Hz display.</summary>
-        public const int MinPerceptiblePhaseDurationMs = 200;
+        /// <summary>
+        /// The shortest time between two phase 2 updates, in milliseconds. The value applied comes from elapsed time, so this
+        /// is only a floor that keeps an idle UI thread from being spun: a late update catches up, it does not stretch the run.
+        /// </summary>
+        public const int Phase2UpdateIntervalMs = 4;
 
         /// <summary>Ani2 Fancy pause between phase 1 and phase 2 (Ani2.inc Wait 100).</summary>
         public const int FancyPauseMs = 100;
@@ -78,14 +80,6 @@ namespace MosaicShell.Core.Modules.Tessera
         public const int MinDisplacementPx = 10;
         public const int MaxDisplacementPx = 200;
 
-        /// <summary>Ani0 uses built-in fade instead of slide tween.</summary>
-        public const bool AniNoneUsesBuiltInFade = true;
-
-        /// <summary>
-        /// YourFlyouts Ani0.inc Showfade ignores AniSteps. Rainmeter default FadeDuration is 250 ms.
-        /// </summary>
-        public const bool AniNoneIgnoresAniSteps = true;
-
         /// <summary>Rainmeter default <c>FadeDuration</c> (Main.ini does not override).</summary>
         public const int FadeDurationMs = 250;
 
@@ -96,12 +90,6 @@ namespace MosaicShell.Core.Modules.Tessera
         {
             return Math.Max(MinAniSteps, FadeDurationMs / StepPresentationIntervalMs);
         }
-
-        /// <summary>
-        /// YourFlyouts TweenNode1 is skin-wide (Ani2 In2). Stacked Host must not restrict
-        /// phase 2 to the Media HWND.
-        /// </summary>
-        public const bool StackedPhase2MustNotBeMediaSlotOnly = true;
 
         /// <summary>
         /// What the phase 1 slide moves. YourFlyouts moves the skin window. An OS acrylic window's
@@ -147,21 +135,6 @@ namespace MosaicShell.Core.Modules.Tessera
         /// <summary>Host must not relayout mid-motion (prevents anchor snap).</summary>
         public const bool RelayoutMustDeferDuringMotion = true;
 
-        /// <summary>
-        /// Phase-2 HWND resize was tried so the Win11 card could grow. SoftFrost Transparent
-        /// swapchain clears to black on each SetWindowPos. Host pre-sizes to rest bounds and clips.
-        /// </summary>
-        public const bool RelayoutAllowedDuringPhase2 = false;
-
-        /// <summary>Phase 2 must clip in-place; do not SizeToContent / SetWindowPos per tween step.</summary>
-        public const bool Phase2MustNotResizeHwnd = true;
-
-        /// <summary>
-        /// Fancy binders must not change DesiredSize (Width/Height/TrackThickness).
-        /// Clip and RenderTransform follow TweenNode1; measure stays rest (YourFlyouts skin size).
-        /// </summary>
-        public const bool Phase2MustNotMutateLayoutMeasure = true;
-
         /// <summary>Aborted Fancy entrance on the owning generation must snap TweenNode1 to rest.</summary>
         public const bool CancelledEntranceMustSnapToRest = true;
 
@@ -174,12 +147,6 @@ namespace MosaicShell.Core.Modules.Tessera
 
         /// <summary>ApplyRequest supersedes in-flight motion and must clear the Host motion flag.</summary>
         public const bool MotionAnimatingMustClearOnSupersede = true;
-
-        /// <summary>
-        /// Hide tweens must be cancelled when a show supersedes. Leaving them running
-        /// writes TweenNode1 back to 0 after fade-in (empty media bay, jumping scrubber).
-        /// </summary>
-        public const bool SupersededMotionMustCancelInFlightTweens = true;
 
         public static bool ShouldDeferRelayoutDuringMotion(bool motionAnimating, bool phase2Animating)
         {
@@ -222,11 +189,6 @@ namespace MosaicShell.Core.Modules.Tessera
         public static bool ShouldAnimateOpacity(int ani)
         {
             return ani >= 0;
-        }
-
-        public static bool RequiresPhase2(int ani, bool showMediaStrip)
-        {
-            return ani >= 2 && showMediaStrip;
         }
 
         public static int NormalizeAniSteps(int steps)
@@ -307,60 +269,6 @@ namespace MosaicShell.Core.Modules.Tessera
             return (DefaultEaseFamily, DefaultEaseVariant);
         }
 
-        /// <summary>
-        /// InOut of the selected family. Linear is unchanged. Entrance uses this so the
-        /// first quarter stays near the hide pose and the last quarter settles into rest.
-        /// Pure In* dumps the remaining travel into the final frames.
-        /// </summary>
-        public static string ResolveInOutEase(string? ease)
-        {
-            string id = NormalizeEase(ease);
-            if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
-            {
-                return EaseLinear;
-            }
-
-            (string? family, string _) = SplitEase(id);
-            return ComposeEase(family, "InOut");
-        }
-
-        /// <summary>
-        /// Out of the selected family. Linear is unchanged. Hide uses this so In* never
-        /// runs on the reverse clock (end-slam of a card already on screen).
-        /// </summary>
-        public static string ResolveOutEase(string? ease)
-        {
-            string id = NormalizeEase(ease);
-            if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
-            {
-                return EaseLinear;
-            }
-
-            (string? family, string _) = SplitEase(id);
-            return ComposeEase(family, "Out");
-        }
-
-        /// <summary>
-        /// Time-reverse of a selected ease. OutQuart hide lingers then leaves; show uses InQuart
-        /// so it stays offscreen/dim then arrives. InOut and Linear are their own inverses.
-        /// </summary>
-        public static string InvertEaseVariant(string? ease)
-        {
-            string id = NormalizeEase(ease);
-            if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
-            {
-                return EaseLinear;
-            }
-
-            (string? family, string? variant) = SplitEase(id);
-            string inverted = variant.Equals("In", StringComparison.OrdinalIgnoreCase)
-                ? "Out"
-                : variant.Equals("Out", StringComparison.OrdinalIgnoreCase)
-                    ? "In"
-                    : variant;
-            return ComposeEase(family, inverted);
-        }
-
         /// <summary>Compose Hub family + variant into canonical ease id.</summary>
         public static string ComposeEase(string? family, string? variant)
         {
@@ -385,29 +293,10 @@ namespace MosaicShell.Core.Modules.Tessera
             return NormalizeAniSteps(aniSteps) * StepPresentationIntervalMs;
         }
 
-        /// <summary>Fancy entrance total when media strip is shown (phase overlap, no show pause).</summary>
-        public static int ResolveFancyEntranceDurationMs(int aniSteps, string? ease = null)
-        {
-            int phase = ResolvePhaseDurationMs(aniSteps);
-            int wait = ResolveInterPhaseWaitMs(entrance: true);
-            int overlap = ResolvePhase2ShowOverlapMs(ease ?? DefaultEase, aniSteps);
-            return phase + wait + Math.Max(0, phase - overlap);
-        }
-
         /// <summary>Normalized 0..1 TweenNode progress for stepped motion keyframes.</summary>
         public static double ResolveNormalizedTweenProgress(int step, int aniSteps, string? ease, bool entrance)
         {
             return ResolveTweenNode(step, aniSteps, ease, entrance) / 100.0;
-        }
-
-        /// <summary>
-        /// Forward clock only. Fade in is fade out with endpoints swapped
-        /// (<see cref="FadeInMustInverseFadeOut"/>).
-        /// </summary>
-        public static double InterpolateForward(double from, double to, int step, int aniSteps, string? ease)
-        {
-            double tn = ResolveNormalizedTweenProgress(step, aniSteps, ease, entrance: true);
-            return from + ((to - from) * tn);
         }
 
         /// <summary>Interpolate between <paramref name="from"/> and <paramref name="to"/> using stepped TweenNode progress.</summary>
@@ -416,23 +305,6 @@ namespace MosaicShell.Core.Modules.Tessera
             double tn = ResolveNormalizedTweenProgress(step, aniSteps, ease, entrance);
             double blend = entrance ? tn : 1 - tn;
             return from + ((to - from) * blend);
-        }
-
-        /// <summary>Continuous easing sample for Avalonia keyframe generation.</summary>
-        public static double SampleEaseContinuous(double t, string? ease)
-        {
-            t = Math.Clamp(t, 0, 1);
-            Func<double, double, double, double, double> fn = TesseraFlyoutTweenEngine.ResolveEasingFunction(NormalizeEase(ease));
-            return fn(t, 0, 1, 1);
-        }
-
-        /// <summary>Penner-style easing sample. <paramref name="t"/> is 0..1 linear progress.</summary>
-        public static double SampleEase(double t, string? ease)
-        {
-            t = Math.Clamp(t, 0, 1);
-            int steps = DefaultAniSteps;
-            int clock = (int)Math.Round(t * steps);
-            return TesseraFlyoutTweenEngine.SampleNormalized(clock, steps, ease, entrance: true);
         }
 
         /// <summary>Resolve eased TweenNode after <paramref name="step"/> ticks (0..steps).</summary>
@@ -458,12 +330,6 @@ namespace MosaicShell.Core.Modules.Tessera
             }
 
             return tween.Value;
-        }
-
-        /// <summary>Opacity from TweenNode (YourFlyouts SetTransparency TweenNode/100*255).</summary>
-        public static double ResolveOpacityFromTweenNode(double tweenNode)
-        {
-            return Math.Clamp(tweenNode / 100.0, 0, 1);
         }
 
         /// <summary>
@@ -553,83 +419,15 @@ namespace MosaicShell.Core.Modules.Tessera
 
         public sealed record FlyoutAnimationPhase(FlyoutAnimationPhaseKind Kind, int StepCount = 0, int WaitMs = 0);
 
-        /// <summary>ActionTimer sequence from Ani0/Ani1/Ani2.inc.</summary>
-        public static IReadOnlyList<FlyoutAnimationPhase> ResolveEntranceSequence(int ani, bool showMediaStrip)
-        {
-            if (ani <= 0)
-            {
-                return [new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Show)];
-            }
-
-            int steps = DefaultAniSteps;
-            if (ani == 1)
-            {
-                return
-                [
-                    new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Show),
-                    new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Phase1In, steps),
-                ];
-            }
-
-            List<FlyoutAnimationPhase> seq =
-            [
-                new(FlyoutAnimationPhaseKind.Show),
-                new(FlyoutAnimationPhaseKind.Phase1In, steps),
-            ];
-            if (RequiresPhase2(ani, showMediaStrip))
-            {
-                seq.Add(new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Wait, WaitMs: FancyPauseMs));
-                seq.Add(new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Phase2In, steps));
-            }
-            return seq;
-        }
-
-        public static IReadOnlyList<FlyoutAnimationPhase> ResolveExitSequence(int ani, bool showMediaStrip)
-        {
-            if (ani <= 0)
-            {
-                return [new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Hide)];
-            }
-
-            int steps = DefaultAniSteps;
-            if (ani == 1)
-            {
-                return [new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Phase1Out, steps)];
-            }
-
-            List<FlyoutAnimationPhase> seq = [];
-            if (RequiresPhase2(ani, showMediaStrip))
-            {
-                seq.Add(new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Phase2Out, steps));
-            }
-
-            if (RequiresPhase2(ani, showMediaStrip))
-            {
-                seq.Add(new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Wait, WaitMs: FancyPauseMs));
-            }
-
-            seq.Add(new FlyoutAnimationPhase(FlyoutAnimationPhaseKind.Phase1Out, steps));
-            return seq;
-        }
-
-        /// <summary>Keyframe values are already eased; Avalonia must lerp linearly between them.</summary>
-        public const bool SteppedKeyframesMustUseLinearInterpolation = true;
-
         /// <summary>
-        /// Hide keeps the selected ease on the reverse clock. Show uses InOut of that family
-        /// so arrival settles instead of slamming. Linear fade-in/out remains a numeric inverse.
+        /// The curve phase 1 plays: exactly the one chosen, entering and leaving. The Hub preview draws the same curve, so
+        /// what you pick is what you see. (Entrances used to be remapped to the InOut form of the chosen family, which made
+        /// every Out* curve play as the same symmetric S and the settings look identical.)
         /// </summary>
-        public const bool FadeInMustInverseFadeOut = true;
-
-        /// <summary>Entrance uses InOut of the selected family, not a pure In* slam.</summary>
-        public const bool Phase1EntranceMustUseInOutFamily = true;
-
-        public const bool EntranceOpacityMustStayVisibleDuringInEase = true;
-
         public static string ResolvePhase1MotionEase(string? ease, bool entrance)
         {
-            string id = NormalizeEase(ease);
-            return entrance && Phase1EntranceMustUseInOutFamily ? ResolveInOutEase(id) : id;
+            _ = entrance;
+            return NormalizeEase(ease);
         }
 
         public static string ResolvePhase1OpacityEase(string? ease, bool entrance)
@@ -637,31 +435,8 @@ namespace MosaicShell.Core.Modules.Tessera
             return ResolvePhase1MotionEase(ease, entrance);
         }
 
-        /// <summary>
-        /// Show may run In* or InOut* of the selected family. Out* forward is a start-slam
-        /// after volume has sat; remap it to InOut* (mid-band), never InvertEaseVariant (In*).
-        /// </summary>
-        public const bool Phase2ShowMustUseInOrInOutFamily = true;
-
-        /// <summary>
-        /// Hide may run Out* or InOut* of the selected family. In* on hide dumps travel
-        /// into the last frames of a card already on screen.
-        /// </summary>
-        public const bool Phase2HideMustUseOutOrInOutFamily = true;
-
-        /// <summary>
-        /// InQuart show dumps remaining travel into the last frames (volume sits, rest pops).
-        /// Phase 2 must not invert Out* to In* to "complement" hide.
-        /// </summary>
-        public const bool Phase2ShowMustNotInvertToInEase = true;
-
         /// <summary>Show progress band that must be occupied for a fraction of phase 2.</summary>
         public const double Phase2ShowMidBandMin = 0.15;
-
-        public const double Phase2ShowMidBandMax = 0.85;
-
-        /// <summary>Minimum share of 0..AniSteps samples that must sit in the mid band.</summary>
-        public const double Phase2ShowMidBandMinDurationFraction = 0.18;
 
         /// <summary>
         /// Show InOut sits near 0 for a long time. Stacking FancyPause on top of that is the
@@ -756,20 +531,6 @@ namespace MosaicShell.Core.Modules.Tessera
         public const bool Phase2HideMustNotSnapMissingHostsToRest = true;
 
         /// <summary>
-        /// Show must not snap missing hosts to rest either. That is the first painted
-        /// frame becoming TweenNode1=1 (divider and media pop, no wipe).
-        /// </summary>
-        public const bool Phase2ShowMustNotSnapMissingHostsToRest = true;
-
-        /// <summary>
-        /// Hide paints because the HWND is already at rest. Show feeds 0 to 1 into
-        /// Avalonia Animation.RunAsync on a collapsed HWND; those keyframes coalesce
-        /// into one frame. Host must apply each AniStep on the dispatcher and wait
-        /// <see cref="StepPresentationIntervalMs"/> so every tick can paint.
-        /// </summary>
-        public const bool Phase2MustPumpEachAniStepOnDispatcher = true;
-
-        /// <summary>
         /// Unhiding collapsed media must reach the compositor before phase 2 ticks.
         /// Applying Opacity 1 and TweenNode1 0 in the same turn as the first rest
         /// frame still pops.
@@ -798,24 +559,24 @@ namespace MosaicShell.Core.Modules.Tessera
             return InterpolateStepped(from, to, step, aniSteps, ease, entrance);
         }
 
+        /// <summary>
+        /// The reveal progress at linear time <paramref name="linearT"/> (0..1) of the run, for a driver that samples once
+        /// per rendered frame: the stepped value at each step, straight-line between steps, so a high refresh rate sees a
+        /// smooth run and a late frame catches up instead of stretching it. Equals
+        /// <see cref="ResolvePhase2RevealProgress"/> at every whole step.
+        /// </summary>
+        public static double ResolvePhase2RevealProgressAt(bool entrance, double linearT, int aniSteps, string? ease)
+        {
+            double from = entrance ? 0d : 1d;
+            double to = entrance ? 1d : 0d;
+            return SampleSteppedAt(from, to, linearT, aniSteps, ease, entrance);
+        }
+
+        /// <summary>The curve phase 2 plays: the chosen one, as in phase 1.</summary>
         public static string ResolvePhase2MotionEase(string? ease, bool entrance)
         {
-            string id = NormalizeEase(ease);
-            if (id.Equals(EaseLinear, StringComparison.OrdinalIgnoreCase))
-            {
-                return EaseLinear;
-            }
-
-            (string _, string? variant) = SplitEase(id);
-            return entrance
-                ? Phase2ShowMustUseInOrInOutFamily
-                    && variant.Equals("Out", StringComparison.OrdinalIgnoreCase)
-                    ? ResolveInOutEase(id)
-                    : id
-                : Phase2HideMustUseOutOrInOutFamily
-                && variant.Equals("In", StringComparison.OrdinalIgnoreCase)
-                ? ResolveOutEase(id)
-                : id;
+            _ = entrance;
+            return NormalizeEase(ease);
         }
 
         public static bool Phase2RequiresAnimatedLayout(int ani, string? styleId, bool showMediaStrip)

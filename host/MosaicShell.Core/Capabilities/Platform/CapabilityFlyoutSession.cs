@@ -17,8 +17,18 @@ namespace MosaicShell.Core.Capabilities.Platform
         private Timer? _presentSettle;
         private Action? _presentSettleAction;
 
-        public string OpenKind { get; private set; } = "";
-        public string? OpenStyle { get; private set; }
+        // The last kind and style actually handed to the presenter. A request that was suppressed never gets here.
+        private string _lastDeliveredKind = "";
+        private string? _lastDeliveredStyle;
+
+        /// <summary>
+        /// The kind the presenter has open: the session's own kind when it has one, else the last delivered kind
+        /// while something is visible, else empty. It is not "last requested" (audit F18): a suppressed present or a
+        /// dismissed flyout has no open kind.
+        /// </summary>
+        public string OpenKind => Open().Kind;
+
+        public string? OpenStyle => Open().Style;
 
         public bool IsVisible => _presenter.IsVisible(_moduleId);
 
@@ -60,13 +70,9 @@ namespace MosaicShell.Core.Capabilities.Platform
                 _suppressAutoPresent = false;
             }
 
-            string openKind = OpenKind;
-            string? openStyle = OpenStyle;
-            OpenKind = request.Kind;
-            OpenStyle = nextStyle;
-
             bool visible = _presenter.IsVisible(_moduleId);
             TesseraFlyoutSessionSnapshot snapshot = _presenter.GetSessionSnapshot(_moduleId);
+            (string openKind, string? openStyle) = Open(snapshot, visible);
             bool sessionActive = snapshot.IsSessionActive;
             FlyoutSyncAction action = FlyoutRefreshPolicy.ResolvePresentation(
                 sessionActive,
@@ -94,11 +100,13 @@ namespace MosaicShell.Core.Capabilities.Platform
 
                 FlyoutTrace.Write($"route -> Show kind={request.Kind}");
                 _presenter.Show(request);
+                Delivered(request, nextStyle);
             }
             else if (FlyoutDismissPolicy.ShouldResetAutoDismiss(trigger, _lastMediaIdentity, currentMedia))
             {
                 FlyoutTrace.Write($"route -> Update kind={request.Kind}");
                 _presenter.Update(request);
+                Delivered(request, nextStyle);
                 if (trigger == FlyoutSyncTrigger.MediaSession
                     && request.Kind.Equals("media", StringComparison.OrdinalIgnoreCase))
                 {
@@ -109,6 +117,7 @@ namespace MosaicShell.Core.Capabilities.Platform
             {
                 FlyoutTrace.Write($"route -> SoftRefresh kind={request.Kind}");
                 _presenter.SoftRefresh(request);
+                Delivered(request, nextStyle);
             }
 
             if (MediaPresentPolicy.ShouldSchedulePresentSettle(request.Kind, action))
@@ -121,6 +130,24 @@ namespace MosaicShell.Core.Capabilities.Platform
             {
                 _lastMediaIdentity = currentMedia;
             }
+        }
+
+        private (string Kind, string? Style) Open()
+        {
+            return Open(_presenter.GetSessionSnapshot(_moduleId), _presenter.IsVisible(_moduleId));
+        }
+
+        private (string Kind, string? Style) Open(TesseraFlyoutSessionSnapshot snapshot, bool visible)
+        {
+            return snapshot.Mode != TesseraFlyoutSessionMode.None
+                ? (snapshot.Kind, snapshot.StyleId)
+                : visible ? (_lastDeliveredKind, _lastDeliveredStyle) : ("", null);
+        }
+
+        private void Delivered(FlyoutRequest request, string nextStyle)
+        {
+            _lastDeliveredKind = request.Kind;
+            _lastDeliveredStyle = nextStyle;
         }
 
         public void SoftRefresh(FlyoutRequest request)

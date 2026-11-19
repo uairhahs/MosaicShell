@@ -32,9 +32,6 @@ namespace MosaicShell.Core.Modules.Tessera
         /// </summary>
         public const bool PreferPresentableShellUntilSoftFrostHwnd = true;
 
-        /// <summary>Skia glass on opaque HWND is not presentable (black slabs).</summary>
-        public const bool SkiaGlassAllowedWithoutTransparentHwnd = false;
-
         /// <summary>
         /// GDI BitBlt / shared-surface sampling of "what's behind" self-captures the flyout
         /// (opaque black) and overwrites frost. Soft frost uses Transparent HWND + Skia fake glass

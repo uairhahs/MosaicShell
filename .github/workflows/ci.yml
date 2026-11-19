@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+  pull_request:
+    branches:
+      - dev
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Test (Core)
+        working-directory: host
+        run: dotnet test MosaicShell.Core.Tests --configuration Release --nologo
+
+      # Separate step: a multi-line pwsh step only fails on the last command's exit code.
+      - name: Test (Host, Avalonia headless)
+        working-directory: host
+        run: dotnet test MosaicShell.Host.Tests --configuration Release --nologo
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # Runs the linters pinned in .trunk/trunk.yaml. On a pull request it checks only the changed files.
+      - name: Trunk check
+        uses: trunk-io/trunk-action@e1234e67a86010d61ddac8d8ebf4b783e2ffd2fa # v2.0.0
