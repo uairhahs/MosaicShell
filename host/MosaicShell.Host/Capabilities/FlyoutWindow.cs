@@ -107,6 +107,7 @@ namespace MosaicShell.Host.Capabilities
             WindowDecorations = WindowDecorations.None;
             Topmost = true;
             ShowInTaskbar = false;
+            X11WindowState.ReassertOnShow(this);
             ShowActivated = false;
             Focusable = true;
             IsHitTestVisible = true;

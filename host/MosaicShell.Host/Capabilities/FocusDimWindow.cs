@@ -30,6 +30,7 @@ namespace MosaicShell.Host.Capabilities
             CanResize = false;
             Topmost = true;
             ShowInTaskbar = false;
+            X11WindowState.ReassertOnShow(this);
             ShowActivated = false;
             Focusable = false;
             IsHitTestVisible = false;
