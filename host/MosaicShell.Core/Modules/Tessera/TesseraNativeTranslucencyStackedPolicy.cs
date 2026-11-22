@@ -80,7 +80,7 @@ namespace MosaicShell.Core.Modules.Tessera
                 payload,
                 styleId,
                 trialRequested: TesseraNativeTranslucencyPolicy.IsTrialRequested(),
-                osSupportsWinUiAcrylic: TesseraNativeTranslucencyPolicy.OsSupportsWinUiAcrylic,
+                platformSupported: NativeTranslucencyPlatform.IsAvailable,
                 nativeTranslucencyRenderingAvailable: !HostLaunchOptions.TesseraForceSoftwareRender,
                 kind: kind);
         }
@@ -89,13 +89,13 @@ namespace MosaicShell.Core.Modules.Tessera
             IReadOnlyDictionary<string, string>? payload,
             string? styleId,
             bool trialRequested,
-            bool osSupportsWinUiAcrylic,
+            bool platformSupported,
             bool nativeTranslucencyRenderingAvailable = true,
             bool compileAvailable = Available,
             string? kind = null)
         {
             return !TesseraStatusFlyoutPolicy.MustUseDedicatedSingleWindow(kind)
-                && compileAvailable && trialRequested && osSupportsWinUiAcrylic && nativeTranslucencyRenderingAvailable
+                && compileAvailable && trialRequested && platformSupported && nativeTranslucencyRenderingAvailable
                 && TesseraFlyoutMaterialFactory.UseAcrylicFromPayload(payload)
                 && IsVolumeMediaStripStacked(payload)
                 && TesseraStackedPlacementPolicy.SupportsStackedNativeTranslucency(styleId);

@@ -127,7 +127,7 @@ namespace MosaicShell.Core.Tests
             _ = TesseraNativeTranslucencyPolicy.IsEligible(
                     payload: null,
                     trialRequested: true,
-                    osSupportsWinUiAcrylic: true,
+                    platformSupported: true,
                     styleId: styleId)
                 .Should().BeFalse();
         }

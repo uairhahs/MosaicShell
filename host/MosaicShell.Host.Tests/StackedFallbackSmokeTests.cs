@@ -54,7 +54,7 @@ namespace MosaicShell.Host.Tests
             // Guards the premise: if this request stopped being stacked-eligible, the tests below
             // would pass without exercising the fallback at all.
             _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindow(
-                StackedPayload, StackedStyle, trialRequested: true, osSupportsWinUiAcrylic: true,
+                StackedPayload, StackedStyle, trialRequested: true, platformSupported: true,
                 nativeTranslucencyRenderingAvailable: true, kind: "vol").Should().BeTrue();
             _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(StackedPayload, StackedStyle, "vol").Should().BeFalse();
         }

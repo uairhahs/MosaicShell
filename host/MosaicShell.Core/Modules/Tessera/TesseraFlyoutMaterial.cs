@@ -1,15 +1,24 @@
+using MosaicShell.Core.Capabilities.Platform;
+
 namespace MosaicShell.Core.Modules.Tessera
 {
     /// <summary>
     /// Flyout material policy. Soft frost = translucent crust + chrome edge blend.
-    /// OS AcrylicBlur is opt-in via <see cref="TesseraNativeTranslucencyPolicy"/> (default Skia frost).
+    /// Native Translucency (the OS blurs the desktop behind the card) is opt-in via
+    /// <see cref="TesseraNativeTranslucencyPolicy"/> (default Skia frost).
     /// </summary>
+    /// <remarks>
+    /// <c>UseNativeTranslucency</c>: the OS draws the material behind the window. Windows does it through the AcrylicBlur
+    /// hint; on KWin the hints stay Transparent and the Host sets the blur region, so this flag, not the hints, says
+    /// which windows are translucent.
+    /// </remarks>
     public sealed record TesseraFlyoutMaterial(
         bool UseSoftFrost,
         IReadOnlyList<string> TransparencyHints,
         byte ShellAlpha,
         bool ShouldLockClientSize,
-        bool UseEdgeBlend);
+        bool UseEdgeBlend,
+        bool UseNativeTranslucency = false);
 
     public static class TesseraFlyoutMaterialFactory
     {
@@ -17,8 +26,15 @@ namespace MosaicShell.Core.Modules.Tessera
         public const byte SolidShellAlpha = 232;
 
         /// <param name="useAcrylic">Legacy setting name - means soft frost tint, not native translucency.</param>
-        /// <param name="nativeTranslucencyEligible">When true, request AcrylicBlur with Transparent fallback.</param>
-        public static TesseraFlyoutMaterial Create(bool useAcrylic, bool nativeTranslucencyEligible = false)
+        /// <param name="nativeTranslucencyEligible">When true, ask the backend for the OS material.</param>
+        /// <param name="backend">
+        /// Which OS draws it; null for this process's <see cref="NativeTranslucencyPlatform.Backend"/>. Windows asks for
+        /// AcrylicBlur with a Transparent fallback; KWin needs only Transparent.
+        /// </param>
+        public static TesseraFlyoutMaterial Create(
+            bool useAcrylic,
+            bool nativeTranslucencyEligible = false,
+            NativeTranslucencyBackend? backend = null)
         {
             if (!useAcrylic)
             {
@@ -30,7 +46,10 @@ namespace MosaicShell.Core.Modules.Tessera
                     UseEdgeBlend: false);
             }
 
-            IReadOnlyList<string> hints = nativeTranslucencyEligible
+            NativeTranslucencyBackend native = nativeTranslucencyEligible
+                ? backend ?? NativeTranslucencyPlatform.Backend
+                : NativeTranslucencyBackend.None;
+            IReadOnlyList<string> hints = native == NativeTranslucencyBackend.WindowsAcrylic
                 ? ["AcrylicBlur", "Transparent"]
                 : ["Transparent"];
 
@@ -39,7 +58,8 @@ namespace MosaicShell.Core.Modules.Tessera
                 TransparencyHints: hints,
                 ShellAlpha: SoftFrostShellAlpha,
                 ShouldLockClientSize: false,
-                UseEdgeBlend: true);
+                UseEdgeBlend: true,
+                UseNativeTranslucency: native != NativeTranslucencyBackend.None);
         }
 
         /// <summary>Payload key <c>acrylic</c>: "0" off, anything else / missing → soft frost on.</summary>

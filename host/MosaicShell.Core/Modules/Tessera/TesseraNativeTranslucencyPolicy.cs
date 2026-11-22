@@ -33,7 +33,7 @@ namespace MosaicShell.Core.Modules.Tessera
         public static bool IsEligible(
             IReadOnlyDictionary<string, string>? payload,
             bool trialRequested,
-            bool osSupportsWinUiAcrylic,
+            bool platformSupported,
             bool compileAvailable = Available,
             bool nativeTranslucencyRenderingAvailable = true,
             string? styleId = null)
@@ -43,7 +43,7 @@ namespace MosaicShell.Core.Modules.Tessera
             // window area around its shape has no local background to fall back on if the OS
             // composite silently fails, unlike every other style.
             return !TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).RequiresMatteChrome
-                && compileAvailable && trialRequested && osSupportsWinUiAcrylic && nativeTranslucencyRenderingAvailable && (!IsStackedMultiPanel(payload)
+                && compileAvailable && trialRequested && platformSupported && nativeTranslucencyRenderingAvailable && (!IsStackedMultiPanel(payload)
                 || styleId is null
                 || !TesseraStackedPlacementPolicy.SupportsStackedNativeTranslucency(styleId)) && TesseraFlyoutMaterialFactory.UseAcrylicFromPayload(payload);
         }
@@ -74,7 +74,7 @@ namespace MosaicShell.Core.Modules.Tessera
             return IsEligible(
                 payload,
                 IsTrialRequested(),
-                OsSupportsWinUiAcrylic,
+                NativeTranslucencyPlatform.IsAvailable,
                 nativeTranslucencyRenderingAvailable: !HostLaunchOptions.TesseraForceSoftwareRender,
                 styleId: styleId);
         }

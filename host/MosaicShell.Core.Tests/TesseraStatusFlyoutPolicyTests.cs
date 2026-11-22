@@ -50,10 +50,10 @@ namespace MosaicShell.Core.Tests
 
             Dictionary<string, string> stacked = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
             _ = TesseraNativeTranslucencyStackedPolicy
-                .UseMultiWindow(stacked, StyleIds.ModernFlyouts, trialRequested: true, osSupportsWinUiAcrylic: true, kind: kind)
+                .UseMultiWindow(stacked, StyleIds.ModernFlyouts, trialRequested: true, platformSupported: true, kind: kind)
                 .Should().BeFalse("caps/airplane must not fork into volume+media HWNDs");
             _ = TesseraNativeTranslucencyStackedPolicy
-                .UseMultiWindow(stacked, StyleIds.ModernFlyouts, trialRequested: true, osSupportsWinUiAcrylic: true, kind: "vol")
+                .UseMultiWindow(stacked, StyleIds.ModernFlyouts, trialRequested: true, platformSupported: true, kind: "vol")
                 .Should().BeTrue();
         }
 

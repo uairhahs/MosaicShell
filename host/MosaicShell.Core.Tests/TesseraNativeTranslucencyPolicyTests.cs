@@ -108,22 +108,22 @@ namespace MosaicShell.Core.Tests
             Dictionary<string, string> single = new() { ["showMediaStrip"] = "0", ["acrylic"] = "1" };
             Dictionary<string, string> stacked = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
 
-            _ = TesseraNativeTranslucencyPolicy.IsEligible(single, trialRequested: false, osSupportsWinUiAcrylic: true)
+            _ = TesseraNativeTranslucencyPolicy.IsEligible(single, trialRequested: false, platformSupported: true)
                 .Should().BeFalse();
-            _ = TesseraNativeTranslucencyPolicy.IsEligible(single, trialRequested: true, osSupportsWinUiAcrylic: false)
+            _ = TesseraNativeTranslucencyPolicy.IsEligible(single, trialRequested: true, platformSupported: false)
                 .Should().BeFalse("below WinUIComposition floor keeps frost; Win10 is best-effort only");
-            _ = TesseraNativeTranslucencyPolicy.IsEligible(stacked, trialRequested: true, osSupportsWinUiAcrylic: true,
+            _ = TesseraNativeTranslucencyPolicy.IsEligible(stacked, trialRequested: true, platformSupported: true,
                     styleId: StyleIds.Meter)
                 .Should().BeFalse("Meter uses N-window split under H3");
-            _ = TesseraNativeTranslucencyPolicy.IsEligible(stacked, trialRequested: true, osSupportsWinUiAcrylic: true,
+            _ = TesseraNativeTranslucencyPolicy.IsEligible(stacked, trialRequested: true, platformSupported: true,
                     styleId: StyleIds.Fluent)
                 .Should().BeTrue("Fluent keeps volume+media in one acrylic shell");
-            _ = TesseraNativeTranslucencyPolicy.IsEligible(single, trialRequested: true, osSupportsWinUiAcrylic: true)
+            _ = TesseraNativeTranslucencyPolicy.IsEligible(single, trialRequested: true, platformSupported: true)
                 .Should().BeTrue();
-            _ = TesseraNativeTranslucencyPolicy.IsEligible(single, trialRequested: true, osSupportsWinUiAcrylic: true,
+            _ = TesseraNativeTranslucencyPolicy.IsEligible(single, trialRequested: true, platformSupported: true,
                     compileAvailable: false)
                 .Should().BeFalse("per-build kill-switch");
-            _ = TesseraNativeTranslucencyPolicy.IsEligible(single, trialRequested: true, osSupportsWinUiAcrylic: true,
+            _ = TesseraNativeTranslucencyPolicy.IsEligible(single, trialRequested: true, platformSupported: true,
                     nativeTranslucencyRenderingAvailable: false)
                 .Should().BeFalse("Software-only rendering keeps frost (H2 fallback row)");
         }
@@ -148,7 +148,8 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Material_requests_acrylic_with_transparent_fallback_when_eligible()
         {
-            TesseraFlyoutMaterial m = TesseraFlyoutMaterialFactory.Create(useAcrylic: true, nativeTranslucencyEligible: true);
+            TesseraFlyoutMaterial m = TesseraFlyoutMaterialFactory.Create(
+                useAcrylic: true, nativeTranslucencyEligible: true, NativeTranslucencyBackend.WindowsAcrylic);
             _ = m.UseSoftFrost.Should().BeTrue();
             _ = m.TransparencyHints.Should().Equal("AcrylicBlur", "Transparent");
             _ = TesseraFlyoutWindowPolicy.ResolveTransparencyHints(m).Should().Equal("AcrylicBlur", "Transparent");
