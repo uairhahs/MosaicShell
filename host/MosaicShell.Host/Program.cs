@@ -11,6 +11,7 @@ namespace MosaicShell.Host
         public static int Main(string[] args)
         {
             Core.Capabilities.Platform.HostLaunchOptions.Apply(args);
+            _ = HostServices.DetectNativeTranslucencyAsync();
             DiagnosticLog.Start(
                 AppPaths.CacheDirectory,
                 DiagnosticLogLevels.Resolve(Environment.GetEnvironmentVariable(DiagnosticLogLevels.EnvironmentVariable), IsDebugBuild));

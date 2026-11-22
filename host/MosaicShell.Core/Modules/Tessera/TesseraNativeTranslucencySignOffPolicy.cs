@@ -21,6 +21,16 @@ namespace MosaicShell.Core.Modules.Tessera
         public static bool Win11EvalComplete =>
             H2Win11EvalSignedOff && H3StackedVolumeMediaSignedOff;
 
+        /// <summary>
+        /// KDE Plasma (KWin blur behind the card's rounded region): single-shell and stacked rows checked live. Until
+        /// then the Hub toggle stays hidden on Linux and only the launch flag turns it on, as on Windows before H2.
+        /// </summary>
+        public static bool KdeEvalSignedOff => false;
+
+        /// <summary>The sign-off that governs this OS: Windows' evaluation on Windows, KDE's elsewhere.</summary>
+        public static bool EvalCompleteForThisPlatform =>
+            OperatingSystem.IsWindows() ? Win11EvalComplete : KdeEvalSignedOff;
+
         private static readonly HashSet<string> H3StackedStylesSignedOff = new(StringComparer.OrdinalIgnoreCase)
         {
             StyleIds.Meter,

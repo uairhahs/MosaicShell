@@ -774,7 +774,7 @@
                               IsVisible="{Binding TesseraNativeTranslucencyHubAvailable}"
                               IsChecked="{Binding TesseraNativeTranslucency}"
                               IsEnabled="{Binding TesseraAcrylicBackdrop}"
-                              ToolTip.Tip="The operating system blurs the desktop behind eligible Tessera flyouts (single-shell and stacked Meter/Gnome/Compact/Modern): acrylic on Windows 11. Requires Soft frost tint. Save, then restart Host so the corner radius applies. This hub toggle is authoritative (--tessera-native-translucency is ignored after sign-off)." />
+                              ToolTip.Tip="The operating system blurs the desktop behind eligible Tessera flyouts (single-shell and stacked Meter/Gnome/Compact/Modern): acrylic on Windows 11, KWin blur on KDE Plasma. Requires Soft frost tint. Save, then restart Host so the corner radius applies. This hub toggle is authoritative (--tessera-native-translucency is ignored after sign-off)." />
                     <CheckBox Content="Skia backdrop blur" IsChecked="{Binding TesseraBackdropBlur}"
                               IsEnabled="{Binding TesseraAcrylicBackdrop}"
                               ToolTip.Tip="Lighter, more translucent Skia frost so the desktop shows through. Live pixel sampling is off (black-box safe); this adjusts fake-glass richness only. No effect when native translucency is active." />

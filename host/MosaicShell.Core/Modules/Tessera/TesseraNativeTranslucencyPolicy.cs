@@ -49,12 +49,12 @@ namespace MosaicShell.Core.Modules.Tessera
         }
 
         /// <summary>
-        /// After Win11 eval sign-off, persisted hub <c>UseNativeTranslucency</c> is the sole opt-in.
-        /// Before sign-off, only the launch flag applies (H2 eval).
+        /// After the platform's eval sign-off, persisted hub <c>UseNativeTranslucency</c> is the sole opt-in.
+        /// Before sign-off, only the launch flag applies (as Windows did during its H2 eval).
         /// </summary>
-        public static bool ResolveTrialRequested(bool launchFlag, bool persistedUseNativeTranslucency)
+        public static bool ResolveTrialRequested(bool launchFlag, bool persistedUseNativeTranslucency, bool evalComplete)
         {
-            return Available && (TesseraNativeTranslucencySignOffPolicy.Win11EvalComplete
+            return Available && (evalComplete
                     ? persistedUseNativeTranslucency
                     : launchFlag);
         }
@@ -64,7 +64,8 @@ namespace MosaicShell.Core.Modules.Tessera
         {
             return ResolveTrialRequested(
                 HostLaunchOptions.TesseraNativeTranslucencyTrial,
-                TesseraFlyoutRequestBuilder.LoadSettings().UseNativeTranslucency);
+                TesseraFlyoutRequestBuilder.LoadSettings().UseNativeTranslucency,
+                TesseraNativeTranslucencySignOffPolicy.EvalCompleteForThisPlatform);
         }
 
         public static bool IsEligibleFromPayload(

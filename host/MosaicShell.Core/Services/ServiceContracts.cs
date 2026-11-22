@@ -172,6 +172,33 @@ namespace MosaicShell.Core.Services
         }
 
         /// <summary>
+        /// Finds the Native Translucency backend and sets <see cref="Capabilities.Platform.NativeTranslucencyPlatform"/>.
+        /// Windows already knows it from the OS version. Linux asks KWin whether its blur effect is loaded, which takes a
+        /// bus round trip, so the Host starts this at launch without waiting: flyouts shown before it finishes keep the
+        /// frost, as they do wherever there is no backend.
+        /// </summary>
+        public static async Task DetectNativeTranslucencyAsync()
+        {
+#if WINDOWS
+            await Task.CompletedTask.ConfigureAwait(false);
+#else
+            if (!OperatingSystem.IsLinux())
+            {
+                return;
+            }
+
+            bool hasX11Display = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY"));
+            bool kwinBlur = hasX11Display && await Linux.KWinBlurProbe.IsBlurLoadedAsync().ConfigureAwait(false);
+            Capabilities.Platform.NativeTranslucencyPlatform.Set(Capabilities.Platform.NativeTranslucencyPlatform.Resolve(
+                isWindows: false,
+                windowsSupportsWinUiAcrylic: false,
+                isLinux: true,
+                hasX11Display,
+                kwinBlur));
+#endif
+        }
+
+        /// <summary>
         /// Every service present and inert: features report themselves unavailable rather than showing invented data.
         /// For a platform with no implementations yet, so the Host can start and draw.
         /// </summary>

@@ -42,7 +42,8 @@ namespace MosaicShell.Core.Tests
                 "process-wide radius is unset while the trial is off so alpha keeps Skia frost");
         }
 
-        [Fact]
+        // Windows' sign-off governs only on Windows; KDE's is pending (see the sign-off tests).
+        [WindowsFact]
         public void Persisted_hub_setting_enables_trial_when_win11_eval_is_signed_off()
         {
             ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseNativeTranslucency = true });
@@ -50,18 +51,21 @@ namespace MosaicShell.Core.Tests
             _ = Win32HostCompositionPolicy.NativeTranslucencyTrialRequested.Should().BeTrue();
         }
 
-        [Fact]
-        public void Persisted_hub_setting_is_ignored_without_win11_eval_sign_off()
+        [Theory]
+        [InlineData(true, false, true, true)]
+        [InlineData(true, true, false, false)]
+        [InlineData(false, false, true, false)]
+        [InlineData(false, true, false, true)]
+        public void After_sign_off_the_hub_setting_decides_and_before_it_only_the_flag(
+            bool evalComplete, bool launchFlag, bool persisted, bool expected)
         {
             _ = TesseraNativeTranslucencyPolicy
-                .ResolveTrialRequested(launchFlag: false, persistedUseNativeTranslucency: true)
-                .Should().Be(TesseraNativeTranslucencySignOffPolicy.Win11EvalComplete);
-            _ = TesseraNativeTranslucencyPolicy
-                .ResolveTrialRequested(launchFlag: true, persistedUseNativeTranslucency: false)
-                .Should().Be(!TesseraNativeTranslucencySignOffPolicy.Win11EvalComplete);
+                .ResolveTrialRequested(launchFlag, persisted, evalComplete)
+                .Should().Be(expected);
         }
 
-        [Fact]
+        // Windows' sign-off governs only on Windows; KDE's is pending (see the sign-off tests).
+        [WindowsFact]
         public void Launch_flag_is_ignored_after_win11_sign_off_until_hub_setting_is_on()
         {
             HostLaunchOptions.Apply([HostLaunchOptions.TesseraNativeTranslucencyTrialFlag]);
@@ -77,7 +81,8 @@ namespace MosaicShell.Core.Tests
                 .Should().Be(TesseraNativeTranslucencyPolicy.SpikeCornerRadius);
         }
 
-        [Fact]
+        // Windows' sign-off governs only on Windows; KDE's is pending (see the sign-off tests).
+        [WindowsFact]
         public void Hub_setting_off_disables_acrylic_even_when_launch_flag_is_on()
         {
             ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseNativeTranslucency = false });

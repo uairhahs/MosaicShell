@@ -170,7 +170,7 @@ namespace MosaicShell.Host.ViewModels
         [ObservableProperty] private bool _tesseraMediaStrip = true;
         [ObservableProperty] private bool _tesseraAcrylicBackdrop = true;
         [ObservableProperty] private bool _tesseraNativeTranslucency;
-        public bool TesseraNativeTranslucencyHubAvailable => TesseraNativeTranslucencySignOffPolicy.Win11EvalComplete;
+        public bool TesseraNativeTranslucencyHubAvailable => TesseraNativeTranslucencySignOffPolicy.EvalCompleteForThisPlatform;
         [ObservableProperty] private bool _tesseraFocusDim = true;
         [ObservableProperty] private bool _tesseraBackdropBlur = true;
         [ObservableProperty] private decimal _tesseraFlyoutScalePercent = 100;
@@ -406,7 +406,7 @@ namespace MosaicShell.Host.ViewModels
                 TesseraFlightFlyouts = s.EnableFlightFlyouts;
                 TesseraMediaStrip = s.ShowMediaStripOnVolume;
                 TesseraAcrylicBackdrop = s.UseAcrylicBackdrop;
-                TesseraNativeTranslucency = TesseraNativeTranslucencySignOffPolicy.Win11EvalComplete && s.UseNativeTranslucency;
+                TesseraNativeTranslucency = TesseraNativeTranslucencySignOffPolicy.EvalCompleteForThisPlatform && s.UseNativeTranslucency;
                 TesseraFocusDim = s.UseFocusDim;
                 TesseraBackdropBlur = s.UseBackdropBlur;
                 TesseraFlyoutScalePercent = Math.Clamp(s.FlyoutScalePercent, 50, 150);
@@ -593,7 +593,7 @@ namespace MosaicShell.Host.ViewModels
             s.EnableFlightFlyouts = TesseraFlightFlyouts;
             s.ShowMediaStripOnVolume = TesseraMediaStrip;
             s.UseAcrylicBackdrop = TesseraAcrylicBackdrop;
-            s.UseNativeTranslucency = TesseraNativeTranslucencySignOffPolicy.Win11EvalComplete && TesseraNativeTranslucency;
+            s.UseNativeTranslucency = TesseraNativeTranslucencySignOffPolicy.EvalCompleteForThisPlatform && TesseraNativeTranslucency;
             s.UseFocusDim = TesseraFocusDim;
             s.UseBackdropBlur = TesseraBackdropBlur;
             s.FlyoutScalePercent = (int)Math.Clamp(TesseraFlyoutScalePercent, 50, 150);

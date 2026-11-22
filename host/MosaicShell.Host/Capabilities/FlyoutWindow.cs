@@ -10,6 +10,7 @@ using Avalonia.VisualTree;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
+using MosaicShell.Core.Services.Kde;
 using MosaicShell.Host.Tiles.Tessera;
 using MosaicShell.Core.Modules;
 
@@ -308,6 +309,11 @@ namespace MosaicShell.Host.Capabilities
                         TesseraFlyoutRequestBuilder.FlyoutScaleFromPayload(FlyoutRequest.Payload)))
                 {
                     Win32WindowChrome.ApplyEmptyRegion(this);
+                    if (UsesNativeTranslucencyBackdrop())
+                    {
+                        X11BlurBehind.Clear(this);
+                    }
+
                     return;
                 }
 
@@ -318,6 +324,11 @@ namespace MosaicShell.Host.Capabilities
                     CornerRadiusPx,
                     applySynchronously: true,
                     redrawClient: !_suppressRegionClientRedraw);
+                if (UsesNativeTranslucencyBackdrop())
+                {
+                    // KWin blurs only where told; the reveal's region is the card's shape at this frame.
+                    X11BlurBehind.SetRegion(this, KWinBlurRegion.FromRoundedRect(WidthPx, HeightPx, CornerRadiusPx));
+                }
             }
             finally
             {
@@ -485,7 +496,8 @@ namespace MosaicShell.Host.Capabilities
             // pins down whether that gap is the cause of MaterialYou's reported inconsistent
             // background, rather than patching on a guess.
             if (!_material.TransparencyHints.SequenceEqual(freshMaterial.TransparencyHints, StringComparer.OrdinalIgnoreCase)
-                || _material.ShellAlpha != freshMaterial.ShellAlpha)
+                || _material.ShellAlpha != freshMaterial.ShellAlpha
+                || _material.UseNativeTranslucency != freshMaterial.UseNativeTranslucency)
             {
                 TesseraFlyoutDiagnostics.Log(
                     $"TryApplyLive material drift w{WindowId} style={request.StyleId} kind={request.Kind} "
@@ -874,13 +886,19 @@ namespace MosaicShell.Host.Capabilities
 
         private void ApplyStackedBackdropClip(int widthPx, int heightPx, double scale)
         {
+            bool acrylic = UsesNativeTranslucencyBackdrop();
             if (BackdropCornerRadiusDip is not { } radiusDip || radiusDip <= 0)
             {
+                if (acrylic)
+                {
+                    // A square card: KWin blurs the whole window, as Windows' acrylic covers the whole HWND.
+                    X11BlurBehind.SetRegion(this, KWinBlurRegion.FromRoundedRect(widthPx, heightPx, 0));
+                }
+
                 return;
             }
 
             bool status = TesseraStatusFlyoutPolicy.IsStatusKind(FlyoutRequest.Kind);
-            bool acrylic = UsesNativeTranslucencyBackdrop();
             if (!acrylic
                 && !(status && TesseraStatusFlyoutPolicy.SoftFrostMustRoundClipHwnd))
             {
@@ -906,6 +924,10 @@ namespace MosaicShell.Host.Capabilities
             }
 
             Win32WindowChrome.ApplyRoundRectRegion(this, widthPx, heightPx, radiusPx, applySynchronously: true);
+            if (acrylic)
+            {
+                X11BlurBehind.SetRegion(this, KWinBlurRegion.FromRoundedRect(widthPx, heightPx, radiusPx));
+            }
         }
 
         /// <summary>Phase 1 slide on the HWND: rest position plus an offset in physical pixels.</summary>
@@ -916,10 +938,13 @@ namespace MosaicShell.Host.Capabilities
                 _restPosition.Y + (int)Math.Round(dy));
         }
 
+        /// <summary>
+        /// The OS draws the material behind this window. Read from the material, not from the AcrylicBlur hint: on KWin
+        /// the hint stays Transparent and the blur is a window property.
+        /// </summary>
         internal bool UsesNativeTranslucencyBackdrop()
         {
-            return _material.TransparencyHints.Any(static hint =>
-                hint.Equals("AcrylicBlur", StringComparison.OrdinalIgnoreCase));
+            return _material.UseNativeTranslucency;
         }
 
         private static Screen? ResolveScreen(IReadOnlyList<Screen> screens, int monitorIndexOneBased)
@@ -1489,7 +1514,14 @@ namespace MosaicShell.Host.Capabilities
 
         private void ApplyFlyoutMaterial(TesseraFlyoutMaterial material)
         {
+            bool wasNative = _material is { UseNativeTranslucency: true };
             _material = material;
+            if (wasNative && !_material.UseNativeTranslucency)
+            {
+                // A reused window leaving Native Translucency must not keep KWin's blur behind it.
+                X11BlurBehind.Clear(this);
+            }
+
             TesseraPalette.ApplyMaterial(_material);
             TransparencyLevelHint = ParseTransparencyHints(
                 TesseraFlyoutWindowPolicy.ResolveTransparencyHints(_material));

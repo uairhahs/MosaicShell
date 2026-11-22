@@ -30,6 +30,17 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public void Kde_waits_for_its_own_live_check_and_each_platform_reads_its_own_sign_off()
+        {
+            _ = TesseraNativeTranslucencySignOffPolicy.KdeEvalSignedOff.Should().BeFalse(
+                "KWin blur is new; the Hub toggle stays hidden on Linux until the live check passes");
+            _ = TesseraNativeTranslucencySignOffPolicy.EvalCompleteForThisPlatform.Should().Be(
+                OperatingSystem.IsWindows()
+                    ? TesseraNativeTranslucencySignOffPolicy.Win11EvalComplete
+                    : TesseraNativeTranslucencySignOffPolicy.KdeEvalSignedOff);
+        }
+
+        [Fact]
         public void Win11_native_translucency_eval_is_signed_off_in_core()
         {
             _ = TesseraNativeTranslucencySignOffPolicy.Win11EvalComplete.Should().BeTrue();
