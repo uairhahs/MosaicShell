@@ -29,6 +29,9 @@ namespace MosaicShell.Core.Capabilities.Platform
 
         public static bool IsAvailable => Backend != NativeTranslucencyBackend.None;
 
+        /// <summary>Raised when <see cref="Set"/> changes the backend, on the caller's thread.</summary>
+        public static event EventHandler? Changed;
+
         /// <summary>Pure decision from the platform facts, so both platforms' answers are tested on any OS.</summary>
         public static NativeTranslucencyBackend Resolve(
             bool isWindows,
@@ -44,7 +47,13 @@ namespace MosaicShell.Core.Capabilities.Platform
 
         public static void Set(NativeTranslucencyBackend backend)
         {
+            if (Backend == backend)
+            {
+                return;
+            }
+
             Backend = backend;
+            Changed?.Invoke(null, EventArgs.Empty);
         }
 
         internal static void ResetForTests()

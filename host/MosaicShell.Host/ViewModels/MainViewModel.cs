@@ -168,11 +168,7 @@ namespace MosaicShell.Host.ViewModels
         [ObservableProperty] private bool _tesseraLockFlyouts = true;
         [ObservableProperty] private bool _tesseraFlightFlyouts = true;
         [ObservableProperty] private bool _tesseraMediaStrip = true;
-        [ObservableProperty] private bool _tesseraAcrylicBackdrop = true;
-        [ObservableProperty] private bool _tesseraNativeTranslucency;
-        public bool TesseraNativeTranslucencyHubAvailable => TesseraNativeTranslucencySignOffPolicy.EvalCompleteForThisPlatform;
         [ObservableProperty] private bool _tesseraFocusDim = true;
-        [ObservableProperty] private bool _tesseraBackdropBlur = true;
         [ObservableProperty] private decimal _tesseraFlyoutScalePercent = 100;
         [ObservableProperty] private string _tesseraAccentHex = "";
         [ObservableProperty] private decimal _tesseraLegacyStepPercent = 2;
@@ -405,10 +401,8 @@ namespace MosaicShell.Host.ViewModels
                 TesseraLockFlyouts = s.EnableLockFlyouts;
                 TesseraFlightFlyouts = s.EnableFlightFlyouts;
                 TesseraMediaStrip = s.ShowMediaStripOnVolume;
-                TesseraAcrylicBackdrop = s.UseAcrylicBackdrop;
-                TesseraNativeTranslucency = TesseraNativeTranslucencySignOffPolicy.EvalCompleteForThisPlatform && s.UseNativeTranslucency;
+                LoadTesseraMaterial(s);
                 TesseraFocusDim = s.UseFocusDim;
-                TesseraBackdropBlur = s.UseBackdropBlur;
                 TesseraFlyoutScalePercent = Math.Clamp(s.FlyoutScalePercent, 50, 150);
                 TesseraAccentHex = s.AccentColor ?? "";
                 decimal stepPct = s.LegacyVolumeStep <= 1.0
@@ -592,10 +586,8 @@ namespace MosaicShell.Host.ViewModels
             s.EnableLockFlyouts = TesseraLockFlyouts;
             s.EnableFlightFlyouts = TesseraFlightFlyouts;
             s.ShowMediaStripOnVolume = TesseraMediaStrip;
-            s.UseAcrylicBackdrop = TesseraAcrylicBackdrop;
-            s.UseNativeTranslucency = TesseraNativeTranslucencySignOffPolicy.EvalCompleteForThisPlatform && TesseraNativeTranslucency;
+            PersistTesseraMaterial(s);
             s.UseFocusDim = TesseraFocusDim;
-            s.UseBackdropBlur = TesseraBackdropBlur;
             s.FlyoutScalePercent = (int)Math.Clamp(TesseraFlyoutScalePercent, 50, 150);
             s.AccentColor = TesseraAccentColor.NormalizeOrEmpty(TesseraAccentHex);
             TesseraAccentHex = s.AccentColor;
