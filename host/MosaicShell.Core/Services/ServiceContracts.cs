@@ -209,13 +209,16 @@ namespace MosaicShell.Core.Services
 
 #if !WINDOWS
         /// <summary>
-        /// Linux: media from MPRIS players and shell flyout triggers from KDE's KGlobalAccel, both on the session bus;
-        /// every other service inert until it has a Linux implementation. The browser bridge is not wired on Linux yet,
+        /// Linux: media from MPRIS players, shell flyout triggers from KDE's KGlobalAccel and Plasma pop-up suppression,
+        /// all on the session bus; every other service inert until it has a Linux implementation. The browser bridge is not wired on Linux yet,
         /// so there are no browser sources.
         /// </summary>
         public static HostServices CreateLinuxDefaults()
         {
-            return CreateInert(CreateLinuxMediaStack(), new Linux.KGlobalAccelShellFlyoutTriggers());
+            return CreateInert(
+                CreateLinuxMediaStack(),
+                new Linux.KGlobalAccelShellFlyoutTriggers(),
+                new Linux.PlasmaOsdSuppressor());
         }
 
         /// <summary>
@@ -229,7 +232,10 @@ namespace MosaicShell.Core.Services
         }
 #endif
 
-        private static HostServices CreateInert(IMediaSessionService media, IShellFlyoutTriggerSource? shellFlyoutTriggers = null)
+        private static HostServices CreateInert(
+            IMediaSessionService media,
+            IShellFlyoutTriggerSource? shellFlyoutTriggers = null,
+            INativeOsdSuppressor? osdSuppressor = null)
         {
             return new HostServices
             {
@@ -242,7 +248,7 @@ namespace MosaicShell.Core.Services
                 AudioLevels = new NullAudioLevelService(),
                 Autostart = new NullAutostartService(),
                 BrightnessChanges = new NullBrightnessChangeSource(),
-                OsdSuppressor = new NullNativeOsdSuppressor(),
+                OsdSuppressor = osdSuppressor ?? new NullNativeOsdSuppressor(),
                 LegacyVolumeKeys = new NullLegacyMediaKeyHook(),
                 Idle = new NullIdleService(),
                 Fullscreen = new NullFullscreenProbe(),

@@ -167,6 +167,7 @@ namespace MosaicShell.Core.Tests.Linux
             using HostServices hub = HostServices.CreatePlatformDefaults();
 
             _ = hub.ShellFlyoutTriggers.Should().BeOfType<KGlobalAccelShellFlyoutTriggers>();
+            _ = hub.OsdSuppressor.Should().BeOfType<PlasmaOsdSuppressor>("Plasma's own volume and brightness pop-ups are hidden while Tessera is armed");
         }
     }
 
