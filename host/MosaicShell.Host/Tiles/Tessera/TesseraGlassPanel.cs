@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Avalonia.Rendering.SceneGraph;
 using Avalonia.Skia;
 using Avalonia.VisualTree;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules.Tessera;
 using SkiaSharp;
 
@@ -459,6 +460,11 @@ namespace MosaicShell.Host.Tiles.Tessera
 
             if (nativeTranslucency)
             {
+                if (NativeTranslucencyAcrylicSpec.AppPaintsAcrylicLayers(NativeTranslucencyPlatform.Backend))
+                {
+                    TesseraGlassDrawOperation.DrawAcrylicLayers(lc, round, w, h);
+                }
+
                 TesseraGlassDrawOperation.DrawGlassChrome(lc, round);
             }
             else
@@ -681,6 +687,52 @@ namespace MosaicShell.Host.Tiles.Tessera
                 BlendMode = SKBlendMode.SoftLight
             };
             canvas.DrawRoundRect(round, tintPaint);
+        }
+
+        /// <summary>
+        /// Tint, highlight and grain over a blur-only backdrop (KWin), so it reads as acrylic as it does on Windows.
+        /// Values from <see cref="NativeTranslucencyAcrylicSpec"/>.
+        /// </summary>
+        internal static void DrawAcrylicLayers(SKCanvas canvas, SKRoundRect round, int w, int h)
+        {
+            using SKPaint tint = new()
+            {
+                Color = new SKColor(
+                    NativeTranslucencyAcrylicSpec.TintR,
+                    NativeTranslucencyAcrylicSpec.TintG,
+                    NativeTranslucencyAcrylicSpec.TintB,
+                    NativeTranslucencyAcrylicSpec.TintAlpha),
+                IsAntialias = true
+            };
+            canvas.DrawRoundRect(round, tint);
+
+            using SKPaint highlight = new()
+            {
+                Shader = SKShader.CreateLinearGradient(
+                    new SKPoint(0, 0),
+                    new SKPoint(0, h * NativeTranslucencyAcrylicSpec.HighlightExtent),
+                    [
+                        new SKColor(255, 255, 255, NativeTranslucencyAcrylicSpec.HighlightTopAlpha),
+                        new SKColor(255, 255, 255, NativeTranslucencyAcrylicSpec.HighlightBottomAlpha)
+                    ],
+                    [0f, 1f],
+                    SKShaderTileMode.Clamp),
+                IsAntialias = true,
+                BlendMode = SKBlendMode.Plus
+            };
+            canvas.DrawRoundRect(round, highlight);
+
+            using SKPaint grain = new()
+            {
+                Shader = SKShader.CreatePerlinNoiseFractalNoise(0.85f, 0.6f, 2, 0),
+                Color = new SKColor(255, 255, 255, NativeTranslucencyAcrylicSpec.NoiseAlpha),
+                IsAntialias = true,
+                BlendMode = SKBlendMode.Overlay
+            };
+            _ = canvas.Save();
+            canvas.ClipRoundRect(round, antialias: true);
+            canvas.DrawRect(0, 0, w, h, grain);
+            canvas.Restore();
         }
 
         internal static void DrawGlassChrome(SKCanvas canvas, SKRoundRect round)
