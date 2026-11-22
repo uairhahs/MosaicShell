@@ -70,12 +70,14 @@ namespace MosaicShell.Core.Tests.Linux
         }
 
         [LinuxBusFact]
-        public void Platform_defaults_on_linux_read_media_from_mpris_and_keep_the_rest_inert()
+        public void Platform_defaults_on_linux_wire_the_linux_services_and_keep_the_rest_inert()
         {
             using HostServices hub = HostServices.CreatePlatformDefaults();
 
             _ = hub.Media.Should().BeOfType<CompositeMediaSessionService>();
-            _ = hub.Brightness.IsSupported.Should().BeFalse();
+            _ = hub.Audio.Should().BeOfType<PulseAudioService>();
+            _ = hub.Brightness.Should().BeOfType<KdeScreenBrightness>();
+            _ = hub.BrightnessChanges.Should().BeSameAs(hub.Brightness, "one PowerDevil watcher serves both roles");
             _ = hub.Airplane.IsSupported.Should().BeFalse();
         }
     }

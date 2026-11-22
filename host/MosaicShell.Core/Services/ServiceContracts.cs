@@ -209,16 +209,22 @@ namespace MosaicShell.Core.Services
 
 #if !WINDOWS
         /// <summary>
-        /// Linux: media from MPRIS players, shell flyout triggers from KDE's KGlobalAccel and Plasma pop-up suppression,
-        /// all on the session bus; every other service inert until it has a Linux implementation. The browser bridge is not wired on Linux yet,
+        /// Linux: media from MPRIS players, shell flyout triggers from KDE's KGlobalAccel, Plasma pop-up suppression and
+        /// screen brightness from PowerDevil (all on the session bus), and volume through pactl; every other service inert
+        /// until it has a Linux implementation. The browser bridge is not wired on Linux yet,
         /// so there are no browser sources.
         /// </summary>
         public static HostServices CreateLinuxDefaults()
         {
+            // One PowerDevil watcher serves both the value and its changes, as Windows' pair shares one service.
+            Linux.KdeScreenBrightness brightness = new();
             return CreateInert(
                 CreateLinuxMediaStack(),
                 new Linux.KGlobalAccelShellFlyoutTriggers(),
-                new Linux.PlasmaOsdSuppressor());
+                new Linux.PlasmaOsdSuppressor(),
+                new Linux.PulseAudioService(),
+                brightness,
+                brightness);
         }
 
         /// <summary>
@@ -235,19 +241,22 @@ namespace MosaicShell.Core.Services
         private static HostServices CreateInert(
             IMediaSessionService media,
             IShellFlyoutTriggerSource? shellFlyoutTriggers = null,
-            INativeOsdSuppressor? osdSuppressor = null)
+            INativeOsdSuppressor? osdSuppressor = null,
+            IAudioService? audio = null,
+            IBrightnessService? brightness = null,
+            IBrightnessChangeSource? brightnessChanges = null)
         {
             return new HostServices
             {
-                Audio = new NullAudioService(),
+                Audio = audio ?? new NullAudioService(),
                 AppAudio = new NullAppAudioService(),
-                Brightness = new NullBrightnessService(),
+                Brightness = brightness ?? new NullBrightnessService(),
                 Media = media,
                 Hotkeys = new NullHotkeyService(),
                 Metrics = new NullSystemMetricsService(),
                 AudioLevels = new NullAudioLevelService(),
                 Autostart = new NullAutostartService(),
-                BrightnessChanges = new NullBrightnessChangeSource(),
+                BrightnessChanges = brightnessChanges ?? new NullBrightnessChangeSource(),
                 OsdSuppressor = osdSuppressor ?? new NullNativeOsdSuppressor(),
                 LegacyVolumeKeys = new NullLegacyMediaKeyHook(),
                 Idle = new NullIdleService(),
