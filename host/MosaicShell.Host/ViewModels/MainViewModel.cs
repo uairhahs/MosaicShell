@@ -169,8 +169,8 @@ namespace MosaicShell.Host.ViewModels
         [ObservableProperty] private bool _tesseraFlightFlyouts = true;
         [ObservableProperty] private bool _tesseraMediaStrip = true;
         [ObservableProperty] private bool _tesseraAcrylicBackdrop = true;
-        [ObservableProperty] private bool _tesseraOsAcrylic;
-        public bool TesseraOsAcrylicHubAvailable => TesseraOsAcrylicSignOffPolicy.Win11EvalComplete;
+        [ObservableProperty] private bool _tesseraNativeTranslucency;
+        public bool TesseraNativeTranslucencyHubAvailable => TesseraNativeTranslucencySignOffPolicy.Win11EvalComplete;
         [ObservableProperty] private bool _tesseraFocusDim = true;
         [ObservableProperty] private bool _tesseraBackdropBlur = true;
         [ObservableProperty] private decimal _tesseraFlyoutScalePercent = 100;
@@ -406,7 +406,7 @@ namespace MosaicShell.Host.ViewModels
                 TesseraFlightFlyouts = s.EnableFlightFlyouts;
                 TesseraMediaStrip = s.ShowMediaStripOnVolume;
                 TesseraAcrylicBackdrop = s.UseAcrylicBackdrop;
-                TesseraOsAcrylic = TesseraOsAcrylicSignOffPolicy.Win11EvalComplete && s.UseOsAcrylic;
+                TesseraNativeTranslucency = TesseraNativeTranslucencySignOffPolicy.Win11EvalComplete && s.UseNativeTranslucency;
                 TesseraFocusDim = s.UseFocusDim;
                 TesseraBackdropBlur = s.UseBackdropBlur;
                 TesseraFlyoutScalePercent = Math.Clamp(s.FlyoutScalePercent, 50, 150);
@@ -593,7 +593,7 @@ namespace MosaicShell.Host.ViewModels
             s.EnableFlightFlyouts = TesseraFlightFlyouts;
             s.ShowMediaStripOnVolume = TesseraMediaStrip;
             s.UseAcrylicBackdrop = TesseraAcrylicBackdrop;
-            s.UseOsAcrylic = TesseraOsAcrylicSignOffPolicy.Win11EvalComplete && TesseraOsAcrylic;
+            s.UseNativeTranslucency = TesseraNativeTranslucencySignOffPolicy.Win11EvalComplete && TesseraNativeTranslucency;
             s.UseFocusDim = TesseraFocusDim;
             s.UseBackdropBlur = TesseraBackdropBlur;
             s.FlyoutScalePercent = (int)Math.Clamp(TesseraFlyoutScalePercent, 50, 150);
@@ -685,7 +685,7 @@ namespace MosaicShell.Host.ViewModels
                 case string when ModuleIds.IsTessera(id):
                     {
                         TesseraSettings prior = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
-                        bool priorOsAcrylic = prior.UseOsAcrylic;
+                        bool priorNativeTranslucency = prior.UseNativeTranslucency;
                         PersistTesseraFromUi();
                         TesseraSettings saved = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
                         bool wasArmed = _capabilityHost?.IsArmed(ModuleIds.Tessera) == true;
@@ -704,9 +704,9 @@ namespace MosaicShell.Host.ViewModels
                             StatusMessage = "Tessera settings saved. Arm from Tiles to apply flyout hooks.";
                         }
 
-                        if (saved.UseOsAcrylic != priorOsAcrylic)
+                        if (saved.UseNativeTranslucency != priorNativeTranslucency)
                         {
-                            StatusMessage += " Restart Host after changing OS acrylic (process-wide corner radius).";
+                            StatusMessage += " Restart Host after changing native translucency (process-wide corner radius).";
                         }
 
                         break;

@@ -189,9 +189,9 @@ namespace MosaicShell.Host.Capabilities
             {
                 lock (_gate)
                 {
-                    if (ShouldUseStackedOsAcrylic(request))
+                    if (ShouldUseStackedNativeTranslucency(request))
                     {
-                        string volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey(ModuleIds.Tessera, TesseraStackedPanelRole.Volume);
+                        string volumeKey = TesseraNativeTranslucencyStackedPolicy.WindowSlotKey(ModuleIds.Tessera, TesseraStackedPanelRole.Volume);
                         if (!_windows.TryGetValue(volumeKey, out FlyoutWindow? volumeWin)
                             || !volumeWin.IsFlyoutSessionShowing)
                         {
@@ -376,7 +376,7 @@ namespace MosaicShell.Host.Capabilities
         {
             InvalidateTesseraQueuesOnHandoff(request);
 
-            if (ShouldUseStackedOsAcrylic(request))
+            if (ShouldUseStackedNativeTranslucency(request))
             {
                 ShowOrUpdateStacked(request, resetDismiss, allowLivePatch);
                 return;
@@ -397,7 +397,7 @@ namespace MosaicShell.Host.Capabilities
                 return;
             }
 
-            bool nextStacked = ShouldUseStackedOsAcrylic(request);
+            bool nextStacked = ShouldUseStackedNativeTranslucency(request);
             string? openKind = null;
             string? openStyle = null;
             bool openStacked = _stackedSession is not null;
@@ -927,7 +927,7 @@ namespace MosaicShell.Host.Capabilities
         private void OnFlyoutTransientDismissed(string moduleId)
         {
             if (_stackedSession is not null
-                && TesseraOsAcrylicStackedPolicy.ShouldCascadeTransientDismissToStackedSession(
+                && TesseraNativeTranslucencyStackedPolicy.ShouldCascadeTransientDismissToStackedSession(
                     moduleId, _stackedSession.SlotKeys))
             {
                 lock (_gate)
@@ -945,7 +945,7 @@ namespace MosaicShell.Host.Capabilities
                 StopStackedAutoDismiss();
             }
             else if (_stackedSession is not null
-                     && TesseraOsAcrylicStackedPolicy.TransientDismissMustHideAllSlots)
+                     && TesseraNativeTranslucencyStackedPolicy.TransientDismissMustHideAllSlots)
             {
                 // Superseded single-shell CapsLock Tick: ignore; do not touch live volume/media.
                 Log($"ignore superseded transient-dismiss key={moduleId}");
@@ -955,7 +955,7 @@ namespace MosaicShell.Host.Capabilities
             try
             {
                 TransientDismissed?.Invoke(
-                    TesseraOsAcrylicStackedPolicy.ResolveTransientDismissConsumerKey(moduleId));
+                    TesseraNativeTranslucencyStackedPolicy.ResolveTransientDismissConsumerKey(moduleId));
             }
             catch { /* ignore */ }
 
@@ -977,14 +977,14 @@ namespace MosaicShell.Host.Capabilities
                     request.Payload, request.StyleId, request.Kind);
                 TesseraPalette.ApplyMaterial(material);
 
-                bool osAcrylicEligible = TesseraFlyoutMaterialFactory.OsAcrylicEligibleFromPayload(
+                bool nativeTranslucencyEligible = TesseraFlyoutMaterialFactory.NativeTranslucencyEligibleFromPayload(
                     request.Payload, request.StyleId, request.Kind);
                 bool settingsWantBlur = TesseraFlyoutRequestBuilder.BackdropBlurFromPayload(request.Payload);
-                TesseraFlyoutGlassBinder.Binding glass = TesseraFlyoutGlassBinder.ApplyForLiveFlyout(settingsWantBlur, osAcrylicEligible);
+                TesseraFlyoutGlassBinder.Binding glass = TesseraFlyoutGlassBinder.ApplyForLiveFlyout(settingsWantBlur, nativeTranslucencyEligible);
                 Log(
                     $"glass mode={glass.Mode} backdrop={glass.UseBackdropBlur} " +
                     $"embeddedPreview={glass.UseEmbeddedPreview} softFrostHwnd={glass.SoftFrostHwndReady} " +
-                    $"osAcrylic={glass.OsAcrylicEligible}");
+                    $"nativeTranslucency={glass.NativeTranslucencyEligible}");
 
                 TesseraFlyoutViewModel vm = TesseraFlyoutViewModel.FromRequest(_services, request, _hostUi);
                 Control root = TesseraStyleFactory.Create(

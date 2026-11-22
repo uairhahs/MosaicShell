@@ -471,9 +471,9 @@ namespace MosaicShell.Core.Tests
 
         [InlineData(StyleIds.Radial, false)]
 
-        public void Supports_stacked_os_acrylic(string styleId, bool supported)
+        public void Supports_stacked_native_translucency(string styleId, bool supported)
         {
-            _ = TesseraStackedPlacementPolicy.SupportsStackedOsAcrylic(styleId).Should().Be(supported);
+            _ = TesseraStackedPlacementPolicy.SupportsStackedNativeTranslucency(styleId).Should().Be(supported);
         }
 
         [Fact]

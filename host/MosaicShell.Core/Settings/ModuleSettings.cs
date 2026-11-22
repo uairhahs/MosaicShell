@@ -56,12 +56,30 @@ namespace MosaicShell.Core.Settings
         public bool EnableLockFlyouts { get; set; } = true;
         public bool EnableFlightFlyouts { get; set; } = true;
         public bool ShowMediaStripOnVolume { get; set; } = true;
-        /// <summary>Soft frost tint on flyout shell (not OS acrylic).</summary>
+        /// <summary>Soft frost tint on flyout shell (not native translucency).</summary>
         public bool UseAcrylicBackdrop { get; set; } = true;
         /// <summary>
-        /// Win11 OS AcrylicBlur on eligible Tessera flyouts. Honored only after Win11 eval sign-off; default off.
+        /// The OS blur behind eligible Tessera flyouts (Windows AcrylicBlur). Honored only after the platform's eval
+        /// sign-off; default off.
         /// </summary>
-        public bool UseOsAcrylic { get; set; }
+        public bool UseNativeTranslucency { get; set; }
+
+        /// <summary>
+        /// Legacy JSON key from before the Native Translucency rename: read into <see cref="UseNativeTranslucency"/>,
+        /// never written, so a saved file holds one key and the two cannot disagree.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        public bool? UseOsAcrylic
+        {
+            get => null;
+            set
+            {
+                if (value is bool legacy)
+                {
+                    UseNativeTranslucency = legacy;
+                }
+            }
+        }
         /// <summary>Subtle click-through desktop dim behind flyout.</summary>
         public bool UseFocusDim { get; set; } = true;
         /// <summary>Flyout size multiplier percent (50-150). Default 100.</summary>

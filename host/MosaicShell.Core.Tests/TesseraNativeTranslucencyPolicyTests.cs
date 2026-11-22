@@ -8,13 +8,13 @@ using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Core.Tests
 {
-    public class TesseraOsAcrylicTrialPolicyTests : IDisposable
+    public class TesseraNativeTranslucencyPolicyTests : IDisposable
     {
         private readonly string _root;
 
-        public TesseraOsAcrylicTrialPolicyTests()
+        public TesseraNativeTranslucencyPolicyTests()
         {
-            _root = Path.Combine(Path.GetTempPath(), "MosaicOsAcrylicTrial_" + Guid.NewGuid().ToString("N"));
+            _root = Path.Combine(Path.GetTempPath(), "MosaicNativeTranslucencyTrial_" + Guid.NewGuid().ToString("N"));
             AppPaths.SetRootOverride(_root);
             AppPaths.EnsureLayout();
             ModuleSettingsStore.Save("Tessera", new TesseraSettings());
@@ -33,11 +33,11 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Trial_is_available_but_default_off()
         {
-            _ = TesseraOsAcrylicTrialPolicy.Available.Should().BeTrue(
-                "compile kill-switch stays on so --tessera-os-acrylic works without a rebuild");
-            _ = HostLaunchOptions.TesseraOsAcrylicTrial.Should().BeFalse();
-            _ = TesseraOsAcrylicTrialPolicy.IsTrialRequested().Should().BeFalse();
-            _ = Win32HostCompositionPolicy.OsAcrylicTrialRequested.Should().BeFalse();
+            _ = TesseraNativeTranslucencyPolicy.Available.Should().BeTrue(
+                "compile kill-switch stays on so --tessera-native-translucency works without a rebuild");
+            _ = HostLaunchOptions.TesseraNativeTranslucencyTrial.Should().BeFalse();
+            _ = TesseraNativeTranslucencyPolicy.IsTrialRequested().Should().BeFalse();
+            _ = Win32HostCompositionPolicy.NativeTranslucencyTrialRequested.Should().BeFalse();
             _ = Win32HostCompositionPolicy.WinUiCompositionBackdropCornerRadius.Should().BeNull(
                 "process-wide radius is unset while the trial is off so alpha keeps Skia frost");
         }
@@ -45,45 +45,45 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Persisted_hub_setting_enables_trial_when_win11_eval_is_signed_off()
         {
-            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseOsAcrylic = true });
-            _ = TesseraOsAcrylicTrialPolicy.IsTrialRequested().Should().BeTrue();
-            _ = Win32HostCompositionPolicy.OsAcrylicTrialRequested.Should().BeTrue();
+            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseNativeTranslucency = true });
+            _ = TesseraNativeTranslucencyPolicy.IsTrialRequested().Should().BeTrue();
+            _ = Win32HostCompositionPolicy.NativeTranslucencyTrialRequested.Should().BeTrue();
         }
 
         [Fact]
         public void Persisted_hub_setting_is_ignored_without_win11_eval_sign_off()
         {
-            _ = TesseraOsAcrylicTrialPolicy
-                .ResolveTrialRequested(launchFlag: false, persistedUseOsAcrylic: true)
-                .Should().Be(TesseraOsAcrylicSignOffPolicy.Win11EvalComplete);
-            _ = TesseraOsAcrylicTrialPolicy
-                .ResolveTrialRequested(launchFlag: true, persistedUseOsAcrylic: false)
-                .Should().Be(!TesseraOsAcrylicSignOffPolicy.Win11EvalComplete);
+            _ = TesseraNativeTranslucencyPolicy
+                .ResolveTrialRequested(launchFlag: false, persistedUseNativeTranslucency: true)
+                .Should().Be(TesseraNativeTranslucencySignOffPolicy.Win11EvalComplete);
+            _ = TesseraNativeTranslucencyPolicy
+                .ResolveTrialRequested(launchFlag: true, persistedUseNativeTranslucency: false)
+                .Should().Be(!TesseraNativeTranslucencySignOffPolicy.Win11EvalComplete);
         }
 
         [Fact]
         public void Launch_flag_is_ignored_after_win11_sign_off_until_hub_setting_is_on()
         {
-            HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
-            _ = HostLaunchOptions.TesseraOsAcrylicTrial.Should().BeTrue();
-            _ = TesseraOsAcrylicTrialPolicy.IsTrialRequested().Should().BeFalse(
+            HostLaunchOptions.Apply([HostLaunchOptions.TesseraNativeTranslucencyTrialFlag]);
+            _ = HostLaunchOptions.TesseraNativeTranslucencyTrial.Should().BeTrue();
+            _ = TesseraNativeTranslucencyPolicy.IsTrialRequested().Should().BeFalse(
                 "post sign-off the hub setting is authoritative; CLI flag alone must not enable acrylic");
-            _ = Win32HostCompositionPolicy.OsAcrylicTrialRequested.Should().BeFalse();
+            _ = Win32HostCompositionPolicy.NativeTranslucencyTrialRequested.Should().BeFalse();
 
-            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseOsAcrylic = true });
-            _ = TesseraOsAcrylicTrialPolicy.IsTrialRequested().Should().BeTrue();
-            _ = Win32HostCompositionPolicy.OsAcrylicTrialRequested.Should().BeTrue();
+            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseNativeTranslucency = true });
+            _ = TesseraNativeTranslucencyPolicy.IsTrialRequested().Should().BeTrue();
+            _ = Win32HostCompositionPolicy.NativeTranslucencyTrialRequested.Should().BeTrue();
             _ = Win32HostCompositionPolicy.WinUiCompositionBackdropCornerRadius
-                .Should().Be(TesseraOsAcrylicTrialPolicy.SpikeCornerRadius);
+                .Should().Be(TesseraNativeTranslucencyPolicy.SpikeCornerRadius);
         }
 
         [Fact]
         public void Hub_setting_off_disables_acrylic_even_when_launch_flag_is_on()
         {
-            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseOsAcrylic = false });
-            HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
-            _ = TesseraOsAcrylicTrialPolicy.IsTrialRequested().Should().BeFalse();
-            _ = Win32HostCompositionPolicy.OsAcrylicTrialRequested.Should().BeFalse();
+            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseNativeTranslucency = false });
+            HostLaunchOptions.Apply([HostLaunchOptions.TesseraNativeTranslucencyTrialFlag]);
+            _ = TesseraNativeTranslucencyPolicy.IsTrialRequested().Should().BeFalse();
+            _ = Win32HostCompositionPolicy.NativeTranslucencyTrialRequested.Should().BeFalse();
         }
 
         [Fact]
@@ -99,7 +99,7 @@ namespace MosaicShell.Core.Tests
         public void Stacked_media_strip_is_out_of_spike(string showMediaStrip, bool stacked)
         {
             Dictionary<string, string> payload = new() { ["showMediaStrip"] = showMediaStrip };
-            _ = TesseraOsAcrylicTrialPolicy.IsStackedMultiPanel(payload).Should().Be(stacked);
+            _ = TesseraNativeTranslucencyPolicy.IsStackedMultiPanel(payload).Should().Be(stacked);
         }
 
         [Fact]
@@ -108,23 +108,23 @@ namespace MosaicShell.Core.Tests
             Dictionary<string, string> single = new() { ["showMediaStrip"] = "0", ["acrylic"] = "1" };
             Dictionary<string, string> stacked = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
 
-            _ = TesseraOsAcrylicTrialPolicy.IsEligible(single, trialRequested: false, osSupportsWinUiAcrylic: true)
+            _ = TesseraNativeTranslucencyPolicy.IsEligible(single, trialRequested: false, osSupportsWinUiAcrylic: true)
                 .Should().BeFalse();
-            _ = TesseraOsAcrylicTrialPolicy.IsEligible(single, trialRequested: true, osSupportsWinUiAcrylic: false)
+            _ = TesseraNativeTranslucencyPolicy.IsEligible(single, trialRequested: true, osSupportsWinUiAcrylic: false)
                 .Should().BeFalse("below WinUIComposition floor keeps frost; Win10 is best-effort only");
-            _ = TesseraOsAcrylicTrialPolicy.IsEligible(stacked, trialRequested: true, osSupportsWinUiAcrylic: true,
+            _ = TesseraNativeTranslucencyPolicy.IsEligible(stacked, trialRequested: true, osSupportsWinUiAcrylic: true,
                     styleId: StyleIds.Meter)
                 .Should().BeFalse("Meter uses N-window split under H3");
-            _ = TesseraOsAcrylicTrialPolicy.IsEligible(stacked, trialRequested: true, osSupportsWinUiAcrylic: true,
+            _ = TesseraNativeTranslucencyPolicy.IsEligible(stacked, trialRequested: true, osSupportsWinUiAcrylic: true,
                     styleId: StyleIds.Fluent)
                 .Should().BeTrue("Fluent keeps volume+media in one acrylic shell");
-            _ = TesseraOsAcrylicTrialPolicy.IsEligible(single, trialRequested: true, osSupportsWinUiAcrylic: true)
+            _ = TesseraNativeTranslucencyPolicy.IsEligible(single, trialRequested: true, osSupportsWinUiAcrylic: true)
                 .Should().BeTrue();
-            _ = TesseraOsAcrylicTrialPolicy.IsEligible(single, trialRequested: true, osSupportsWinUiAcrylic: true,
+            _ = TesseraNativeTranslucencyPolicy.IsEligible(single, trialRequested: true, osSupportsWinUiAcrylic: true,
                     compileAvailable: false)
                 .Should().BeFalse("per-build kill-switch");
-            _ = TesseraOsAcrylicTrialPolicy.IsEligible(single, trialRequested: true, osSupportsWinUiAcrylic: true,
-                    osAcrylicRenderingAvailable: false)
+            _ = TesseraNativeTranslucencyPolicy.IsEligible(single, trialRequested: true, osSupportsWinUiAcrylic: true,
+                    nativeTranslucencyRenderingAvailable: false)
                 .Should().BeFalse("Software-only rendering keeps frost (H2 fallback row)");
         }
 
@@ -132,9 +132,9 @@ namespace MosaicShell.Core.Tests
         public void Is_eligible_from_payload_respects_force_software_render()
         {
             Dictionary<string, string> single = new() { ["showMediaStrip"] = "0", ["acrylic"] = "1" };
-            TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
+            TesseraNativeTranslucencyTestHarness.EnableHubNativeTranslucency();
             HostLaunchOptions.Apply([HostLaunchOptions.TesseraForceSoftwareRenderFlag]);
-            _ = TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(single, StyleIds.Fluent).Should().BeFalse();
+            _ = TesseraNativeTranslucencyPolicy.IsEligibleFromPayload(single, StyleIds.Fluent).Should().BeFalse();
         }
 
         [Fact]
@@ -148,7 +148,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Material_requests_acrylic_with_transparent_fallback_when_eligible()
         {
-            TesseraFlyoutMaterial m = TesseraFlyoutMaterialFactory.Create(useAcrylic: true, osAcrylicEligible: true);
+            TesseraFlyoutMaterial m = TesseraFlyoutMaterialFactory.Create(useAcrylic: true, nativeTranslucencyEligible: true);
             _ = m.UseSoftFrost.Should().BeTrue();
             _ = m.TransparencyHints.Should().Equal("AcrylicBlur", "Transparent");
             _ = TesseraFlyoutWindowPolicy.ResolveTransparencyHints(m).Should().Equal("AcrylicBlur", "Transparent");
@@ -157,7 +157,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Material_does_not_request_acrylic_when_user_disables_frost()
         {
-            TesseraFlyoutMaterial m = TesseraFlyoutMaterialFactory.Create(useAcrylic: false, osAcrylicEligible: true);
+            TesseraFlyoutMaterial m = TesseraFlyoutMaterialFactory.Create(useAcrylic: false, nativeTranslucencyEligible: true);
             _ = m.TransparencyHints.Should().Equal("Transparent");
             _ = m.TransparencyHints.Should().NotContain("AcrylicBlur");
         }
@@ -171,15 +171,15 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void Live_mode_is_os_acrylic_only_when_eligible()
+        public void Live_mode_is_native_translucency_only_when_eligible()
         {
             _ = TesseraFlyoutGlassPolicy.ResolveLiveMode(softFrostHwndReady: true, useBackdropBlur: true)
                 .Should().Be(TesseraFlyoutGlassMode.SkiaFallback);
             _ = TesseraFlyoutGlassPolicy
-                .ResolveLiveMode(softFrostHwndReady: true, useBackdropBlur: true, osAcrylicEligible: true)
-                .Should().Be(TesseraFlyoutGlassMode.OsAcrylic);
+                .ResolveLiveMode(softFrostHwndReady: true, useBackdropBlur: true, nativeTranslucencyEligible: true)
+                .Should().Be(TesseraFlyoutGlassMode.NativeTranslucency);
             _ = TesseraFlyoutGlassPolicy
-                .ResolveLiveMode(softFrostHwndReady: false, useBackdropBlur: true, osAcrylicEligible: true)
+                .ResolveLiveMode(softFrostHwndReady: false, useBackdropBlur: true, nativeTranslucencyEligible: true)
                 .Should().Be(TesseraFlyoutGlassMode.EmbeddedSimple);
         }
 

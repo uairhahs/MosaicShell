@@ -21,7 +21,7 @@ namespace MosaicShell.Host.Tiles.Tessera
 
         /// <summary>
         /// Opt-in GDI screen capture for glass. Off by default (Avalonia docs prefer OS transparency).
-        /// Set true only when OS acrylic is unavailable and BitBlt glass is explicitly desired.
+        /// Set true only when native translucency is unavailable and BitBlt glass is explicitly desired.
         /// </summary>
         public static bool AllowGdiScreenCapture { get; set; }
 
@@ -32,7 +32,7 @@ namespace MosaicShell.Host.Tiles.Tessera
         public static bool EmbeddedPreviewBuild { get; set; }
 
         /// <summary>OS AcrylicBlur trial: skip Skia frost slab; HWND blur + light edge only.</summary>
-        public static bool UseOsAcrylicChrome { get; set; }
+        public static bool UseNativeTranslucencyChrome { get; set; }
 
         /// <summary>Live flyout: skip inner TesseraChrome.Glass on Meter/Amber (see Core policy).</summary>
         public static bool SuppressInnerSkiaGlass { get; set; }
@@ -419,11 +419,11 @@ namespace MosaicShell.Host.Tiles.Tessera
             SKRect rect = SKRect.Create(0, 0, w, h);
             SKRoundRect round = new(rect, (float)cornerRadius, (float)cornerRadius);
 
-            bool osAcrylic = TesseraGlass.UseOsAcrylicChrome
+            bool nativeTranslucency = TesseraGlass.UseNativeTranslucencyChrome
                 && !TesseraGlass.PreviewMode
                 && !TesseraGlass.IsEmbeddedPreviewContext(this);
 
-            if (!osAcrylic)
+            if (!nativeTranslucency)
             {
                 // Always paint translucent frost chrome. Do NOT GDI/BitBlt or shared-capture into
                 // this layer, that self-captures the flyout as opaque black (Soft frost → black boxes).
@@ -435,7 +435,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             }
 
             bool drewBackdrop = false;
-            bool maySample = !osAcrylic
+            bool maySample = !nativeTranslucency
                 && TesseraGlass.UseBackdropBlur
                 && !TesseraGlass.PreviewMode
                 && !TesseraGlass.IsEmbeddedPreviewContext(this)
@@ -457,7 +457,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                     lc, targetCanvas, sourceSurface, rect, round, blurRadius);
             }
 
-            if (osAcrylic)
+            if (nativeTranslucency)
             {
                 TesseraGlassDrawOperation.DrawGlassChrome(lc, round);
             }

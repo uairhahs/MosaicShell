@@ -46,6 +46,26 @@ namespace MosaicShell.Core.Tests
             _ = s.Style.Should().Be("Fluent");
         }
 
+        [Theory]
+        [InlineData("{\"UseOsAcrylic\": true}", true)]
+        [InlineData("{\"UseNativeTranslucency\": true}", true)]
+        [InlineData("{}", false)]
+        public void Native_translucency_loads_from_the_old_and_new_setting_keys(string json, bool expected)
+        {
+            // Tessera.json files saved before the rename carry only UseOsAcrylic.
+            TesseraSettings s = System.Text.Json.JsonSerializer.Deserialize<TesseraSettings>(json)!;
+
+            _ = s.UseNativeTranslucency.Should().Be(expected);
+        }
+
+        [Fact]
+        public void Native_translucency_is_saved_under_the_new_key_only()
+        {
+            string json = System.Text.Json.JsonSerializer.Serialize(new TesseraSettings { UseNativeTranslucency = true });
+
+            _ = json.Should().Contain("\"UseNativeTranslucency\":true").And.NotContain("UseOsAcrylic");
+        }
+
         [Fact]
         public void TesseraSettings_host_polish_defaults()
         {
@@ -54,7 +74,7 @@ namespace MosaicShell.Core.Tests
             _ = s.UseBackdropBlur.Should().BeTrue();
             _ = s.UseBakedFrost.Should().BeTrue();
             _ = s.UseAcrylicBackdrop.Should().BeTrue();
-            _ = s.UseOsAcrylic.Should().BeFalse();
+            _ = s.UseNativeTranslucency.Should().BeFalse();
             _ = s.UseFocusDim.Should().BeTrue();
             _ = Math.Clamp(s.FlyoutScalePercent, 50, 150).Should().Be(100);
         }
@@ -113,7 +133,7 @@ namespace MosaicShell.Core.Tests
                 AniDir = "Bottom",
                 EnableFlightFlyouts = false,
                 ShowMediaStripOnVolume = false,
-                UseOsAcrylic = true,
+                UseNativeTranslucency = true,
                 AccentColor = "#D8E2F8"
             };
             ModuleSettingsStore.Save("Tessera", s);
@@ -124,7 +144,7 @@ namespace MosaicShell.Core.Tests
             _ = loaded.MonitorIndex.Should().Be(2);
             _ = loaded.AniDir.Should().Be("Bottom");
             _ = loaded.EnableFlightFlyouts.Should().BeFalse();
-            _ = loaded.UseOsAcrylic.Should().BeTrue();
+            _ = loaded.UseNativeTranslucency.Should().BeTrue();
         }
 
         [Fact]

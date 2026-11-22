@@ -92,14 +92,14 @@ namespace MosaicShell.Core.Modules.Tessera
         }
 
         /// <summary>
-        /// What the phase 1 slide moves. YourFlyouts moves the skin window. An OS acrylic window's
+        /// What the phase 1 slide moves. YourFlyouts moves the skin window. An native translucency window's
         /// blur belongs to the HWND, so sliding only its content (RenderTransform) moved the card's
         /// border across a still blurred pane; that window moves as a whole. A window that paints
         /// its own background (SoftFrost) slides its content, which carries the background with it.
         /// </summary>
-        public static TesseraSlideTarget ResolvePhase1SlideTarget(bool osAcrylicBackdrop)
+        public static TesseraSlideTarget ResolvePhase1SlideTarget(bool nativeTranslucencyBackdrop)
         {
-            return osAcrylicBackdrop ? TesseraSlideTarget.WindowPosition : TesseraSlideTarget.RenderTransform;
+            return nativeTranslucencyBackdrop ? TesseraSlideTarget.WindowPosition : TesseraSlideTarget.RenderTransform;
         }
 
         /// <summary>
@@ -109,9 +109,9 @@ namespace MosaicShell.Core.Modules.Tessera
         /// slid back (the Modern Flyouts jiggle, 2026-10-04).
         /// </summary>
         public static (int Dx, int Dy) ResolveWindowEntranceStartOffsetPx(
-            int ani, string? aniDir, int displacementPx, bool osAcrylicBackdrop)
+            int ani, string? aniDir, int displacementPx, bool nativeTranslucencyBackdrop)
         {
-            return ShouldSlide(ani) && ResolvePhase1SlideTarget(osAcrylicBackdrop) == TesseraSlideTarget.WindowPosition
+            return ShouldSlide(ani) && ResolvePhase1SlideTarget(nativeTranslucencyBackdrop) == TesseraSlideTarget.WindowPosition
                 ? ResolveSlideOffsetPx(aniDir, displacementPx)
                 : (0, 0);
         }

@@ -16,9 +16,12 @@ namespace MosaicShell.Core.Capabilities.Platform
         public const string TrayOnlyFlag = "--tray-only";
 
         /// <summary>Opt-in OS AcrylicBlur spike for single-shell Tessera flyouts (default off).</summary>
-        public const string TesseraOsAcrylicTrialFlag = "--tessera-os-acrylic";
+        public const string TesseraNativeTranslucencyTrialFlag = "--tessera-native-translucency";
 
-        /// <summary>H2 eval: force Software-only rendering (OsAcrylic ineligible; frost fallback).</summary>
+        /// <summary>The flag's name before the Native Translucency rename; still accepted.</summary>
+        public const string LegacyTesseraOsAcrylicTrialFlag = "--tessera-os-acrylic";
+
+        /// <summary>H2 eval: force Software-only rendering (NativeTranslucency ineligible; frost fallback).</summary>
         public const string TesseraForceSoftwareRenderFlag = "--tessera-software-render";
 
         public static HostLaunchMode Mode { get; private set; } = HostLaunchMode.FullHub;
@@ -26,7 +29,7 @@ namespace MosaicShell.Core.Capabilities.Platform
         public static bool IsTrayOnly => Mode == HostLaunchMode.TrayOnly;
 
         /// <summary>When true, eligible Tessera flyouts may request AcrylicBlur (H1 trial).</summary>
-        public static bool TesseraOsAcrylicTrial { get; private set; }
+        public static bool TesseraNativeTranslucencyTrial { get; private set; }
 
         /// <summary>When true, Host pins Software rendering only (H2 acrylic-unavailable fallback).</summary>
         public static bool TesseraForceSoftwareRender { get; private set; }
@@ -34,7 +37,7 @@ namespace MosaicShell.Core.Capabilities.Platform
         public static void Apply(IReadOnlyList<string> args)
         {
             Mode = HostLaunchMode.FullHub;
-            TesseraOsAcrylicTrial = false;
+            TesseraNativeTranslucencyTrial = false;
             TesseraForceSoftwareRender = false;
             foreach (string arg in args)
             {
@@ -42,9 +45,10 @@ namespace MosaicShell.Core.Capabilities.Platform
                 {
                     Mode = HostLaunchMode.TrayOnly;
                 }
-                else if (arg.Equals(TesseraOsAcrylicTrialFlag, StringComparison.OrdinalIgnoreCase))
+                else if (arg.Equals(TesseraNativeTranslucencyTrialFlag, StringComparison.OrdinalIgnoreCase)
+                    || arg.Equals(LegacyTesseraOsAcrylicTrialFlag, StringComparison.OrdinalIgnoreCase))
                 {
-                    TesseraOsAcrylicTrial = true;
+                    TesseraNativeTranslucencyTrial = true;
                 }
                 else if (arg.Equals(TesseraForceSoftwareRenderFlag, StringComparison.OrdinalIgnoreCase))
                 {
@@ -56,7 +60,7 @@ namespace MosaicShell.Core.Capabilities.Platform
         internal static void ResetForTests()
         {
             Mode = HostLaunchMode.FullHub;
-            TesseraOsAcrylicTrial = false;
+            TesseraNativeTranslucencyTrial = false;
             TesseraForceSoftwareRender = false;
         }
     }

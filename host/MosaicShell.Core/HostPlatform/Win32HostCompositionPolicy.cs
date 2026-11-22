@@ -27,20 +27,20 @@ namespace MosaicShell.Core.HostPlatform
                 ? ["Software"]
                 : ["AngleEgl", "Software"];
 
-        /// <summary>OsAcrylic needs AngleEgl; Software-only forces frost fallback (H2 row).</summary>
-        public static bool OsAcrylicRenderingAvailable =>
+        /// <summary>NativeTranslucency needs AngleEgl; Software-only forces frost fallback (H2 row).</summary>
+        public static bool NativeTranslucencyRenderingAvailable =>
             !HostLaunchOptions.TesseraForceSoftwareRender;
 
         /// <summary>Runtime opt-in from launch flag or persisted Tessera hub setting.</summary>
-        public static bool OsAcrylicTrialRequested =>
-            TesseraOsAcrylicTrialPolicy.Available
-            && TesseraOsAcrylicTrialPolicy.IsTrialRequested()
-            && OsAcrylicRenderingAvailable;
+        public static bool NativeTranslucencyTrialRequested =>
+            TesseraNativeTranslucencyPolicy.Available
+            && TesseraNativeTranslucencyPolicy.IsTrialRequested()
+            && NativeTranslucencyRenderingAvailable;
 
         /// <summary>
         /// Process-wide rounded acrylic brushes. Null while trial is off so alpha keeps Skia frost.
         /// </summary>
         public static float? WinUiCompositionBackdropCornerRadius =>
-            OsAcrylicTrialRequested ? TesseraOsAcrylicTrialPolicy.SpikeCornerRadius : null;
+            NativeTranslucencyTrialRequested ? TesseraNativeTranslucencyPolicy.SpikeCornerRadius : null;
     }
 }

@@ -880,7 +880,7 @@ namespace MosaicShell.Host.Capabilities
             }
 
             bool status = TesseraStatusFlyoutPolicy.IsStatusKind(FlyoutRequest.Kind);
-            bool acrylic = UsesOsAcrylicBackdrop();
+            bool acrylic = UsesNativeTranslucencyBackdrop();
             if (!acrylic
                 && !(status && TesseraStatusFlyoutPolicy.SoftFrostMustRoundClipHwnd))
             {
@@ -916,7 +916,7 @@ namespace MosaicShell.Host.Capabilities
                 _restPosition.Y + (int)Math.Round(dy));
         }
 
-        internal bool UsesOsAcrylicBackdrop()
+        internal bool UsesNativeTranslucencyBackdrop()
         {
             return _material.TransparencyHints.Any(static hint =>
                 hint.Equals("AcrylicBlur", StringComparison.OrdinalIgnoreCase));
@@ -971,7 +971,7 @@ namespace MosaicShell.Host.Capabilities
         internal (int Dx, int Dy) ResolveWindowSlideStartOffsetPx()
         {
             return TesseraFlyoutAnimationPolicy.ResolveWindowEntranceStartOffsetPx(
-                FlyoutRequest.Ani, FlyoutRequest.AniDir, FlyoutRequest.AnimationDisplacement, UsesOsAcrylicBackdrop());
+                FlyoutRequest.Ani, FlyoutRequest.AniDir, FlyoutRequest.AnimationDisplacement, UsesNativeTranslucencyBackdrop());
         }
 
         private PixelPoint EntranceStartPosition()
@@ -1480,7 +1480,7 @@ namespace MosaicShell.Host.Capabilities
                 try
                 {
                     TransientDismissed?.Invoke(
-                        TesseraOsAcrylicStackedPolicy.ResolveTransientDismissNotifyKey(
+                        TesseraNativeTranslucencyStackedPolicy.ResolveTransientDismissNotifyKey(
                             FlyoutRequest.ModuleId, StackedRole));
                 }
                 catch { /* ignore */ }

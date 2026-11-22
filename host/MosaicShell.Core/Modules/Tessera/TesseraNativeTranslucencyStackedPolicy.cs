@@ -3,8 +3,8 @@ using MosaicShell.Core.Capabilities.Platform;
 namespace MosaicShell.Core.Modules.Tessera
 {
     /// <summary>
-    /// H3 (a): per-panel FlyoutWindows for stacked Tessera shells under the OS acrylic trial.
-    /// Single-shell acrylic stays on <see cref="TesseraOsAcrylicTrialPolicy"/>; this policy
+    /// H3 (a): per-panel FlyoutWindows for stacked Tessera shells under the native translucency trial.
+    /// Single-shell acrylic stays on <see cref="TesseraNativeTranslucencyPolicy"/>; this policy
     /// covers volume+media strip and (later) CoreUI multi-tile forks.
     /// </summary>
     public enum TesseraStackedPanelRole
@@ -15,7 +15,7 @@ namespace MosaicShell.Core.Modules.Tessera
         Device,
     }
 
-    public static class TesseraOsAcrylicStackedPolicy
+    public static class TesseraNativeTranslucencyStackedPolicy
     {
         /// <summary>Compile gate for Host N-window presenter work (H3 phase 1+).</summary>
         public const bool Available = true;
@@ -28,7 +28,7 @@ namespace MosaicShell.Core.Modules.Tessera
         public const string DeviceSlotSuffix = "device";
 
         /// <summary>
-        /// Win32 region clip radius for stacked OS acrylic HWNDs. Caps design radius (owned by
+        /// Win32 region clip radius for stacked native translucency HWNDs. Caps design radius (owned by
         /// the profile - ADR-0001) at half the shorter client edge so capsules (GNOME pill, Meter
         /// spine) do not leak square corners.
         /// </summary>
@@ -49,7 +49,7 @@ namespace MosaicShell.Core.Modules.Tessera
 
         public static bool IsVolumeMediaStripStacked(IReadOnlyDictionary<string, string>? payload)
         {
-            return TesseraOsAcrylicTrialPolicy.IsStackedMultiPanel(payload);
+            return TesseraNativeTranslucencyPolicy.IsStackedMultiPanel(payload);
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace MosaicShell.Core.Modules.Tessera
 
         /// <summary>
         /// True when Host should present N FlyoutWindows instead of one frost shell.
-        /// Mutually exclusive with <see cref="TesseraOsAcrylicTrialPolicy.IsEligible"/>.
+        /// Mutually exclusive with <see cref="TesseraNativeTranslucencyPolicy.IsEligible"/>.
         /// </summary>
         public static bool UseMultiWindowFromPayload(
             IReadOnlyDictionary<string, string>? payload,
@@ -79,9 +79,9 @@ namespace MosaicShell.Core.Modules.Tessera
             return UseMultiWindow(
                 payload,
                 styleId,
-                trialRequested: TesseraOsAcrylicTrialPolicy.IsTrialRequested(),
-                osSupportsWinUiAcrylic: TesseraOsAcrylicTrialPolicy.OsSupportsWinUiAcrylic,
-                osAcrylicRenderingAvailable: !HostLaunchOptions.TesseraForceSoftwareRender,
+                trialRequested: TesseraNativeTranslucencyPolicy.IsTrialRequested(),
+                osSupportsWinUiAcrylic: TesseraNativeTranslucencyPolicy.OsSupportsWinUiAcrylic,
+                nativeTranslucencyRenderingAvailable: !HostLaunchOptions.TesseraForceSoftwareRender,
                 kind: kind);
         }
 
@@ -90,15 +90,15 @@ namespace MosaicShell.Core.Modules.Tessera
             string? styleId,
             bool trialRequested,
             bool osSupportsWinUiAcrylic,
-            bool osAcrylicRenderingAvailable = true,
+            bool nativeTranslucencyRenderingAvailable = true,
             bool compileAvailable = Available,
             string? kind = null)
         {
             return !TesseraStatusFlyoutPolicy.MustUseDedicatedSingleWindow(kind)
-                && compileAvailable && trialRequested && osSupportsWinUiAcrylic && osAcrylicRenderingAvailable
+                && compileAvailable && trialRequested && osSupportsWinUiAcrylic && nativeTranslucencyRenderingAvailable
                 && TesseraFlyoutMaterialFactory.UseAcrylicFromPayload(payload)
                 && IsVolumeMediaStripStacked(payload)
-                && TesseraStackedPlacementPolicy.SupportsStackedOsAcrylic(styleId);
+                && TesseraStackedPlacementPolicy.SupportsStackedNativeTranslucency(styleId);
         }
 
         /// <summary>Logical panels for volume+media strip (phase 1).</summary>

@@ -76,12 +76,12 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void An_os_acrylic_window_slides_as_a_whole_so_its_blur_moves_with_the_card()
+        public void An_native_translucency_window_slides_as_a_whole_so_its_blur_moves_with_the_card()
         {
             // Modern Flyouts, 2026-10-04 (motion frame trace, run ff725208): the content slid 30 dip
             // by RenderTransform inside an acrylic pane that stayed put, so the card's border travelled
             // across a still blurred pane (the "shake while sliding"). YourFlyouts moves the skin window.
-            _ = TesseraFlyoutAnimationPolicy.ResolvePhase1SlideTarget(osAcrylicBackdrop: true)
+            _ = TesseraFlyoutAnimationPolicy.ResolvePhase1SlideTarget(nativeTranslucencyBackdrop: true)
                 .Should().Be(TesseraSlideTarget.WindowPosition);
         }
 
@@ -93,7 +93,7 @@ namespace MosaicShell.Core.Tests
             // returned (the jiggle). The start pose has to be in place before the pane is shown.
             (int dx, int dy) = TesseraFlyoutAnimationPolicy.ResolveSlideOffsetPx("left", 30);
 
-            _ = TesseraFlyoutAnimationPolicy.ResolveWindowEntranceStartOffsetPx(ani: 2, "left", 30, osAcrylicBackdrop: true)
+            _ = TesseraFlyoutAnimationPolicy.ResolveWindowEntranceStartOffsetPx(ani: 2, "left", 30, nativeTranslucencyBackdrop: true)
                 .Should().Be((dx, dy));
             _ = (dx, dy).Should().NotBe((0, 0), "premise: the left slide has an offset");
         }
@@ -101,16 +101,16 @@ namespace MosaicShell.Core.Tests
         [Theory]
         [InlineData(2, false)]
         [InlineData(0, true)]
-        public void No_window_start_offset_when_the_window_does_not_slide(int ani, bool osAcrylic)
+        public void No_window_start_offset_when_the_window_does_not_slide(int ani, bool nativeTranslucency)
         {
-            _ = TesseraFlyoutAnimationPolicy.ResolveWindowEntranceStartOffsetPx(ani, "left", 30, osAcrylic)
+            _ = TesseraFlyoutAnimationPolicy.ResolveWindowEntranceStartOffsetPx(ani, "left", 30, nativeTranslucency)
                 .Should().Be((0, 0));
         }
 
         [Fact]
         public void A_window_that_paints_its_own_background_slides_its_content()
         {
-            _ = TesseraFlyoutAnimationPolicy.ResolvePhase1SlideTarget(osAcrylicBackdrop: false)
+            _ = TesseraFlyoutAnimationPolicy.ResolvePhase1SlideTarget(nativeTranslucencyBackdrop: false)
                 .Should().Be(TesseraSlideTarget.RenderTransform);
         }
 

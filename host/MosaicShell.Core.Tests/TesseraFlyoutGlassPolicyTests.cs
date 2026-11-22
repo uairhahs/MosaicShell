@@ -87,7 +87,7 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void Default_frost_material_asks_for_transparent_not_os_acrylic()
+        public void Default_frost_material_asks_for_transparent_not_native_translucency()
         {
             TesseraFlyoutMaterial m = TesseraFlyoutMaterialFactory.Create(useAcrylic: true);
             _ = m.TransparencyHints.Should().Equal("Transparent");
@@ -99,7 +99,7 @@ namespace MosaicShell.Core.Tests
         [Theory]
         [InlineData(TesseraFlyoutGlassMode.EmbeddedSimple, false)]
         [InlineData(TesseraFlyoutGlassMode.SkiaFallback, true)]
-        [InlineData(TesseraFlyoutGlassMode.OsAcrylic, true)]
+        [InlineData(TesseraFlyoutGlassMode.NativeTranslucency, true)]
         [InlineData(TesseraFlyoutGlassMode.SkiaBackdrop, true)]
         public void Meter_inner_skia_glass_suppressed_on_live_flyout_shells(
             TesseraFlyoutGlassMode mode,

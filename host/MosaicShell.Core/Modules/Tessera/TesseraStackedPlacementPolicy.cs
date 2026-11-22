@@ -66,10 +66,10 @@ namespace MosaicShell.Core.Modules.Tessera
             return TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).LayoutKind;
         }
 
-        /// <summary>H3 multi-window OS-acrylic eligibility. Owned by the profile (ADR-0001).</summary>
-        public static bool SupportsStackedOsAcrylic(string? styleId)
+        /// <summary>H3 multi-window native-translucency eligibility. Owned by the profile (ADR-0001).</summary>
+        public static bool SupportsStackedNativeTranslucency(string? styleId)
         {
-            return TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).SupportsStackedOsAcrylic;
+            return TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).SupportsStackedNativeTranslucency;
         }
 
 
@@ -108,7 +108,7 @@ namespace MosaicShell.Core.Modules.Tessera
 
                 StyleIds.ModernFlyouts => ModernFlyoutsPlacements(),
 
-                // Unlisted styles never reach here through the live H3 path (SupportsStackedOsAcrylic
+                // Unlisted styles never reach here through the live H3 path (SupportsStackedNativeTranslucency
                 // gates it); this mirrors Compact's shape so an unexpected id still has a sane estimate.
                 _ => VerticalVolumeFirstPlacements(StyleIds.Compact),
 

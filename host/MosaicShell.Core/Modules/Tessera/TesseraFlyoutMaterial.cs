@@ -2,7 +2,7 @@ namespace MosaicShell.Core.Modules.Tessera
 {
     /// <summary>
     /// Flyout material policy. Soft frost = translucent crust + chrome edge blend.
-    /// OS AcrylicBlur is opt-in via <see cref="TesseraOsAcrylicTrialPolicy"/> (default Skia frost).
+    /// OS AcrylicBlur is opt-in via <see cref="TesseraNativeTranslucencyPolicy"/> (default Skia frost).
     /// </summary>
     public sealed record TesseraFlyoutMaterial(
         bool UseSoftFrost,
@@ -16,9 +16,9 @@ namespace MosaicShell.Core.Modules.Tessera
         public const byte SoftFrostShellAlpha = 188;
         public const byte SolidShellAlpha = 232;
 
-        /// <param name="useAcrylic">Legacy setting name - means soft frost tint, not OS acrylic.</param>
-        /// <param name="osAcrylicEligible">When true, request AcrylicBlur with Transparent fallback.</param>
-        public static TesseraFlyoutMaterial Create(bool useAcrylic, bool osAcrylicEligible = false)
+        /// <param name="useAcrylic">Legacy setting name - means soft frost tint, not native translucency.</param>
+        /// <param name="nativeTranslucencyEligible">When true, request AcrylicBlur with Transparent fallback.</param>
+        public static TesseraFlyoutMaterial Create(bool useAcrylic, bool nativeTranslucencyEligible = false)
         {
             if (!useAcrylic)
             {
@@ -30,7 +30,7 @@ namespace MosaicShell.Core.Modules.Tessera
                     UseEdgeBlend: false);
             }
 
-            IReadOnlyList<string> hints = osAcrylicEligible
+            IReadOnlyList<string> hints = nativeTranslucencyEligible
                 ? ["AcrylicBlur", "Transparent"]
                 : ["Transparent"];
 
@@ -54,7 +54,7 @@ namespace MosaicShell.Core.Modules.Tessera
             string? kind = null)
         {
             // A style whose spec calls for matte chrome only (MaterialYou's pills, PlainText's
-            // slant-clipped card) must never touch OS Acrylic or the Skia soft-frost glass,
+            // slant-clipped card) must never touch Native Translucency or the Skia soft-frost glass,
             // regardless of settings - the unpainted window area around its shape has no local
             // background to fall back on if a glass material fails to render, unlike every other
             // style. The window itself still uses plain Transparent (true per-pixel alpha, not an
@@ -64,22 +64,22 @@ namespace MosaicShell.Core.Modules.Tessera
                 ? Create(useAcrylic: false)
                 : Create(
                     UseAcrylicFromPayload(payload),
-                    osAcrylicEligible: OsAcrylicEligibleFromPayload(payload, styleId, kind));
+                    nativeTranslucencyEligible: NativeTranslucencyEligibleFromPayload(payload, styleId, kind));
         }
 
         /// <summary>
-        /// Single-shell (<see cref="TesseraOsAcrylicTrialPolicy"/>) or stacked N-window
-        /// (<see cref="TesseraOsAcrylicStackedPolicy"/>) OS acrylic trial.
+        /// Single-shell (<see cref="TesseraNativeTranslucencyPolicy"/>) or stacked N-window
+        /// (<see cref="TesseraNativeTranslucencyStackedPolicy"/>) native translucency trial.
         /// Status kinds never take stacked acrylic eligibility.
         /// </summary>
-        public static bool OsAcrylicEligibleFromPayload(
+        public static bool NativeTranslucencyEligibleFromPayload(
             IReadOnlyDictionary<string, string>? payload,
             string? styleId = null,
             string? kind = null)
         {
-            return TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(payload, styleId)
+            return TesseraNativeTranslucencyPolicy.IsEligibleFromPayload(payload, styleId)
             || (!TesseraStatusFlyoutPolicy.MustUseDedicatedSingleWindow(kind)
-                && TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(payload, styleId, kind));
+                && TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(payload, styleId, kind));
         }
     }
 }

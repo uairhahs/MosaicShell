@@ -49,7 +49,7 @@ namespace MosaicShell.Core.Tests
             ["TesseraLayoutCoverage.cs:IsPolished"] = KeptOnPurpose,
             ["TesseraLayoutCoverage.cs:LayoutFidelityProofRelativeDirectory"] = KeptOnPurpose,
             ["TesseraLayoutCoverage.cs:RequiresLiveVolumePercentLabel"] = KeptOnPurpose,
-            ["TesseraOsAcrylicSignOffPolicy.cs:AllH3StackedStylesSignedOff"] = KeptOnPurpose,
+            ["TesseraNativeTranslucencySignOffPolicy.cs:AllH3StackedStylesSignedOff"] = KeptOnPurpose,
         };
 
         [Fact]

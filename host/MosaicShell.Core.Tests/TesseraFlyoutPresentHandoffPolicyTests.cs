@@ -49,8 +49,8 @@ namespace MosaicShell.Core.Tests
         {
             Dictionary<string, string> stripOn = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
             _ = TesseraFlyoutMaterialFactory
-                .OsAcrylicEligibleFromPayload(stripOn, "ModernFlyouts", kind: "locks")
-                .Should().Be(TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(stripOn, "ModernFlyouts"));
+                .NativeTranslucencyEligibleFromPayload(stripOn, "ModernFlyouts", kind: "locks")
+                .Should().Be(TesseraNativeTranslucencyPolicy.IsEligibleFromPayload(stripOn, "ModernFlyouts"));
         }
     }
 }

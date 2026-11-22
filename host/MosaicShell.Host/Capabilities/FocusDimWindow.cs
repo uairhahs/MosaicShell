@@ -601,7 +601,7 @@ namespace MosaicShell.Host.Capabilities
         private static extern bool IsWindowVisible(IntPtr hWnd);
 
         /// <summary>
-        /// Clip stacked OS acrylic flyouts to pill/card geometry. HWND backdrop is rectangular;
+        /// Clip stacked native translucency flyouts to pill/card geometry. HWND backdrop is rectangular;
         /// without a region, acrylic leaks outside inner rounded content.
         /// When <paramref name="applySynchronously"/> is true (status CapsLock), do not Post at
         /// Loaded: that races SoftFrost Opacity reveal and flashes a black rectangle.

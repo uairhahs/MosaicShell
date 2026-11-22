@@ -13,7 +13,7 @@ namespace MosaicShell.Core.Modules.Tessera
         EmbeddedSimple,
 
         /// <summary>WinUI AcrylicBlur on Transparent HWND (H1 trial, single-shell only).</summary>
-        OsAcrylic,
+        NativeTranslucency,
 
         /// <summary>Skia glass chrome (Transparent SoftFrost HWND, no live backdrop).</summary>
         SkiaFallback,
@@ -81,18 +81,18 @@ namespace MosaicShell.Core.Modules.Tessera
 
         public static TesseraFlyoutGlassMode ResolveLiveMode(bool softFrostHwndReady, bool useBackdropBlur)
         {
-            return ResolveLiveMode(softFrostHwndReady, useBackdropBlur, osAcrylicEligible: false);
+            return ResolveLiveMode(softFrostHwndReady, useBackdropBlur, nativeTranslucencyEligible: false);
         }
 
         public static TesseraFlyoutGlassMode ResolveLiveMode(
             bool softFrostHwndReady,
             bool useBackdropBlur,
-            bool osAcrylicEligible)
+            bool nativeTranslucencyEligible)
         {
             return !softFrostHwndReady && PreferPresentableShellUntilSoftFrostHwnd
                 ? TesseraFlyoutGlassMode.EmbeddedSimple
-                : osAcrylicEligible
-                ? TesseraFlyoutGlassMode.OsAcrylic
+                : nativeTranslucencyEligible
+                ? TesseraFlyoutGlassMode.NativeTranslucency
                 : ShouldEnableBackdropBlur(softFrostHwndReady, useBackdropBlur)
                 ? TesseraFlyoutGlassMode.SkiaBackdrop
                 : TesseraFlyoutGlassMode.SkiaFallback;
@@ -100,13 +100,13 @@ namespace MosaicShell.Core.Modules.Tessera
 
         /// <summary>
         /// Meter (Amber) wraps the pill and media card in inner <c>TesseraChrome.Glass</c> panels.
-        /// On live SoftFrost/OsAcrylic flyouts that stacks Skia layers on the outer shell and
+        /// On live SoftFrost/NativeTranslucency flyouts that stacks Skia layers on the outer shell and
         /// produces GPU shimmer/artifacting until the compositor dies.
         /// </summary>
         public static bool SuppressMeterInnerSkiaGlass(TesseraFlyoutGlassMode mode)
         {
             return mode is TesseraFlyoutGlassMode.SkiaFallback
-                or TesseraFlyoutGlassMode.OsAcrylic
+                or TesseraFlyoutGlassMode.NativeTranslucency
                 or TesseraFlyoutGlassMode.SkiaBackdrop;
         }
     }

@@ -4,13 +4,13 @@ namespace MosaicShell.Core.Modules.Tessera
 {
     /// <summary>
     /// Default-off OS AcrylicBlur spike for single-shell Tessera flyouts (H1).
-    /// Alpha ships Skia frost; enable with hub <c>UseOsAcrylic</c> (when signed off) or
-    /// <see cref="HostLaunchOptions.TesseraOsAcrylicTrialFlag"/>.
-    /// Stacked volume+media uses N FlyoutWindows under H3; see TesseraOsAcrylicStackedPolicy.
+    /// Alpha ships Skia frost; enable with hub <c>UseNativeTranslucency</c> (when signed off) or
+    /// <see cref="HostLaunchOptions.TesseraNativeTranslucencyTrialFlag"/>.
+    /// Stacked volume+media uses N FlyoutWindows under H3; see TesseraNativeTranslucencyStackedPolicy.
     /// Windows 11 is the supported evaluation and ship target. Windows 10 may pass the
     /// technical gate below but is best-effort only; MosaicShell makes no Win10 acrylic promises.
     /// </summary>
-    public static class TesseraOsAcrylicTrialPolicy
+    public static class TesseraNativeTranslucencyPolicy
     {
         /// <summary>Compile kill-switch. Hotfix can set false without removing the flag parser.</summary>
         public const bool Available = true;
@@ -35,27 +35,27 @@ namespace MosaicShell.Core.Modules.Tessera
             bool trialRequested,
             bool osSupportsWinUiAcrylic,
             bool compileAvailable = Available,
-            bool osAcrylicRenderingAvailable = true,
+            bool nativeTranslucencyRenderingAvailable = true,
             string? styleId = null)
         {
             // A style whose spec calls for matte-only chrome (MaterialYou, PlainText) must never
-            // be eligible for any window-level transparency, OS Acrylic included - the unpainted
+            // be eligible for any window-level transparency, Native Translucency included - the unpainted
             // window area around its shape has no local background to fall back on if the OS
             // composite silently fails, unlike every other style.
             return !TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).RequiresMatteChrome
-                && compileAvailable && trialRequested && osSupportsWinUiAcrylic && osAcrylicRenderingAvailable && (!IsStackedMultiPanel(payload)
+                && compileAvailable && trialRequested && osSupportsWinUiAcrylic && nativeTranslucencyRenderingAvailable && (!IsStackedMultiPanel(payload)
                 || styleId is null
-                || !TesseraStackedPlacementPolicy.SupportsStackedOsAcrylic(styleId)) && TesseraFlyoutMaterialFactory.UseAcrylicFromPayload(payload);
+                || !TesseraStackedPlacementPolicy.SupportsStackedNativeTranslucency(styleId)) && TesseraFlyoutMaterialFactory.UseAcrylicFromPayload(payload);
         }
 
         /// <summary>
-        /// After Win11 eval sign-off, persisted hub <c>UseOsAcrylic</c> is the sole opt-in.
+        /// After Win11 eval sign-off, persisted hub <c>UseNativeTranslucency</c> is the sole opt-in.
         /// Before sign-off, only the launch flag applies (H2 eval).
         /// </summary>
-        public static bool ResolveTrialRequested(bool launchFlag, bool persistedUseOsAcrylic)
+        public static bool ResolveTrialRequested(bool launchFlag, bool persistedUseNativeTranslucency)
         {
-            return Available && (TesseraOsAcrylicSignOffPolicy.Win11EvalComplete
-                    ? persistedUseOsAcrylic
+            return Available && (TesseraNativeTranslucencySignOffPolicy.Win11EvalComplete
+                    ? persistedUseNativeTranslucency
                     : launchFlag);
         }
 
@@ -63,8 +63,8 @@ namespace MosaicShell.Core.Modules.Tessera
         public static bool IsTrialRequested()
         {
             return ResolveTrialRequested(
-                HostLaunchOptions.TesseraOsAcrylicTrial,
-                TesseraFlyoutRequestBuilder.LoadSettings().UseOsAcrylic);
+                HostLaunchOptions.TesseraNativeTranslucencyTrial,
+                TesseraFlyoutRequestBuilder.LoadSettings().UseNativeTranslucency);
         }
 
         public static bool IsEligibleFromPayload(
@@ -75,7 +75,7 @@ namespace MosaicShell.Core.Modules.Tessera
                 payload,
                 IsTrialRequested(),
                 OsSupportsWinUiAcrylic,
-                osAcrylicRenderingAvailable: !HostLaunchOptions.TesseraForceSoftwareRender,
+                nativeTranslucencyRenderingAvailable: !HostLaunchOptions.TesseraForceSoftwareRender,
                 styleId: styleId);
         }
     }

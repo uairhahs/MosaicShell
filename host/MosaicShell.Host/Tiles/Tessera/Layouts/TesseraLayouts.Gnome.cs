@@ -72,9 +72,9 @@ namespace MosaicShell.Host.Tiles.Tessera
 
         private static Control GnomeVolumeWrap(Control inner)
         {
-            // When using OS acrylic, the stacked window itself provides the background
+            // When using native translucency, the stacked window itself provides the background
             // Don't add extra border wrapper that could leave artifacts
-            return TesseraStackedBuildContext.IsActive && TesseraGlass.UseOsAcrylicChrome
+            return TesseraStackedBuildContext.IsActive && TesseraGlass.UseNativeTranslucencyChrome
                 ? inner
                 : TesseraChrome.Glass(inner, 28, new Thickness(14, 10), w: 240);
         }

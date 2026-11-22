@@ -1,24 +1,24 @@
-# Tessera H3 (a): N FlyoutWindows for stacked OS acrylic
+# Tessera H3 (a): N FlyoutWindows for stacked native translucency
 
-**Decision (2026-08-23):** option **(a)** from [tessera-os-acrylic-spike.md](tessera-os-acrylic-spike.md). Each logical panel gets its own top-level `FlyoutWindow` with rounded OS acrylic. Option (b) one-HWND inner seams is rejected.
+**Decision (2026-08-23):** option **(a)** from [tessera-native-translucency-spike.md](tessera-native-translucency-spike.md). Each logical panel gets its own top-level `FlyoutWindow` with rounded native translucency. Option (b) one-HWND inner seams is rejected.
 
 **Prerequisite:** H2 PASS on Win11 (signed 2026-08-23).
 
 ## Goal
 
-Under `--tessera-os-acrylic`, stacked volume+media (`showMediaStrip=1`) and later CoreUI multi-tile shells render as **N separate acrylic HWNDs** instead of one Skia frost shell.
+Under `--tessera-native-translucency`, stacked volume+media (`showMediaStrip=1`) and later CoreUI multi-tile shells render as **N separate acrylic HWNDs** instead of one Skia frost shell.
 
-Alpha default stays frost (flag off). Hub **Windows 11 OS acrylic** toggle persists `UseOsAcrylic` when Win11 eval is signed off. Do not flip Hub `*_mvp` or `tessera_layout_fidelity` for acrylic.
+Alpha default stays frost (flag off). Hub **Native Translucency** toggle persists `UseNativeTranslucency` when Win11 eval is signed off. Do not flip Hub `*_mvp` or `tessera_layout_fidelity` for acrylic.
 
 ## Core contracts (phase 0, in tree)
 
-| Type                                                                                                                | Role                                                                         |
-| ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| [`TesseraOsAcrylicStackedPolicy`](../../host/MosaicShell.Core/Modules/Tessera/TesseraOsAcrylicStackedPolicy.cs)     | When N-window mode applies; panel roles; slot keys; z-order; live-host owner |
-| [`TesseraFlyoutOutsideClickPolicy`](../../host/MosaicShell.Core/Modules/Tessera/TesseraFlyoutOutsideClickPolicy.cs) | Union bounds for multi-window outside-click                                  |
-| [`TesseraOsAcrylicTrialPolicy`](../../host/MosaicShell.Core/Modules/Tessera/TesseraOsAcrylicTrialPolicy.cs)         | Single-shell acrylic only (`showMediaStrip=0`)                               |
+| Type                                                                                                                              | Role                                                                         |
+| --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| [`TesseraNativeTranslucencyStackedPolicy`](../../host/MosaicShell.Core/Modules/Tessera/TesseraNativeTranslucencyStackedPolicy.cs) | When N-window mode applies; panel roles; slot keys; z-order; live-host owner |
+| [`TesseraFlyoutOutsideClickPolicy`](../../host/MosaicShell.Core/Modules/Tessera/TesseraFlyoutOutsideClickPolicy.cs)               | Union bounds for multi-window outside-click                                  |
+| [`TesseraNativeTranslucencyPolicy`](../../host/MosaicShell.Core/Modules/Tessera/TesseraNativeTranslucencyPolicy.cs)               | Single-shell acrylic only (`showMediaStrip=0`)                               |
 
-**Mutual exclusion:** `IsEligible` (single OsAcrylic) and `UseMultiWindow` (stacked OsAcrylic) cannot both be true for the same payload.
+**Mutual exclusion:** `IsEligible` (single NativeTranslucency) and `UseMultiWindow` (stacked NativeTranslucency) cannot both be true for the same payload.
 
 ## Phased Host work
 
@@ -51,12 +51,12 @@ Alpha default stays frost (flag off). Hub **Windows 11 OS acrylic** toggle persi
    - Style-specific horizontal offsets so volume+media visually match current single-HWND layout (measure from existing stacked layouts).
 
 5. **Glass**
-   - Each slot: `TesseraFlyoutGlassMode.OsAcrylic`, skip inner Skia slab (same as H1 single-shell).
+   - Each slot: `TesseraFlyoutGlassMode.NativeTranslucency`, skip inner Skia slab (same as H1 single-shell).
    - Meter inner glass suppression applies per slot.
 
 ### Phase 2: CoreUI multi-tile
 
-Flip `TesseraOsAcrylicStackedPolicy.CoreUiMultiWindowEnabled` after phase 1 sign-off.
+Flip `TesseraNativeTranslucencyStackedPolicy.CoreUiMultiWindowEnabled` after phase 1 sign-off.
 
 **Panels:** `Device` + `Volume` + `Media` (three HWNDs).
 
@@ -82,7 +82,7 @@ The recorded sign-off results are summarized below:
 
 | Check                       | Pass criteria                                                          | 2026-08-23 |
 | --------------------------- | ---------------------------------------------------------------------- | ---------- |
-| Two acrylic corners visible | Volume and media each show rounded OS acrylic on Win11                 | Pass       |
+| Two acrylic corners visible | Volume and media each show rounded native translucency on Win11        | Pass       |
 | Z-order                     | Volume thumb usable; no slot paints under FocusDim                     | Pass       |
 | Outside click               | Click outside both panels dismisses; click inside either keeps session | Pass       |
 | FocusDim                    | Dim + all slots dismiss together on timer / outside click              | Pass       |
@@ -100,5 +100,5 @@ The recorded sign-off results are summarized below:
 
 ## Related
 
-- Spike tracker: [tessera-os-acrylic-spike.md](tessera-os-acrylic-spike.md)
-- H2 evaluation: [single-shell evaluation results](tessera-os-acrylic-spike.md#h2-manual-evaluation-checklist-before-ship)
+- Spike tracker: [tessera-native-translucency-spike.md](tessera-native-translucency-spike.md)
+- H2 evaluation: [single-shell evaluation results](tessera-native-translucency-spike.md#h2-manual-evaluation-checklist-before-ship)

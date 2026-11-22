@@ -37,8 +37,8 @@ namespace MosaicShell.Core.Tests
             { "tessera_live_update_multimonitor", true },
             // All 11 StyleCatalog styles signed off; proofs in .github/res/Tessera/
             { "tessera_layout_fidelity", true },
-            // Win11 OS acrylic trial eval (H2 single-shell + H3 stacked); frost remains alpha default
-            { "tessera_os_acrylic_win11_eval", true },
+            // Win11 native translucency trial eval (H2 single-shell + H3 stacked); frost remains alpha default
+            { "tessera_native_translucency_win11_eval", true },
             // Fluent+Windows11 kit exists; Host-identity Fluent/Windows11/Square polish (not pixel YourFlyouts)
             { "tessera_fluent_win11_kit", true },
             { "tessera_fluent_yourflyouts", true },
@@ -107,7 +107,7 @@ namespace MosaicShell.Core.Tests
         private static readonly Dictionary<string, string> CompanionProof = new(StringComparer.OrdinalIgnoreCase)
         {
             ["tessera_layout_fidelity"] = nameof(StyleCatalogTests.Tessera_layout_fidelity_github_screenshots_cover_every_style),
-            ["tessera_os_acrylic_win11_eval"] = nameof(TesseraOsAcrylicSignOffPolicyTests.Win11_os_acrylic_eval_is_signed_off_in_core),
+            ["tessera_native_translucency_win11_eval"] = nameof(TesseraNativeTranslucencySignOffPolicyTests.Win11_native_translucency_eval_is_signed_off_in_core),
             ["update_check_against_github_releases"] = nameof(UpdateCheckerTests.Check_reports_newer_date_build_tag),
             ["tessera_osd_flyout"] = nameof(TesseraCapabilityTests.Armed_tessera_shows_flyout_on_volume_change),
             ["tessera_named_styles"] = nameof(StyleCatalogTests.Tessera_has_eleven_jaxcore_layouts),
@@ -168,9 +168,9 @@ namespace MosaicShell.Core.Tests
             _ = map["tile_substrate_mvp"].Should().BeTrue();
             _ = map["tile_slate_mvp"].Should().BeTrue();
             _ = map["tessera_layout_fidelity"].Should().BeTrue();
-            _ = map["tessera_os_acrylic_win11_eval"].Should().BeTrue();
+            _ = map["tessera_native_translucency_win11_eval"].Should().BeTrue();
             _ = TesseraLayoutCoverage.AllLayoutFidelitySignedOff().Should().BeTrue();
-            _ = TesseraOsAcrylicSignOffPolicy.Win11EvalComplete.Should().BeTrue();
+            _ = TesseraNativeTranslucencySignOffPolicy.Win11EvalComplete.Should().BeTrue();
             _ = map["tessera_fluent_yourflyouts"].Should().BeTrue();
             _ = map["tessera_media_browser"].Should().BeTrue();
             _ = map["tessera_media_smtc_only"].Should().BeFalse();

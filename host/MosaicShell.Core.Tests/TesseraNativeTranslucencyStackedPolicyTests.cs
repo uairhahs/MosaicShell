@@ -7,13 +7,13 @@ using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Core.Tests
 {
-    public class TesseraOsAcrylicStackedPolicyTests : IDisposable
+    public class TesseraNativeTranslucencyStackedPolicyTests : IDisposable
     {
         private readonly string _root;
 
-        public TesseraOsAcrylicStackedPolicyTests()
+        public TesseraNativeTranslucencyStackedPolicyTests()
         {
-            _root = Path.Combine(Path.GetTempPath(), "MosaicOsAcrylicStacked_" + Guid.NewGuid().ToString("N"));
+            _root = Path.Combine(Path.GetTempPath(), "MosaicNativeTranslucencyStacked_" + Guid.NewGuid().ToString("N"));
             AppPaths.SetRootOverride(_root);
             AppPaths.EnsureLayout();
             ModuleSettingsStore.Save("Tessera", new TesseraSettings());
@@ -33,51 +33,51 @@ namespace MosaicShell.Core.Tests
         public void Unified_shell_styles_use_single_hwnd_acrylic_with_media_strip()
         {
             Dictionary<string, string> stacked = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
-            HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
-            TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
+            HostLaunchOptions.Apply([HostLaunchOptions.TesseraNativeTranslucencyTrialFlag]);
+            TesseraNativeTranslucencyTestHarness.EnableHubNativeTranslucency();
 
-            _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Fluent).Should().BeFalse();
-            _ = TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(stacked, StyleIds.Fluent).Should().BeTrue();
-            _ = TesseraFlyoutMaterialFactory.OsAcrylicEligibleFromPayload(stacked, StyleIds.Fluent).Should().BeTrue();
+            _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Fluent).Should().BeFalse();
+            _ = TesseraNativeTranslucencyPolicy.IsEligibleFromPayload(stacked, StyleIds.Fluent).Should().BeTrue();
+            _ = TesseraFlyoutMaterialFactory.NativeTranslucencyEligibleFromPayload(stacked, StyleIds.Fluent).Should().BeTrue();
 
-            _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Windows11).Should().BeFalse();
-            _ = TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(stacked, StyleIds.Windows11).Should().BeTrue();
+            _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Windows11).Should().BeFalse();
+            _ = TesseraNativeTranslucencyPolicy.IsEligibleFromPayload(stacked, StyleIds.Windows11).Should().BeTrue();
 
-            _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.PlainText).Should().BeFalse();
-            _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Radial).Should().BeFalse();
+            _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.PlainText).Should().BeFalse();
+            _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Radial).Should().BeFalse();
         }
 
         [WindowsFact]
         public void Split_styles_keep_n_window_path_and_block_single_shell()
         {
             Dictionary<string, string> stacked = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
-            HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
-            TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
+            HostLaunchOptions.Apply([HostLaunchOptions.TesseraNativeTranslucencyTrialFlag]);
+            TesseraNativeTranslucencyTestHarness.EnableHubNativeTranslucency();
 
-            _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Meter).Should().BeTrue();
-            _ = TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(stacked, StyleIds.Meter).Should().BeFalse();
+            _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Meter).Should().BeTrue();
+            _ = TesseraNativeTranslucencyPolicy.IsEligibleFromPayload(stacked, StyleIds.Meter).Should().BeFalse();
         }
 
         [WindowsFact]
         public void Stacked_acrylic_is_mutually_exclusive_with_single_shell_eligible_on_split_styles()
         {
             Dictionary<string, string> stacked = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
-            HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
-            TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
+            HostLaunchOptions.Apply([HostLaunchOptions.TesseraNativeTranslucencyTrialFlag]);
+            TesseraNativeTranslucencyTestHarness.EnableHubNativeTranslucency();
 
-            _ = TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(stacked, StyleIds.Meter).Should().BeFalse();
-            _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Meter).Should().BeTrue();
+            _ = TesseraNativeTranslucencyPolicy.IsEligibleFromPayload(stacked, StyleIds.Meter).Should().BeFalse();
+            _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Meter).Should().BeTrue();
         }
 
         [WindowsFact]
         public void Single_shell_stays_on_single_window_acrylic_path()
         {
             Dictionary<string, string> single = new() { ["showMediaStrip"] = "0", ["acrylic"] = "1" };
-            HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
-            TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
+            HostLaunchOptions.Apply([HostLaunchOptions.TesseraNativeTranslucencyTrialFlag]);
+            TesseraNativeTranslucencyTestHarness.EnableHubNativeTranslucency();
 
-            _ = TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(single).Should().BeTrue();
-            _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(single, StyleIds.Fluent).Should().BeFalse();
+            _ = TesseraNativeTranslucencyPolicy.IsEligibleFromPayload(single).Should().BeTrue();
+            _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(single, StyleIds.Fluent).Should().BeFalse();
         }
 
         [WindowsFact]
@@ -85,41 +85,41 @@ namespace MosaicShell.Core.Tests
         {
             Dictionary<string, string> stacked = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
 
-            _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Meter).Should().BeFalse();
+            _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Meter).Should().BeFalse();
 
-            HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
-            TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
-            _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Meter).Should().BeTrue();
+            HostLaunchOptions.Apply([HostLaunchOptions.TesseraNativeTranslucencyTrialFlag]);
+            TesseraNativeTranslucencyTestHarness.EnableHubNativeTranslucency();
+            _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Meter).Should().BeTrue();
 
             Dictionary<string, string> frost = new() { ["showMediaStrip"] = "1", ["acrylic"] = "0" };
-            _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(frost, StyleIds.Meter).Should().BeFalse();
+            _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(frost, StyleIds.Meter).Should().BeFalse();
         }
 
         [WindowsFact]
         public void Stacked_acrylic_can_be_enabled_from_persisted_hub_setting()
         {
             Dictionary<string, string> stacked = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
-            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseOsAcrylic = true });
+            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseNativeTranslucency = true });
 
-            _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Meter).Should().BeTrue();
+            _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Meter).Should().BeTrue();
         }
 
         [Fact]
         public void Force_software_render_keeps_stacked_on_frost()
         {
             Dictionary<string, string> stacked = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
-            TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
+            TesseraNativeTranslucencyTestHarness.EnableHubNativeTranslucency();
             HostLaunchOptions.Apply([HostLaunchOptions.TesseraForceSoftwareRenderFlag]);
 
-            _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Fluent).Should().BeFalse();
+            _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Fluent).Should().BeFalse();
         }
 
         [Fact]
         public void Resolve_volume_media_panels_returns_volume_and_media()
         {
-            _ = TesseraOsAcrylicStackedPolicy.ResolveVolumeMediaPanels(StyleIds.Fluent)
+            _ = TesseraNativeTranslucencyStackedPolicy.ResolveVolumeMediaPanels(StyleIds.Fluent)
                 .Should().Equal(TesseraStackedPanelRole.Volume, TesseraStackedPanelRole.Media);
-            _ = TesseraOsAcrylicStackedPolicy.ResolvePanels(
+            _ = TesseraNativeTranslucencyStackedPolicy.ResolvePanels(
                     new Dictionary<string, string> { ["showMediaStrip"] = "1" },
                     StyleIds.Meter)
                 .Should().Equal(TesseraStackedPanelRole.Volume, TesseraStackedPanelRole.Media);
@@ -128,55 +128,55 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void CoreUI_multi_window_stays_off_until_phase_two()
         {
-            _ = TesseraOsAcrylicStackedPolicy.CoreUiMultiWindowEnabled.Should().BeFalse();
-            _ = TesseraOsAcrylicStackedPolicy.IsCoreUiMultiTile(StyleIds.CoreUI).Should().BeFalse();
+            _ = TesseraNativeTranslucencyStackedPolicy.CoreUiMultiWindowEnabled.Should().BeFalse();
+            _ = TesseraNativeTranslucencyStackedPolicy.IsCoreUiMultiTile(StyleIds.CoreUI).Should().BeFalse();
 
-            HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
-            TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
+            HostLaunchOptions.Apply([HostLaunchOptions.TesseraNativeTranslucencyTrialFlag]);
+            TesseraNativeTranslucencyTestHarness.EnableHubNativeTranslucency();
             Dictionary<string, string> payload = new() { ["showMediaStrip"] = "0", ["acrylic"] = "1" };
-            _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(payload, StyleIds.CoreUI).Should().BeFalse();
+            _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(payload, StyleIds.CoreUI).Should().BeFalse();
         }
 
         [Fact]
         public void Window_slot_keys_are_stable()
         {
-            _ = TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Volume)
+            _ = TesseraNativeTranslucencyStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Volume)
                 .Should().Be("Tessera:vol");
-            _ = TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Media)
+            _ = TesseraNativeTranslucencyStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Media)
                 .Should().Be("Tessera:media");
         }
 
         [Fact]
         public void Volume_slot_owns_live_host_and_wins_z_order()
         {
-            _ = TesseraOsAcrylicStackedPolicy.ZOrderRank(TesseraStackedPanelRole.Volume)
-                .Should().BeGreaterThan(TesseraOsAcrylicStackedPolicy.ZOrderRank(TesseraStackedPanelRole.Media));
+            _ = TesseraNativeTranslucencyStackedPolicy.ZOrderRank(TesseraStackedPanelRole.Volume)
+                .Should().BeGreaterThan(TesseraNativeTranslucencyStackedPolicy.ZOrderRank(TesseraStackedPanelRole.Media));
         }
 
         [Fact]
         public void Transient_dismiss_hides_every_stacked_slot()
         {
-            _ = TesseraOsAcrylicStackedPolicy.TransientDismissMustHideAllSlots.Should().BeTrue();
-            _ = TesseraOsAcrylicStackedPolicy.SupersededSingleHwndMustCancelDismissBeforeClose.Should().BeTrue();
+            _ = TesseraNativeTranslucencyStackedPolicy.TransientDismissMustHideAllSlots.Should().BeTrue();
+            _ = TesseraNativeTranslucencyStackedPolicy.SupersededSingleHwndMustCancelDismissBeforeClose.Should().BeTrue();
         }
 
         [Fact]
         public void Superseded_status_dismiss_must_not_cascade_into_stacked_volume()
         {
-            string vol = TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Volume);
-            string media = TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Media);
+            string vol = TesseraNativeTranslucencyStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Volume);
+            string media = TesseraNativeTranslucencyStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Media);
             string[] live = [vol, media];
 
-            _ = TesseraOsAcrylicStackedPolicy
+            _ = TesseraNativeTranslucencyStackedPolicy
                 .ShouldCascadeTransientDismissToStackedSession("Tessera", live)
                 .Should().BeFalse("CapsLock HWND key must not dismiss volume/media after handoff");
-            _ = TesseraOsAcrylicStackedPolicy
+            _ = TesseraNativeTranslucencyStackedPolicy
                 .ShouldCascadeTransientDismissToStackedSession(vol, live)
                 .Should().BeTrue();
-            _ = TesseraOsAcrylicStackedPolicy
+            _ = TesseraNativeTranslucencyStackedPolicy
                 .ShouldCascadeTransientDismissToStackedSession(media, live)
                 .Should().BeTrue();
-            _ = TesseraOsAcrylicStackedPolicy
+            _ = TesseraNativeTranslucencyStackedPolicy
                 .ShouldCascadeTransientDismissToStackedSession(null, live)
                 .Should().BeFalse();
             _ = TesseraStatusFlyoutPolicy.SupersededStatusMustCancelDismissBeforeClose.Should().BeTrue();
@@ -185,34 +185,34 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Stacked_hwnd_transient_dismiss_notifies_slot_key_consumers_get_module_id()
         {
-            _ = TesseraOsAcrylicStackedPolicy
+            _ = TesseraNativeTranslucencyStackedPolicy
                 .ResolveTransientDismissNotifyKey("Tessera", TesseraStackedPanelRole.Volume)
                 .Should().Be("Tessera:vol");
-            _ = TesseraOsAcrylicStackedPolicy
+            _ = TesseraNativeTranslucencyStackedPolicy
                 .ResolveTransientDismissNotifyKey("Tessera", TesseraStackedPanelRole.Media)
                 .Should().Be("Tessera:media");
-            _ = TesseraOsAcrylicStackedPolicy
+            _ = TesseraNativeTranslucencyStackedPolicy
                 .ResolveTransientDismissNotifyKey("Tessera", role: null)
                 .Should().Be("Tessera");
 
-            _ = TesseraOsAcrylicStackedPolicy.ResolveTransientDismissConsumerKey("Tessera:vol")
+            _ = TesseraNativeTranslucencyStackedPolicy.ResolveTransientDismissConsumerKey("Tessera:vol")
                 .Should().Be("Tessera");
-            _ = TesseraOsAcrylicStackedPolicy.ResolveTransientDismissConsumerKey("Tessera:media")
+            _ = TesseraNativeTranslucencyStackedPolicy.ResolveTransientDismissConsumerKey("Tessera:media")
                 .Should().Be("Tessera");
-            _ = TesseraOsAcrylicStackedPolicy.ResolveTransientDismissConsumerKey("Tessera")
+            _ = TesseraNativeTranslucencyStackedPolicy.ResolveTransientDismissConsumerKey("Tessera")
                 .Should().Be("Tessera");
 
             string[] live =
             [
-                TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Volume),
-                TesseraOsAcrylicStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Media),
+                TesseraNativeTranslucencyStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Volume),
+                TesseraNativeTranslucencyStackedPolicy.WindowSlotKey("Tessera", TesseraStackedPanelRole.Media),
             ];
-            string volumeNotify = TesseraOsAcrylicStackedPolicy.ResolveTransientDismissNotifyKey(
+            string volumeNotify = TesseraNativeTranslucencyStackedPolicy.ResolveTransientDismissNotifyKey(
                 "Tessera", TesseraStackedPanelRole.Volume);
-            _ = TesseraOsAcrylicStackedPolicy
+            _ = TesseraNativeTranslucencyStackedPolicy
                 .ShouldCascadeTransientDismissToStackedSession(volumeNotify, live)
                 .Should().BeTrue();
-            _ = TesseraOsAcrylicStackedPolicy
+            _ = TesseraNativeTranslucencyStackedPolicy
                 .ShouldCascadeTransientDismissToStackedSession("Tessera", live)
                 .Should().BeFalse();
         }
@@ -220,10 +220,10 @@ namespace MosaicShell.Core.Tests
         [WindowsFact]
         public void Stacked_volume_media_requests_acrylic_blur_on_each_hwnd()
         {
-            HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
-            TesseraOsAcrylicTestHarness.EnableHubOsAcrylic();
+            HostLaunchOptions.Apply([HostLaunchOptions.TesseraNativeTranslucencyTrialFlag]);
+            TesseraNativeTranslucencyTestHarness.EnableHubNativeTranslucency();
             Dictionary<string, string> stacked = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
-            _ = TesseraFlyoutMaterialFactory.OsAcrylicEligibleFromPayload(stacked, StyleIds.Meter).Should().BeTrue();
+            _ = TesseraFlyoutMaterialFactory.NativeTranslucencyEligibleFromPayload(stacked, StyleIds.Meter).Should().BeTrue();
             TesseraFlyoutMaterial m = TesseraFlyoutMaterialFactory.FromPayload(stacked, StyleIds.Meter);
             _ = m.TransparencyHints.Should().Equal("AcrylicBlur", "Transparent");
         }
@@ -240,14 +240,14 @@ namespace MosaicShell.Core.Tests
             double heightDip,
             float expected)
         {
-            _ = TesseraOsAcrylicStackedPolicy.ResolvePanelCornerRadiusDip(styleId, role, widthDip, heightDip)
+            _ = TesseraNativeTranslucencyStackedPolicy.ResolvePanelCornerRadiusDip(styleId, role, widthDip, heightDip)
                 .Should().Be(expected);
         }
 
         [Fact]
         public void Cluster_relayout_allows_meter_volume_spine_width()
         {
-            _ = TesseraOsAcrylicStackedPolicy.ClusterRelayoutMinWidthDip.Should().BeLessThan(
+            _ = TesseraNativeTranslucencyStackedPolicy.ClusterRelayoutMinWidthDip.Should().BeLessThan(
                 TesseraStackedPlacementSpec.MeterVolumeWidthDip);
             _ = TesseraFlyoutWindowPolicy.MeetsRelayoutSizeGate(
                     TesseraStackedPlacementSpec.MeterVolumeWidthDip,

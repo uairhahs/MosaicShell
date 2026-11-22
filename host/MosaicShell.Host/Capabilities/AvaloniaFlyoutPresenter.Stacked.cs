@@ -26,10 +26,10 @@ namespace MosaicShell.Host.Capabilities
         private DispatcherTimer? _stackedAutoDismiss;
         private bool _stackedClusterHovered;
 
-        private bool ShouldUseStackedOsAcrylic(FlyoutRequest request)
+        private bool ShouldUseStackedNativeTranslucency(FlyoutRequest request)
         {
             return ModuleIds.IsTessera(request.ModuleId)
-            && TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(
+            && TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(
                 request.Payload, request.StyleId, request.Kind);
         }
 
@@ -54,7 +54,7 @@ namespace MosaicShell.Host.Capabilities
                 return;
             }
 
-            IReadOnlyList<TesseraStackedPanelRole> panels = TesseraOsAcrylicStackedPolicy.ResolvePanels(request.Payload, request.StyleId);
+            IReadOnlyList<TesseraStackedPanelRole> panels = TesseraNativeTranslucencyStackedPolicy.ResolvePanels(request.Payload, request.StyleId);
             if (panels.Count == 0)
             {
                 Log("stacked panels empty, falling back to single HWND");
@@ -75,7 +75,7 @@ namespace MosaicShell.Host.Capabilities
                 return false;
             }
 
-            string volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey(ModuleIds.Tessera, TesseraStackedPanelRole.Volume);
+            string volumeKey = TesseraNativeTranslucencyStackedPolicy.WindowSlotKey(ModuleIds.Tessera, TesseraStackedPanelRole.Volume);
             lock (_gate)
             {
                 if (!_windows.TryGetValue(volumeKey, out FlyoutWindow? volumeWin)
@@ -137,7 +137,7 @@ namespace MosaicShell.Host.Capabilities
                 return false;
             }
 
-            string volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey(ModuleIds.Tessera, TesseraStackedPanelRole.Volume);
+            string volumeKey = TesseraNativeTranslucencyStackedPolicy.WindowSlotKey(ModuleIds.Tessera, TesseraStackedPanelRole.Volume);
             FlyoutWindow? volumeWin;
             lock (_gate)
             {
@@ -203,7 +203,7 @@ namespace MosaicShell.Host.Capabilities
 
             foreach (TesseraStackedPanelRole role in panels)
             {
-                string slotKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey(ModuleIds.Tessera, role);
+                string slotKey = TesseraNativeTranslucencyStackedPolicy.WindowSlotKey(ModuleIds.Tessera, role);
                 newKeys.Add(slotKey);
 
                 Control content;
@@ -221,7 +221,7 @@ namespace MosaicShell.Host.Capabilities
                 lock (_gate)
                 {
                     if (_windows.TryGetValue(slotKey, out FlyoutWindow? existing)
-                        && TesseraOsAcrylicStackedPolicy.MustReuseRegisteredFlyoutHwndPerSlot)
+                        && TesseraNativeTranslucencyStackedPolicy.MustReuseRegisteredFlyoutHwndPerSlot)
                     {
                         window = existing;
                         window.StackedRole = role;
@@ -678,7 +678,7 @@ namespace MosaicShell.Host.Capabilities
 
                 window.StackedPanelWidthDip = placement.WidthDip;
                 window.StackedPanelHeightDip = placement.HeightDip;
-                window.BackdropCornerRadiusDip = TesseraOsAcrylicStackedPolicy.ResolvePanelCornerRadiusDip(
+                window.BackdropCornerRadiusDip = TesseraNativeTranslucencyStackedPolicy.ResolvePanelCornerRadiusDip(
                     request.StyleId,
                     role,
                     placement.WidthDip,
@@ -716,11 +716,11 @@ namespace MosaicShell.Host.Capabilities
                 request.Payload, request.StyleId, request.Kind);
             TesseraPalette.ApplyMaterial(material);
 
-            bool osAcrylicEligible = true;
+            bool nativeTranslucencyEligible = true;
             bool settingsWantBlur = TesseraFlyoutRequestBuilder.BackdropBlurFromPayload(request.Payload);
-            TesseraFlyoutGlassBinder.Binding glass = TesseraFlyoutGlassBinder.ApplyForLiveFlyout(settingsWantBlur, osAcrylicEligible);
+            TesseraFlyoutGlassBinder.Binding glass = TesseraFlyoutGlassBinder.ApplyForLiveFlyout(settingsWantBlur, nativeTranslucencyEligible);
             Log(
-                $"stacked glass role={role} mode={glass.Mode} osAcrylic={glass.OsAcrylicEligible}");
+                $"stacked glass role={role} mode={glass.Mode} nativeTranslucency={glass.NativeTranslucencyEligible}");
 
             TesseraFlyoutViewModel vm = TesseraFlyoutViewModel.FromRequest(_services, request, _hostUi);
             string? accent = TesseraFlyoutRequestBuilder.AccentFromPayload(request.Payload);
@@ -755,7 +755,7 @@ namespace MosaicShell.Host.Capabilities
             SyncFocusDim(request);
 
             foreach (string? slotKey in _stackedSession!.SlotKeys
-                         .OrderBy(k => TesseraOsAcrylicStackedPolicy.ZOrderRank(RoleForSlotKey(k))))
+                         .OrderBy(k => TesseraNativeTranslucencyStackedPolicy.ZOrderRank(RoleForSlotKey(k))))
             {
                 lock (_gate)
                 {
@@ -884,7 +884,7 @@ namespace MosaicShell.Host.Capabilities
                 // CapsLock→volume: cancel timer + detach before Close so a late Tick cannot
                 // cascade into the stacked session via OnFlyoutTransientDismissed.
                 single.TransientDismissed -= OnFlyoutTransientDismissed;
-                if (TesseraOsAcrylicStackedPolicy.SupersededSingleHwndMustCancelDismissBeforeClose
+                if (TesseraNativeTranslucencyStackedPolicy.SupersededSingleHwndMustCancelDismissBeforeClose
                     || TesseraStatusFlyoutPolicy.SupersededStatusMustCancelDismissBeforeClose)
                 {
                     single.SuppressAutoDismiss();

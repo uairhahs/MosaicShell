@@ -3,15 +3,15 @@ using MosaicShell.Core.Styles;
 namespace MosaicShell.Core.Modules.Tessera
 {
     /// <summary>
-    /// Manual Win11 OS acrylic evaluation sign-off (H2 single-shell + H3 stacked N-window).
+    /// Manual Win11 native translucency evaluation sign-off (H2 single-shell + H3 stacked N-window).
     /// Visual acceptance only; alpha still ships Skia frost unless
-    /// <see cref="Capabilities.Platform.HostLaunchOptions.TesseraOsAcrylicTrialFlag"/> is set.
+    /// <see cref="Capabilities.Platform.HostLaunchOptions.TesseraNativeTranslucencyTrialFlag"/> is set.
     /// H4 ship/kill (persisted setting or kill-switch) is a separate decision.
     /// </summary>
-    public static class TesseraOsAcrylicSignOffPolicy
+    public static class TesseraNativeTranslucencySignOffPolicy
     {
 
-        /// <summary>H2: single-shell OsAcrylic on Win11 (--tessera-os-acrylic, showMediaStrip=0).</summary>
+        /// <summary>H2: single-shell NativeTranslucency on Win11 (--tessera-native-translucency, showMediaStrip=0).</summary>
         public const bool H2Win11EvalSignedOff = true;
 
         /// <summary>H3 phase 1: N-window stacked volume+media acrylic on Win11.</summary>
@@ -41,7 +41,7 @@ namespace MosaicShell.Core.Modules.Tessera
         {
             foreach (string id in StyleCatalog.IdsFor("Tessera"))
             {
-                if (TesseraStackedPlacementPolicy.SupportsStackedOsAcrylic(id)
+                if (TesseraStackedPlacementPolicy.SupportsStackedNativeTranslucency(id)
                     && !IsH3StackedStyleSignedOff(id))
                 {
                     return false;
