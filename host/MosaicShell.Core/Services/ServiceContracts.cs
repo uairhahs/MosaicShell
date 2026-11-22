@@ -182,12 +182,13 @@ namespace MosaicShell.Core.Services
 
 #if !WINDOWS
         /// <summary>
-        /// Linux: media from MPRIS players on the session bus; every other service inert until it has a Linux
-        /// implementation. The browser bridge is not wired on Linux yet, so there are no browser sources.
+        /// Linux: media from MPRIS players and shell flyout triggers from KDE's KGlobalAccel, both on the session bus;
+        /// every other service inert until it has a Linux implementation. The browser bridge is not wired on Linux yet,
+        /// so there are no browser sources.
         /// </summary>
         public static HostServices CreateLinuxDefaults()
         {
-            return CreateInert(CreateLinuxMediaStack());
+            return CreateInert(CreateLinuxMediaStack(), new Linux.KGlobalAccelShellFlyoutTriggers());
         }
 
         /// <summary>
@@ -201,7 +202,7 @@ namespace MosaicShell.Core.Services
         }
 #endif
 
-        private static HostServices CreateInert(IMediaSessionService media)
+        private static HostServices CreateInert(IMediaSessionService media, IShellFlyoutTriggerSource? shellFlyoutTriggers = null)
         {
             return new HostServices
             {
@@ -221,7 +222,7 @@ namespace MosaicShell.Core.Services
                 LockKeys = new NullLockKeysService(),
                 Airplane = new NullAirplaneModeService(),
                 AudioDevices = new NullAudioDeviceService(),
-                ShellFlyoutTriggers = new NullShellFlyoutTriggerSource(),
+                ShellFlyoutTriggers = shellFlyoutTriggers ?? new NullShellFlyoutTriggerSource(),
             };
         }
 
