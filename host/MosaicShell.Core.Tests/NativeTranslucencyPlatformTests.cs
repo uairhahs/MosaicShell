@@ -88,6 +88,26 @@ namespace MosaicShell.Core.Tests
             _ = m.TransparencyHints.Should().Equal("Transparent");
         }
 
+        [Theory]
+        [InlineData(true, false, NativeTranslucencyBackend.None, true, false, NativeTranslucencyBackend.None, true)]
+        [InlineData(true, false, NativeTranslucencyBackend.None, false, false, NativeTranslucencyBackend.None, false)]
+        [InlineData(true, false, NativeTranslucencyBackend.None, true, true, NativeTranslucencyBackend.KWinBlur, false)]
+        [InlineData(true, true, NativeTranslucencyBackend.KWinBlur, true, true, NativeTranslucencyBackend.WindowsAcrylic, false)]
+        [InlineData(true, true, NativeTranslucencyBackend.KWinBlur, true, true, NativeTranslucencyBackend.KWinBlur, true)]
+        public void A_window_can_keep_its_material_only_when_nothing_the_window_was_built_with_changed(
+            bool frostA, bool eligibleA, NativeTranslucencyBackend backendA,
+            bool frostB, bool eligibleB, NativeTranslucencyBackend backendB,
+            bool expected)
+        {
+            // Solid, Frosted and Native differ in hints, shell alpha or the blur flag: all three are set when the
+            // window is built, so a live patch across them would keep the old look.
+            TesseraFlyoutMaterial a = TesseraFlyoutMaterialFactory.Create(frostA, eligibleA, backendA);
+            TesseraFlyoutMaterial b = TesseraFlyoutMaterialFactory.Create(frostB, eligibleB, backendB);
+
+            _ = a.SameWindowMaterial(b).Should().Be(expected);
+            _ = b.SameWindowMaterial(a).Should().Be(expected);
+        }
+
         [Fact]
         public void Eligibility_from_the_payload_needs_a_backend()
         {

@@ -18,7 +18,22 @@ namespace MosaicShell.Core.Modules.Tessera
         byte ShellAlpha,
         bool ShouldLockClientSize,
         bool UseEdgeBlend,
-        bool UseNativeTranslucency = false);
+        bool UseNativeTranslucency = false)
+    {
+        /// <summary>
+        /// Whether a window built with <paramref name="other"/> already has this material. The transparency hints, the
+        /// shell alpha and the OS blur are set when the window is built; a live patch does not change them, so a
+        /// request whose material differs must rebuild the window.
+        /// </summary>
+        public bool SameWindowMaterial(TesseraFlyoutMaterial other)
+        {
+            return UseSoftFrost == other.UseSoftFrost
+                && ShellAlpha == other.ShellAlpha
+                && UseEdgeBlend == other.UseEdgeBlend
+                && UseNativeTranslucency == other.UseNativeTranslucency
+                && TransparencyHints.SequenceEqual(other.TransparencyHints, StringComparer.OrdinalIgnoreCase);
+        }
+    }
 
     public static class TesseraFlyoutMaterialFactory
     {

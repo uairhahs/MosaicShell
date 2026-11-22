@@ -53,6 +53,18 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public void Switching_native_translucency_must_rebuild()
+        {
+            // A KWin window gets its blur region and an AcrylicBlur window its hint only when built; a patch kept the
+            // old material, so every Hub material looked the same (2026-11-22).
+            FlyoutStructureKey built = KeyOf(Request());
+            FlyoutStructureKey next = built with { NativeTranslucency = !built.NativeTranslucency };
+
+            _ = next.CanPatch(built).Should().BeFalse();
+            _ = next.DifferingFields(built).Should().Equal("nativeTranslucency");
+        }
+
+        [Fact]
         public void Motion_dismissal_and_monitor_are_not_structure()
         {
             KeyOf(Request(ani: 0, autoDismissMs: 9000, monitorIndex: 2)).Should().Be(KeyOf(Request()));

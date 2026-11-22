@@ -483,28 +483,26 @@ namespace MosaicShell.Host.Capabilities
             // Rebuild + PresentFlyout (Win32 restack ×3) on every Audio.Changed freezes the app.
             // Strip structure can catch up on the next cold Show.
             liveHost.ApplyLive(services, request);
-            // TesseraPalette is read live at paint/render time (TesseraGlassPanel.DrawGlassChrome,
-            // TesseraTrack.ApplyFillBrush), so re-applying it here (unlike the scale wrapper) keeps
-            // acrylic/backdrop-blur/accent settings in sync on a patch without needing a rebuild.
+            // The window's transparency hints, shell alpha and OS blur are set when it is built, and
+            // a patch does not change them. A request for another material (Hub Material: Solid,
+            // Frosted, Native Translucency) must rebuild, or the old look stays: the drift logged
+            // here since 2026-09-07 was exactly that, and made every material look the same.
             TesseraFlyoutMaterial freshMaterial = TesseraFlyoutMaterialFactory.FromPayload(
                 request.Payload, request.StyleId, request.Kind);
-            TesseraPalette.ApplyMaterial(freshMaterial);
-
-            // Diagnostic (2026-09-07): TryApplyLive never calls ApplyFlyoutMaterial, so this
-            // window's own TransparencyLevelHint/Background can go stale relative to what content
-            // now assumes via TesseraPalette above. Logging whether the hints actually differ
-            // pins down whether that gap is the cause of MaterialYou's reported inconsistent
-            // background, rather than patching on a guess.
-            if (!_material.TransparencyHints.SequenceEqual(freshMaterial.TransparencyHints, StringComparer.OrdinalIgnoreCase)
-                || _material.ShellAlpha != freshMaterial.ShellAlpha
-                || _material.UseNativeTranslucency != freshMaterial.UseNativeTranslucency)
+            if (!_material.SameWindowMaterial(freshMaterial))
             {
                 TesseraFlyoutDiagnostics.Log(
-                    $"TryApplyLive material drift w{WindowId} style={request.StyleId} kind={request.Kind} "
+                    $"TryApplyLive material changed w{WindowId} style={request.StyleId} kind={request.Kind} "
                     + $"windowHints=[{string.Join(',', _material.TransparencyHints)}] windowAlpha={_material.ShellAlpha} "
+                    + $"windowNative={_material.UseNativeTranslucency} "
                     + $"freshHints=[{string.Join(',', freshMaterial.TransparencyHints)}] freshAlpha={freshMaterial.ShellAlpha} "
-                    + $"liveHint={string.Join(',', TransparencyLevelHint)}");
+                    + $"freshNative={freshMaterial.UseNativeTranslucency}, rebuilding");
+                return false;
             }
+
+            // TesseraPalette is read live at paint/render time (TesseraGlassPanel.DrawGlassChrome,
+            // TesseraTrack.ApplyFillBrush), so re-applying it keeps the accent in sync on a patch.
+            TesseraPalette.ApplyMaterial(freshMaterial);
             string? priorAccent = TesseraFlyoutRequestBuilder.AccentFromPayload(FlyoutRequest.Payload);
             string? nextAccent = TesseraFlyoutRequestBuilder.AccentFromPayload(request.Payload);
             if (!string.Equals(priorAccent, nextAccent, StringComparison.OrdinalIgnoreCase))
