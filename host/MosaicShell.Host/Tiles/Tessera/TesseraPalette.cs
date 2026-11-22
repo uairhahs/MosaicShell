@@ -13,7 +13,11 @@ namespace MosaicShell.Host.Tiles.Tessera
         {
             ShellAlpha = material.ShellAlpha;
             UseEdgeBlend = material.UseEdgeBlend;
+            Material = material;
         }
+
+        /// <summary>The material last applied; the default frost until a flyout applies one.</summary>
+        public static TesseraFlyoutMaterial Material { get; private set; } = TesseraFlyoutMaterialFactory.Create(useAcrylic: true);
 
         public static byte ShellAlpha { get; private set; } = TesseraFlyoutMaterialFactory.SoftFrostShellAlpha;
         public static bool UseEdgeBlend { get; private set; } = true;

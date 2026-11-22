@@ -16,6 +16,22 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public void Solid_paints_a_dense_base_and_frost_a_see_through_one()
+        {
+            // The shell tint is blended SoftLight, which adds no opacity, so the base slab alone decides how much of
+            // the desktop shows. Solid and Frosted used the same base and looked alike (2026-11-22).
+            TesseraFlyoutMaterial solid = TesseraFlyoutMaterialFactory.Create(useAcrylic: false);
+            TesseraFlyoutMaterial frost = TesseraFlyoutMaterialFactory.Create(useAcrylic: true);
+
+            _ = TesseraFlyoutMaterialFactory.GlassBaseAlpha(solid, lighterFrost: true)
+                .Should().Be(TesseraFlyoutMaterialFactory.SolidShellAlpha);
+            _ = TesseraFlyoutMaterialFactory.GlassBaseAlpha(solid, lighterFrost: false)
+                .Should().Be(TesseraFlyoutMaterialFactory.SolidShellAlpha);
+            _ = TesseraFlyoutMaterialFactory.GlassBaseAlpha(frost, lighterFrost: true).Should().Be(68);
+            _ = TesseraFlyoutMaterialFactory.GlassBaseAlpha(frost, lighterFrost: false).Should().Be(96);
+        }
+
+        [Fact]
         public void Soft_frost_uses_edge_blend()
         {
             TesseraFlyoutMaterial m = TesseraFlyoutMaterialFactory.Create(useAcrylic: true);

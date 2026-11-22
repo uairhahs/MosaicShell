@@ -624,8 +624,9 @@ namespace MosaicShell.Host.Tiles.Tessera
             int h,
             bool lighterFrost = false)
         {
-            // Recipe from 4fcc41a (pre-consolidation), dark slab + highlight so Soft frost reads.
-            byte baseAlpha = lighterFrost ? (byte)68 : (byte)96;
+            // Recipe from 4fcc41a (pre-consolidation), dark slab + highlight so Soft frost reads;
+            // Solid makes the slab dense.
+            byte baseAlpha = TesseraFlyoutMaterialFactory.GlassBaseAlpha(TesseraPalette.Material, lighterFrost);
             using SKPaint basePaint = new()
             {
                 Color = new SKColor(17, 17, 27, baseAlpha),

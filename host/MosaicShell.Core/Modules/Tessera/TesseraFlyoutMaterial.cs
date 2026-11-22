@@ -77,6 +77,16 @@ namespace MosaicShell.Core.Modules.Tessera
                 UseNativeTranslucency: native != NativeTranslucencyBackend.None);
         }
 
+        /// <summary>
+        /// Alpha of the crust slab under an app-drawn shell (not Native Translucency). The shell tint over it blends
+        /// SoftLight and adds no opacity, so this alone decides how much of the desktop shows: dense for Solid, see-through
+        /// for the frost (lighter when the simulated backdrop blur is on, the 4fcc41a recipe).
+        /// </summary>
+        public static byte GlassBaseAlpha(TesseraFlyoutMaterial material, bool lighterFrost)
+        {
+            return !material.UseSoftFrost ? SolidShellAlpha : lighterFrost ? (byte)68 : (byte)96;
+        }
+
         /// <summary>Payload key <c>acrylic</c>: "0" off, anything else / missing → soft frost on.</summary>
         public static bool UseAcrylicFromPayload(IReadOnlyDictionary<string, string>? payload)
         {
