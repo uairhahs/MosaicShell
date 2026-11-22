@@ -16,6 +16,15 @@ namespace MosaicShell.Core.Services.Kde
         public const string Interface = "org.kde.ScreenBrightness";
         public const string DisplayInterface = "org.kde.ScreenBrightness.Display";
 
+        /// <summary>
+        /// AdjustBrightnessRatio flag that keeps PowerDevil from showing Plasma's pop-up (checked live on Plasma 6.8:
+        /// 0 pop-up calls with it, 2 without). The slider is in Tessera's own flyout, as on Windows.
+        /// </summary>
+        public const uint SuppressIndicatorFlag = 1;
+
+        /// <summary>A reference change smaller than this is the echo of a rounded write, not a change.</summary>
+        public const double ChangeThreshold = 0.005;
+
         public static KdeDisplay? Reference(IReadOnlyList<KdeDisplay> displays)
         {
             return displays.FirstOrDefault(static d => d.IsInternal) ?? displays.FirstOrDefault();
