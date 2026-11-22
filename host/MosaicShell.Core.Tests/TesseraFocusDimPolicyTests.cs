@@ -50,5 +50,26 @@ namespace MosaicShell.Core.Tests
             _ = TesseraFocusDimPolicy.CrustG.Should().Be(0x11);
             _ = TesseraFocusDimPolicy.CrustB.Should().Be(0x1b);
         }
+
+        [Fact]
+        public void Only_windows_can_draw_the_dim_translucent_and_click_through()
+        {
+            // Elsewhere the Win32 layered alpha and WS_EX_TRANSPARENT calls do nothing, and the dim became an opaque
+            // full-screen sheet that hid the flyouts and swallowed clicks (KDE, 2026-11-22).
+            _ = TesseraFocusDimPolicy.PlatformCanDim.Should().Be(OperatingSystem.IsWindows());
+        }
+
+        [Theory]
+        [InlineData(true, null, true)]
+        [InlineData(true, "0", false)]
+        [InlineData(false, null, false)]
+        [InlineData(false, "1", false)]
+        public void The_dim_shows_only_where_the_platform_can_draw_it_and_the_user_wants_it(
+            bool platformCanDim, string? setting, bool expected)
+        {
+            Dictionary<string, string>? payload = setting is null ? null : new() { ["focusDim"] = setting };
+
+            _ = TesseraFocusDimPolicy.ShouldShow(payload, platformCanDim).Should().Be(expected);
+        }
     }
 }

@@ -754,7 +754,7 @@ namespace MosaicShell.Host.Capabilities
             SyncFocusDim(request);
             RestackAboveDim(window);
 
-            bool focusDimOn = TesseraFocusDimPolicy.EnabledFromPayload(request.Payload);
+            bool focusDimOn = TesseraFocusDimPolicy.ShouldShow(request.Payload, TesseraFocusDimPolicy.PlatformCanDim);
             string layered = TesseraFlyoutWindowPolicy.MustApplyPresentableLayeredAlpha
                 ? Win32WindowChrome.ForceOpaqueLayer(window)
                 : "skipped";
@@ -844,7 +844,7 @@ namespace MosaicShell.Host.Capabilities
         private void SyncFocusDim(FlyoutRequest request)
         {
             if (!ModuleIds.IsTessera(request.ModuleId)
-                || !TesseraFocusDimPolicy.EnabledFromPayload(request.Payload))
+                || !TesseraFocusDimPolicy.ShouldShow(request.Payload, TesseraFocusDimPolicy.PlatformCanDim))
             {
                 CloseFocusDim();
                 return;

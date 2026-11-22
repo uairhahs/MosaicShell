@@ -37,6 +37,23 @@ namespace MosaicShell.Core.Modules.Tessera
             return OverlayAlpha;
         }
 
+        /// <summary>
+        /// Whether this OS can draw the dim as the policy requires: a translucent wash that never captures input. Only
+        /// Windows can today (constant LWA_ALPHA plus WS_EX_TRANSPARENT). Elsewhere those calls do nothing, so the dim is
+        /// an opaque full-screen sheet that hides the flyouts and swallows clicks; it stays off until that platform has
+        /// its own translucency and click-through.
+        /// </summary>
+        public static bool PlatformCanDim => OperatingSystem.IsWindows();
+
+        /// <summary>
+        /// Host gate for showing the dim: the user's <c>focusDim</c> setting, where the platform can draw it. Pass
+        /// <see cref="PlatformCanDim"/>; the parameter keeps both platforms' answers testable on any OS.
+        /// </summary>
+        public static bool ShouldShow(IReadOnlyDictionary<string, string>? payload, bool platformCanDim)
+        {
+            return platformCanDim && EnabledFromPayload(payload);
+        }
+
         /// <summary>Payload <c>focusDim</c>: "0" off; missing / other → on (default).</summary>
         public static bool EnabledFromPayload(IReadOnlyDictionary<string, string>? payload)
         {
