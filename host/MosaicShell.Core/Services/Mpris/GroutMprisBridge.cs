@@ -16,6 +16,7 @@ namespace MosaicShell.Core.Services.Mpris
         private readonly IMprisExport _export;
         private readonly string _artDirectory;
         private readonly Func<int?> _browserProcessId;
+        private readonly Func<string, int?, string> _desktopEntryFor;
         private readonly Lock _gate = new();
         private Task _settled = Task.CompletedTask;
         private string? _currentArt;
@@ -27,12 +28,14 @@ namespace MosaicShell.Core.Services.Mpris
             IMediaSessionService media,
             Func<IMprisExportCommands, IMprisExport> createExport,
             string artDirectory,
-            Func<int?>? browserProcessId = null)
+            Func<int?>? browserProcessId = null,
+            Func<string, int?, string>? desktopEntryFor = null)
         {
             _browser = browser;
             _media = media;
             _artDirectory = artDirectory;
             _browserProcessId = browserProcessId ?? (static () => null);
+            _desktopEntryFor = desktopEntryFor ?? (static (appId, _) => appId);
             _export = createExport(this);
             _browser.Changed += OnChanged;
             _media.Changed += OnChanged;
@@ -122,8 +125,11 @@ namespace MosaicShell.Core.Services.Mpris
                 BrowserPlayerSnapshot? report = _browser.Active;
                 string? artUrl = report?.CoverPng is { Length: > 0 } cover ? WriteArt(cover) : null;
                 MediaSessionInfo? session = _media.Current;
-                string? desktopEntry = BrowserSessionPolicy.LooksLikeBrowserSession(session?.AppId) ? session!.AppId : null;
-                await _export.PublishAsync(MprisExportPolicy.From(report, artUrl, desktopEntry, session, _browserProcessId()))
+                int? browserProcess = _browserProcessId();
+                string? desktopEntry = BrowserSessionPolicy.LooksLikeBrowserSession(session?.AppId)
+                    ? _desktopEntryFor(session!.AppId!, browserProcess)
+                    : null;
+                await _export.PublishAsync(MprisExportPolicy.From(report, artUrl, desktopEntry, session, browserProcess))
                     .ConfigureAwait(false);
             }
             catch (Exception ex)

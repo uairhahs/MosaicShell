@@ -209,5 +209,35 @@ namespace MosaicShell.Core.Tests
 
             _ = MprisExportPolicy.ChangedPlayerProperties(before, after).Should().Equal("Metadata");
         }
+
+        [Theory]
+        [InlineData("edge", "/opt/microsoft/msedge/msedge", null, "microsoft-edge")]
+        [InlineData("edge", "/opt/microsoft/msedge-dev/msedge", null, "microsoft-edge-dev")]
+        [InlineData("edge", "/app/extra/msedge", "com.microsoft.Edge", "com.microsoft.Edge")]
+        [InlineData("microsoft-edge", "/opt/microsoft/msedge/msedge", null, "microsoft-edge")]
+        [InlineData("chromium", "/usr/lib/chromium/chromium", null, "chromium-browser")]
+        [InlineData("brave", null, null, "brave-browser")]
+        [InlineData("vivaldi", null, null, "vivaldi-stable")]
+        [InlineData("unknownbrowser", null, null, "unknownbrowser")]
+        public void The_desktop_entry_is_the_browsers_installed_one_so_clients_show_its_icon(
+            string appId, string? exePath, string? flatpakAppId, string expected)
+        {
+            // Edge's own MPRIS player names itself "edge", for which there is no .desktop file and so no icon.
+            HashSet<string> installed =
+            [
+                "microsoft-edge", "microsoft-edge-dev", "com.microsoft.Edge", "chromium-browser", "brave-browser", "vivaldi-stable",
+            ];
+
+            _ = MprisExportPolicy.DesktopEntryFor(appId, exePath, flatpakAppId, installed.Contains).Should().Be(expected);
+        }
+
+        [Fact]
+        public void A_channel_that_is_not_installed_falls_back_to_one_that_is()
+        {
+            HashSet<string> installed = ["microsoft-edge"];
+
+            _ = MprisExportPolicy.DesktopEntryFor("edge", "/opt/microsoft/msedge-beta/msedge", null, installed.Contains)
+                .Should().Be("microsoft-edge");
+        }
     }
 }

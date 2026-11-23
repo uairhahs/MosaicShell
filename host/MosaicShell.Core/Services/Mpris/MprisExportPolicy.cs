@@ -81,6 +81,47 @@ namespace MosaicShell.Core.Services.Mpris
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
         }
 
+        /// <summary>
+        /// The browser's installed desktop entry, so MPRIS clients show its icon. A player's own id can name no file
+        /// (Edge's own MPRIS player calls itself "edge"), so this tries, in order: the Flatpak app id the process runs as,
+        /// the id itself, then the browser family's entries, the channel the executable belongs to first. The first that
+        /// <paramref name="isInstalled"/> knows wins; with none, the id is kept.
+        /// </summary>
+        public static string DesktopEntryFor(string appId, string? executablePath, string? flatpakAppId, Func<string, bool> isInstalled)
+        {
+            List<string> candidates = [];
+            if (!string.IsNullOrWhiteSpace(flatpakAppId))
+            {
+                candidates.Add(flatpakAppId);
+            }
+
+            candidates.Add(appId);
+            candidates.AddRange(BrowserFamilyEntries(appId.ToLowerInvariant(), (executablePath ?? "").ToLowerInvariant()));
+            return candidates.FirstOrDefault(isInstalled) ?? appId;
+        }
+
+        private static IEnumerable<string> BrowserFamilyEntries(string id, string exe)
+        {
+            bool edge = id == "edge" || id.Contains("microsoft-edge", StringComparison.Ordinal)
+                || id.Contains("msedge", StringComparison.Ordinal) || exe.Contains("/msedge", StringComparison.Ordinal);
+            return edge ? Channel(exe, "msedge", "microsoft-edge", "microsoft-edge-beta", "microsoft-edge-dev")
+                : id.Contains("chrome", StringComparison.Ordinal) ? Channel(exe, "chrome", "google-chrome", "google-chrome-beta", "google-chrome-unstable")
+                : id.Contains("chromium", StringComparison.Ordinal) ? ["chromium", "chromium-browser", "org.chromium.Chromium"]
+                : id.Contains("brave", StringComparison.Ordinal) ? ["brave-browser", "com.brave.Browser"]
+                : id.Contains("vivaldi", StringComparison.Ordinal) ? ["vivaldi-stable", "vivaldi"]
+                : id.Contains("firefox", StringComparison.Ordinal) ? ["firefox", "org.mozilla.firefox"]
+                : [];
+        }
+
+        /// <summary>Stable, beta and unstable entries, the one the executable's install folder names first.</summary>
+        private static IEnumerable<string> Channel(string exe, string folder, string stable, string beta, string unstable)
+        {
+            string first = exe.Contains(folder + "-dev", StringComparison.Ordinal) || exe.Contains(folder + "-unstable", StringComparison.Ordinal)
+                ? unstable
+                : exe.Contains(folder + "-beta", StringComparison.Ordinal) ? beta : stable;
+            return new[] { first, stable, beta, unstable }.Distinct();
+        }
+
         /// <summary>The cover's file name in the art cache: its content hash, so the same cover keeps the same file.</summary>
         public static string ArtFileName(byte[] cover)
         {

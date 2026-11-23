@@ -97,6 +97,20 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public async Task The_desktop_entry_is_resolved_from_the_session_and_browser_process()
+        {
+            _media.Current = new MediaSessionInfo("Vision", "Pìjus", "edge", true);
+            using GroutMprisBridge bridge = new(
+                _browser, _media, _ => _export, _cache, () => 13951,
+                (appId, pid) => $"{appId}-resolved-{pid}");
+
+            _browser.Report(Report());
+            await bridge.SettledAsync();
+
+            _ = _export.Last!.DesktopEntry.Should().Be("edge-resolved-13951");
+        }
+
+        [Fact]
         public async Task A_native_player_session_lends_no_desktop_entry()
         {
             _media.Current = new MediaSessionInfo("Song", "Band", "spotify", true);

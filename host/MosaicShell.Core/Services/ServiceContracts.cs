@@ -239,7 +239,8 @@ namespace MosaicShell.Core.Services
                     composite,
                     commands => new Linux.DBusMprisExport(address: null, commands),
                     Mpris.MprisExportPolicy.DefaultArtCacheDirectory(),
-                    () => mpris.ActiveProcessId));
+                    () => mpris.ActiveProcessId,
+                    LinuxDesktopEntryResolver()));
                 media = composite;
             }
             else
@@ -260,6 +261,21 @@ namespace MosaicShell.Core.Services
         /// <summary>
         /// MPRIS in the same composite that Windows wraps SMTC in, so both platforms merge and present by one path.
         /// </summary>
+        /// <summary>
+        /// The browser's installed desktop entry for an app id and process (<see cref="Mpris.MprisExportPolicy.DesktopEntryFor"/>),
+        /// remembered per pair: the bridge asks on every progress tick, and an install does not change under a running process.
+        /// </summary>
+        private static Func<string, int?, string> LinuxDesktopEntryResolver()
+        {
+            Linux.LinuxDesktopEntries entries = Linux.LinuxDesktopEntries.ForCurrentUser();
+            System.Collections.Concurrent.ConcurrentDictionary<(string, int?), string> known = new();
+            return (appId, pid) => known.GetOrAdd((appId, pid), key => Mpris.MprisExportPolicy.DesktopEntryFor(
+                key.Item1,
+                key.Item2 is int p ? Linux.LinuxDesktopEntries.ExecutablePath(p) : null,
+                key.Item2 is int q ? Linux.LinuxDesktopEntries.FlatpakAppId(q) : null,
+                entries.Exists));
+        }
+
         /// <param name="busAddress">Null for the user's session bus; tests pass a private bus.</param>
         public static IMediaSessionService CreateLinuxMediaStack(string? busAddress = null)
         {
