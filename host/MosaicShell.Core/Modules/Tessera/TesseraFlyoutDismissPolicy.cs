@@ -39,6 +39,21 @@ namespace MosaicShell.Core.Modules.Tessera
                 && ShouldFinishTransientDismiss(dismissalSessionGeneration, currentSessionGeneration, phase, anyWindowVisible);
         }
 
+        /// <summary>
+        /// Whether a stacked dismiss starts an exit. While an exit runs (<paramref name="runningExitMotionGenerations"/>,
+        /// read right after it began; null when none runs) and every slot is still on that motion, a second dismiss
+        /// would only restart the fade from part way and replay the collapse, so it leaves that exit to finish. Once a
+        /// present supersedes the exit the generations move and a dismiss begins a new one; the phase cannot tell,
+        /// because re-presented slots can still report <see cref="TesseraFlyoutPhase.Exiting"/>.
+        /// </summary>
+        public static bool ShouldBeginStackedDismiss(
+            IReadOnlyList<int>? runningExitMotionGenerations,
+            IReadOnlyList<int> currentMotionGenerations)
+        {
+            return runningExitMotionGenerations is null
+                || !runningExitMotionGenerations.SequenceEqual(currentMotionGenerations);
+        }
+
         public static bool ShouldResetAutoDismiss(
             TesseraFlyoutRefreshTrigger trigger,
             MediaSessionInfo? previousMedia,
