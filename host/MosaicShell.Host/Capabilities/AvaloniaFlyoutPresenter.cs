@@ -754,7 +754,7 @@ namespace MosaicShell.Host.Capabilities
             SyncFocusDim(request);
             RestackAboveDim(window);
 
-            bool focusDimOn = TesseraFocusDimPolicy.ShouldShow(request.Payload, TesseraFocusDimPolicy.PlatformCanDim);
+            bool focusDimOn = _focusDim is not null;
             string layered = TesseraFlyoutWindowPolicy.MustApplyPresentableLayeredAlpha
                 ? Win32WindowChrome.ForceOpaqueLayer(window)
                 : "skipped";
@@ -843,8 +843,15 @@ namespace MosaicShell.Host.Capabilities
 
         private void SyncFocusDim(FlyoutRequest request)
         {
-            if (!ModuleIds.IsTessera(request.ModuleId)
-                || !TesseraFocusDimPolicy.ShouldShow(request.Payload, TesseraFocusDimPolicy.PlatformCanDim))
+            if (!ModuleIds.IsTessera(request.ModuleId) || !TesseraFocusDimPolicy.EnabledFromPayload(request.Payload))
+            {
+                CloseFocusDim();
+                return;
+            }
+
+            // Asked only when the user wants the dim, and per call: X11 compositing can be switched off and on.
+            FocusDimRoute route = X11FocusDim.ResolveRoute();
+            if (!TesseraFocusDimPolicy.ShouldShow(request.Payload, TesseraFocusDimPolicy.CanDim(route)))
             {
                 CloseFocusDim();
                 return;
@@ -852,12 +859,12 @@ namespace MosaicShell.Host.Capabilities
 
             if (_focusDim is null)
             {
-                _focusDim = new FocusDimWindow(request.MonitorIndex);
+                _focusDim = new FocusDimWindow(request.MonitorIndex, route);
                 _focusDim.PrepareBeforeShow();
                 // Show dim BEFORE the flyout (caller order) so the flyout is the later topmost peer.
                 _focusDim.Show();
                 _focusDim.FadeIn();
-                Log($"focusDim shown mon={request.MonitorIndex}");
+                Log($"focusDim shown mon={request.MonitorIndex} route={route}");
             }
             else
             {

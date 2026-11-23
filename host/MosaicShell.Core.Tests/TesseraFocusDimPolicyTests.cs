@@ -51,12 +51,45 @@ namespace MosaicShell.Core.Tests
             _ = TesseraFocusDimPolicy.CrustB.Should().Be(0x1b);
         }
 
-        [Fact]
-        public void Only_windows_can_draw_the_dim_translucent_and_click_through()
+        [Theory]
+        [InlineData(true, false, false, false, FocusDimRoute.Win32LayeredAlpha)]
+        [InlineData(true, false, true, true, FocusDimRoute.Win32LayeredAlpha)]
+        [InlineData(false, true, true, true, FocusDimRoute.X11ArgbInputShape)]
+        [InlineData(false, true, true, false, FocusDimRoute.None)]
+        [InlineData(false, true, false, true, FocusDimRoute.None)]
+        [InlineData(false, false, true, true, FocusDimRoute.None)]
+        public void Each_platform_gets_the_route_that_draws_a_translucent_click_through_dim(
+            bool isWindows, bool isLinux, bool hasX11Display, bool x11Composited, FocusDimRoute expected)
         {
-            // Elsewhere the Win32 layered alpha and WS_EX_TRANSPARENT calls do nothing, and the dim became an opaque
-            // full-screen sheet that hid the flyouts and swallowed clicks (KDE, 2026-11-22).
-            _ = TesseraFocusDimPolicy.PlatformCanDim.Should().Be(OperatingSystem.IsWindows());
+            // Without a compositor an ARGB window's alpha is ignored and the dim is an opaque sheet that hides the
+            // flyouts and swallows clicks, as it was on KDE before any route existed (2026-11-22).
+            _ = TesseraFocusDimPolicy.ResolveRoute(isWindows, isLinux, hasX11Display, x11Composited).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(FocusDimRoute.None, false)]
+        [InlineData(FocusDimRoute.Win32LayeredAlpha, true)]
+        [InlineData(FocusDimRoute.X11ArgbInputShape, true)]
+        public void The_dim_can_show_on_any_route_but_none(FocusDimRoute route, bool expected)
+        {
+            _ = TesseraFocusDimPolicy.CanDim(route).Should().Be(expected);
+        }
+
+        [Fact]
+        public void On_x11_the_window_itself_carries_the_dim_alpha()
+        {
+            // X11 has no per-window constant alpha the compositor honors for every window, so the transparent window's
+            // background brush carries the same alpha that LWA_ALPHA applies on Windows.
+            _ = TesseraFocusDimPolicy.PaintsAlphaInWindow(FocusDimRoute.X11ArgbInputShape).Should().BeTrue();
+            _ = TesseraFocusDimPolicy.ResolveBackgroundAlpha(FocusDimRoute.X11ArgbInputShape)
+                .Should().Be(TesseraFocusDimPolicy.OverlayAlpha);
+        }
+
+        [Fact]
+        public void On_windows_the_background_stays_opaque_under_layered_alpha()
+        {
+            _ = TesseraFocusDimPolicy.PaintsAlphaInWindow(FocusDimRoute.Win32LayeredAlpha).Should().BeFalse();
+            _ = TesseraFocusDimPolicy.ResolveBackgroundAlpha(FocusDimRoute.Win32LayeredAlpha).Should().Be(255);
         }
 
         [Theory]

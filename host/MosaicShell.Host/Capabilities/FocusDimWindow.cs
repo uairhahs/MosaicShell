@@ -21,10 +21,12 @@ namespace MosaicShell.Host.Capabilities
     internal sealed class FocusDimWindow : Window
     {
         private int _monitorIndex;
+        private readonly FocusDimRoute _route;
 
-        public FocusDimWindow(int monitorIndexOneBased)
+        public FocusDimWindow(int monitorIndexOneBased, FocusDimRoute route)
         {
             _monitorIndex = monitorIndexOneBased;
+            _route = route;
             Title = "MosaicShell - Focus dim";
             WindowDecorations = WindowDecorations.None;
             CanResize = false;
@@ -34,10 +36,14 @@ namespace MosaicShell.Host.Capabilities
             ShowActivated = false;
             Focusable = false;
             IsHitTestVisible = false;
-            // Opaque HWND + layered constant alpha (see ApplySubtleDim). Avoid Transparent
-            // composition: with RedirectionSurface, FallbackBrush was painting a near-black fill.
-            TransparencyLevelHint = [WindowTransparencyLevel.None];
-            Background = new SolidColorBrush(Color.FromRgb(
+            // Windows: opaque HWND + layered constant alpha (see ApplySubtleDim). Avoid Transparent
+            // composition there: with RedirectionSurface, FallbackBrush was painting a near-black fill.
+            // X11: a Transparent (ARGB) window whose background brush carries the dim alpha.
+            TransparencyLevelHint = TesseraFocusDimPolicy.PaintsAlphaInWindow(route)
+                ? [WindowTransparencyLevel.Transparent]
+                : [WindowTransparencyLevel.None];
+            Background = new SolidColorBrush(Color.FromArgb(
+                TesseraFocusDimPolicy.ResolveBackgroundAlpha(route),
                 TesseraFocusDimPolicy.CrustR,
                 TesseraFocusDimPolicy.CrustG,
                 TesseraFocusDimPolicy.CrustB));
@@ -86,6 +92,13 @@ namespace MosaicShell.Host.Capabilities
         public void PrepareBeforeShow()
         {
             PlaceOnMonitor(_monitorIndex);
+            if (_route == FocusDimRoute.X11ArgbInputShape)
+            {
+                // The XID exists from construction too, so the dim is click-through from its first frame.
+                _ = X11FocusDim.Apply(this);
+                return;
+            }
+
             if (TesseraFocusDimPolicy.UseConstantLayeredAlpha)
             {
                 _ = Win32WindowChrome.ApplySubtleDim(this, TesseraFocusDimPolicy.ResolveLayeredAlpha());
@@ -102,6 +115,12 @@ namespace MosaicShell.Host.Capabilities
 
         private void ApplyDimChrome()
         {
+            if (_route == FocusDimRoute.X11ArgbInputShape)
+            {
+                _ = X11FocusDim.Apply(this);
+                return;
+            }
+
             if (TesseraFocusDimPolicy.UseConstantLayeredAlpha)
             {
                 _ = Win32WindowChrome.ApplySubtleDim(this, TesseraFocusDimPolicy.ResolveLayeredAlpha());

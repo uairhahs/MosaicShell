@@ -769,7 +769,7 @@ namespace MosaicShell.Host.Capabilities
                 }
             }
 
-            Log($"stacked presented slots={windows.Count} focusDim={TesseraFocusDimPolicy.ShouldShow(request.Payload, TesseraFocusDimPolicy.PlatformCanDim)}");
+            Log($"stacked presented slots={windows.Count} focusDim={_focusDim is not null}");
             if (TesseraFlyoutDiagnostics.IsEnabled(DiagnosticLogLevel.Debug))
             {
                 TesseraFlyoutDiagnostics.Log(
