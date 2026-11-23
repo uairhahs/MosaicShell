@@ -174,16 +174,16 @@ namespace MosaicShell.Core.Services.Linux
         /// <summary>Reads the default output; false when pactl gave nothing usable.</summary>
         private async Task<bool> RefreshAsync(CancellationToken ct)
         {
+            // `list sinks` rather than `get-sink-volume`/`get-sink-mute`: pactl 17.0 as NixOS ships it prints those two
+            // as text even with `-f json`, so neither parsed and the flyout showed 0% and muted (2026-11-23).
             string? sinkOut = await _pactl.RunAsync(["get-default-sink"], ct).ConfigureAwait(false);
-            string? volumeOut = await _pactl.RunAsync(["-f", "json", "get-sink-volume", "@DEFAULT_SINK@"], ct).ConfigureAwait(false);
-            string? muteOut = await _pactl.RunAsync(["-f", "json", "get-sink-mute", "@DEFAULT_SINK@"], ct).ConfigureAwait(false);
-            if (!PulseVolumePolicy.TryParseVolume(volumeOut, out IReadOnlyList<PulseChannel> channels)
-                || !PulseVolumePolicy.TryParseMute(muteOut, out bool muted))
+            string sink = sinkOut?.Trim() ?? "";
+            string? listOut = await _pactl.RunAsync(["-f", "json", "list", "sinks"], ct).ConfigureAwait(false);
+            if (!PulseVolumePolicy.TryParseSink(listOut, sink, out IReadOnlyList<PulseChannel> channels, out bool muted))
             {
                 return false;
             }
 
-            string sink = sinkOut?.Trim() ?? "";
             bool raise = false;
             lock (_gate)
             {

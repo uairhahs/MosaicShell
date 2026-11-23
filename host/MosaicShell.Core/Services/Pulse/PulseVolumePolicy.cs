@@ -27,25 +27,79 @@ namespace MosaicShell.Core.Services.Pulse
 
             using (doc)
             {
-                if (!doc.RootElement.TryGetProperty("volume", out JsonElement volume) || volume.ValueKind != JsonValueKind.Object)
-                {
-                    return false;
-                }
-
-                List<PulseChannel> list = [];
-                foreach (JsonProperty channel in volume.EnumerateObject())
-                {
-                    if (channel.Value.ValueKind == JsonValueKind.Object
-                        && channel.Value.TryGetProperty("value", out JsonElement value)
-                        && value.TryGetUInt32(out uint raw))
-                    {
-                        list.Add(new PulseChannel(channel.Name, raw));
-                    }
-                }
-
-                channels = list;
-                return list.Count > 0;
+                return TryReadChannels(doc.RootElement, out channels);
             }
+        }
+
+        /// <summary>
+        /// Reads one sink's volume and mute from <c>pactl -f json list sinks</c>: [{"name":"...","mute":false,
+        /// "volume":{"front-left":{"value":20972,...},...},...},...]. Used for the default output because pactl 17.0 as
+        /// some distributions ship it (NixOS, 2026-11-23) prints text for <c>get-sink-volume</c> and
+        /// <c>get-sink-mute</c> even with <c>-f json</c>, while <c>list sinks</c> is JSON everywhere.
+        /// </summary>
+        public static bool TryParseSink(string? listJson, string sinkName, out IReadOnlyList<PulseChannel> channels, out bool muted)
+        {
+            channels = [];
+            muted = false;
+            if (string.IsNullOrEmpty(sinkName) || string.IsNullOrWhiteSpace(listJson) || listJson.TrimStart()[0] != '[')
+            {
+                return false;
+            }
+
+            try
+            {
+                using JsonDocument doc = JsonDocument.Parse(listJson);
+                foreach (JsonElement sink in doc.RootElement.EnumerateArray())
+                {
+                    if (sink.ValueKind != JsonValueKind.Object
+                        || !sink.TryGetProperty("name", out JsonElement name)
+                        || name.ValueKind != JsonValueKind.String
+                        || !string.Equals(name.GetString(), sinkName, StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    if (!sink.TryGetProperty("mute", out JsonElement mute)
+                        || mute.ValueKind is not (JsonValueKind.True or JsonValueKind.False)
+                        || !TryReadChannels(sink, out channels))
+                    {
+                        channels = [];
+                        return false;
+                    }
+
+                    muted = mute.GetBoolean();
+                    return true;
+                }
+
+                return false;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        private static bool TryReadChannels(JsonElement owner, out IReadOnlyList<PulseChannel> channels)
+        {
+            channels = [];
+            if (!owner.TryGetProperty("volume", out JsonElement volume) || volume.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            List<PulseChannel> list = [];
+            foreach (JsonProperty channel in volume.EnumerateObject())
+            {
+                if (channel.Value.ValueKind == JsonValueKind.Object
+                    && channel.Value.TryGetProperty("value", out JsonElement value)
+                    && value.TryGetUInt32(out uint raw))
+                {
+                    list.Add(new PulseChannel(channel.Name, raw));
+                }
+            }
+
+            channels = list;
+            return list.Count > 0;
         }
 
         /// <summary>Reads <c>get-sink-mute</c>: {"mute":false}.</summary>

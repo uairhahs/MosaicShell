@@ -82,6 +82,57 @@ namespace MosaicShell.Core.Tests
             _ = PulseVolumePolicy.TryParseMute(output, out _).Should().BeFalse();
         }
 
+        // pactl 17.0 as NixOS ships it (2026-11-23): `-f json list sinks` is JSON, but `-f json get-sink-volume` and
+        // `get-sink-mute` still print text, so the service read neither and showed 0% and muted.
+        private const string ListSinks =
+            "[{\"index\":131,\"state\":\"SUSPENDED\",\"name\":\"alsa_output.usb-headset\",\"mute\":true,"
+            + "\"volume\":{\"mono\":{\"value\":65536,\"value_percent\":\"100%\",\"db\":\"0.00 dB\"}},\"balance\":0.00},"
+            + "{\"index\":132,\"state\":\"RUNNING\",\"name\":\"alsa_output.pci-0000_00_1f.3.hdmi-stereo\","
+            + "\"description\":\"Built-in Audio Digital Stereo (HDMI)\",\"driver\":\"PipeWire\",\"mute\":false,"
+            + "\"volume\":{\"front-left\":{\"value\":20972,\"value_percent\":\"32%\",\"db\":\"-29.69 dB\"},"
+            + "\"front-right\":{\"value\":20972,\"value_percent\":\"32%\",\"db\":\"-29.69 dB\"}},\"balance\":0.00,"
+            + "\"base_volume\":{\"value\":65536,\"value_percent\":\"100%\",\"db\":\"0.00 dB\"}}]";
+
+        [Fact]
+        public void Reads_the_named_sink_from_list_sinks()
+        {
+            _ = PulseVolumePolicy.TryParseSink(
+                    ListSinks, "alsa_output.pci-0000_00_1f.3.hdmi-stereo", out IReadOnlyList<PulseChannel> channels, out bool muted)
+                .Should().BeTrue();
+
+            _ = channels.Should().Equal(new PulseChannel("front-left", 20972), new PulseChannel("front-right", 20972));
+            _ = muted.Should().BeFalse();
+        }
+
+        [Fact]
+        public void Another_sink_in_the_list_is_not_read()
+        {
+            _ = PulseVolumePolicy.TryParseSink(ListSinks, "alsa_output.usb-headset", out IReadOnlyList<PulseChannel> channels, out bool muted)
+                .Should().BeTrue();
+
+            _ = channels.Should().Equal(new PulseChannel("mono", 65536));
+            _ = muted.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("alsa_output.missing")]
+        [InlineData("")]
+        public void A_sink_not_in_the_list_is_not_read(string sink)
+        {
+            _ = PulseVolumePolicy.TryParseSink(ListSinks, sink, out _, out _).Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("Volume: front-left: 20972 /  32% / -29.69 dB,   front-right: 20972 /  32% / -29.69 dB")]
+        [InlineData("{\"volume\":{}}")]
+        [InlineData("[{\"name\":\"s\",\"volume\":{}}]")]
+        [InlineData("[{\"name\":\"s\",\"volume\":{\"mono\":{\"value\":1}}}]")]
+        public void Anything_else_is_not_a_sink(string output)
+        {
+            _ = PulseVolumePolicy.TryParseSink(output, "s", out _, out _).Should().BeFalse();
+        }
+
         [Fact]
         public void Unknown_fields_are_ignored()
         {

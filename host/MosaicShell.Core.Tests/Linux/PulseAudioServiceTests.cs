@@ -208,12 +208,11 @@ namespace MosaicShell.Core.Tests.Linux
                 return;
             }
 
-            string? volume = await pactl.RunAsync(["-f", "json", "get-sink-volume", "@DEFAULT_SINK@"], CancellationToken.None);
-            string? mute = await pactl.RunAsync(["-f", "json", "get-sink-mute", "@DEFAULT_SINK@"], CancellationToken.None);
+            // The read PulseAudioService makes. `get-sink-volume`/`get-sink-mute` are not JSON on every pactl 17.0.
+            string? list = await pactl.RunAsync(["-f", "json", "list", "sinks"], CancellationToken.None);
 
-            _ = PulseVolumePolicy.TryParseVolume(volume, out IReadOnlyList<PulseChannel> channels).Should().BeTrue(volume);
+            _ = PulseVolumePolicy.TryParseSink(list, sink.Trim(), out IReadOnlyList<PulseChannel> channels, out _).Should().BeTrue(list);
             _ = channels.Should().NotBeEmpty();
-            _ = PulseVolumePolicy.TryParseMute(mute, out _).Should().BeTrue(mute);
         }
 
         [Fact]
@@ -302,20 +301,27 @@ namespace MosaicShell.Core.Tests.Linux
 
             lock (_gate)
             {
+                // As pactl 17.0 on NixOS answers (2026-11-23): JSON for `list sinks`, but text for `get-sink-*` even
+                // with `-f json`, which the service once relied on and so read nothing.
                 return command switch
                 {
                     "get-default-sink" => _sink + "\n",
-                    "get-sink-volume @DEFAULT_SINK@" => VolumeJson(),
-                    "get-sink-mute @DEFAULT_SINK@" => _muted ? "{\"mute\":true}" : "{\"mute\":false}",
+                    "list sinks" => ListSinksJson(),
+                    "get-sink-volume @DEFAULT_SINK@" => "Volume: " + string.Join(",   ", _channels.Select(static c => $"{c.Name}: {c.Value} /  50% / -18.06 dB")) + "\n        balance 0.00\n",
+                    "get-sink-mute @DEFAULT_SINK@" => _muted ? "Mute: yes\n" : "Mute: no\n",
                     _ => null,
                 };
             }
         }
 
-        private string VolumeJson()
+        private string ListSinksJson()
         {
             _ = Interlocked.Increment(ref _volumeReads);
-            return "{\"volume\":{" + string.Join(',', _channels.Select(static c => $"\"{c.Name}\":{{\"value\":{c.Value}}}")) + "},\"balance\":0}";
+            // A second, unrelated sink first, so reading the wrong entry shows up.
+            string decoy = "{\"index\":1,\"name\":\"decoy.sink\",\"mute\":true,\"volume\":{\"mono\":{\"value\":65536}},\"balance\":0}";
+            string sink = "{\"index\":2,\"name\":\"" + _sink + "\",\"mute\":" + (_muted ? "true" : "false") + ",\"volume\":{"
+                + string.Join(',', _channels.Select(static c => $"\"{c.Name}\":{{\"value\":{c.Value}}}")) + "},\"balance\":0}";
+            return "[" + decoy + "," + sink + "]";
         }
 
         public async IAsyncEnumerable<string> SubscribeAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
