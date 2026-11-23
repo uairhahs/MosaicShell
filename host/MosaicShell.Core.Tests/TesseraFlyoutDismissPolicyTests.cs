@@ -25,6 +25,47 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public void A_stacked_exit_finishes_when_nothing_superseded_it()
+        {
+            _ = TesseraFlyoutDismissPolicy.ShouldFinishStackedTransientDismiss(
+                4, 4, [7, 9], [7, 9], TesseraFlyoutPhase.Exiting, anyWindowVisible: true).Should().BeTrue();
+        }
+
+        [Fact]
+        public void A_present_during_a_stacked_exit_cancels_the_dismissal()
+        {
+            // A same-kind request re-presented the slots mid-exit without a new session (generation 4 both times);
+            // only their motion generations moved. The stale exit then hid them anyway and the flyout vanished
+            // despite the request (KDE, 2026-11-23).
+            _ = TesseraFlyoutDismissPolicy.ShouldFinishStackedTransientDismiss(
+                4, 4, [7, 9], [8, 10], TesseraFlyoutPhase.Exiting, anyWindowVisible: true).Should().BeFalse();
+        }
+
+        [Fact]
+        public void One_re_presented_slot_is_enough_to_cancel_the_dismissal()
+        {
+            _ = TesseraFlyoutDismissPolicy.ShouldFinishStackedTransientDismiss(
+                4, 4, [7, 9], [7, 10], TesseraFlyoutPhase.Exiting, anyWindowVisible: true).Should().BeFalse();
+        }
+
+        [Fact]
+        public void A_changed_slot_set_cancels_the_dismissal()
+        {
+            _ = TesseraFlyoutDismissPolicy.ShouldFinishStackedTransientDismiss(
+                4, 4, [7, 9], [7], TesseraFlyoutPhase.Exiting, anyWindowVisible: true).Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData(5, TesseraFlyoutPhase.Exiting, true)]
+        [InlineData(4, TesseraFlyoutPhase.Shown, true)]
+        [InlineData(4, TesseraFlyoutPhase.Exiting, false)]
+        public void A_stacked_exit_keeps_the_single_window_rules(int currentSession, TesseraFlyoutPhase phase, bool anyVisible)
+        {
+            _ = TesseraFlyoutDismissPolicy.ShouldFinishStackedTransientDismiss(
+                4, currentSession, [7, 9], [7, 9], phase, anyVisible).Should().BeFalse();
+        }
+
+        [Fact]
         public void Completed_fade_still_requires_native_hide()
         {
             const bool windowVisible = true;

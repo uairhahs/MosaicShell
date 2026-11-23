@@ -20,6 +20,25 @@ namespace MosaicShell.Core.Modules.Tessera
                 && windowVisible;
         }
 
+        /// <summary>
+        /// Stacked form of <see cref="ShouldFinishTransientDismiss"/>. A same-kind request that lands during the exit
+        /// re-presents the slots without starting a new session, so the session generation alone cannot see it; each
+        /// slot's motion generation can, because the re-present supersedes its motion. The dismissal finishes only when
+        /// every slot still runs the exit it started (<paramref name="exitMotionGenerations"/>, read right after the
+        /// exit began) and the single-window rules hold.
+        /// </summary>
+        public static bool ShouldFinishStackedTransientDismiss(
+            int dismissalSessionGeneration,
+            int currentSessionGeneration,
+            IReadOnlyList<int> exitMotionGenerations,
+            IReadOnlyList<int> currentMotionGenerations,
+            TesseraFlyoutPhase phase,
+            bool anyWindowVisible)
+        {
+            return exitMotionGenerations.SequenceEqual(currentMotionGenerations)
+                && ShouldFinishTransientDismiss(dismissalSessionGeneration, currentSessionGeneration, phase, anyWindowVisible);
+        }
+
         public static bool ShouldResetAutoDismiss(
             TesseraFlyoutRefreshTrigger trigger,
             MediaSessionInfo? previousMedia,

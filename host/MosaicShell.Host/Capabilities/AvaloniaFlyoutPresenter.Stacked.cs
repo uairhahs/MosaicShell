@@ -494,12 +494,27 @@ namespace MosaicShell.Host.Capabilities
         {
             int gen = _session.Generation;
             _session.SetPhase(TesseraFlyoutPhase.Exiting);
-            await RunStackedExitAnimationAsync(request, windows).ConfigureAwait(true);
-            if (TesseraFlyoutDismissPolicy.ShouldFinishTransientDismiss(
-                    gen, _session.Generation, _session.Phase, windows.Any(static window => window.IsVisible)))
+            Task exit = RunStackedExitAnimationAsync(request, windows);
+            // Read after the exit began (BeginMotion runs before its first await): a re-present supersedes these.
+            int[] exitGenerations = [.. windows.Select(static window => window.MotionGeneration)];
+            await exit.ConfigureAwait(true);
+            int[] nowGenerations = [.. windows.Select(static window => window.MotionGeneration)];
+            if (TesseraFlyoutDismissPolicy.ShouldFinishStackedTransientDismiss(
+                    gen,
+                    _session.Generation,
+                    exitGenerations,
+                    nowGenerations,
+                    _session.Phase,
+                    windows.Any(static window => window.IsVisible)))
             {
                 _session.SetPhase(TesseraFlyoutPhase.Hidden);
                 DismissStackedImmediate(notify, windows);
+                return;
+            }
+
+            if (!exitGenerations.SequenceEqual(nowGenerations))
+            {
+                Log("stacked dismiss superseded by a present during the exit, slots stay");
             }
         }
 
