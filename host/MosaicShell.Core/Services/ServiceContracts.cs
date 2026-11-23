@@ -166,8 +166,7 @@ namespace MosaicShell.Core.Services
 #if WINDOWS
             return CreateWindowsDefaults(browserSources);
 #else
-            _ = browserSources;
-            return OperatingSystem.IsLinux() ? CreateLinuxDefaults() : CreateUnsupportedPlatformDefaults();
+            return OperatingSystem.IsLinux() ? CreateLinuxDefaults(browserSources) : CreateUnsupportedPlatformDefaults();
 #endif
         }
 
@@ -211,15 +210,15 @@ namespace MosaicShell.Core.Services
         /// <summary>
         /// Linux: media from MPRIS players, shell flyout triggers from KDE's KGlobalAccel, Plasma pop-up suppression and
         /// screen brightness from PowerDevil (all on the session bus), and volume through pactl; every other service inert
-        /// until it has a Linux implementation. The browser bridge is not wired on Linux yet,
-        /// so there are no browser sources.
+        /// until it has a Linux implementation.
         /// </summary>
-        public static HostServices CreateLinuxDefaults()
+        /// <param name="browserSources">The Grout extension source beside MPRIS (the Host passes true; tests leave it off).</param>
+        public static HostServices CreateLinuxDefaults(bool browserSources = false)
         {
             // One PowerDevil watcher serves both the value and its changes, as Windows' pair shares one service.
             Linux.KdeScreenBrightness brightness = new();
             return CreateInert(
-                CreateLinuxMediaStack(),
+                CreateLinuxMediaStack(busAddress: null, browserSources),
                 new Linux.KGlobalAccelShellFlyoutTriggers(),
                 new Linux.PlasmaOsdSuppressor(),
                 new Linux.PulseAudioService(),
@@ -231,10 +230,13 @@ namespace MosaicShell.Core.Services
         /// MPRIS in the same composite that Windows wraps SMTC in, so both platforms merge and present by one path.
         /// </summary>
         /// <param name="busAddress">Null for the user's session bus; tests pass a private bus.</param>
-        public static IMediaSessionService CreateLinuxMediaStack(string? busAddress = null)
+        /// <param name="browserSources">Adds Grout's source, as Windows does in <c>CreateMediaStack</c>.</param>
+        public static IMediaSessionService CreateLinuxMediaStack(string? busAddress = null, bool browserSources = false)
         {
-            return new CompositeMediaSessionService(
-                new Mpris.MprisMediaSessionService(new Linux.DBusMprisBus(busAddress), new Mpris.MprisArtSource()));
+            Mpris.MprisMediaSessionService mpris = new(new Linux.DBusMprisBus(busAddress), new Mpris.MprisArtSource());
+            return browserSources
+                ? new CompositeMediaSessionService(mpris, BrowserSourceStack.CreateLinux(() => mpris.Current))
+                : new CompositeMediaSessionService(mpris);
         }
 #endif
 
