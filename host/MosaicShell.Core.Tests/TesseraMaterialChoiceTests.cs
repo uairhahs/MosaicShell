@@ -95,5 +95,44 @@ namespace MosaicShell.Core.Tests
 
             _ = changes.Should().Be(1, "setting the same backend again is not a change");
         }
+
+        public static TheoryData<string> AllStyles =>
+        [
+            "MaterialYou", "Fluent", "Windows11", "Gnome", "CoreUI", "ModernFlyouts", "Meter", "Square", "Compact", "PlainText", "Radial",
+        ];
+
+        [Theory]
+        [InlineData("MaterialYou", false)]
+        [InlineData("PlainText", false)]
+        [InlineData("Fluent", true)]
+        [InlineData("ModernFlyouts", true)]
+        [InlineData("Meter", true)]
+        public void Material_is_selectable_only_for_styles_it_changes(string styleId, bool expected)
+        {
+            _ = TesseraMaterialChoicePolicy.IsSelectable(styleId).Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(AllStyles))]
+        public void A_style_the_material_cannot_change_draws_the_same_for_every_choice(string styleId)
+        {
+            // Ties the Hub rule to what the flyouts draw: where the choice is selectable Solid and Frosted differ, and
+            // where it is not every choice produces one material.
+            TesseraFlyoutMaterial solid = TesseraFlyoutMaterialFactory.FromPayload(new Dictionary<string, string> { ["acrylic"] = "0" }, styleId, "vol");
+            TesseraFlyoutMaterial frosted = TesseraFlyoutMaterialFactory.FromPayload(new Dictionary<string, string> { ["acrylic"] = "1" }, styleId, "vol");
+
+            _ = (!SameMaterial(solid, frosted)).Should().Be(TesseraMaterialChoicePolicy.IsSelectable(styleId), styleId);
+        }
+
+        private static bool SameMaterial(TesseraFlyoutMaterial a, TesseraFlyoutMaterial b)
+        {
+            // Field by field: the record compares TransparencyHints by reference.
+            return a.UseSoftFrost == b.UseSoftFrost
+                && a.ShellAlpha == b.ShellAlpha
+                && a.UseEdgeBlend == b.UseEdgeBlend
+                && a.UseNativeTranslucency == b.UseNativeTranslucency
+                && a.ShouldLockClientSize == b.ShouldLockClientSize
+                && a.TransparencyHints.SequenceEqual(b.TransparencyHints);
+        }
     }
 }

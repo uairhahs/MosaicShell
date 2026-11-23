@@ -119,7 +119,10 @@ namespace MosaicShell.Host.ViewModels
         [ObservableProperty] private string _serviceProbe = "";
         [ObservableProperty] private string _configModuleId = "";
         [ObservableProperty] private string _configModuleTitle = "";
-        [ObservableProperty] private string _moduleStyle = "DEFAULT";
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(TesseraMaterialSelectable))]
+        [NotifyPropertyChangedFor(nameof(TesseraMaterialFixedNote))]
+        private string _moduleStyle = "DEFAULT";
         [ObservableProperty] private StyleDescriptor? _selectedModuleStyle;
         [ObservableProperty] private bool _chronoSeconds = true;
         [ObservableProperty] private bool _showChronoExtras;

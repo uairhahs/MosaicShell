@@ -47,6 +47,16 @@ namespace MosaicShell.Core.Modules.Tessera
             settings.UseBackdropBlur = true;
         }
 
+        /// <summary>
+        /// Whether the material changes how <paramref name="styleId"/> draws. A style whose spec calls for matte chrome
+        /// (MaterialYou's pills, PlainText's slanted card) always gets the solid panel, so the Hub disables the choice
+        /// there. The saved choice is kept for the other styles.
+        /// </summary>
+        public static bool IsSelectable(string? styleId)
+        {
+            return !TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).RequiresMatteChrome;
+        }
+
         public static IReadOnlyList<TesseraMaterialChoice> Offered(bool nativeOffered)
         {
             return nativeOffered

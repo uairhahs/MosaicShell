@@ -773,7 +773,11 @@
                       <ComboBox MinWidth="220" HorizontalAlignment="Left"
                                 ItemsSource="{Binding TesseraMaterialOptions}"
                                 SelectedItem="{Binding SelectedTesseraMaterial}"
+                                IsEnabled="{Binding TesseraMaterialSelectable}"
                                 ToolTip.Tip="Solid: a dense panel. Frosted: Tessera's own translucent frost, drawn by the app. Native Translucency: the operating system blurs the desktop behind the card (acrylic on Windows 11, KWin blur on KDE Plasma); listed only where the system can draw it. After switching Native Translucency on Windows, restart Host so the corner radius applies." />
+                      <TextBlock Text="{Binding TesseraMaterialFixedNote}" Foreground="#a6adc8" FontSize="11"
+                                 TextWrapping="Wrap" MaxWidth="320" HorizontalAlignment="Left"
+                                 IsVisible="{Binding !TesseraMaterialSelectable}" />
                     </StackPanel>
                     <CheckBox Content="Subtle desktop dim (Focus)" IsChecked="{Binding TesseraFocusDim}"
                               ToolTip.Tip="Very light dim behind the flyout. Never blocks input; outside click dismisses instantly." />

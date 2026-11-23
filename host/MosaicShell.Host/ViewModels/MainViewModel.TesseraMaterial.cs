@@ -6,6 +6,7 @@ using MosaicShell.Core.Modules;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Settings;
+using MosaicShell.Core.Styles;
 
 namespace MosaicShell.Host.ViewModels
 {
@@ -24,6 +25,17 @@ namespace MosaicShell.Host.ViewModels
 
         private TesseraMaterialChoice SelectedTesseraMaterialChoice =>
             SelectedTesseraMaterial?.Choice ?? TesseraMaterialChoice.Frosted;
+
+        /// <summary>
+        /// False for a style the material does not change (<see cref="TesseraMaterialChoicePolicy.IsSelectable"/>). The
+        /// selection itself is left alone, so the saved choice still applies to the other styles.
+        /// </summary>
+        public bool TesseraMaterialSelectable => TesseraMaterialChoicePolicy.IsSelectable(ModuleStyle);
+
+        /// <summary>Shown under the disabled choice; empty where the material applies.</summary>
+        public string TesseraMaterialFixedNote => TesseraMaterialSelectable
+            ? ""
+            : $"{StyleIds.DisplayName(ModuleStyle)} always uses a solid panel, so the material does not change it.";
 
         private void LoadTesseraMaterial(TesseraSettings settings)
         {
