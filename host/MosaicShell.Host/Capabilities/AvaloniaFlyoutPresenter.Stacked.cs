@@ -26,6 +26,9 @@ namespace MosaicShell.Host.Capabilities
         private DispatcherTimer? _stackedAutoDismiss;
         private bool _stackedClusterHovered;
 
+        /// <summary>Slot motion generations of the stacked exit in flight, read right after it began; null when none runs.</summary>
+        private int[]? _stackedExitGenerations;
+
         private bool ShouldUseStackedNativeTranslucency(FlyoutRequest request)
         {
             return ModuleIds.IsTessera(request.ModuleId)
@@ -473,6 +476,13 @@ namespace MosaicShell.Host.Capabilities
                 return;
             }
 
+            if (!TesseraFlyoutDismissPolicy.ShouldBeginStackedDismiss(
+                    _stackedExitGenerations, [.. windows.Select(static window => window.MotionGeneration)]))
+            {
+                Log("stacked dismiss ignored, its exit is already running");
+                return;
+            }
+
             if (_stackedDismissRequest is not null
                 && TesseraFlyoutAnimationPolicy.ShouldAnimateOpacity(_stackedDismissRequest.Ani)
                 && TesseraFlyoutAnimationPolicy.ExitMustMirrorEntrance)
@@ -494,7 +504,19 @@ namespace MosaicShell.Host.Capabilities
             Task exit = RunStackedExitAnimationAsync(request, windows);
             // Read after the exit began (BeginMotion runs before its first await): a re-present supersedes these.
             int[] exitGenerations = [.. windows.Select(static window => window.MotionGeneration)];
-            await exit.ConfigureAwait(true);
+            _stackedExitGenerations = exitGenerations;
+            try
+            {
+                await exit.ConfigureAwait(true);
+            }
+            finally
+            {
+                if (ReferenceEquals(_stackedExitGenerations, exitGenerations))
+                {
+                    _stackedExitGenerations = null;
+                }
+            }
+
             int[] nowGenerations = [.. windows.Select(static window => window.MotionGeneration)];
             if (TesseraFlyoutDismissPolicy.ShouldFinishStackedTransientDismiss(
                     gen,
@@ -863,6 +885,7 @@ namespace MosaicShell.Host.Capabilities
 
             StopStackedAutoDismiss();
             _stackedDismissRequest = null;
+            _stackedExitGenerations = null;
 
             List<string> keys = [.. _stackedSession.SlotKeys];
             _stackedSession = null;
@@ -926,6 +949,9 @@ namespace MosaicShell.Host.Capabilities
             }
 
             Log("stacked dismiss");
+            // As FlyoutWindow.TransientDismissCore does: the clock stops when the dismiss begins, not when the exit ends,
+            // or a timer due within the exit fires into it.
+            StopStackedAutoDismiss();
             TransientDismissAllStackedSlots(notify);
             StopOutsideClickWatcher();
             CloseFocusDim();
