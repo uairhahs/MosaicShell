@@ -16,11 +16,13 @@ namespace MosaicShell.Core.Services.Mpris
 
         private const double MicrosPerSecond = 1_000_000.0;
 
+        /// <summary>An MPRIS player to read; never the Host's own published player (<see cref="MprisExportPolicy"/>).</summary>
         public static bool IsPlayerBusName(string? name)
         {
             return name is not null
                 && name.Length > BusNamePrefix.Length
-                && name.StartsWith(BusNamePrefix, StringComparison.Ordinal);
+                && name.StartsWith(BusNamePrefix, StringComparison.Ordinal)
+                && !MprisExportPolicy.IsOwnPlayer(name);
         }
 
         /// <summary>

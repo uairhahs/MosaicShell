@@ -56,6 +56,7 @@ namespace MosaicShell.Core.Tests
         [InlineData("org.freedesktop.Notifications", false)]
         [InlineData(":1.42", false)]
         [InlineData(null, false)]
+        [InlineData("org.mpris.MediaPlayer2.mosaicshell", false)]
         public void Only_names_under_the_mpris_prefix_are_players(string? name, bool expected)
         {
             _ = MprisPolicy.IsPlayerBusName(name).Should().Be(expected);

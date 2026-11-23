@@ -1,0 +1,162 @@
+using FluentAssertions;
+using MosaicShell.Core.Services;
+using MosaicShell.Core.Services.Mpris;
+
+namespace MosaicShell.Core.Tests
+{
+    /// <summary>
+    /// The MPRIS player the Host publishes on Linux from Grout's report, so Plasma's media controls, the lock screen and
+    /// anything else that reads MPRIS get the page's own title, artist and cover for the whole track.
+    /// </summary>
+    public class MprisExportPolicyTests
+    {
+        private static readonly byte[] Png = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0x0D, 1, 2, 3];
+        private static readonly byte[] Jpeg = [0xFF, 0xD8, 0xFF, 0xE0, 0, 0x10, 0x4A, 0x46, 0x49, 0x46, 0, 1, 9];
+
+        private static BrowserPlayerSnapshot Snapshot(
+            string title = "Vision", string artist = "Pìjus", BrowserPlaybackState state = BrowserPlaybackState.Playing,
+            double position = 12.5, double duration = 201.4)
+        {
+            return new BrowserPlayerSnapshot
+            {
+                Name = "YouTube Music",
+                Title = title,
+                Artist = artist,
+                Album = "Vision - Single",
+                State = state,
+                PositionSeconds = position,
+                DurationSeconds = duration,
+                CoverPng = Png,
+            };
+        }
+
+        [Theory]
+        [InlineData("org.mpris.MediaPlayer2.mosaicshell", true)]
+        [InlineData("org.mpris.MediaPlayer2.mosaicshell.instance42", true)]
+        [InlineData("org.mpris.MediaPlayer2.mosaicshellish", false)]
+        [InlineData("org.mpris.MediaPlayer2.plasma-browser-integration", false)]
+        public void The_host_recognises_its_own_player_so_it_never_reads_back_what_it_publishes(string busName, bool expected)
+        {
+            _ = MprisExportPolicy.IsOwnPlayer(busName).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(BrowserPlaybackState.Playing, "Playing")]
+        [InlineData(BrowserPlaybackState.Paused, "Paused")]
+        [InlineData(BrowserPlaybackState.Stopped, "Stopped")]
+        public void Playback_status_uses_the_MPRIS_names(BrowserPlaybackState state, string expected)
+        {
+            _ = MprisExportPolicy.PlaybackStatus(state).Should().Be(expected);
+        }
+
+        [Fact]
+        public void A_track_id_is_a_valid_object_path_that_is_stable_per_track()
+        {
+            string id = MprisExportPolicy.TrackId("Vision", "Pìjus");
+
+            _ = id.Should().MatchRegex("^/org/mosaicshell/track/t[0-9a-f]{16}$");
+            _ = MprisExportPolicy.TrackId("Vision", "Pìjus").Should().Be(id);
+            _ = MprisExportPolicy.TrackId("Rush", "Pìjus").Should().NotBe(id);
+            _ = MprisExportPolicy.TrackId("Vision", "Someone else").Should().NotBe(id);
+        }
+
+        [Theory]
+        [InlineData(201.4, 201_400_000L)]
+        [InlineData(0.0, null)]
+        [InlineData(-3.0, null)]
+        public void Length_is_in_microseconds_and_left_out_when_unknown(double seconds, long? expected)
+        {
+            _ = MprisExportPolicy.LengthMicros(seconds).Should().Be(expected);
+        }
+
+        [Fact]
+        public void The_cover_file_is_named_by_its_content_and_kind()
+        {
+            string png = MprisExportPolicy.ArtFileName(Png);
+
+            _ = png.Should().MatchRegex("^cover-[0-9a-f]{16}\\.png$");
+            _ = MprisExportPolicy.ArtFileName(Png).Should().Be(png, "the same cover keeps the same file, so clients cache it");
+            _ = MprisExportPolicy.ArtFileName(Jpeg).Should().EndWith(".jpg");
+        }
+
+        [Fact]
+        public void A_playing_report_becomes_the_published_state()
+        {
+            MprisExportedState? state = MprisExportPolicy.From(Snapshot(), "file:///cache/cover-x.png", "microsoft-edge");
+
+            _ = state.Should().NotBeNull();
+            _ = state!.PlaybackStatus.Should().Be("Playing");
+            _ = state.Identity.Should().Be("YouTube Music");
+            _ = state.DesktopEntry.Should().Be("microsoft-edge");
+            _ = state.PositionMicros.Should().Be(12_500_000L);
+            _ = state.Track.Title.Should().Be("Vision");
+            _ = state.Track.Artists.Should().Equal("Pìjus");
+            _ = state.Track.Album.Should().Be("Vision - Single");
+            _ = state.Track.LengthMicros.Should().Be(201_400_000L);
+            _ = state.Track.ArtUrl.Should().Be("file:///cache/cover-x.png");
+            _ = state.Track.TrackId.Should().Be(MprisExportPolicy.TrackId("Vision", "Pìjus"));
+        }
+
+        [Fact]
+        public void Nothing_is_published_without_a_report_a_title_or_while_stopped()
+        {
+            _ = MprisExportPolicy.From(null, null, null).Should().BeNull();
+            _ = MprisExportPolicy.From(Snapshot(title: " "), null, null).Should().BeNull();
+            _ = MprisExportPolicy.From(Snapshot(state: BrowserPlaybackState.Stopped), null, null).Should().BeNull();
+        }
+
+        [Fact]
+        public void A_paused_report_is_still_published()
+        {
+            _ = MprisExportPolicy.From(Snapshot(state: BrowserPlaybackState.Paused), null, null)!.PlaybackStatus.Should().Be("Paused");
+        }
+
+        [Fact]
+        public void The_artist_is_published_as_the_MPRIS_artist_list()
+        {
+            _ = MprisExportPolicy.From(Snapshot(artist: "1tbsp & Cherry Chola"), null, null)!.Track.Artists
+                .Should().Equal("1tbsp & Cherry Chola");
+            _ = MprisExportPolicy.From(Snapshot(artist: ""), null, null)!.Track.Artists.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Only_the_properties_that_changed_are_announced_and_never_position()
+        {
+            MprisExportedState first = MprisExportPolicy.From(Snapshot(), "file:///a.png", null)!;
+            MprisExportedState paused = MprisExportPolicy.From(Snapshot(state: BrowserPlaybackState.Paused, position: 40), "file:///a.png", null)!;
+            MprisExportedState next = MprisExportPolicy.From(Snapshot(title: "Rush"), "file:///b.png", null)!;
+            MprisExportedState later = MprisExportPolicy.From(Snapshot(position: 60), "file:///a.png", null)!;
+
+            _ = MprisExportPolicy.ChangedPlayerProperties(null, first).Should().Contain(["PlaybackStatus", "Metadata"]);
+            _ = MprisExportPolicy.ChangedPlayerProperties(first, paused).Should().Equal("PlaybackStatus");
+            _ = MprisExportPolicy.ChangedPlayerProperties(first, next).Should().Equal("Metadata");
+            _ = MprisExportPolicy.ChangedPlayerProperties(first, later).Should().BeEmpty("position is read, not announced; a jump is a Seeked signal");
+        }
+
+        [Theory]
+        [InlineData(10_000_000L, 1.0, true, 11_000_000L, false)]
+        [InlineData(10_000_000L, 1.0, true, 11_900_000L, false)]
+        [InlineData(10_000_000L, 1.0, true, 60_000_000L, true)]
+        [InlineData(10_000_000L, 1.0, true, 2_000_000L, true)]
+        [InlineData(10_000_000L, 5.0, false, 10_000_000L, false)]
+        [InlineData(10_000_000L, 5.0, false, 30_000_000L, true)]
+        public void A_position_that_departs_from_where_playback_would_be_is_a_seek(
+            long before, double elapsedSeconds, bool wasPlaying, long now, bool expected)
+        {
+            _ = MprisExportPolicy.IsSeek(before, elapsedSeconds, wasPlaying, now).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(true, 2.0, 14_500_000L)]
+        [InlineData(false, 2.0, 12_500_000L)]
+        [InlineData(true, 500.0, 201_400_000L)]
+        public void The_position_read_between_reports_runs_on_while_playing_and_stops_at_the_end(
+            bool playing, double sinceReport, long expected)
+        {
+            MprisExportedState state = MprisExportPolicy.From(
+                Snapshot(state: playing ? BrowserPlaybackState.Playing : BrowserPlaybackState.Paused), null, null)!;
+
+            _ = MprisExportPolicy.PositionAt(state, sinceReport).Should().Be(expected);
+        }
+    }
+}
