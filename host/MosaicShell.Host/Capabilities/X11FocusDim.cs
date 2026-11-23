@@ -49,7 +49,7 @@ namespace MosaicShell.Host.Capabilities
         /// Makes the window click-through and unfocusable. Safe to repeat; both survive hide and show because they are
         /// properties of the X window, not of its mapped state.
         /// </summary>
-        public static string Apply(Window window)
+        public static string Apply(Window window, bool clickThrough = true)
         {
             lock (Gate)
             {
@@ -68,7 +68,10 @@ namespace MosaicShell.Host.Capabilities
                 nint xid = handle.Handle;
                 try
                 {
-                    XShapeCombineRectangles(_display, xid, ShapeInput, 0, 0, 0, 0, ShapeSet, Unsorted);
+                    if (clickThrough)
+                    {
+                        XShapeCombineRectangles(_display, xid, ShapeInput, 0, 0, 0, 0, ShapeSet, Unsorted);
+                    }
                 }
                 catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
                 {

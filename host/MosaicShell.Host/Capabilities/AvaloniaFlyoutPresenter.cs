@@ -868,15 +868,15 @@ namespace MosaicShell.Host.Capabilities
 
         private void SyncFocusDim(FlyoutRequest request)
         {
-            if (!ModuleIds.IsTessera(request.ModuleId) || !TesseraFocusDimPolicy.EnabledFromPayload(request.Payload))
+            if (!ModuleIds.IsTessera(request.ModuleId))
             {
                 CloseFocusDim();
                 return;
             }
 
-            // Asked only when the user wants the dim, and per call: X11 compositing can be switched off and on.
+            // Per call: X11 compositing can be switched off and on.
             FocusDimRoute route = X11FocusDim.ResolveRoute();
-            if (!TesseraFocusDimPolicy.ShouldShow(request.Payload, TesseraFocusDimPolicy.CanDim(route)))
+            if (!TesseraFocusDimPolicy.ShouldShowLayer(request.Payload, route))
             {
                 CloseFocusDim();
                 return;
@@ -884,7 +884,8 @@ namespace MosaicShell.Host.Capabilities
 
             if (_focusDim is null)
             {
-                _focusDim = new FocusDimWindow(request.MonitorIndex, route);
+                _focusDim = new FocusDimWindow(request.MonitorIndex, route, TesseraFocusDimPolicy.EnabledFromPayload(request.Payload));
+                _focusDim.OutsideClicked += (_, _) => DismissTesseraImmediate();
                 _focusDim.PrepareBeforeShow();
                 // Show dim BEFORE the flyout (caller order) so the flyout is the later topmost peer.
                 _focusDim.Show();

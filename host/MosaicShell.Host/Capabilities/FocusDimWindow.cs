@@ -23,7 +23,10 @@ namespace MosaicShell.Host.Capabilities
         private int _monitorIndex;
         private readonly FocusDimRoute _route;
 
-        public FocusDimWindow(int monitorIndexOneBased, FocusDimRoute route)
+        /// <summary>A press on the layer where it is the outside-click hitbox (X11).</summary>
+        public event EventHandler? OutsideClicked;
+
+        public FocusDimWindow(int monitorIndexOneBased, FocusDimRoute route, bool dimEnabled = true)
         {
             _monitorIndex = monitorIndexOneBased;
             _route = route;
@@ -35,7 +38,7 @@ namespace MosaicShell.Host.Capabilities
             X11WindowState.ReassertOnShow(this);
             ShowActivated = false;
             Focusable = false;
-            IsHitTestVisible = false;
+            IsHitTestVisible = TesseraFocusDimPolicy.LayerIsOutsideClickHitbox(route);
             // Windows: opaque HWND + layered constant alpha (see ApplySubtleDim). Avoid Transparent
             // composition there: with RedirectionSurface, FallbackBrush was painting a near-black fill.
             // X11: a Transparent (ARGB) window whose background brush carries the dim alpha.
@@ -43,12 +46,17 @@ namespace MosaicShell.Host.Capabilities
                 ? [WindowTransparencyLevel.Transparent]
                 : [WindowTransparencyLevel.None];
             Background = new SolidColorBrush(Color.FromArgb(
-                TesseraFocusDimPolicy.ResolveBackgroundAlpha(route),
+                TesseraFocusDimPolicy.ResolveLayerAlpha(route, dimEnabled),
                 TesseraFocusDimPolicy.CrustR,
                 TesseraFocusDimPolicy.CrustG,
                 TesseraFocusDimPolicy.CrustB));
             Opacity = 0;
             Content = null;
+            PointerPressed += (_, e) =>
+            {
+                e.Handled = true;
+                OutsideClicked?.Invoke(this, EventArgs.Empty);
+            };
             Opened += (_, _) =>
             {
                 PlaceOnMonitor(_monitorIndex);
@@ -95,7 +103,7 @@ namespace MosaicShell.Host.Capabilities
             if (_route == FocusDimRoute.X11ArgbInputShape)
             {
                 // The XID exists from construction too, so the dim is click-through from its first frame.
-                _ = X11FocusDim.Apply(this);
+                _ = X11FocusDim.Apply(this, clickThrough: !TesseraFocusDimPolicy.LayerIsOutsideClickHitbox(_route));
                 return;
             }
 
@@ -117,7 +125,7 @@ namespace MosaicShell.Host.Capabilities
         {
             if (_route == FocusDimRoute.X11ArgbInputShape)
             {
-                _ = X11FocusDim.Apply(this);
+                _ = X11FocusDim.Apply(this, clickThrough: !TesseraFocusDimPolicy.LayerIsOutsideClickHitbox(_route));
                 return;
             }
 

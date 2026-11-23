@@ -116,6 +116,23 @@ namespace MosaicShell.Core.Modules.Tessera
             return platformCanDim && EnabledFromPayload(payload);
         }
 
+        /// <summary>On X11 the layer catches outside clicks (Wayland gives no others), so it shows with the dim off too.</summary>
+        public static bool LayerIsOutsideClickHitbox(FocusDimRoute route)
+        {
+            return route == FocusDimRoute.X11ArgbInputShape;
+        }
+
+        public static bool ShouldShowLayer(IReadOnlyDictionary<string, string>? payload, FocusDimRoute route)
+        {
+            return LayerIsOutsideClickHitbox(route) || ShouldShow(payload, CanDim(route));
+        }
+
+        /// <summary>The dim's alpha, or fully transparent when the layer is only the hitbox.</summary>
+        public static byte ResolveLayerAlpha(FocusDimRoute route, bool dimEnabled)
+        {
+            return dimEnabled ? ResolveBackgroundAlpha(route) : (byte)0;
+        }
+
         /// <summary>Payload <c>focusDim</c>: "0" off; missing / other → on (default).</summary>
         public static bool EnabledFromPayload(IReadOnlyDictionary<string, string>? payload)
         {
