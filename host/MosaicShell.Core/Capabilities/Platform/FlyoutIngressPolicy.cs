@@ -94,6 +94,17 @@ namespace MosaicShell.Core.Capabilities.Platform
                 : FlyoutIngressDecision.RebuildInPlace;
         }
 
+        /// <summary>
+        /// Whether <paramref name="decision"/> presents the flyout session: shows it from hidden or rebuilds it, so the
+        /// session chrome (focus dim, outside-click watcher, stacking) must be set up again. Transient dismiss tears
+        /// that chrome down with the hide, a revived hidden window included. Only a patch of a session that is already
+        /// showing keeps what it has.
+        /// </summary>
+        public static bool PresentsSession(FlyoutIngressDecision decision)
+        {
+            return decision is not (FlyoutIngressDecision.PatchActiveSession or FlyoutIngressDecision.PatchVisibleCoalesced);
+        }
+
         /// <summary>A patch may fail at the binding level; the presenter then falls back to this.</summary>
         public static FlyoutIngressDecision OnPatchMissed(FlyoutIngressDecision attempted)
         {

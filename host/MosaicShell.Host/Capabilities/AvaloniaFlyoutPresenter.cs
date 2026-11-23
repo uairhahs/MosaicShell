@@ -551,6 +551,13 @@ namespace MosaicShell.Host.Capabilities
 
                 Log($"revive kind={request.Kind} style={request.StyleId} focusDim={_focusDim is not null} {reuse.MotionStateTag}");
                 reuse.PlayShowAnimation();
+
+                // Transient dismiss stopped the watcher with the hide; arm it again as PresentFlyout does.
+                if (ModuleIds.IsTessera(request.ModuleId) && TesseraFlyoutOutsideClickPolicy.MustArmOnIngress(decision))
+                {
+                    ScheduleOutsideClickArm(reuse);
+                }
+
                 return;
             }
 

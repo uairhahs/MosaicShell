@@ -1,3 +1,5 @@
+using MosaicShell.Core.Capabilities.Platform;
+
 namespace MosaicShell.Core.Modules.Tessera
 {
     /// <summary>
@@ -18,5 +20,15 @@ namespace MosaicShell.Core.Modules.Tessera
         /// </summary>
         public static bool PresentMustStopPriorWatcherBeforeRearm =>
             TesseraFlyoutPresentHandoffPolicy.PresentMustStopOutsideClickBeforeRearm;
+
+        /// <summary>
+        /// Whether an ingress must schedule the watcher's arm. Transient dismiss stops the watcher, so every ingress
+        /// that presents the session must arm it again, a revived hidden window included (see
+        /// <see cref="FlyoutIngressPolicy.PresentsSession"/>).
+        /// </summary>
+        public static bool MustArmOnIngress(FlyoutIngressDecision decision)
+        {
+            return FlyoutIngressPolicy.PresentsSession(decision);
+        }
     }
 }

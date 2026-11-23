@@ -47,13 +47,13 @@ namespace MosaicShell.Core.Modules.Tessera
         }
 
         /// <summary>
-        /// Whether an ingress must open or update the dim. Transient dismiss closes it, so every decision that shows a
-        /// flyout from hidden or rebuilds it must open it again, a revived hidden window included; only a patch of a
-        /// session that is already showing keeps the dim it has.
+        /// Whether an ingress must open or update the dim. Transient dismiss closes it, so every ingress that presents
+        /// the session must open it again, a revived hidden window included (see
+        /// <see cref="FlyoutIngressPolicy.PresentsSession"/>).
         /// </summary>
         public static bool MustSyncOnIngress(FlyoutIngressDecision decision)
         {
-            return decision is not (FlyoutIngressDecision.PatchActiveSession or FlyoutIngressDecision.PatchVisibleCoalesced);
+            return FlyoutIngressPolicy.PresentsSession(decision);
         }
 
         /// <summary>Host must use this for SetLayeredWindowAttributes, never a parallel magic number.</summary>
