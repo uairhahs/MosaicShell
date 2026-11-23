@@ -149,6 +149,30 @@ namespace MosaicShell.Core.Tests
             _ = TesseraFocusDimPolicy.ResolveLayerAlpha(FocusDimRoute.X11ArgbInputShape, dimEnabled).Should().Be(expected);
         }
 
+        [Theory]
+        [InlineData(FocusDimRoute.X11ArgbInputShape, true)]
+        [InlineData(FocusDimRoute.Win32LayeredAlpha, false)]
+        [InlineData(FocusDimRoute.None, false)]
+        public void On_x11_the_hitbox_layer_covers_every_screen(FocusDimRoute route, bool expected)
+        {
+            // A layer on the flyout's screen alone let a click on another display reach the app there and leave the
+            // flyout up (KDE, two displays, 2026-11-23). Windows' hook already sees clicks on every screen.
+            _ = TesseraFocusDimPolicy.LayerCoversEveryScreen(route).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(true, true, TesseraFocusDimPolicy.OverlayAlpha)]
+        [InlineData(true, false, 0)]
+        [InlineData(false, true, 0)]
+        [InlineData(false, false, 0)]
+        public void Only_the_flyouts_screen_is_dimmed_the_others_are_bare_hitbox(
+            bool dimEnabled, bool onFlyoutScreen, byte expected)
+        {
+            // Windows dims only the flyout's monitor; the extra X11 layers catch clicks without dimming other screens.
+            _ = TesseraFocusDimPolicy.ResolveLayerAlpha(FocusDimRoute.X11ArgbInputShape, dimEnabled, onFlyoutScreen)
+                .Should().Be(expected);
+        }
+
         [Fact]
         public void On_x11_the_window_itself_carries_the_dim_alpha()
         {

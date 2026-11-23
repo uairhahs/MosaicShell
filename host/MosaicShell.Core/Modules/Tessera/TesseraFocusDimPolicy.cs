@@ -133,6 +133,24 @@ namespace MosaicShell.Core.Modules.Tessera
             return dimEnabled ? ResolveBackgroundAlpha(route) : (byte)0;
         }
 
+        /// <summary>
+        /// Whether the layer is shown on every screen, not only the flyout's. Where it is the outside-click hitbox, a
+        /// screen without it lets a click there reach the app under it and leave the flyout up.
+        /// </summary>
+        public static bool LayerCoversEveryScreen(FocusDimRoute route)
+        {
+            return LayerIsOutsideClickHitbox(route);
+        }
+
+        /// <summary>
+        /// The layer's alpha on one screen: only the flyout's screen is dimmed, as on Windows; the layers on the other
+        /// screens (see <see cref="LayerCoversEveryScreen"/>) are fully transparent hitboxes.
+        /// </summary>
+        public static byte ResolveLayerAlpha(FocusDimRoute route, bool dimEnabled, bool onFlyoutScreen)
+        {
+            return onFlyoutScreen ? ResolveLayerAlpha(route, dimEnabled) : (byte)0;
+        }
+
         /// <summary>Payload <c>focusDim</c>: "0" off; missing / other → on (default).</summary>
         public static bool EnabledFromPayload(IReadOnlyDictionary<string, string>? payload)
         {
