@@ -24,14 +24,14 @@ namespace MosaicShell.Core.Tests
             Task connect = presenter.ConnectWithRetryAsync(
                 TimeSpan.FromSeconds(10), pipeName: pipeName, attemptTimeoutMs: 100, retryDelayMs: 50);
             await Task.Delay(400);
-            presenter.IsConnected.Should().BeFalse("nothing was listening yet");
+            _ = presenter.IsConnected.Should().BeFalse("nothing was listening yet");
 
             await using NamedPipeServerStream server = new(
                 pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
             await server.WaitForConnectionAsync(new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
             await connect;
 
-            presenter.IsConnected.Should().BeTrue();
+            _ = presenter.IsConnected.Should().BeTrue();
         }
 
         [Fact]
@@ -42,8 +42,8 @@ namespace MosaicShell.Core.Tests
             Func<Task> act = () => presenter.ConnectWithRetryAsync(
                 TimeSpan.FromMilliseconds(400), pipeName: NewPipeName(), attemptTimeoutMs: 100, retryDelayMs: 50);
 
-            await act.Should().ThrowAsync<TimeoutException>();
-            presenter.IsConnected.Should().BeFalse();
+            _ = await act.Should().ThrowAsync<TimeoutException>();
+            _ = presenter.IsConnected.Should().BeFalse();
         }
 
         [Fact]
@@ -55,7 +55,7 @@ namespace MosaicShell.Core.Tests
             Func<Task> act = () => presenter.ConnectWithRetryAsync(
                 TimeSpan.FromSeconds(30), cts.Token, NewPipeName(), attemptTimeoutMs: 100, retryDelayMs: 50);
 
-            await act.Should().ThrowAsync<OperationCanceledException>();
+            _ = await act.Should().ThrowAsync<OperationCanceledException>();
         }
     }
 }

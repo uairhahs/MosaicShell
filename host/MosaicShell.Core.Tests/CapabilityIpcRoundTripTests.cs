@@ -73,7 +73,7 @@ namespace MosaicShell.Core.Tests
             await second.ConnectWithRetryAsync(TimeSpan.FromSeconds(8), pipeName: pipeName, attemptTimeoutMs: 500, retryDelayMs: 50).WaitAsync(TimeSpan.FromSeconds(12));
             second.Hide("Tessera");
 
-            (await hidden.Task.WaitAsync(TimeSpan.FromSeconds(5))).Should().Be("Tessera");
+            _ = (await hidden.Task.WaitAsync(TimeSpan.FromSeconds(5))).Should().Be("Tessera");
         }
 
         [Fact]
@@ -98,7 +98,7 @@ namespace MosaicShell.Core.Tests
             await WaitForAsync(() => worker.IsConnected, TimeSpan.FromSeconds(10));
             worker.Hide("Tessera");
 
-            (await hiddenOnSecond.Task.WaitAsync(TimeSpan.FromSeconds(5))).Should().Be("Tessera");
+            _ = (await hiddenOnSecond.Task.WaitAsync(TimeSpan.FromSeconds(5))).Should().Be("Tessera");
             stop.Cancel();
             await keepConnected.WaitAsync(TimeSpan.FromSeconds(5));
         }
@@ -115,7 +115,7 @@ namespace MosaicShell.Core.Tests
             stop.Cancel();
 
             await keepConnected.WaitAsync(TimeSpan.FromSeconds(5));
-            worker.IsConnected.Should().BeFalse();
+            _ = worker.IsConnected.Should().BeFalse();
         }
 
         [Fact]
@@ -130,7 +130,7 @@ namespace MosaicShell.Core.Tests
 
             double share = await IdleCpu.LowestShareAsync();
 
-            share.Should().BeLessThan(0.5, "the accept loop must wait for the connection to end, not retry in a tight loop");
+            _ = share.Should().BeLessThan(0.5, "the accept loop must wait for the connection to end, not retry in a tight loop");
         }
 
         private static async Task WaitForAsync(Func<bool> condition, TimeSpan timeout)

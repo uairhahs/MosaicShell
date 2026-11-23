@@ -24,7 +24,7 @@ namespace MosaicShell.Core.Tests
 
             string text = StartupShortcutPolicy.FormatUrlShortcut(exe);
 
-            text.Should().Be($"[InternetShortcut]\r\nURL=file:///{normalized}\r\nIconIndex=0\r\nIconFile={normalized}\r\n");
+            _ = text.Should().Be($"[InternetShortcut]\r\nURL=file:///{normalized}\r\nIconIndex=0\r\nIconFile={normalized}\r\n");
         }
 
         [Theory]
@@ -35,7 +35,7 @@ namespace MosaicShell.Core.Tests
             string exe = Path.Combine(_root, "Host.exe");
             string normalized = Path.GetFullPath(exe).Replace('\\', '/');
 
-            StartupShortcutPolicy.FormatUrlShortcut(exe, arguments)
+            _ = StartupShortcutPolicy.FormatUrlShortcut(exe, arguments)
                 .Should().Contain($"URL=file:///{normalized}{expectedSuffix}\r\n")
                 .And.Contain($"IconFile={normalized}\r\n", "the icon is the exe, never the arguments");
         }
@@ -48,7 +48,7 @@ namespace MosaicShell.Core.Tests
         {
             string exe = Path.Combine(_root, "Host.exe");
 
-            StartupShortcutPolicy.FormatUrlShortcut(exe, arguments)
+            _ = StartupShortcutPolicy.FormatUrlShortcut(exe, arguments)
                 .Should().Contain($"URL=file:///{Path.GetFullPath(exe).Replace('\\', '/')}\r\n");
         }
 
@@ -59,8 +59,8 @@ namespace MosaicShell.Core.Tests
 
             StartupShortcutPolicy.WriteHostShortcut(shortcut, Path.Combine(_root, "Host.exe"));
 
-            File.Exists(shortcut).Should().BeTrue();
-            File.ReadAllText(shortcut).Should().StartWith("[InternetShortcut]");
+            _ = File.Exists(shortcut).Should().BeTrue();
+            _ = File.ReadAllText(shortcut).Should().StartWith("[InternetShortcut]");
         }
 
         [Fact]
@@ -72,8 +72,8 @@ namespace MosaicShell.Core.Tests
             StartupShortcutPolicy.WriteHostShortcut(trayOnly, Path.Combine(_root, "Host.exe"), trayOnly: true);
             StartupShortcutPolicy.WriteHostShortcut(normal, Path.Combine(_root, "Host.exe"), trayOnly: false);
 
-            File.ReadAllText(trayOnly).Should().Contain(HostInstallPolicy.TrayOnlyArg);
-            File.ReadAllText(normal).Should().NotContain(HostInstallPolicy.TrayOnlyArg);
+            _ = File.ReadAllText(trayOnly).Should().Contain(HostInstallPolicy.TrayOnlyArg);
+            _ = File.ReadAllText(normal).Should().NotContain(HostInstallPolicy.TrayOnlyArg);
         }
 
         [Fact]
@@ -84,7 +84,7 @@ namespace MosaicShell.Core.Tests
 
             StartupShortcutPolicy.WriteHostShortcut(shortcut, Path.Combine(_root, "new", "Host.exe"));
 
-            File.ReadAllText(shortcut).Should().Contain("/new/Host.exe").And.NotContain("/old/");
+            _ = File.ReadAllText(shortcut).Should().Contain("/new/Host.exe").And.NotContain("/old/");
         }
     }
 }

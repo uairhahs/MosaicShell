@@ -21,16 +21,16 @@ namespace MosaicShell.Core.Tests
                 TesseraFlyoutAnimationPolicy.DefaultEase,
                 TesseraFlyoutAnimationPolicy.DefaultDisplacementPx);
 
-            match.Should().NotBeNull();
-            match!.Id.Should().Be("classic");
+            _ = match.Should().NotBeNull();
+            _ = match!.Id.Should().Be("classic");
         }
 
         [Fact]
         public void Preset_ids_and_names_are_unique_and_never_the_reserved_custom_id()
         {
-            TesseraMotionPresets.All.Select(p => p.Id).Should().OnlyHaveUniqueItems().And.NotContain("custom");
-            TesseraMotionPresets.All.Select(p => p.Name).Should().OnlyHaveUniqueItems();
-            TesseraMotionPresets.All.Should().OnlyContain(p => p.Name.Length > 0 && p.Description.Length > 0);
+            _ = TesseraMotionPresets.All.Select(p => p.Id).Should().OnlyHaveUniqueItems().And.NotContain("custom");
+            _ = TesseraMotionPresets.All.Select(p => p.Name).Should().OnlyHaveUniqueItems();
+            _ = TesseraMotionPresets.All.Should().OnlyContain(p => p.Name.Length > 0 && p.Description.Length > 0);
         }
 
         [Fact]
@@ -38,10 +38,10 @@ namespace MosaicShell.Core.Tests
         {
             foreach (TesseraMotionPreset p in TesseraMotionPresets.All)
             {
-                p.Ani.Should().BeInRange(0, 2, p.Id);
-                TesseraFlyoutAnimationPolicy.NormalizeAniSteps(p.AniSteps).Should().Be(p.AniSteps, p.Id);
-                TesseraFlyoutAnimationPolicy.NormalizeEase(p.AniEase).Should().Be(p.AniEase, p.Id);
-                TesseraFlyoutAnimationPolicy.NormalizeDisplacementPx(p.DisplacementPx).Should().Be(p.DisplacementPx, p.Id);
+                _ = p.Ani.Should().BeInRange(0, 2, p.Id);
+                _ = TesseraFlyoutAnimationPolicy.NormalizeAniSteps(p.AniSteps).Should().Be(p.AniSteps, p.Id);
+                _ = TesseraFlyoutAnimationPolicy.NormalizeEase(p.AniEase).Should().Be(p.AniEase, p.Id);
+                _ = TesseraFlyoutAnimationPolicy.NormalizeDisplacementPx(p.DisplacementPx).Should().Be(p.DisplacementPx, p.Id);
             }
         }
 
@@ -50,7 +50,7 @@ namespace MosaicShell.Core.Tests
         {
             foreach (TesseraMotionPreset p in TesseraMotionPresets.All)
             {
-                TesseraMotionPresets.Match(p.Ani, p.AniSteps, p.AniEase, p.DisplacementPx)?.Id.Should().Be(p.Id);
+                _ = (TesseraMotionPresets.Match(p.Ani, p.AniSteps, p.AniEase, p.DisplacementPx)?.Id.Should().Be(p.Id));
             }
         }
 
@@ -59,9 +59,9 @@ namespace MosaicShell.Core.Tests
         {
             TesseraMotionPreset glide = TesseraMotionPresets.All.First(p => p.Ani == 1);
 
-            TesseraMotionPresets.Match(glide.Ani, glide.AniSteps, glide.AniEase, glide.DisplacementPx + 5).Should().BeNull();
-            TesseraMotionPresets.Match(glide.Ani, glide.AniSteps + 1, glide.AniEase, glide.DisplacementPx).Should().BeNull();
-            TesseraMotionPresets.Match(glide.Ani, glide.AniSteps, "InOutBounce", glide.DisplacementPx).Should().BeNull();
+            _ = TesseraMotionPresets.Match(glide.Ani, glide.AniSteps, glide.AniEase, glide.DisplacementPx + 5).Should().BeNull();
+            _ = TesseraMotionPresets.Match(glide.Ani, glide.AniSteps + 1, glide.AniEase, glide.DisplacementPx).Should().BeNull();
+            _ = TesseraMotionPresets.Match(glide.Ani, glide.AniSteps, "InOutBounce", glide.DisplacementPx).Should().BeNull();
         }
 
         [Fact]
@@ -69,7 +69,7 @@ namespace MosaicShell.Core.Tests
         {
             TesseraMotionPreset glide = TesseraMotionPresets.All.First(p => p.AniEase == "OutCubic");
 
-            TesseraMotionPresets.Match(glide.Ani, glide.AniSteps, "outcubic", glide.DisplacementPx)?.Id.Should().Be(glide.Id);
+            _ = (TesseraMotionPresets.Match(glide.Ani, glide.AniSteps, "outcubic", glide.DisplacementPx)?.Id.Should().Be(glide.Id));
         }
 
         [Fact]
@@ -77,8 +77,8 @@ namespace MosaicShell.Core.Tests
         {
             TesseraMotionPreset fade = TesseraMotionPresets.All.Single(p => p.Ani == 0);
 
-            TesseraMotionPresets.Match(0, 40, fade.AniEase, 200)?.Id.Should().Be(fade.Id);
-            TesseraMotionPresets.Match(0, 10, "InOutBack", 200).Should().BeNull();
+            _ = (TesseraMotionPresets.Match(0, 40, fade.AniEase, 200)?.Id.Should().Be(fade.Id));
+            _ = TesseraMotionPresets.Match(0, 10, "InOutBack", 200).Should().BeNull();
         }
 
         [Fact]
@@ -100,7 +100,7 @@ namespace MosaicShell.Core.Tests
                 }
             }
 
-            alike.Should().BeEmpty($"every pair must be more than {MinimumDistance} apart");
+            _ = alike.Should().BeEmpty($"every pair must be more than {MinimumDistance} apart");
         }
 
         [Fact]
@@ -108,12 +108,12 @@ namespace MosaicShell.Core.Tests
         {
             IReadOnlyList<TesseraMotionPreset> all = TesseraMotionPresets.All;
 
-            all.Min(p => p.Ani > 0 ? TesseraMotionPresets.DurationMsFromSteps(p.AniSteps) : int.MaxValue).Should().BeLessThanOrEqualTo(200);
-            all.Max(p => p.Ani > 0 ? TesseraMotionPresets.DurationMsFromSteps(p.AniSteps) : 0).Should().BeGreaterThanOrEqualTo(560);
-            all.Where(p => p.Ani > 0).Max(p => p.DisplacementPx).Should().BeGreaterThanOrEqualTo(120);
-            all.Any(p => p.Ani == 0).Should().BeTrue("a plain fade is the quiet choice");
-            all.Any(p => p.Ani == 2).Should().BeTrue("one look keeps the media strip reveal");
-            all.Any(p => Peak(p) > 1.05).Should().BeTrue("at least one look visibly overshoots");
+            _ = all.Min(p => p.Ani > 0 ? TesseraMotionPresets.DurationMsFromSteps(p.AniSteps) : int.MaxValue).Should().BeLessThanOrEqualTo(200);
+            _ = all.Max(p => p.Ani > 0 ? TesseraMotionPresets.DurationMsFromSteps(p.AniSteps) : 0).Should().BeGreaterThanOrEqualTo(560);
+            _ = all.Where(p => p.Ani > 0).Max(p => p.DisplacementPx).Should().BeGreaterThanOrEqualTo(120);
+            _ = all.Any(p => p.Ani == 0).Should().BeTrue("a plain fade is the quiet choice");
+            _ = all.Any(p => p.Ani == 2).Should().BeTrue("one look keeps the media strip reveal");
+            _ = all.Any(p => Peak(p) > 1.05).Should().BeTrue("at least one look visibly overshoots");
         }
 
         [Theory]
@@ -122,8 +122,8 @@ namespace MosaicShell.Core.Tests
         [InlineData(40, 640)]
         public void Steps_and_milliseconds_convert_at_the_presentation_interval(int steps, int ms)
         {
-            TesseraMotionPresets.DurationMsFromSteps(steps).Should().Be(ms);
-            TesseraMotionPresets.StepsFromDurationMs(ms).Should().Be(steps);
+            _ = TesseraMotionPresets.DurationMsFromSteps(steps).Should().Be(ms);
+            _ = TesseraMotionPresets.StepsFromDurationMs(ms).Should().Be(steps);
         }
 
         [Theory]
@@ -133,7 +133,7 @@ namespace MosaicShell.Core.Tests
         [InlineData(5000, 40)]
         public void A_duration_outside_what_the_engine_plays_is_brought_inside_it(int ms, int steps)
         {
-            TesseraMotionPresets.StepsFromDurationMs(ms).Should().Be(steps);
+            _ = TesseraMotionPresets.StepsFromDurationMs(ms).Should().Be(steps);
         }
 
         private static double Peak(TesseraMotionPreset p)

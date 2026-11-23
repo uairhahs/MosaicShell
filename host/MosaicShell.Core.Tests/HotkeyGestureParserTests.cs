@@ -30,10 +30,10 @@ namespace MosaicShell.Core.Tests
         [InlineData("Ctrl+F12", ModifierKeys.Control, 0x7B)]
         public void A_valid_gesture_parses_to_its_modifiers_and_virtual_key(string gesture, ModifierKeys mods, int vk)
         {
-            HotkeyGestureParser.TryParse(gesture, out ModifierKeys parsedMods, out int parsedVk).Should().BeTrue();
+            _ = HotkeyGestureParser.TryParse(gesture, out ModifierKeys parsedMods, out int parsedVk).Should().BeTrue();
 
-            parsedMods.Should().Be(mods);
-            parsedVk.Should().Be(vk);
+            _ = parsedMods.Should().Be(mods);
+            _ = parsedVk.Should().Be(vk);
         }
 
         [Theory]
@@ -56,7 +56,7 @@ namespace MosaicShell.Core.Tests
         [InlineData("Foo+K")]
         public void A_gesture_without_a_modifier_or_a_known_key_is_rejected(string? gesture)
         {
-            HotkeyGestureParser.TryParse(gesture!, out _, out _).Should().BeFalse();
+            _ = HotkeyGestureParser.TryParse(gesture!, out _, out _).Should().BeFalse();
         }
 
         [Theory]
@@ -80,7 +80,7 @@ namespace MosaicShell.Core.Tests
         [InlineData(ModifierKeys.Control, 0x2E, "Ctrl+0x2E")]
         public void Format_orders_modifiers_the_same_way_every_time(ModifierKeys mods, int vk, string expected)
         {
-            HotkeyGestureParser.Format(mods, vk).Should().Be(expected);
+            _ = HotkeyGestureParser.Format(mods, vk).Should().Be(expected);
         }
 
         [Theory]
@@ -89,13 +89,13 @@ namespace MosaicShell.Core.Tests
         [InlineData("  Ctrl+Alt+K ", "Ctrl+Alt+K")]
         public void Normalize_rewrites_a_valid_gesture_in_canonical_form(string gesture, string expected)
         {
-            HotkeyGestureParser.Normalize(gesture).Should().Be(expected);
+            _ = HotkeyGestureParser.Normalize(gesture).Should().Be(expected);
         }
 
         [Fact]
         public void Normalize_leaves_an_unparseable_gesture_alone_apart_from_trimming()
         {
-            HotkeyGestureParser.Normalize("  not a gesture ").Should().Be("not a gesture");
+            _ = HotkeyGestureParser.Normalize("  not a gesture ").Should().Be("not a gesture");
         }
 
         [Theory]
@@ -105,7 +105,7 @@ namespace MosaicShell.Core.Tests
         {
             _ = HotkeyGestureParser.TryParse(gesture, out ModifierKeys mods, out int vk);
 
-            HotkeyGestureParser.Format(mods, vk).Should().Be(gesture);
+            _ = HotkeyGestureParser.Format(mods, vk).Should().Be(gesture);
         }
 
         [Theory]
@@ -120,7 +120,7 @@ namespace MosaicShell.Core.Tests
         [InlineData("   ", false)]
         public void Gestures_the_shell_owns_are_recognised(string gesture, bool reserved)
         {
-            HotkeyGestureParser.IsLikelyOsReserved(gesture).Should().Be(reserved);
+            _ = HotkeyGestureParser.IsLikelyOsReserved(gesture).Should().Be(reserved);
         }
 
         [Theory]
@@ -131,7 +131,7 @@ namespace MosaicShell.Core.Tests
         [InlineData("anything-else", "Ctrl+Alt+O")]
         public void Each_module_has_a_safe_default_gesture(string moduleId, string expected)
         {
-            HotkeyGestureParser.SafeDefault(moduleId).Should().Be(expected);
+            _ = HotkeyGestureParser.SafeDefault(moduleId).Should().Be(expected);
         }
 
         [Theory]
@@ -143,7 +143,7 @@ namespace MosaicShell.Core.Tests
         [InlineData("Unknown", null, "Ctrl+Alt+O")]
         public void A_gesture_that_cannot_be_registered_is_replaced_by_the_modules_default(string moduleId, string? gesture, string expected)
         {
-            HotkeyGestureParser.EnsureRegisterable(moduleId, gesture!).Should().Be(expected);
+            _ = HotkeyGestureParser.EnsureRegisterable(moduleId, gesture!).Should().Be(expected);
         }
     }
 }

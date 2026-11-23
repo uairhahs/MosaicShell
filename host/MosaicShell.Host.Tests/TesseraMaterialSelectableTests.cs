@@ -1,8 +1,8 @@
 using Avalonia.Headless.XUnit;
 using FluentAssertions;
 using MosaicShell.Core.Modules;
-using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Settings;
 using MosaicShell.Host.ViewModels;
 
@@ -29,8 +29,8 @@ namespace MosaicShell.Host.Tests
         {
             MainViewModel vm = OpenTesseraSettings("PlainText");
 
-            vm.TesseraMaterialSelectable.Should().BeFalse();
-            vm.TesseraMaterialFixedNote.Should().Contain("Plain Text").And.Contain("solid panel");
+            _ = vm.TesseraMaterialSelectable.Should().BeFalse();
+            _ = vm.TesseraMaterialFixedNote.Should().Contain("Plain Text").And.Contain("solid panel");
         }
 
         [AvaloniaFact]
@@ -42,10 +42,10 @@ namespace MosaicShell.Host.Tests
 
             vm.ModuleStyle = "Fluent";
 
-            vm.TesseraMaterialSelectable.Should().BeTrue();
-            vm.TesseraMaterialFixedNote.Should().BeEmpty();
-            changed.Should().Contain(nameof(MainViewModel.TesseraMaterialSelectable));
-            vm.SelectedTesseraMaterial!.Choice.Should().Be(TesseraMaterialChoice.Frosted);
+            _ = vm.TesseraMaterialSelectable.Should().BeTrue();
+            _ = vm.TesseraMaterialFixedNote.Should().BeEmpty();
+            _ = changed.Should().Contain(nameof(MainViewModel.TesseraMaterialSelectable));
+            _ = vm.SelectedTesseraMaterial!.Choice.Should().Be(TesseraMaterialChoice.Frosted);
         }
     }
 }

@@ -15,7 +15,7 @@ namespace MosaicShell.Core.Tests
         {
             string title = "Why China Can Tax its Rich But The West Cannot Do The Same Thing";
 
-            MediaSignalTraceText.Text(title).Should().Be(title);
+            _ = MediaSignalTraceText.Text(title).Should().Be(title);
         }
 
         [Theory]
@@ -24,13 +24,13 @@ namespace MosaicShell.Core.Tests
         [InlineData("   ")]
         public void A_missing_value_is_a_dash(string? value)
         {
-            MediaSignalTraceText.Text(value).Should().Be("-");
+            _ = MediaSignalTraceText.Text(value).Should().Be("-");
         }
 
         [Fact]
         public void Art_is_a_dash_when_there_is_none()
         {
-            MediaSignalTraceText.Art(null).Should().Be("-");
+            _ = MediaSignalTraceText.Art(null).Should().Be("-");
         }
 
         [Fact]
@@ -39,15 +39,15 @@ namespace MosaicShell.Core.Tests
             byte[] a = [1, 2, 3, 4];
             byte[] b = [4, 3, 2, 1];
 
-            MediaSignalTraceText.Art(a).Should().StartWith("4:");
-            MediaSignalTraceText.Art(a).Should().NotBe(MediaSignalTraceText.Art(b));
-            MediaSignalTraceText.Art(a).Should().Be(MediaSignalTraceText.Art((byte[])a.Clone()));
+            _ = MediaSignalTraceText.Art(a).Should().StartWith("4:");
+            _ = MediaSignalTraceText.Art(a).Should().NotBe(MediaSignalTraceText.Art(b));
+            _ = MediaSignalTraceText.Art(a).Should().Be(MediaSignalTraceText.Art((byte[])a.Clone()));
         }
 
         [Fact]
         public void Art_does_not_put_the_picture_bytes_in_the_log()
         {
-            MediaSignalTraceText.Art(new byte[100_000]).Length.Should().BeLessThan(32);
+            _ = MediaSignalTraceText.Art(new byte[100_000]).Length.Should().BeLessThan(32);
         }
     }
 }

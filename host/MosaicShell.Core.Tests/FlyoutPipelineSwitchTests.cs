@@ -25,7 +25,7 @@ namespace MosaicShell.Core.Tests
         [InlineData("fast", FlyoutPipelineMode.Shadow)]
         public void The_mode_is_read_by_name_and_defaults_to_shadow(string? configured, FlyoutPipelineMode expected)
         {
-            FlyoutPipelineModes.Parse(configured).Should().Be(expected);
+            _ = FlyoutPipelineModes.Parse(configured).Should().Be(expected);
         }
 
         [Fact]
@@ -36,8 +36,8 @@ namespace MosaicShell.Core.Tests
                 FlyoutIngressDecision.PatchActiveSession,
                 FlyoutIngressDecision.RebuildStructure);
 
-            choice.Executed.Should().Be(FlyoutIngressDecision.PatchActiveSession);
-            choice.Disagreement.Should().BeNull();
+            _ = choice.Executed.Should().Be(FlyoutIngressDecision.PatchActiveSession);
+            _ = choice.Disagreement.Should().BeNull();
         }
 
         [Fact]
@@ -48,8 +48,8 @@ namespace MosaicShell.Core.Tests
                 FlyoutIngressDecision.PatchActiveSession,
                 FlyoutIngressDecision.RebuildStructure);
 
-            choice.Executed.Should().Be(FlyoutIngressDecision.RebuildStructure);
-            choice.Disagreement.Should().BeNull();
+            _ = choice.Executed.Should().Be(FlyoutIngressDecision.RebuildStructure);
+            _ = choice.Disagreement.Should().BeNull();
         }
 
         [Fact]
@@ -60,8 +60,8 @@ namespace MosaicShell.Core.Tests
                 FlyoutIngressDecision.PatchVisibleCoalesced,
                 FlyoutIngressDecision.PatchVisibleCoalesced);
 
-            choice.Executed.Should().Be(FlyoutIngressDecision.PatchVisibleCoalesced);
-            choice.Disagreement.Should().BeNull();
+            _ = choice.Executed.Should().Be(FlyoutIngressDecision.PatchVisibleCoalesced);
+            _ = choice.Disagreement.Should().BeNull();
         }
 
         [Theory]
@@ -78,12 +78,12 @@ namespace MosaicShell.Core.Tests
         {
             FlyoutPipelineChoice choice = FlyoutPipelineSwitch.Choose(FlyoutPipelineMode.Shadow, legacy, next);
 
-            choice.Executed.Should().Be(legacy);
-            choice.Disagreement.Should().NotBeNull();
-            choice.Disagreement!.Value.Legacy.Should().Be(legacy);
-            choice.Disagreement.Value.Next.Should().Be(next);
-            choice.Disagreement.Value.LedgerFinding.Should().Be(finding);
-            choice.Disagreement.Value.IsExplained.Should().BeTrue();
+            _ = choice.Executed.Should().Be(legacy);
+            _ = choice.Disagreement.Should().NotBeNull();
+            _ = choice.Disagreement!.Value.Legacy.Should().Be(legacy);
+            _ = choice.Disagreement.Value.Next.Should().Be(next);
+            _ = choice.Disagreement.Value.LedgerFinding.Should().Be(finding);
+            _ = choice.Disagreement.Value.IsExplained.Should().BeTrue();
         }
 
         [Theory]
@@ -96,20 +96,20 @@ namespace MosaicShell.Core.Tests
         {
             FlyoutPipelineChoice choice = FlyoutPipelineSwitch.Choose(FlyoutPipelineMode.Shadow, legacy, next);
 
-            choice.Executed.Should().Be(legacy);
-            choice.Disagreement.Should().NotBeNull();
-            choice.Disagreement!.Value.LedgerFinding.Should().BeNull();
-            choice.Disagreement.Value.IsExplained.Should().BeFalse();
+            _ = choice.Executed.Should().Be(legacy);
+            _ = choice.Disagreement.Should().NotBeNull();
+            _ = choice.Disagreement!.Value.LedgerFinding.Should().BeNull();
+            _ = choice.Disagreement.Value.IsExplained.Should().BeFalse();
         }
 
         [Fact]
         public void A_disagreement_renders_as_one_trace_line_with_both_values()
         {
-            var disagreement = new FlyoutShadowDisagreement(
+            FlyoutShadowDisagreement disagreement = new(
                 FlyoutIngressDecision.PatchActiveSession, FlyoutIngressDecision.RebuildStructure, "F02");
 
-            disagreement.ToTraceText().Should().Be("legacy=PatchActiveSession next=RebuildStructure ledger=F02");
-            new FlyoutShadowDisagreement(FlyoutIngressDecision.ColdBuild, FlyoutIngressDecision.RebuildInPlace, null)
+            _ = disagreement.ToTraceText().Should().Be("legacy=PatchActiveSession next=RebuildStructure ledger=F02");
+            _ = new FlyoutShadowDisagreement(FlyoutIngressDecision.ColdBuild, FlyoutIngressDecision.RebuildInPlace, null)
                 .ToTraceText().Should().Be("legacy=ColdBuild next=RebuildInPlace ledger=none");
         }
 
@@ -152,15 +152,15 @@ namespace MosaicShell.Core.Tests
                 FlyoutStructureKey.From(built, TesseraFlyoutSessionMode.Single),
                 FlyoutStructureKey.From(request, TesseraFlyoutSessionMode.Single));
 
-            state.HasExistingWindow.Should().BeTrue();
-            state.ReuseRegisteredHwnd.Should().BeTrue();
-            state.OpenKind.Should().Be(legacy.OpenKind);
-            state.RequestKind.Should().Be(legacy.RequestKind);
-            state.Phase.Should().Be(TesseraFlyoutPhase.Shown);
-            state.EntranceMotionInFlight.Should().BeTrue();
-            state.OpenWindowVisible.Should().BeTrue();
-            state.AllowLivePatch.Should().BeTrue();
-            state.BuiltStructure.Should().NotBeNull();
+            _ = state.HasExistingWindow.Should().BeTrue();
+            _ = state.ReuseRegisteredHwnd.Should().BeTrue();
+            _ = state.OpenKind.Should().Be(legacy.OpenKind);
+            _ = state.RequestKind.Should().Be(legacy.RequestKind);
+            _ = state.Phase.Should().Be(TesseraFlyoutPhase.Shown);
+            _ = state.EntranceMotionInFlight.Should().BeTrue();
+            _ = state.OpenWindowVisible.Should().BeTrue();
+            _ = state.AllowLivePatch.Should().BeTrue();
+            _ = state.BuiltStructure.Should().NotBeNull();
         }
 
         [Fact]
@@ -176,8 +176,8 @@ namespace MosaicShell.Core.Tests
                 FlyoutStructureKey.From(built, TesseraFlyoutSessionMode.Single),
                 FlyoutStructureKey.From(request, TesseraFlyoutSessionMode.Single));
 
-            choice.Executed.Should().Be(FlyoutIngressDecision.PatchActiveSession);
-            choice.Disagreement!.Value.LedgerFinding.Should().Be("F02");
+            _ = choice.Executed.Should().Be(FlyoutIngressDecision.PatchActiveSession);
+            _ = choice.Disagreement!.Value.LedgerFinding.Should().Be("F02");
         }
 
         [Fact]
@@ -189,8 +189,8 @@ namespace MosaicShell.Core.Tests
 
             FlyoutPipelineChoice choice = FlyoutPipelineSwitch.Choose(FlyoutPipelineMode.Shadow, legacy, key, key);
 
-            choice.Executed.Should().Be(FlyoutIngressDecision.PatchActiveSession);
-            choice.Disagreement.Should().BeNull();
+            _ = choice.Executed.Should().Be(FlyoutIngressDecision.PatchActiveSession);
+            _ = choice.Disagreement.Should().BeNull();
         }
 
         [Fact]
@@ -202,9 +202,9 @@ namespace MosaicShell.Core.Tests
 
             FlyoutPipelineChoice choice = FlyoutPipelineSwitch.Choose(FlyoutPipelineMode.Shadow, legacy, key, key);
 
-            choice.Executed.Should().Be(FlyoutIngressPolicy.Resolve(legacy));
-            choice.Disagreement!.Value.LedgerFinding.Should().Be("F04");
-            choice.Disagreement.Value.Next.Should().Be(FlyoutIngressDecision.ReviveDuringExit);
+            _ = choice.Executed.Should().Be(FlyoutIngressPolicy.Resolve(legacy));
+            _ = choice.Disagreement!.Value.LedgerFinding.Should().Be("F04");
+            _ = choice.Disagreement.Value.Next.Should().Be(FlyoutIngressDecision.ReviveDuringExit);
         }
 
         [Fact]
@@ -216,36 +216,50 @@ namespace MosaicShell.Core.Tests
             int checkedStates = 0;
 
             foreach (string openKind in kinds)
-            foreach (string requestKind in kinds)
-            foreach (string openStyle in styles)
-            foreach (string requestStyle in styles)
-            foreach (bool showMedia in new[] { false, true })
-            foreach (TesseraFlyoutPhase phase in phases)
-            foreach (bool visible in new[] { false, true })
-            foreach (bool entrance in new[] { false, true })
             {
-                FlyoutRequest built = Request(openKind, openStyle, showMedia: false);
-                FlyoutRequest request = Request(requestKind, requestStyle, showMedia);
-                FlyoutIngressState legacy = Ingress(built, request, phase, visible, entrance);
-
-                FlyoutPipelineChoice choice = FlyoutPipelineSwitch.Choose(
-                    FlyoutPipelineMode.Shadow,
-                    legacy,
-                    FlyoutStructureKey.From(built, TesseraFlyoutSessionMode.Single),
-                    FlyoutStructureKey.From(request, TesseraFlyoutSessionMode.Single));
-
-                choice.Executed.Should().Be(FlyoutIngressPolicy.Resolve(legacy));
-                if (choice.Disagreement is { } disagreement)
+                foreach (string requestKind in kinds)
                 {
-                    disagreement.IsExplained.Should().BeTrue(
-                        $"{openKind}/{openStyle} -> {requestKind}/{requestStyle} media={showMedia} phase={phase} "
-                        + $"visible={visible} entrance={entrance}: {disagreement.ToTraceText()}");
-                }
+                    foreach (string openStyle in styles)
+                    {
+                        foreach (string requestStyle in styles)
+                        {
+                            foreach (bool showMedia in new[] { false, true })
+                            {
+                                foreach (TesseraFlyoutPhase phase in phases)
+                                {
+                                    foreach (bool visible in new[] { false, true })
+                                    {
+                                        foreach (bool entrance in new[] { false, true })
+                                        {
+                                            FlyoutRequest built = Request(openKind, openStyle, showMedia: false);
+                                            FlyoutRequest request = Request(requestKind, requestStyle, showMedia);
+                                            FlyoutIngressState legacy = Ingress(built, request, phase, visible, entrance);
 
-                checkedStates++;
+                                            FlyoutPipelineChoice choice = FlyoutPipelineSwitch.Choose(
+                                                FlyoutPipelineMode.Shadow,
+                                                legacy,
+                                                FlyoutStructureKey.From(built, TesseraFlyoutSessionMode.Single),
+                                                FlyoutStructureKey.From(request, TesseraFlyoutSessionMode.Single));
+
+                                            _ = choice.Executed.Should().Be(FlyoutIngressPolicy.Resolve(legacy));
+                                            if (choice.Disagreement is { } disagreement)
+                                            {
+                                                _ = disagreement.IsExplained.Should().BeTrue(
+                                                    $"{openKind}/{openStyle} -> {requestKind}/{requestStyle} media={showMedia} phase={phase} "
+                                                    + $"visible={visible} entrance={entrance}: {disagreement.ToTraceText()}");
+                                            }
+
+                                            checkedStates++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
-            checkedStates.Should().BeGreaterThan(500);
+            _ = checkedStates.Should().BeGreaterThan(500);
         }
     }
 }

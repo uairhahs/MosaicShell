@@ -12,11 +12,6 @@ namespace MosaicShell.Core.Tests
         /// <summary>Below this, In vs Out and Bounce vs Linear are not readable on a 60 Hz display.</summary>
         private const int MinPerceptiblePhaseDurationMs = 200;
 
-        private const double Phase2ShowMidBandMax = 0.85;
-
-        /// <summary>Minimum share of 0..AniSteps samples that must sit in the mid band.</summary>
-        private const double Phase2ShowMidBandMinDurationFraction = 0.18;
-
         [Theory]
         [InlineData(0, 10, 250)]
         [InlineData(0, 20, 250)]

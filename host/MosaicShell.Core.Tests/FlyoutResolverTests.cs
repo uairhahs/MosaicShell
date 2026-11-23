@@ -52,13 +52,13 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void No_window_is_a_cold_build()
         {
-            FlyoutResolver.Resolve(State(Request(), Request(), hasWindow: false)).Should().Be(FlyoutIngressDecision.ColdBuild);
+            _ = FlyoutResolver.Resolve(State(Request(), Request(), hasWindow: false)).Should().Be(FlyoutIngressDecision.ColdBuild);
         }
 
         [Fact]
         public void A_window_that_must_not_be_reused_is_closed_then_built_cold()
         {
-            FlyoutResolver.Resolve(State(Request(), Request(), reuseHwnd: false))
+            _ = FlyoutResolver.Resolve(State(Request(), Request(), reuseHwnd: false))
                 .Should().Be(FlyoutIngressDecision.CloseThenColdBuild);
         }
 
@@ -67,7 +67,7 @@ namespace MosaicShell.Core.Tests
         [InlineData(TesseraFlyoutSessionMode.Stacked)]
         public void The_same_structure_on_a_shown_flyout_patches_the_active_session_in_either_topology(TesseraFlyoutSessionMode topology)
         {
-            FlyoutResolver.Resolve(State(Request(), Request(), TesseraFlyoutPhase.Shown, topology))
+            _ = FlyoutResolver.Resolve(State(Request(), Request(), TesseraFlyoutPhase.Shown, topology))
                 .Should().Be(FlyoutIngressDecision.PatchActiveSession);
         }
 
@@ -77,7 +77,7 @@ namespace MosaicShell.Core.Tests
         public void The_same_structure_on_a_visible_window_with_no_active_session_is_a_coalesced_patch(TesseraFlyoutSessionMode topology)
         {
             // SoftFrost keeps the HWND visible at opacity zero: no session phase, but a window that can take a patch.
-            FlyoutResolver.Resolve(State(Request(), Request(), TesseraFlyoutPhase.Hidden, topology, visible: true))
+            _ = FlyoutResolver.Resolve(State(Request(), Request(), TesseraFlyoutPhase.Hidden, topology, visible: true))
                 .Should().Be(FlyoutIngressDecision.PatchVisibleCoalesced);
         }
 
@@ -86,7 +86,7 @@ namespace MosaicShell.Core.Tests
         [InlineData(TesseraFlyoutSessionMode.Stacked)]
         public void The_same_structure_during_an_entrance_patches_the_active_session(TesseraFlyoutSessionMode topology)
         {
-            FlyoutResolver.Resolve(State(Request(), Request(), TesseraFlyoutPhase.Entering, topology, entranceInFlight: true))
+            _ = FlyoutResolver.Resolve(State(Request(), Request(), TesseraFlyoutPhase.Entering, topology, entranceInFlight: true))
                 .Should().Be(FlyoutIngressDecision.PatchActiveSession);
         }
 
@@ -98,7 +98,7 @@ namespace MosaicShell.Core.Tests
 
             foreach (TesseraFlyoutPhase phase in new[] { TesseraFlyoutPhase.Entering, TesseraFlyoutPhase.Shown, TesseraFlyoutPhase.Exiting })
             {
-                FlyoutResolver.Resolve(State(built, request, phase, entranceInFlight: phase == TesseraFlyoutPhase.Entering))
+                _ = FlyoutResolver.Resolve(State(built, request, phase, entranceInFlight: phase == TesseraFlyoutPhase.Entering))
                     .Should().Be(FlyoutIngressDecision.RebuildStructure, phase.ToString());
             }
         }
@@ -106,7 +106,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void A_changed_topology_is_a_rebuild()
         {
-            FlyoutResolver.Resolve(State(Request(), Request(), TesseraFlyoutPhase.Shown, TesseraFlyoutSessionMode.Stacked,
+            _ = FlyoutResolver.Resolve(State(Request(), Request(), TesseraFlyoutPhase.Shown, TesseraFlyoutSessionMode.Stacked,
                     builtTopology: TesseraFlyoutSessionMode.Single))
                 .Should().Be(FlyoutIngressDecision.RebuildStructure);
         }
@@ -116,7 +116,7 @@ namespace MosaicShell.Core.Tests
         {
             foreach (TesseraFlyoutSessionMode topology in new[] { TesseraFlyoutSessionMode.Single, TesseraFlyoutSessionMode.Stacked })
             {
-                FlyoutResolver.Resolve(State(Request(), Request(), TesseraFlyoutPhase.Exiting, topology))
+                _ = FlyoutResolver.Resolve(State(Request(), Request(), TesseraFlyoutPhase.Exiting, topology))
                     .Should().Be(FlyoutIngressDecision.ReviveDuringExit, topology.ToString());
             }
         }
@@ -124,14 +124,14 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void A_hidden_window_of_the_same_surface_is_revived_hidden()
         {
-            FlyoutResolver.Resolve(State(Request(), Request(), TesseraFlyoutPhase.Hidden, visible: false))
+            _ = FlyoutResolver.Resolve(State(Request(), Request(), TesseraFlyoutPhase.Hidden, visible: false))
                 .Should().Be(FlyoutIngressDecision.ReviveHidden);
         }
 
         [Fact]
         public void A_different_kind_on_a_visible_flyout_rebuilds_in_place()
         {
-            FlyoutResolver.Resolve(State(Request("vol"), Request("media"))).Should().Be(FlyoutIngressDecision.RebuildInPlace);
+            _ = FlyoutResolver.Resolve(State(Request("vol"), Request("media"))).Should().Be(FlyoutIngressDecision.RebuildInPlace);
         }
 
         [Fact]
@@ -140,15 +140,15 @@ namespace MosaicShell.Core.Tests
             // The legacy rule: media to a status kind (locks) cannot reuse the shell window.
             FlyoutIngressState legacy = Legacy(Request("media"), Request("locks"));
 
-            FlyoutResolver.Resolve(State(Request("media"), Request("locks")))
+            _ = FlyoutResolver.Resolve(State(Request("media"), Request("locks")))
                 .Should().Be(FlyoutIngressPolicy.Resolve(legacy));
-            FlyoutResolver.Resolve(State(Request("media"), Request("locks"))).Should().Be(FlyoutIngressDecision.RecreateHwnd);
+            _ = FlyoutResolver.Resolve(State(Request("media"), Request("locks"))).Should().Be(FlyoutIngressDecision.RecreateHwnd);
         }
 
         [Fact]
         public void A_patch_that_will_not_apply_is_not_allowed_to_patch_a_visible_flyout()
         {
-            FlyoutResolver.Resolve(State(Request(), Request(), allowLivePatch: false))
+            _ = FlyoutResolver.Resolve(State(Request(), Request(), allowLivePatch: false))
                 .Should().Be(FlyoutIngressPolicy.Resolve(Legacy(Request(), Request(), allowLivePatch: false)));
         }
 
@@ -186,28 +186,42 @@ namespace MosaicShell.Core.Tests
             int compared = 0;
 
             foreach (string openKind in kinds)
-            foreach (string requestKind in kinds)
-            foreach (string openStyle in styles)
-            foreach (string requestStyle in styles)
-            foreach (TesseraFlyoutPhase phase in phases)
-            foreach (bool visible in new[] { true, false })
-            foreach (bool inFlight in new[] { true, false })
-            foreach (bool allow in new[] { true, false })
             {
-                FlyoutRequest built = Request(openKind, openStyle);
-                FlyoutRequest request = Request(requestKind, requestStyle);
+                foreach (string requestKind in kinds)
+                {
+                    foreach (string openStyle in styles)
+                    {
+                        foreach (string requestStyle in styles)
+                        {
+                            foreach (TesseraFlyoutPhase phase in phases)
+                            {
+                                foreach (bool visible in new[] { true, false })
+                                {
+                                    foreach (bool inFlight in new[] { true, false })
+                                    {
+                                        foreach (bool allow in new[] { true, false })
+                                        {
+                                            FlyoutRequest built = Request(openKind, openStyle);
+                                            FlyoutRequest request = Request(requestKind, requestStyle);
 
-                FlyoutIngressDecision expected = FlyoutIngressPolicy.Resolve(Legacy(built, request, phase, visible, inFlight, allow));
-                FlyoutIngressDecision actual = FlyoutResolver.Resolve(State(
-                    built, request, phase, visible: visible, entranceInFlight: inFlight, allowLivePatch: allow));
+                                            FlyoutIngressDecision expected = FlyoutIngressPolicy.Resolve(Legacy(built, request, phase, visible, inFlight, allow));
+                                            FlyoutIngressDecision actual = FlyoutResolver.Resolve(State(
+                                                built, request, phase, visible: visible, entranceInFlight: inFlight, allowLivePatch: allow));
 
-                actual.Should().Be(
-                    expected,
-                    $"open {openKind}/{openStyle} request {requestKind}/{requestStyle} phase {phase} visible {visible} inFlight {inFlight} allow {allow}");
-                compared++;
+                                            _ = actual.Should().Be(
+                                                expected,
+                                                $"open {openKind}/{openStyle} request {requestKind}/{requestStyle} phase {phase} visible {visible} inFlight {inFlight} allow {allow}");
+                                            compared++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
-            compared.Should().Be(3 * 3 * 2 * 2 * 3 * 2 * 2 * 2);
+            _ = compared.Should().Be(3 * 3 * 2 * 2 * 3 * 2 * 2 * 2);
         }
 
         [Fact]
@@ -215,8 +229,8 @@ namespace MosaicShell.Core.Tests
         {
             FlyoutIngressState legacy = Legacy(Request(), Request(), TesseraFlyoutPhase.Exiting);
 
-            FlyoutIngressPolicy.Resolve(legacy).Should().Be(FlyoutIngressDecision.PatchVisibleCoalesced);
-            FlyoutResolver.Resolve(State(Request(), Request(), TesseraFlyoutPhase.Exiting))
+            _ = FlyoutIngressPolicy.Resolve(legacy).Should().Be(FlyoutIngressDecision.PatchVisibleCoalesced);
+            _ = FlyoutResolver.Resolve(State(Request(), Request(), TesseraFlyoutPhase.Exiting))
                 .Should().Be(FlyoutIngressDecision.ReviveDuringExit);
         }
     }

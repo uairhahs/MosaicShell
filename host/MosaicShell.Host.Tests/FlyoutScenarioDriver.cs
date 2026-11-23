@@ -1,6 +1,5 @@
 using FluentAssertions;
 using MosaicShell.Core;
-using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Services;

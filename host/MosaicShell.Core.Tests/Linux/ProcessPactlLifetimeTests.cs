@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.Versioning;
 using FluentAssertions;
 using MosaicShell.Core.Services.Linux;
 
@@ -52,6 +53,7 @@ namespace MosaicShell.Core.Tests.Linux
         }
 
         [UnixFact]
+        [UnsupportedOSPlatform("windows")]
         public async Task Disposing_ProcessPactl_ends_a_running_subscribe()
         {
             string fake = Path.Combine(_dir, "pactl");

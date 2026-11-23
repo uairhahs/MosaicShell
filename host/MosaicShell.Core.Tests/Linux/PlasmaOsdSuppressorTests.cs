@@ -330,7 +330,9 @@ namespace MosaicShell.Core.Tests.Linux
     {
         private readonly DBusConnection _connection;
         private readonly List<string> _calls = [];
+#pragma warning disable IDE0032 // LoadedScript reads under the lock the D-Bus handler writes under; an auto property would not.
         private string? _loadedScript;
+#pragma warning restore IDE0032
 
         private FakeKWinScripting(DBusConnection connection)
         {
