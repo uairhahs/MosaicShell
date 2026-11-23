@@ -17,7 +17,19 @@ namespace MosaicShell.Core.Tests
         private readonly string _cache = Path.Combine(Path.GetTempPath(), "mosaic-mpris-art-" + Guid.NewGuid().ToString("N"));
         private readonly FakeBrowser _browser = new();
         private readonly FakeMedia _media = new();
-        private readonly FakeExport _export = new();
+        private readonly Dictionary<string, FakeExport> _exports = [];
+
+        private FakeExport Export => _exports[MprisExportPolicy.BusName];
+
+        private IMprisExport Create(string busName, IMprisExportCommands commands)
+        {
+            lock (_exports)
+            {
+                FakeExport export = new(commands);
+                _exports[busName] = export;
+                return export;
+            }
+        }
 
         public void Dispose()
         {
@@ -29,7 +41,7 @@ namespace MosaicShell.Core.Tests
 
         private GroutMprisBridge Bridge()
         {
-            return new GroutMprisBridge(_browser, _media, _ => _export, _cache);
+            return new GroutMprisBridge(_browser, _media, Create, _cache);
         }
 
         private static BrowserPlayerSnapshot Report(string title = "Vision", byte[]? cover = null, BrowserPlaybackState state = BrowserPlaybackState.Playing)
@@ -46,7 +58,7 @@ namespace MosaicShell.Core.Tests
             _browser.Report(Report());
             await bridge.SettledAsync();
 
-            MprisExportedState state = _export.Last!;
+            MprisExportedState state = Export.Last!;
             _ = state.Track.Title.Should().Be("Vision");
             _ = state.DesktopEntry.Should().Be("microsoft-edge");
             string file = Path.Combine(_cache, MprisExportPolicy.ArtFileName(CoverA));
@@ -63,8 +75,8 @@ namespace MosaicShell.Core.Tests
             _browser.Report(new BrowserPlayerSnapshot { Name = "YouTube Music", Title = "Vision", Artist = "Pìjus", State = BrowserPlaybackState.Playing });
             await bridge.SettledAsync();
 
-            _ = _export.Last!.Track.LengthMicros.Should().Be(157_000_000L);
-            _ = _export.Last.PositionMicros.Should().Be(30_000_000L);
+            _ = Export.Last!.Track.LengthMicros.Should().Be(157_000_000L);
+            _ = Export.Last.PositionMicros.Should().Be(30_000_000L);
         }
 
         [Fact]
@@ -79,7 +91,7 @@ namespace MosaicShell.Core.Tests
             _media.Raise();
             await bridge.SettledAsync();
 
-            _ = _export.Last!.PositionMicros.Should().Be(120_000_000L);
+            _ = Export.Last!.PositionMicros.Should().Be(120_000_000L);
         }
 
         [Fact]
@@ -92,8 +104,8 @@ namespace MosaicShell.Core.Tests
             _browser.Report(null);
             await bridge.SettledAsync();
 
-            _ = _export.Published.Should().HaveCount(2);
-            _ = _export.Last.Should().BeNull();
+            _ = Export.Published.Should().HaveCount(2);
+            _ = Export.Last.Should().BeNull();
         }
 
         [Fact]
@@ -101,13 +113,13 @@ namespace MosaicShell.Core.Tests
         {
             _media.Current = new MediaSessionInfo("Vision", "Pìjus", "edge", true);
             using GroutMprisBridge bridge = new(
-                _browser, _media, _ => _export, _cache, () => 13951,
+                _browser, _media, Create, _cache, () => 13951,
                 (appId, pid) => $"{appId}-resolved-{pid}");
 
             _browser.Report(Report());
             await bridge.SettledAsync();
 
-            _ = _export.Last!.DesktopEntry.Should().Be("edge-resolved-13951");
+            _ = Export.Last!.DesktopEntry.Should().Be("edge-resolved-13951");
         }
 
         [Fact]
@@ -119,7 +131,7 @@ namespace MosaicShell.Core.Tests
             _browser.Report(Report());
             await bridge.SettledAsync();
 
-            _ = _export.Last!.DesktopEntry.Should().BeNull();
+            _ = Export.Last!.DesktopEntry.Should().BeNull();
         }
 
         [Fact]
@@ -145,7 +157,7 @@ namespace MosaicShell.Core.Tests
             _browser.Report(new BrowserPlayerSnapshot { Name = "YouTube Music", Title = "Vision", State = BrowserPlaybackState.Playing });
             await bridge.SettledAsync();
 
-            _ = _export.Last!.Track.ArtUrl.Should().BeNull();
+            _ = Export.Last!.Track.ArtUrl.Should().BeNull();
         }
 
         [Fact]
@@ -153,13 +165,16 @@ namespace MosaicShell.Core.Tests
         {
             _media.Current = new MediaSessionInfo("Vision", "Pìjus", "microsoft-edge", IsPlaying: true);
             using GroutMprisBridge bridge = Bridge();
+            _browser.Report(Report());
+            await bridge.SettledAsync();
+            IMprisExportCommands commands = Export.Commands;
 
-            await bridge.PlayPauseAsync();
-            await bridge.NextAsync();
-            await bridge.PreviousAsync();
-            await bridge.SeekToAsync(42);
-            await bridge.PlayAsync();
-            await bridge.PauseAsync();
+            await commands.PlayPauseAsync();
+            await commands.NextAsync();
+            await commands.PreviousAsync();
+            await commands.SeekToAsync(42);
+            await commands.PlayAsync();
+            await commands.PauseAsync();
 
             _ = _media.Calls.Should().Equal("PlayPause", "Next", "Previous", "Seek 42", "PlayPause");
         }
@@ -169,9 +184,12 @@ namespace MosaicShell.Core.Tests
         {
             _media.Current = new MediaSessionInfo("Vision", "Pìjus", "microsoft-edge", IsPlaying: false);
             using GroutMprisBridge bridge = Bridge();
+            _browser.Report(Report());
+            await bridge.SettledAsync();
+            IMprisExportCommands commands = Export.Commands;
 
-            await bridge.PauseAsync();
-            await bridge.PlayAsync();
+            await commands.PauseAsync();
+            await commands.PlayAsync();
 
             _ = _media.Calls.Should().Equal("PlayPause");
         }
@@ -183,21 +201,98 @@ namespace MosaicShell.Core.Tests
             // player must not pause Spotify.
             _media.Current = new MediaSessionInfo("Song", "Band", "spotify", IsPlaying: true);
             using GroutMprisBridge bridge = Bridge();
+            _browser.Report(Report());
+            await bridge.SettledAsync();
+            IMprisExportCommands commands = Export.Commands;
 
-            await bridge.PlayPauseAsync();
-            await bridge.NextAsync();
+            await commands.PlayPauseAsync();
+            await commands.NextAsync();
 
             _ = _media.Calls.Should().BeEmpty();
         }
 
         [Fact]
-        public void Disposing_the_bridge_disposes_the_export()
+        public async Task Disposing_the_bridge_disposes_the_export()
         {
             GroutMprisBridge bridge = Bridge();
+            _browser.Report(Report());
+            await bridge.SettledAsync();
 
             bridge.Dispose();
 
-            _ = _export.Disposed.Should().BeTrue();
+            _ = Export.Disposed.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task Each_tab_is_published_as_its_own_player()
+        {
+            FakeTabs tabs = new();
+            using GroutMprisBridge bridge = new(tabs, _media, Create, _cache);
+
+            tabs.Set(("c1_t7", Report("Vision", CoverA)), ("c1_t9", Report("A video", CoverB)));
+            await bridge.SettledAsync();
+
+            _ = _exports.Keys.Should().BeEquivalentTo([MprisExportPolicy.BusNameFor("c1_t7"), MprisExportPolicy.BusNameFor("c1_t9")]);
+            _ = _exports[MprisExportPolicy.BusNameFor("c1_t7")].Last!.Track.Title.Should().Be("Vision");
+            _ = _exports[MprisExportPolicy.BusNameFor("c1_t9")].Last!.Track.Title.Should().Be("A video");
+            _ = Directory.GetFiles(_cache).Select(Path.GetFileName).Should().BeEquivalentTo(
+                [MprisExportPolicy.ArtFileName(CoverA), MprisExportPolicy.ArtFileName(CoverB)], "every tab keeps its own cover");
+        }
+
+        [Fact]
+        public async Task A_tab_that_goes_away_withdraws_its_player()
+        {
+            FakeTabs tabs = new();
+            using GroutMprisBridge bridge = new(tabs, _media, Create, _cache);
+            tabs.Set(("c1_t7", Report("Vision")), ("c1_t9", Report("A video")));
+            await bridge.SettledAsync();
+
+            tabs.Set(("c1_t7", Report("Vision")));
+            await bridge.SettledAsync();
+
+            FakeExport gone = _exports[MprisExportPolicy.BusNameFor("c1_t9")];
+            _ = gone.Last.Should().BeNull();
+            _ = gone.Disposed.Should().BeTrue();
+            _ = _exports[MprisExportPolicy.BusNameFor("c1_t7")].Disposed.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task Only_the_tab_the_browser_is_playing_takes_transport()
+        {
+            _media.Current = new MediaSessionInfo("Vision", "Pìjus", "edge", IsPlaying: true);
+            FakeTabs tabs = new();
+            using GroutMprisBridge bridge = new(tabs, _media, Create, _cache);
+            tabs.Set(("c1_t7", Report("Vision")), ("c1_t9", Report("A video")));
+            await bridge.SettledAsync();
+
+            await _exports[MprisExportPolicy.BusNameFor("c1_t9")].Commands.PlayPauseAsync();
+            await _exports[MprisExportPolicy.BusNameFor("c1_t7")].Commands.PlayPauseAsync();
+
+            _ = _media.Calls.Should().Equal("PlayPause");
+            _ = _exports[MprisExportPolicy.BusNameFor("c1_t7")].Last!.Controllable.Should().BeTrue();
+            _ = _exports[MprisExportPolicy.BusNameFor("c1_t9")].Last!.Controllable.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task The_last_browser_seen_keeps_its_icon_and_process_while_another_app_plays()
+        {
+            _media.Current = new MediaSessionInfo("Vision", "Pìjus", "edge", true);
+            int? pid = 13951;
+            FakeTabs tabs = new();
+            using GroutMprisBridge bridge = new(tabs, _media, Create, _cache, () => pid, (appId, _) => appId + ".desktop");
+            tabs.Set(("c1_t7", Report("Vision")));
+            await bridge.SettledAsync();
+
+            // Spotify is now the platform session; its process must never be claimed.
+            _media.Current = new MediaSessionInfo("Song", "Band", "spotify", true);
+            pid = 777;
+            _media.Raise();
+            await bridge.SettledAsync();
+
+            MprisExportedState state = _exports[MprisExportPolicy.BusNameFor("c1_t7")].Last!;
+            _ = state.DesktopEntry.Should().Be("edge.desktop");
+            _ = state.Track.KdePid.Should().Be(13951);
+            _ = state.Controllable.Should().BeFalse();
         }
 
         [Theory]
@@ -209,9 +304,11 @@ namespace MosaicShell.Core.Tests
             _ = MprisExportPolicy.ArtCacheDirectory(xdgCacheHome, home).Should().Be(expected);
         }
 
-        private sealed class FakeExport : IMprisExport
+        private sealed class FakeExport(IMprisExportCommands commands) : IMprisExport
         {
             private readonly List<MprisExportedState?> _published = [];
+
+            public IMprisExportCommands Commands { get; } = commands;
 
             public IReadOnlyList<MprisExportedState?> Published
             {
@@ -241,6 +338,45 @@ namespace MosaicShell.Core.Tests
             public void Dispose()
             {
                 Disposed = true;
+            }
+        }
+
+        private sealed class FakeTabs : IBrowserMediaSource, IBrowserPlayerList
+        {
+            public IReadOnlyList<BrowserTabPlayer> Players { get; private set; } = [];
+
+            public BrowserPlayerSnapshot? Active => Players.Count > 0 ? Players[0].Snapshot : null;
+
+            public event EventHandler? Changed;
+
+            public void Set(params (string Key, BrowserPlayerSnapshot Report)[] tabs)
+            {
+                Players = [.. tabs.Select(t => new BrowserTabPlayer(t.Key, t.Report))];
+                Changed?.Invoke(this, EventArgs.Empty);
+            }
+
+            public Task SetLikedAsync(bool liked)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task SetDislikedAsync(bool disliked)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task ToggleShuffleAsync()
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task ToggleRepeatAsync()
+            {
+                return Task.CompletedTask;
+            }
+
+            public void Dispose()
+            {
             }
         }
 

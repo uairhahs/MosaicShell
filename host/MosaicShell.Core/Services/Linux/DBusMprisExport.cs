@@ -5,12 +5,17 @@ using Tmds.DBus.Protocol;
 namespace MosaicShell.Core.Services.Linux
 {
     /// <summary>
-    /// Publishes <see cref="MprisExportPolicy.BusName"/> on the session bus: answers the MPRIS root and Player
+    /// Publishes one MPRIS player (<see cref="MprisExportPolicy.BusName"/>, or a tab's name under it) on its own
+    /// session bus connection, since MPRIS signals are told apart by the sending connection: answers the MPRIS root and Player
     /// interfaces from the last <see cref="MprisExportedState"/>, announces changes with PropertiesChanged and Seeked, and
     /// hands transport calls to <see cref="IMprisExportCommands"/>. Owns the name only while there is something to
     /// publish, so clients drop the player when there is nothing.
     /// </summary>
-    public sealed class DBusMprisExport(string? address, IMprisExportCommands commands, TimeProvider? clock = null)
+    public sealed class DBusMprisExport(
+        string? address,
+        IMprisExportCommands commands,
+        TimeProvider? clock = null,
+        string busName = MprisExportPolicy.BusName)
         : IPathMethodHandler, IMprisExport
     {
         private const string PropertiesInterface = "org.freedesktop.DBus.Properties";
@@ -99,7 +104,7 @@ namespace MosaicShell.Core.Services.Linux
                     if (_ownsName)
                     {
                         _ownsName = false;
-                        _ = await connection.ReleaseNameAsync(MprisExportPolicy.BusName).ConfigureAwait(false);
+                        _ = await connection.ReleaseNameAsync(busName).ConfigureAwait(false);
                     }
 
                     return;
@@ -108,7 +113,7 @@ namespace MosaicShell.Core.Services.Linux
                 if (!_ownsName)
                 {
                     // A newly owned name is read whole (GetAll), so nothing needs announcing.
-                    _ownsName = await connection.TryRequestNameAsync(MprisExportPolicy.BusName, RequestNameOptions.None)
+                    _ownsName = await connection.TryRequestNameAsync(busName, RequestNameOptions.None)
                         .ConfigureAwait(false);
                     return;
                 }
@@ -381,8 +386,8 @@ namespace MosaicShell.Core.Services.Linux
 
         private static Dictionary<string, VariantValue> PlayerProperties(MprisExportedState? state, long position)
         {
-            bool active = state is not null;
-            bool canSeek = state?.Track.LengthMicros is > 0;
+            bool active = state is { Controllable: true };
+            bool canSeek = active && state!.Track.LengthMicros is > 0;
             return new Dictionary<string, VariantValue>
             {
                 ["PlaybackStatus"] = VariantValue.String(state?.PlaybackStatus ?? "Stopped"),

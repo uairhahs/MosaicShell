@@ -94,6 +94,20 @@ namespace MosaicShell.Core.Services.BrowserBridge
             }
         }
 
+        /// <summary>Every session worth showing (<see cref="BrowserSessionSelector.Shown"/>), in connection and tab order.</summary>
+        public IReadOnlyList<BrowserSessionEntry> ShownSessions
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    return [.. BrowserSessionSelector.Shown(Snapshot(), clock.GetUtcNow())
+                        .OrderBy(e => e.ConnectionId)
+                        .ThenBy(e => e.Report.TabId)];
+                }
+            }
+        }
+
         public BrowserSessionEntry? Select(string? smtcTitle, string? smtcSite = null)
         {
             lock (_gate)

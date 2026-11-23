@@ -237,7 +237,7 @@ namespace MosaicShell.Core.Services
                 companions.Add(new Mpris.GroutMprisBridge(
                     browser[0],
                     composite,
-                    commands => new Linux.DBusMprisExport(address: null, commands),
+                    (busName, commands) => new Linux.DBusMprisExport(address: null, commands, busName: busName),
                     Mpris.MprisExportPolicy.DefaultArtCacheDirectory(),
                     () => mpris.ActiveProcessId,
                     LinuxDesktopEntryResolver()));

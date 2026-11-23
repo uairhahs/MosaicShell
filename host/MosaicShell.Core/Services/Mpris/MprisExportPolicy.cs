@@ -19,7 +19,8 @@ namespace MosaicShell.Core.Services.Mpris
         MprisExportedTrack Track,
         long PositionMicros,
         string Identity,
-        string? DesktopEntry);
+        string? DesktopEntry,
+        bool Controllable = true);
 
     /// <summary>
     /// The MPRIS player the Host publishes on Linux from Grout's report. The browser's own players carry what the
@@ -36,6 +37,24 @@ namespace MosaicShell.Core.Services.Mpris
         public const long SeekToleranceMicros = 1_500_000;
 
         private const string TrackIdPrefix = "/org/mosaicshell/track/t";
+
+        /// <summary>The player name for one browser tab, under <see cref="BusName"/>.</summary>
+        public static string BusNameFor(string tabKey)
+        {
+            return BusName + "." + tabKey;
+        }
+
+        /// <summary>
+        /// Whether a tab's player can offer play, pause, skip and seek. Grout cannot drive the page, so transport goes
+        /// through the browser's own MPRIS player, which acts on its active tab only: the one the platform session is
+        /// playing. Any other tab shows its track with the buttons off rather than steering a different tab.
+        /// </summary>
+        public static bool IsControllableTab(MediaSessionInfo? session, BrowserPlayerSnapshot tab)
+        {
+            return session is not null
+                && BrowserSessionPolicy.LooksLikeBrowserSession(session.AppId)
+                && MediaTitleNormalizer.LooselyMatch(session.Title, tab.Title);
+        }
 
         /// <summary>Whether <paramref name="busName"/> is the Host's own player, which its MPRIS reader must skip.</summary>
         public static bool IsOwnPlayer(string busName)
@@ -146,7 +165,8 @@ namespace MosaicShell.Core.Services.Mpris
             string? artUrl,
             string? desktopEntry,
             MediaSessionInfo? session = null,
-            int? browserProcessId = null)
+            int? browserProcessId = null,
+            bool controllable = true)
         {
             if (report is null || string.IsNullOrWhiteSpace(report.Title) || report.State == BrowserPlaybackState.Stopped)
             {
@@ -170,7 +190,8 @@ namespace MosaicShell.Core.Services.Mpris
                 track,
                 PositionMicros(position),
                 string.IsNullOrWhiteSpace(report.Name) ? "MosaicShell" : report.Name,
-                desktopEntry);
+                desktopEntry,
+                controllable);
         }
 
         /// <summary>
@@ -188,6 +209,11 @@ namespace MosaicShell.Core.Services.Mpris
             if (previous is null || !SameTrack(previous.Track, next.Track))
             {
                 changed.Add("Metadata");
+            }
+
+            if (previous is not null && previous.Controllable != next.Controllable)
+            {
+                changed.AddRange(["CanPlay", "CanPause", "CanGoNext", "CanGoPrevious", "CanSeek"]);
             }
 
             return changed;

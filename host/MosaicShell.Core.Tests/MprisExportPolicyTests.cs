@@ -239,5 +239,39 @@ namespace MosaicShell.Core.Tests
             _ = MprisExportPolicy.DesktopEntryFor("edge", "/opt/microsoft/msedge-beta/msedge", null, installed.Contains)
                 .Should().Be("microsoft-edge");
         }
+
+        [Fact]
+        public void Each_tab_has_its_own_bus_name_under_the_hosts()
+        {
+            string name = MprisExportPolicy.BusNameFor("c1_t42");
+
+            _ = name.Should().Be("org.mpris.MediaPlayer2.mosaicshell.c1_t42");
+            _ = MprisExportPolicy.IsOwnPlayer(name).Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("Vision", "edge", "Vision", true)]
+        [InlineData("Vision | YouTube Music", "edge", "Vision", true)]
+        [InlineData("A video", "edge", "Vision", false)]
+        [InlineData("Vision", "spotify", "Vision", false)]
+        [InlineData(null, null, "Vision", false)]
+        public void Only_the_tab_the_browser_is_playing_through_its_own_player_takes_transport(
+            string? sessionTitle, string? sessionApp, string tabTitle, bool expected)
+        {
+            // Grout cannot play, pause or seek; the browser's own MPRIS player can, but only for its active tab.
+            MediaSessionInfo? session = sessionTitle is null ? null : new MediaSessionInfo(sessionTitle, null, sessionApp, true);
+
+            _ = MprisExportPolicy.IsControllableTab(session, Snapshot(title: tabTitle)).Should().Be(expected);
+        }
+
+        [Fact]
+        public void A_tab_that_gains_or_loses_control_announces_its_capabilities()
+        {
+            MprisExportedState controllable = MprisExportPolicy.From(Snapshot(), null, null, controllable: true)!;
+            MprisExportedState not = MprisExportPolicy.From(Snapshot(), null, null, controllable: false)!;
+
+            _ = MprisExportPolicy.ChangedPlayerProperties(controllable, not)
+                .Should().BeEquivalentTo(["CanPlay", "CanPause", "CanGoNext", "CanGoPrevious", "CanSeek"]);
+        }
     }
 }

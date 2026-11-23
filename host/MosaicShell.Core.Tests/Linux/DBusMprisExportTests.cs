@@ -139,6 +139,19 @@ namespace MosaicShell.Core.Tests.Linux
         }
 
         [LinuxBusFact]
+        public async Task A_tab_player_publishes_under_its_own_name_without_controls_when_another_tab_plays()
+        {
+            string name = MprisExportPolicy.BusNameFor("c1_t9");
+            using DBusMprisExport tab = new(_dbus!.Address, _commands, busName: name);
+
+            await tab.PublishAsync(State() with { Controllable = false });
+
+            MprisPlayerState? player = await _reader!.ReadPlayerAsync(name);
+            _ = player!.Title.Should().Be("Vision");
+            _ = player.CanSeek.Should().BeFalse();
+        }
+
+        [LinuxBusFact]
         public async Task The_claimed_browser_process_is_published_as_kde_pid()
         {
             MprisExportedState state = State();
