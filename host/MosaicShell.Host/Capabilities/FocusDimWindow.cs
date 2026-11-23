@@ -22,11 +22,28 @@ namespace MosaicShell.Host.Capabilities
     {
         private int _monitorIndex;
         private readonly FocusDimRoute _route;
+        private readonly double _fixedScaling = 1.0;
 
         /// <summary>A press on the layer where it is the outside-click hitbox (X11).</summary>
         public event EventHandler? OutsideClicked;
 
+        /// <summary>
+        /// A bare outside-click hitbox over a screen other than the flyout's (see
+        /// <see cref="TesseraFocusDimPolicy.LayerCoversEveryScreen"/>). It is never dimmed and stays on that screen.
+        /// </summary>
+        public FocusDimWindow(Screen otherScreen, FocusDimRoute route)
+            : this(monitorIndexOneBased: 0, route, dimEnabled: false, onFlyoutScreen: false)
+        {
+            FixedBounds = otherScreen.Bounds;
+            _fixedScaling = otherScreen.Scaling > 0.1 ? otherScreen.Scaling : 1.0;
+        }
+
         public FocusDimWindow(int monitorIndexOneBased, FocusDimRoute route, bool dimEnabled = true)
+            : this(monitorIndexOneBased, route, dimEnabled, onFlyoutScreen: true)
+        {
+        }
+
+        private FocusDimWindow(int monitorIndexOneBased, FocusDimRoute route, bool dimEnabled, bool onFlyoutScreen)
         {
             _monitorIndex = monitorIndexOneBased;
             _route = route;
@@ -46,7 +63,7 @@ namespace MosaicShell.Host.Capabilities
                 ? [WindowTransparencyLevel.Transparent]
                 : [WindowTransparencyLevel.None];
             Background = new SolidColorBrush(Color.FromArgb(
-                TesseraFocusDimPolicy.ResolveLayerAlpha(route, dimEnabled),
+                TesseraFocusDimPolicy.ResolveLayerAlpha(route, dimEnabled, onFlyoutScreen),
                 TesseraFocusDimPolicy.CrustR,
                 TesseraFocusDimPolicy.CrustG,
                 TesseraFocusDimPolicy.CrustB));
@@ -64,11 +81,31 @@ namespace MosaicShell.Host.Capabilities
             };
         }
 
+        /// <summary>The screen a bare hitbox covers; null for the layer that follows the flyout's monitor.</summary>
+        public PixelRect? FixedBounds { get; }
+
+        /// <summary>The screens other than the one this layer's monitor index resolves to.</summary>
+        public List<Screen> OtherScreens()
+        {
+            List<Screen> screens = Screens?.All?.ToList() ?? [];
+            Screen? target = ResolveScreen(screens, _monitorIndex) ?? Screens?.Primary;
+            return target is null ? [] : [.. screens.Where(s => s.Bounds != target.Bounds)];
+        }
+
         public void PlaceOnMonitor(int monitorIndexOneBased)
         {
             _monitorIndex = monitorIndexOneBased;
             try
             {
+                if (FixedBounds is PixelRect fixedBounds)
+                {
+                    Position = new PixelPoint(fixedBounds.X, fixedBounds.Y);
+                    Width = Math.Max(1, fixedBounds.Width / _fixedScaling);
+                    Height = Math.Max(1, fixedBounds.Height / _fixedScaling);
+                    ApplyDimChrome();
+                    return;
+                }
+
                 List<Screen> screens = Screens?.All?.ToList() ?? [];
                 Screen? screen = ResolveScreen(screens, _monitorIndex) ?? Screens?.Primary;
                 if (screen is null)

@@ -33,6 +33,7 @@ namespace MosaicShell.Host.Capabilities
         private readonly Lock _gate = new();
         private readonly Dictionary<string, FlyoutWindow> _windows = new(StringComparer.OrdinalIgnoreCase);
         private FocusDimWindow? _focusDim;
+        private readonly List<FocusDimWindow> _otherScreenLayers = [];
         private TesseraOutsideClickWatcher? _outsideClick;
         private DispatcherTimer? _outsideClickArm;
         private readonly TesseraFlyoutLiveSyncCoalescer _patchCoalesce = new();
@@ -896,21 +897,65 @@ namespace MosaicShell.Host.Capabilities
             {
                 _focusDim.PlaceOnMonitor(request.MonitorIndex);
             }
+
+            SyncOtherScreenLayers(_focusDim, route);
         }
 
-        private void CloseFocusDim()
+        /// <summary>
+        /// Where the layer is the outside-click hitbox, every other screen gets a bare one too, so a click on another
+        /// display also dismisses. Rebuilt only when the set of other screens changed (the flyout moved monitor).
+        /// </summary>
+        private void SyncOtherScreenLayers(FocusDimWindow dim, FocusDimRoute route)
         {
-            FocusDimWindow? dim = _focusDim;
-            _focusDim = null;
-            if (dim is null)
+            List<Screen> others = TesseraFocusDimPolicy.LayerCoversEveryScreen(route) ? dim.OtherScreens() : [];
+            if (others.Select(static s => s.Bounds).SequenceEqual(_otherScreenLayers.Select(static l => l.FixedBounds ?? default)))
             {
                 return;
             }
 
-            try { dim.InstantClose(); }
+            CloseOtherScreenLayers();
+            foreach (Screen screen in others)
+            {
+                FocusDimWindow layer = new(screen, route);
+                layer.OutsideClicked += (_, _) => DismissTesseraImmediate();
+                layer.PrepareBeforeShow();
+                layer.Show();
+                layer.FadeIn();
+                _otherScreenLayers.Add(layer);
+            }
+
+            Log($"hitbox layers on other screens={_otherScreenLayers.Count}");
+        }
+
+        private void CloseFocusDim()
+        {
+            CloseOtherScreenLayers();
+            FocusDimWindow? dim = _focusDim;
+            _focusDim = null;
+            CloseLayer(dim);
+        }
+
+        private void CloseOtherScreenLayers()
+        {
+            foreach (FocusDimWindow layer in _otherScreenLayers)
+            {
+                CloseLayer(layer);
+            }
+
+            _otherScreenLayers.Clear();
+        }
+
+        private static void CloseLayer(FocusDimWindow? layer)
+        {
+            if (layer is null)
+            {
+                return;
+            }
+
+            try { layer.InstantClose(); }
             catch
             {
-                try { dim.Close(); } catch { /* ignore */ }
+                try { layer.Close(); } catch { /* ignore */ }
             }
         }
 
