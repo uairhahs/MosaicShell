@@ -64,6 +64,22 @@ namespace MosaicShell.Core.Services.Mpris
             return durationSeconds > 0 ? (long)Math.Round(durationSeconds * 1_000_000) : null;
         }
 
+        /// <summary>Where published covers are written: <c>$XDG_CACHE_HOME</c> when absolute, else <c>~/.cache</c>.</summary>
+        public static string ArtCacheDirectory(string? xdgCacheHome, string home)
+        {
+            string cache = !string.IsNullOrEmpty(xdgCacheHome) && xdgCacheHome.StartsWith('/')
+                ? xdgCacheHome.TrimEnd('/')
+                : home.TrimEnd('/') + "/.cache";
+            return cache + "/MosaicShell/mpris-art";
+        }
+
+        public static string DefaultArtCacheDirectory()
+        {
+            return ArtCacheDirectory(
+                Environment.GetEnvironmentVariable("XDG_CACHE_HOME"),
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+        }
+
         /// <summary>The cover's file name in the art cache: its content hash, so the same cover keeps the same file.</summary>
         public static string ArtFileName(byte[] cover)
         {
@@ -78,27 +94,34 @@ namespace MosaicShell.Core.Services.Mpris
         /// <summary>
         /// The state to publish for <paramref name="report"/>, or null to publish nothing: no report, no title, or
         /// stopped. <paramref name="artUrl"/> is where the cover was written; <paramref name="desktopEntry"/> the
-        /// browser's, so clients show its icon.
+        /// browser's, so clients show its icon. Grout reports no timing, so position and length come from
+        /// <paramref name="session"/>, the platform's own session, when it plays the same track (as SMTC supplies them on
+        /// Windows).
         /// </summary>
-        public static MprisExportedState? From(BrowserPlayerSnapshot? report, string? artUrl, string? desktopEntry)
+        public static MprisExportedState? From(
+            BrowserPlayerSnapshot? report, string? artUrl, string? desktopEntry, MediaSessionInfo? session = null)
         {
             if (report is null || string.IsNullOrWhiteSpace(report.Title) || report.State == BrowserPlaybackState.Stopped)
             {
                 return null;
             }
 
+            bool sameTrack = session is not null
+                && string.Equals(session.Title?.Trim(), report.Title.Trim(), StringComparison.OrdinalIgnoreCase);
+            double position = sameTrack && report.PositionSeconds <= 0 ? session!.PositionSeconds : report.PositionSeconds;
+            double duration = sameTrack && report.DurationSeconds <= 0 ? session!.DurationSeconds : report.DurationSeconds;
             string artist = report.Artist.Trim();
             MprisExportedTrack track = new(
                 TrackId(report.Title, artist),
                 report.Title,
                 artist.Length > 0 ? [artist] : [],
                 string.IsNullOrWhiteSpace(report.Album) ? null : report.Album,
-                LengthMicros(report.DurationSeconds),
+                LengthMicros(duration),
                 artUrl);
             return new MprisExportedState(
                 PlaybackStatus(report.State),
                 track,
-                PositionMicros(report.PositionSeconds),
+                PositionMicros(position),
                 string.IsNullOrWhiteSpace(report.Name) ? "MosaicShell" : report.Name,
                 desktopEntry);
         }

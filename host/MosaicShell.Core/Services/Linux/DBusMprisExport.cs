@@ -11,7 +11,7 @@ namespace MosaicShell.Core.Services.Linux
     /// publish, so clients drop the player when there is nothing.
     /// </summary>
     public sealed class DBusMprisExport(string? address, IMprisExportCommands commands, TimeProvider? clock = null)
-        : IPathMethodHandler, IDisposable
+        : IPathMethodHandler, IMprisExport
     {
         private const string PropertiesInterface = "org.freedesktop.DBus.Properties";
 

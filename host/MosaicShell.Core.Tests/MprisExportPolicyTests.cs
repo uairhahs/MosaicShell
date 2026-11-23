@@ -158,5 +158,30 @@ namespace MosaicShell.Core.Tests
 
             _ = MprisExportPolicy.PositionAt(state, sinceReport).Should().Be(expected);
         }
+
+        [Fact]
+        public void Timing_comes_from_the_platform_session_when_it_is_the_same_track()
+        {
+            // Grout reports no timing; the browser's own MPRIS player has it, as SMTC does on Windows.
+            BrowserPlayerSnapshot report = Snapshot(position: 0, duration: 0);
+            MediaSessionInfo session = new("vision ", "Pìjus", "microsoft-edge", true, PositionSeconds: 75.6, DurationSeconds: 157);
+
+            MprisExportedState state = MprisExportPolicy.From(report, null, null, session)!;
+
+            _ = state.PositionMicros.Should().Be(75_600_000L);
+            _ = state.Track.LengthMicros.Should().Be(157_000_000L);
+        }
+
+        [Fact]
+        public void A_session_for_another_track_lends_no_timing()
+        {
+            BrowserPlayerSnapshot report = Snapshot(position: 0, duration: 0);
+            MediaSessionInfo session = new("Something else", "Band", "spotify", true, PositionSeconds: 75.6, DurationSeconds: 157);
+
+            MprisExportedState state = MprisExportPolicy.From(report, null, null, session)!;
+
+            _ = state.PositionMicros.Should().Be(0);
+            _ = state.Track.LengthMicros.Should().BeNull();
+        }
     }
 }

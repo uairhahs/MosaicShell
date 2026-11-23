@@ -138,8 +138,17 @@ namespace MosaicShell.Core.Services
         public required IAudioDeviceService AudioDevices { get; init; }
         public required IShellFlyoutTriggerSource ShellFlyoutTriggers { get; init; }
 
+        /// <summary>Platform parts that serve no interface of their own but live as long as the services (Linux: the MPRIS export).</summary>
+        public IReadOnlyList<IDisposable> Companions { get; init; } = [];
+
         public void Dispose()
         {
+            // Companions read the services, so they go first.
+            foreach (IDisposable companion in Companions)
+            {
+                companion.Dispose();
+            }
+
             Audio.Dispose();
             AppAudio.Dispose();
             Media.Dispose();
@@ -210,33 +219,51 @@ namespace MosaicShell.Core.Services
         /// <summary>
         /// Linux: media from MPRIS players, shell flyout triggers from KDE's KGlobalAccel, Plasma pop-up suppression and
         /// screen brightness from PowerDevil (all on the session bus), and volume through pactl; every other service inert
-        /// until it has a Linux implementation.
+        /// until it has a Linux implementation. With browser sources, Grout's report is also published as the Host's own
+        /// MPRIS player (<see cref="Mpris.GroutMprisBridge"/>), so Plasma's media controls get the page's cover too.
         /// </summary>
         /// <param name="browserSources">The Grout extension source beside MPRIS (the Host passes true; tests leave it off).</param>
         public static HostServices CreateLinuxDefaults(bool browserSources = false)
         {
             // One PowerDevil watcher serves both the value and its changes, as Windows' pair shares one service.
             Linux.KdeScreenBrightness brightness = new();
+            Mpris.MprisMediaSessionService mpris = new(new Linux.DBusMprisBus(), new Mpris.MprisArtSource());
+            IMediaSessionService media;
+            List<IDisposable> companions = [];
+            if (browserSources)
+            {
+                IBrowserMediaSource[] browser = BrowserSourceStack.CreateLinux(() => mpris.Current);
+                CompositeMediaSessionService composite = new(mpris, browser);
+                companions.Add(new Mpris.GroutMprisBridge(
+                    browser[0],
+                    composite,
+                    commands => new Linux.DBusMprisExport(address: null, commands),
+                    Mpris.MprisExportPolicy.DefaultArtCacheDirectory()));
+                media = composite;
+            }
+            else
+            {
+                media = new CompositeMediaSessionService(mpris);
+            }
+
             return CreateInert(
-                CreateLinuxMediaStack(busAddress: null, browserSources),
+                media,
                 new Linux.KGlobalAccelShellFlyoutTriggers(),
                 new Linux.PlasmaOsdSuppressor(),
                 new Linux.PulseAudioService(),
                 brightness,
-                brightness);
+                brightness,
+                companions);
         }
 
         /// <summary>
         /// MPRIS in the same composite that Windows wraps SMTC in, so both platforms merge and present by one path.
         /// </summary>
         /// <param name="busAddress">Null for the user's session bus; tests pass a private bus.</param>
-        /// <param name="browserSources">Adds Grout's source, as Windows does in <c>CreateMediaStack</c>.</param>
-        public static IMediaSessionService CreateLinuxMediaStack(string? busAddress = null, bool browserSources = false)
+        public static IMediaSessionService CreateLinuxMediaStack(string? busAddress = null)
         {
-            Mpris.MprisMediaSessionService mpris = new(new Linux.DBusMprisBus(busAddress), new Mpris.MprisArtSource());
-            return browserSources
-                ? new CompositeMediaSessionService(mpris, BrowserSourceStack.CreateLinux(() => mpris.Current))
-                : new CompositeMediaSessionService(mpris);
+            return new CompositeMediaSessionService(
+                new Mpris.MprisMediaSessionService(new Linux.DBusMprisBus(busAddress), new Mpris.MprisArtSource()));
         }
 #endif
 
@@ -246,7 +273,8 @@ namespace MosaicShell.Core.Services
             INativeOsdSuppressor? osdSuppressor = null,
             IAudioService? audio = null,
             IBrightnessService? brightness = null,
-            IBrightnessChangeSource? brightnessChanges = null)
+            IBrightnessChangeSource? brightnessChanges = null,
+            IReadOnlyList<IDisposable>? companions = null)
         {
             return new HostServices
             {
@@ -267,6 +295,7 @@ namespace MosaicShell.Core.Services
                 Airplane = new NullAirplaneModeService(),
                 AudioDevices = new NullAudioDeviceService(),
                 ShellFlyoutTriggers = shellFlyoutTriggers ?? new NullShellFlyoutTriggerSource(),
+                Companions = companions ?? [],
             };
         }
 
