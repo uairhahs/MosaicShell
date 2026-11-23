@@ -32,8 +32,8 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void The_same_request_has_the_same_key()
         {
-            KeyOf(Request()).Should().Be(KeyOf(Request()));
-            KeyOf(Request()).GetHashCode().Should().Be(KeyOf(Request()).GetHashCode());
+            _ = KeyOf(Request()).Should().Be(KeyOf(Request()));
+            _ = KeyOf(Request()).GetHashCode().Should().Be(KeyOf(Request()).GetHashCode());
         }
 
         [Theory]
@@ -49,7 +49,7 @@ namespace MosaicShell.Core.Tests
             FlyoutRequest before = Request(payload: new() { ["volume"] = "0.5", ["mediaTitle"] = "A", ["on"] = "0" });
             FlyoutRequest after = Request(payload: new() { ["volume"] = "0.5", ["mediaTitle"] = "A", ["on"] = "0", [name] = value });
 
-            KeyOf(after).Should().Be(KeyOf(before));
+            _ = KeyOf(after).Should().Be(KeyOf(before));
         }
 
         [Fact]
@@ -67,7 +67,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Motion_dismissal_and_monitor_are_not_structure()
         {
-            KeyOf(Request(ani: 0, autoDismissMs: 9000, monitorIndex: 2)).Should().Be(KeyOf(Request()));
+            _ = KeyOf(Request(ani: 0, autoDismissMs: 9000, monitorIndex: 2)).Should().Be(KeyOf(Request()));
         }
 
         [Fact]
@@ -76,14 +76,14 @@ namespace MosaicShell.Core.Tests
             FlyoutStructureKey withStrip = KeyOf(Request(payload: new() { ["showMediaStrip"] = "1" }));
             FlyoutStructureKey without = KeyOf(Request(payload: new() { ["showMediaStrip"] = "0" }));
 
-            withStrip.Should().NotBe(without);
-            withStrip.CanPatch(builtFrom: without).Should().BeFalse();
+            _ = withStrip.Should().NotBe(without);
+            _ = withStrip.CanPatch(builtFrom: without).Should().BeFalse();
         }
 
         [Fact]
         public void An_equal_key_can_patch()
         {
-            KeyOf(Request()).CanPatch(builtFrom: KeyOf(Request())).Should().BeTrue();
+            _ = KeyOf(Request()).CanPatch(builtFrom: KeyOf(Request())).Should().BeTrue();
         }
 
         [Fact]
@@ -91,13 +91,13 @@ namespace MosaicShell.Core.Tests
         {
             FlyoutStructureKey baseline = KeyOf(Request());
 
-            KeyOf(Request(kind: "media")).Should().NotBe(baseline);
-            KeyOf(Request(style: "Windows11")).Should().NotBe(baseline);
-            KeyOf(Request(payload: new() { ["flyoutScale"] = "125" })).Should().NotBe(baseline);
-            KeyOf(Request(payload: new() { ["acrylic"] = "0" })).Should().NotBe(baseline);
-            KeyOf(Request(payload: new() { ["backdropBlur"] = "0" })).Should().NotBe(baseline);
-            KeyOf(Request(payload: new() { ["accent"] = "#FF8800" })).Should().NotBe(baseline);
-            KeyOf(Request(), TesseraFlyoutSessionMode.Stacked).Should().NotBe(baseline);
+            _ = KeyOf(Request(kind: "media")).Should().NotBe(baseline);
+            _ = KeyOf(Request(style: "Windows11")).Should().NotBe(baseline);
+            _ = KeyOf(Request(payload: new() { ["flyoutScale"] = "125" })).Should().NotBe(baseline);
+            _ = KeyOf(Request(payload: new() { ["acrylic"] = "0" })).Should().NotBe(baseline);
+            _ = KeyOf(Request(payload: new() { ["backdropBlur"] = "0" })).Should().NotBe(baseline);
+            _ = KeyOf(Request(payload: new() { ["accent"] = "#FF8800" })).Should().NotBe(baseline);
+            _ = KeyOf(Request(), TesseraFlyoutSessionMode.Stacked).Should().NotBe(baseline);
         }
 
         [Fact]
@@ -112,39 +112,52 @@ namespace MosaicShell.Core.Tests
                 ["accent"] = "",
             });
 
-            KeyOf(Request()).Should().Be(KeyOf(explicitDefaults));
+            _ = KeyOf(Request()).Should().Be(KeyOf(explicitDefaults));
         }
 
         [Fact]
         public void The_legacy_baked_frost_key_means_the_same_as_backdrop_blur()
         {
-            KeyOf(Request(payload: new() { ["bakedFrost"] = "0" }))
+            _ = KeyOf(Request(payload: new() { ["bakedFrost"] = "0" }))
                 .Should().Be(KeyOf(Request(payload: new() { ["backdropBlur"] = "0" })));
         }
 
         [Fact]
         public void Spelling_that_the_readers_already_treat_alike_does_not_split_the_key()
         {
-            KeyOf(Request(style: "fluent", kind: "VOL")).Should().Be(KeyOf(Request(style: "Fluent", kind: "vol")));
-            KeyOf(Request(payload: new() { ["accent"] = "#ff8800" })).Should().Be(KeyOf(Request(payload: new() { ["accent"] = "#FF8800" })));
+            _ = KeyOf(Request(style: "fluent", kind: "VOL")).Should().Be(KeyOf(Request(style: "Fluent", kind: "vol")));
+            _ = KeyOf(Request(payload: new() { ["accent"] = "#ff8800" })).Should().Be(KeyOf(Request(payload: new() { ["accent"] = "#FF8800" })));
         }
 
         [Fact]
         public void The_scale_is_clamped_the_way_the_builder_clamps_it()
         {
-            KeyOf(Request(payload: new() { ["flyoutScale"] = "999" })).Should().Be(KeyOf(Request(payload: new() { ["flyoutScale"] = "150" })));
-            KeyOf(Request(payload: new() { ["flyoutScale"] = "nonsense" })).Should().Be(KeyOf(Request()));
+            _ = KeyOf(Request(payload: new() { ["flyoutScale"] = "999" })).Should().Be(KeyOf(Request(payload: new() { ["flyoutScale"] = "150" })));
+            _ = KeyOf(Request(payload: new() { ["flyoutScale"] = "nonsense" })).Should().Be(KeyOf(Request()));
         }
 
         [Fact]
         public void The_differing_fields_are_named_in_a_fixed_order_for_the_log()
         {
-            FlyoutStructureKey built = KeyOf(Request(style: "Fluent", payload: new() { ["showMediaStrip"] = "0" }));
-            FlyoutStructureKey next = KeyOf(Request(style: "Windows11", payload: new() { ["showMediaStrip"] = "1", ["acrylic"] = "0" }),
-                TesseraFlyoutSessionMode.Stacked);
+            // Every field is flipped by hand, not derived from a request: NativeTranslucency follows the process's
+            // backend, which is WindowsAcrylic on Windows and None on Linux, so a request-built pair differs by OS.
+            FlyoutStructureKey built = KeyOf(Request());
+            FlyoutStructureKey next = built with
+            {
+                Kind = "brightness",
+                Style = "windows11",
+                ScalePercent = built.ScalePercent + 25,
+                ShowMedia = !built.ShowMedia,
+                Topology = TesseraFlyoutSessionMode.Stacked,
+                Acrylic = !built.Acrylic,
+                BackdropBlur = !built.BackdropBlur,
+                Accent = "#00ff00",
+                NativeTranslucency = !built.NativeTranslucency,
+            };
 
-            next.DifferingFields(built).Should().Equal("style", "showMedia", "topology", "acrylic");
-            built.DifferingFields(built).Should().BeEmpty();
+            _ = next.DifferingFields(built).Should().Equal(
+                "kind", "style", "scale", "showMedia", "topology", "acrylic", "backdropBlur", "accent", "nativeTranslucency");
+            _ = built.DifferingFields(built).Should().BeEmpty();
         }
     }
 }
