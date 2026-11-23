@@ -201,5 +201,115 @@ namespace MosaicShell.Core.Tests
                 _ = Values.Remove(subKey);
             }
         }
+
+        private string ConfigHome()
+        {
+            return Path.Combine(_root, "config");
+        }
+
+        private string LinuxRelay()
+        {
+            string path = Path.Combine(_root, "install", "MosaicShell.BrowserRelay");
+            _ = Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, "");
+            return path;
+        }
+
+        private string ManifestIn(string browserDir)
+        {
+            return Path.Combine(ConfigHome(), browserDir, "NativeMessagingHosts", "com.mosaicshell.grout.json");
+        }
+
+        [Fact]
+        public void On_Linux_each_installed_browser_gets_the_manifest_in_its_own_config()
+        {
+            // Chromium browsers on Linux find a native host by file, not by registry: <config>/<browser>/NativeMessagingHosts.
+            _ = Directory.CreateDirectory(Path.Combine(ConfigHome(), "microsoft-edge"));
+            _ = Directory.CreateDirectory(Path.Combine(ConfigHome(), "google-chrome", "NativeMessagingHosts"));
+            string relay = LinuxRelay();
+
+            int registered = NativeHostRegistration.RegisterForLinuxBrowsers(relay, ConfigHome());
+
+            _ = registered.Should().Be(2);
+            foreach (string browser in new[] { "microsoft-edge", "google-chrome" })
+            {
+                using JsonDocument manifest = JsonDocument.Parse(File.ReadAllText(ManifestIn(browser)));
+                _ = manifest.RootElement.GetProperty("path").GetString().Should().Be(relay);
+                _ = manifest.RootElement.GetProperty("allowed_origins").EnumerateArray().Select(o => o.GetString())
+                    .Should().Contain("chrome-extension://" + NativeHostRegistration.WebStoreExtensionId + "/");
+            }
+        }
+
+        [Fact]
+        public void On_Linux_a_browser_that_is_not_installed_gets_nothing()
+        {
+            _ = Directory.CreateDirectory(Path.Combine(ConfigHome(), "microsoft-edge"));
+
+            _ = NativeHostRegistration.RegisterForLinuxBrowsers(LinuxRelay(), ConfigHome());
+
+            _ = Directory.Exists(Path.Combine(ConfigHome(), "chromium")).Should().BeFalse("registering must not create a browser's profile");
+            _ = Directory.Exists(Path.Combine(ConfigHome(), "BraveSoftware")).Should().BeFalse();
+        }
+
+        [Fact]
+        public void On_Linux_the_known_browsers_include_edge_chrome_chromium_and_brave()
+        {
+            _ = NativeHostRegistration.LinuxBrowserConfigDirs.Should().Contain(
+            [
+                "microsoft-edge", "microsoft-edge-beta", "microsoft-edge-dev",
+                "google-chrome", "chromium", Path.Combine("BraveSoftware", "Brave-Browser"),
+            ]);
+        }
+
+        [Fact]
+        public void On_Linux_registering_again_rewrites_nothing_that_is_already_right()
+        {
+            _ = Directory.CreateDirectory(Path.Combine(ConfigHome(), "microsoft-edge"));
+            string relay = LinuxRelay();
+            _ = NativeHostRegistration.RegisterForLinuxBrowsers(relay, ConfigHome());
+            DateTime first = File.GetLastWriteTimeUtc(ManifestIn("microsoft-edge"));
+            File.SetLastWriteTimeUtc(ManifestIn("microsoft-edge"), first.AddMinutes(-5));
+            DateTime aged = File.GetLastWriteTimeUtc(ManifestIn("microsoft-edge"));
+
+            _ = NativeHostRegistration.RegisterForLinuxBrowsers(relay, ConfigHome());
+
+            _ = File.GetLastWriteTimeUtc(ManifestIn("microsoft-edge")).Should().Be(aged);
+        }
+
+        [Fact]
+        public void On_Linux_a_relay_that_is_not_there_registers_nothing()
+        {
+            _ = Directory.CreateDirectory(Path.Combine(ConfigHome(), "microsoft-edge"));
+
+            int registered = NativeHostRegistration.RegisterForLinuxBrowsers(Path.Combine(_root, "missing", "MosaicShell.BrowserRelay"), ConfigHome());
+
+            _ = registered.Should().Be(0);
+            _ = File.Exists(ManifestIn("microsoft-edge")).Should().BeFalse();
+        }
+
+        [Fact]
+        public void On_Linux_unregistering_removes_only_our_manifest()
+        {
+            _ = Directory.CreateDirectory(Path.Combine(ConfigHome(), "microsoft-edge", "NativeMessagingHosts"));
+            string other = Path.Combine(ConfigHome(), "microsoft-edge", "NativeMessagingHosts", "com.other.json");
+            File.WriteAllText(other, "{}");
+            _ = NativeHostRegistration.RegisterForLinuxBrowsers(LinuxRelay(), ConfigHome());
+
+            NativeHostRegistration.UnregisterForLinuxBrowsers(ConfigHome());
+
+            _ = File.Exists(ManifestIn("microsoft-edge")).Should().BeFalse();
+            _ = File.Exists(other).Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("/custom/config", "/home/u", "/custom/config")]
+        [InlineData(null, "/home/u", "/home/u/.config")]
+        [InlineData("", "/home/u", "/home/u/.config")]
+        [InlineData("relative/config", "/home/u", "/home/u/.config")]
+        public void The_config_home_follows_XDG_and_falls_back_to_dot_config(string? xdgConfigHome, string home, string expected)
+        {
+            // The XDG spec ignores a relative XDG_CONFIG_HOME.
+            _ = NativeHostRegistration.LinuxConfigHome(xdgConfigHome, home).Should().Be(expected);
+        }
     }
 }

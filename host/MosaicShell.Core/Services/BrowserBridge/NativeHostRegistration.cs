@@ -121,6 +121,102 @@ namespace MosaicShell.Core.Services.BrowserBridge
             }
         }
 
+        /// <summary>
+        /// The Chromium browsers' folders under the Linux config home. On Linux a browser finds a native host by a manifest
+        /// file in its own <c>NativeMessagingHosts</c> folder, not by registry; Edge's store copy of Grout works in each.
+        /// </summary>
+        public static IReadOnlyList<string> LinuxBrowserConfigDirs { get; } =
+        [
+            "microsoft-edge",
+            "microsoft-edge-beta",
+            "microsoft-edge-dev",
+            "google-chrome",
+            "google-chrome-beta",
+            "google-chrome-unstable",
+            "chromium",
+            Path.Combine("BraveSoftware", "Brave-Browser"),
+            "vivaldi",
+        ];
+
+        /// <summary>XDG_CONFIG_HOME when it is an absolute path (the XDG spec ignores a relative one), else ~/.config.</summary>
+        public static string LinuxConfigHome(string? xdgConfigHome, string home)
+        {
+            return !string.IsNullOrEmpty(xdgConfigHome) && xdgConfigHome.StartsWith('/')
+                ? xdgConfigHome
+                : home.TrimEnd('/') + "/.config";
+        }
+
+        public static string DefaultLinuxConfigHome()
+        {
+            return LinuxConfigHome(
+                Environment.GetEnvironmentVariable("XDG_CONFIG_HOME"),
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+        }
+
+        /// <summary>
+        /// Writes the manifest into each installed browser's <c>NativeMessagingHosts</c> folder under
+        /// <paramref name="configHome"/>, so the browsers start <paramref name="relayPath"/> for the extension. A browser
+        /// whose folder does not exist is not installed and gets nothing. Writes only what differs. Returns how many
+        /// browsers now have the manifest; 0 when the relay is not where it says.
+        /// </summary>
+        public static int RegisterForLinuxBrowsers(string relayPath, string configHome)
+        {
+            if (!Path.IsPathFullyQualified(relayPath) || !File.Exists(relayPath))
+            {
+                return 0;
+            }
+
+            string manifest = ManifestFor(relayPath);
+            int registered = 0;
+            foreach (string browser in LinuxBrowserConfigDirs)
+            {
+                string browserDir = Path.Combine(configHome, browser);
+                if (!Directory.Exists(browserDir))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    string hosts = Path.Combine(browserDir, "NativeMessagingHosts");
+                    _ = Directory.CreateDirectory(hosts);
+                    string manifestPath = Path.Combine(hosts, HostName + ".json");
+                    if (!File.Exists(manifestPath) || File.ReadAllText(manifestPath) != manifest)
+                    {
+                        File.WriteAllText(manifestPath, manifest, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                    }
+
+                    registered++;
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
+                {
+                    // One browser's folder refusing the file must not stop the others.
+                }
+            }
+
+            return registered;
+        }
+
+        /// <summary>Removes this host's manifest from every browser under <paramref name="configHome"/>, for an uninstall.</summary>
+        public static void UnregisterForLinuxBrowsers(string configHome)
+        {
+            foreach (string browser in LinuxBrowserConfigDirs)
+            {
+                try
+                {
+                    string manifestPath = Path.Combine(configHome, browser, "NativeMessagingHosts", HostName + ".json");
+                    if (File.Exists(manifestPath))
+                    {
+                        File.Delete(manifestPath);
+                    }
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
+                {
+                    // An uninstall that cannot clean up must still finish.
+                }
+            }
+        }
+
         /// <summary>Removes the registration and its manifest, for an uninstall. Nothing registered is harmless.</summary>
         public static void Unregister(string dataDirectory, IUserRegistry registry)
         {
