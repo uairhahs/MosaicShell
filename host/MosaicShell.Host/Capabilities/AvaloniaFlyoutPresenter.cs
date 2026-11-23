@@ -886,7 +886,7 @@ namespace MosaicShell.Host.Capabilities
             if (_focusDim is null)
             {
                 _focusDim = new FocusDimWindow(request.MonitorIndex, route, TesseraFocusDimPolicy.EnabledFromPayload(request.Payload));
-                _focusDim.OutsideClicked += (_, _) => DismissTesseraImmediate();
+                _focusDim.OutsideClicked += (_, at) => DismissTesseraImmediate(at);
                 _focusDim.PrepareBeforeShow();
                 // Show dim BEFORE the flyout (caller order) so the flyout is the later topmost peer.
                 _focusDim.Show();
@@ -917,7 +917,7 @@ namespace MosaicShell.Host.Capabilities
             foreach (Screen screen in others)
             {
                 FocusDimWindow layer = new(screen, route);
-                layer.OutsideClicked += (_, _) => DismissTesseraImmediate();
+                layer.OutsideClicked += (_, at) => DismissTesseraImmediate(at);
                 layer.PrepareBeforeShow();
                 layer.Show();
                 layer.FadeIn();
@@ -974,9 +974,10 @@ namespace MosaicShell.Host.Capabilities
             _outsideClick = null;
         }
 
-        private void DismissTesseraImmediate()
+        private void DismissTesseraImmediate(PixelPoint at)
         {
-            Log("outside-click dismiss");
+            Log($"outside-click dismiss at={at.X},{at.Y}");
+            PlayOutsideClickRipple(at);
             if (_stackedSession is not null)
             {
                 DismissStackedTesseraImmediate();
@@ -984,6 +985,28 @@ namespace MosaicShell.Host.Capabilities
             }
 
             DismissTesseraSingleImmediate();
+        }
+
+        /// <summary>The ripple at the click (<see cref="TesseraOutsideClickRippleSpec"/>); it never blocks the dismiss.</summary>
+        private void PlayOutsideClickRipple(PixelPoint at)
+        {
+            try
+            {
+                Screens? screens = _focusDim?.Screens;
+                if (screens is null)
+                {
+                    lock (_gate)
+                    {
+                        screens = _windows.Values.FirstOrDefault()?.Screens;
+                    }
+                }
+
+                _ = OutsideClickRippleWindow.Play(at, X11FocusDim.ResolveRoute(), screens);
+            }
+            catch (Exception ex)
+            {
+                Log($"ripple failed: {ex.Message}");
+            }
         }
 
         private void WireTesseraSession(FlyoutWindow window)

@@ -24,8 +24,8 @@ namespace MosaicShell.Host.Capabilities
         private readonly FocusDimRoute _route;
         private readonly double _fixedScaling = 1.0;
 
-        /// <summary>A press on the layer where it is the outside-click hitbox (X11).</summary>
-        public event EventHandler? OutsideClicked;
+        /// <summary>A press on the layer where it is the outside-click hitbox (X11), at its screen pixel.</summary>
+        public event EventHandler<PixelPoint>? OutsideClicked;
 
         /// <summary>
         /// A bare outside-click hitbox over a screen other than the flyout's (see
@@ -72,7 +72,7 @@ namespace MosaicShell.Host.Capabilities
             PointerPressed += (_, e) =>
             {
                 e.Handled = true;
-                OutsideClicked?.Invoke(this, EventArgs.Empty);
+                OutsideClicked?.Invoke(this, this.PointToScreen(e.GetPosition(this)));
             };
             Opened += (_, _) =>
             {

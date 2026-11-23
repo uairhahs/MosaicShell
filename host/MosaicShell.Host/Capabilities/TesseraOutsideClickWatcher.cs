@@ -30,7 +30,7 @@ namespace MosaicShell.Host.Capabilities
         }
 #pragma warning restore CS0649
 
-        private readonly Action _dismiss;
+        private readonly Action<Avalonia.PixelPoint> _dismiss;
         private nint _hook;
         private LowLevelMouseProc? _proc;
         private readonly List<(int Left, int Top, int Right, int Bottom)> _rects = [];
@@ -43,12 +43,12 @@ namespace MosaicShell.Host.Capabilities
         private const int WmMButtonDown = 0x0207;
         private const int WmNcLButtonDown = 0x00A1;
 
-        public TesseraOutsideClickWatcher(FlyoutWindow flyout, Action dismiss)
+        public TesseraOutsideClickWatcher(FlyoutWindow flyout, Action<Avalonia.PixelPoint> dismiss)
             : this([flyout], dismiss)
         {
         }
 
-        public TesseraOutsideClickWatcher(IReadOnlyList<FlyoutWindow> flyouts, Action dismiss)
+        public TesseraOutsideClickWatcher(IReadOnlyList<FlyoutWindow> flyouts, Action<Avalonia.PixelPoint> dismiss)
         {
             _dismiss = dismiss;
             CaptureBounds(flyouts);
@@ -162,7 +162,7 @@ namespace MosaicShell.Host.Capabilities
                         MsllHookStruct info = Marshal.PtrToStructure<MsllHookStruct>(lParam);
                         if (_hasBounds && !HitTest(info.Pt.X, info.Pt.Y))
                         {
-                            PostDismissOnce();
+                            PostDismissOnce(new Avalonia.PixelPoint(info.Pt.X, info.Pt.Y));
                         }
                     }
                     catch
@@ -188,7 +188,7 @@ namespace MosaicShell.Host.Capabilities
             return false;
         }
 
-        private void PostDismissOnce()
+        private void PostDismissOnce(Avalonia.PixelPoint at)
         {
             // Hook may fire many downs; only queue dismiss once.
             if (Interlocked.CompareExchange(ref _dismissPosted, 1, 0) != 0)
@@ -198,7 +198,7 @@ namespace MosaicShell.Host.Capabilities
             // Background, never Send/Invoke from the hook thread.
             Dispatcher.UIThread.Post(() =>
             {
-                try { _dismiss(); }
+                try { _dismiss(at); }
                 catch { /* ignore */ }
             }, DispatcherPriority.Background);
         }
