@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using MosaicShell.Core.Services.Pulse;
 
 namespace MosaicShell.Core.Services.Linux
@@ -30,6 +31,7 @@ namespace MosaicShell.Core.Services.Linux
         private static readonly TimeSpan MaxResubscribeDelay = TimeSpan.FromSeconds(30);
 
         private readonly IPactl _pactl;
+        private readonly ProcessPactl? _ownedPactl;
         private readonly TimeSpan _resubscribeDelay;
         private readonly CancellationTokenSource _stop = new();
         private readonly Lock _gate = new();
@@ -50,7 +52,8 @@ namespace MosaicShell.Core.Services.Linux
 
         public PulseAudioService(IPactl? pactl = null, TimeSpan? resubscribeDelay = null)
         {
-            _pactl = pactl ?? new ProcessPactl();
+            _ownedPactl = pactl is null ? new ProcessPactl() : null;
+            _pactl = pactl ?? _ownedPactl!;
             _resubscribeDelay = resubscribeDelay ?? TimeSpan.FromSeconds(1);
             _ = Task.Run(() => WatchAsync(_stop.Token));
             _ = Task.Run(() => WriteAsync(_stop.Token));
@@ -121,6 +124,8 @@ namespace MosaicShell.Core.Services.Linux
         {
             _stop.Cancel();
             _ = _writeSignal.Release();
+            // Synchronously: the cancelled loops' own cleanup may not run before the process exits.
+            _ownedPactl?.Dispose();
         }
 
         private async Task WatchAsync(CancellationToken ct)
@@ -304,10 +309,65 @@ namespace MosaicShell.Core.Services.Linux
         }
     }
 
-    /// <summary>Runs the real pactl, with no shell, as a child process.</summary>
-    public sealed class ProcessPactl : IPactl
+    /// <summary>
+    /// Runs the real pactl, with no shell, as a child process. Every child is tracked and ended on <see cref="Dispose"/>,
+    /// on a normal process exit, and on SIGTERM, SIGINT, SIGHUP and SIGQUIT: libpulse ignores SIGPIPE, so an orphaned
+    /// <c>pactl subscribe</c> never notices its reader is gone and would run forever. .NET does not raise ProcessExit
+    /// for SIGTERM (checked 2026-11-23), so the signals are registered here and then left to their default action.
+    /// SIGKILL or a crash of the Host can still leave one behind.
+    /// </summary>
+    public sealed class ProcessPactl : IPactl, IDisposable
     {
         private static readonly TimeSpan CallTimeout = TimeSpan.FromSeconds(3);
+        private readonly string _executable;
+        private readonly ChildProcessSet _children = new();
+        private readonly EventHandler _onProcessExit;
+        private readonly List<PosixSignalRegistration> _signals = [];
+        private int _disposed;
+
+        public ProcessPactl()
+            : this("pactl")
+        {
+        }
+
+        /// <summary>For tests: a stand-in for pactl at <paramref name="executable"/>.</summary>
+        internal ProcessPactl(string executable)
+        {
+            _executable = executable;
+            _onProcessExit = (_, _) => _children.KillAll();
+            AppDomain.CurrentDomain.ProcessExit += _onProcessExit;
+            foreach (PosixSignal signal in (PosixSignal[])[PosixSignal.SIGTERM, PosixSignal.SIGINT, PosixSignal.SIGHUP, PosixSignal.SIGQUIT])
+            {
+                try
+                {
+                    // The context is not cancelled, so the signal's default action (exit) still follows.
+                    _signals.Add(PosixSignalRegistration.Create(signal, _ => _children.KillAll()));
+                }
+                catch (PlatformNotSupportedException)
+                {
+                    // Not on this OS; Dispose and ProcessExit still cover a normal exit.
+                }
+            }
+        }
+
+        /// <summary>Ids of the pactl children still running, for diagnostics and tests.</summary>
+        internal IReadOnlyList<int> ChildIds => _children.Ids;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) != 0)
+            {
+                return;
+            }
+
+            AppDomain.CurrentDomain.ProcessExit -= _onProcessExit;
+            foreach (PosixSignalRegistration registration in _signals)
+            {
+                registration.Dispose();
+            }
+
+            _children.KillAll();
+        }
 
         public async Task<string?> RunAsync(IReadOnlyList<string> args, CancellationToken cancellationToken)
         {
@@ -330,6 +390,10 @@ namespace MosaicShell.Core.Services.Linux
                 Kill(process);
                 cancellationToken.ThrowIfCancellationRequested();
                 return null;
+            }
+            finally
+            {
+                _children.Remove(process);
             }
         }
 
@@ -358,12 +422,18 @@ namespace MosaicShell.Core.Services.Linux
             finally
             {
                 Kill(process);
+                _children.Remove(process);
             }
         }
 
-        private static Process? Start(IReadOnlyList<string> args)
+        private Process? Start(IReadOnlyList<string> args)
         {
-            ProcessStartInfo info = new("pactl")
+            if (Volatile.Read(ref _disposed) != 0)
+            {
+                return null;
+            }
+
+            ProcessStartInfo info = new(_executable)
             {
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -377,7 +447,18 @@ namespace MosaicShell.Core.Services.Linux
 
             try
             {
-                return Process.Start(info);
+                Process? process = Process.Start(info);
+                if (process is not null)
+                {
+                    _children.Add(process);
+                    if (Volatile.Read(ref _disposed) != 0)
+                    {
+                        // Disposed while this one started: KillAll may already have run without it.
+                        _children.KillAll();
+                    }
+                }
+
+                return process;
             }
             catch (System.ComponentModel.Win32Exception)
             {
