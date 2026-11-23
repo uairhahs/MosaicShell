@@ -139,6 +139,17 @@ namespace MosaicShell.Core.Tests.Linux
         }
 
         [LinuxBusFact]
+        public async Task The_claimed_browser_process_is_published_as_kde_pid()
+        {
+            MprisExportedState state = State();
+            await _export!.PublishAsync(state with { Track = state.Track with { KdePid = 13951 } });
+
+            MprisPlayerState? player = await _reader!.ReadPlayerAsync(MprisExportPolicy.BusName);
+
+            _ = player!.MirroredPid.Should().Be(13951);
+        }
+
+        [LinuxBusFact]
         public async Task Publishing_nothing_gives_up_the_name_so_clients_drop_the_player()
         {
             await _export!.PublishAsync(State());

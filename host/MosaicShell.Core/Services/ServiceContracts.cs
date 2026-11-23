@@ -238,7 +238,8 @@ namespace MosaicShell.Core.Services
                     browser[0],
                     composite,
                     commands => new Linux.DBusMprisExport(address: null, commands),
-                    Mpris.MprisExportPolicy.DefaultArtCacheDirectory()));
+                    Mpris.MprisExportPolicy.DefaultArtCacheDirectory(),
+                    () => mpris.ActiveProcessId));
                 media = composite;
             }
             else

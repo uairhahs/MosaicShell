@@ -425,6 +425,12 @@ namespace MosaicShell.Core.Services.Linux
                 {
                     map["mpris:artUrl"] = VariantValue.String(art);
                 }
+
+                if (track.KdePid is int pid)
+                {
+                    // As plasma-browser-integration writes it (an int): Plasma hides the player of that process.
+                    map["kde:pid"] = VariantValue.Int32(pid);
+                }
             }
 
             return new Dict<string, VariantValue>(map).AsVariantValue();

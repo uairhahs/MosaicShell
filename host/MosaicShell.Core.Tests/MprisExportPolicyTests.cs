@@ -183,5 +183,31 @@ namespace MosaicShell.Core.Tests
             _ = state.PositionMicros.Should().Be(0);
             _ = state.Track.LengthMicros.Should().BeNull();
         }
+
+        [Fact]
+        public void A_browser_session_claims_the_browser_process_so_its_own_player_is_hidden()
+        {
+            // Plasma hides a player whose process another player names in kde:pid, as it does for its own mirror.
+            _ = MprisExportPolicy.From(Snapshot(), null, "edge", null, browserProcessId: 13951)!.Track.KdePid.Should().Be(13951);
+            _ = MprisExportPolicy.From(Snapshot(), null, desktopEntry: null, null, browserProcessId: 13951)!.Track.KdePid
+                .Should().BeNull("a process is only claimed while the session is the browser");
+        }
+
+        [Fact]
+        public void A_site_suffixed_session_title_still_lends_its_timing()
+        {
+            MediaSessionInfo session = new("Vision | YouTube Music", null, "edge", true, PositionSeconds: 10, DurationSeconds: 157);
+
+            _ = MprisExportPolicy.From(Snapshot(position: 0, duration: 0), null, null, session)!.Track.LengthMicros.Should().Be(157_000_000L);
+        }
+
+        [Fact]
+        public void A_new_browser_process_is_announced_as_new_metadata()
+        {
+            MprisExportedState before = MprisExportPolicy.From(Snapshot(), null, "edge", null, browserProcessId: 1)!;
+            MprisExportedState after = MprisExportPolicy.From(Snapshot(), null, "edge", null, browserProcessId: 2)!;
+
+            _ = MprisExportPolicy.ChangedPlayerProperties(before, after).Should().Equal("Metadata");
+        }
     }
 }

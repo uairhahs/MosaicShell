@@ -27,10 +27,14 @@ namespace MosaicShell.Core.Services
                 : null;
         }
 
+        /// <summary>Whole ids too short to match by substring: Edge's own MPRIS player has no desktop entry and is "edge".</summary>
+        private static readonly string[] BrowserIds = ["edge"];
+
         public static bool LooksLikeBrowserSession(string? appId)
         {
             return !string.IsNullOrEmpty(appId)
-                && BrowserMarkers.Any(marker => appId.Contains(marker, StringComparison.OrdinalIgnoreCase));
+                && (BrowserMarkers.Any(marker => appId.Contains(marker, StringComparison.OrdinalIgnoreCase))
+                    || BrowserIds.Any(id => appId.Equals(id, StringComparison.OrdinalIgnoreCase)));
         }
     }
 }

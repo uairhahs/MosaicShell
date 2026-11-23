@@ -15,6 +15,7 @@ namespace MosaicShell.Core.Services.Mpris
         private readonly IMediaSessionService _media;
         private readonly IMprisExport _export;
         private readonly string _artDirectory;
+        private readonly Func<int?> _browserProcessId;
         private readonly Lock _gate = new();
         private Task _settled = Task.CompletedTask;
         private string? _currentArt;
@@ -25,11 +26,13 @@ namespace MosaicShell.Core.Services.Mpris
             IBrowserMediaSource browser,
             IMediaSessionService media,
             Func<IMprisExportCommands, IMprisExport> createExport,
-            string artDirectory)
+            string artDirectory,
+            Func<int?>? browserProcessId = null)
         {
             _browser = browser;
             _media = media;
             _artDirectory = artDirectory;
+            _browserProcessId = browserProcessId ?? (static () => null);
             _export = createExport(this);
             _browser.Changed += OnChanged;
             _media.Changed += OnChanged;
@@ -120,7 +123,8 @@ namespace MosaicShell.Core.Services.Mpris
                 string? artUrl = report?.CoverPng is { Length: > 0 } cover ? WriteArt(cover) : null;
                 MediaSessionInfo? session = _media.Current;
                 string? desktopEntry = BrowserSessionPolicy.LooksLikeBrowserSession(session?.AppId) ? session!.AppId : null;
-                await _export.PublishAsync(MprisExportPolicy.From(report, artUrl, desktopEntry, session)).ConfigureAwait(false);
+                await _export.PublishAsync(MprisExportPolicy.From(report, artUrl, desktopEntry, session, _browserProcessId()))
+                    .ConfigureAwait(false);
             }
             catch (Exception ex)
             {

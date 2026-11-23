@@ -20,6 +20,7 @@ namespace MosaicShell.Core.Tests
         [InlineData("google-chrome")]
         [InlineData("brave-browser")]
         [InlineData("vivaldi-stable")]
+        [InlineData("edge")]
         public void Browsers_and_web_apps_are_browser_sessions(string appId)
         {
             _ = BrowserSessionPolicy.LooksLikeBrowserSession(appId).Should().BeTrue();
@@ -32,6 +33,7 @@ namespace MosaicShell.Core.Tests
         [InlineData("org.kde.elisa")]
         [InlineData("spotify")]
         [InlineData("vlc")]
+        [InlineData("hedgehog-player")]
         [InlineData("")]
         [InlineData(null)]
         public void Native_players_and_nothing_are_not(string? appId)

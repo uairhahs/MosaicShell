@@ -194,6 +194,27 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public void The_browser_process_is_the_one_a_mirror_names()
+        {
+            _bus.Add(Track("org.mpris.MediaPlayer2.edge.instance66176", "Song | YouTube Music") with { Artists = [""], OwnerPid = 66176 });
+            _bus.Add(Track("org.mpris.MediaPlayer2.plasma-browser-integration", "Song") with { DesktopEntry = "microsoft-edge", OwnerPid = 5000, MirroredPid = 66176 });
+
+            using MprisMediaSessionService service = Start();
+
+            _ = service.ActiveProcessId.Should().Be(66176);
+        }
+
+        [Fact]
+        public void Without_a_mirror_the_browser_process_is_the_player_itself()
+        {
+            _bus.Add(Track("org.mpris.MediaPlayer2.edge.instance13951", "U & Me") with { OwnerPid = 13951 });
+
+            using MprisMediaSessionService service = Start();
+
+            _ = service.ActiveProcessId.Should().Be(13951);
+        }
+
+        [Fact]
         public void The_timeline_poll_moves_the_position_with_progress_only()
         {
             _bus.Add(Track(Spotify, "One"));

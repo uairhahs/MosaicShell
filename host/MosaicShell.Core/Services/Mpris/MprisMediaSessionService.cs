@@ -37,6 +37,12 @@ namespace MosaicShell.Core.Services.Mpris
         public MediaSessionInfo? Current { get; private set; }
         public event EventHandler? Changed;
 
+        /// <summary>
+        /// The browser process behind the player shown: the one a mirror names in <c>kde:pid</c>, else the player's
+        /// own. Null when nothing is shown.
+        /// </summary>
+        public int? ActiveProcessId => _active is { } active ? active.MirroredPid ?? active.OwnerPid : null;
+
         /// <summary>Timeline / position / late art only: does not open flyouts.</summary>
         public event EventHandler? ProgressChanged;
 

@@ -10,7 +10,8 @@ namespace MosaicShell.Core.Services.Mpris
         IReadOnlyList<string> Artists,
         string? Album,
         long? LengthMicros,
-        string? ArtUrl);
+        string? ArtUrl,
+        int? KdePid = null);
 
     /// <summary>Everything the published player answers, as of one report.</summary>
     public sealed record MprisExportedState(
@@ -96,18 +97,22 @@ namespace MosaicShell.Core.Services.Mpris
         /// stopped. <paramref name="artUrl"/> is where the cover was written; <paramref name="desktopEntry"/> the
         /// browser's, so clients show its icon. Grout reports no timing, so position and length come from
         /// <paramref name="session"/>, the platform's own session, when it plays the same track (as SMTC supplies them on
-        /// Windows).
+        /// Windows). While the session is the browser (<paramref name="desktopEntry"/> set), the track claims
+        /// <paramref name="browserProcessId"/> in <c>kde:pid</c>, so Plasma hides the browser's own player behind this one.
         /// </summary>
         public static MprisExportedState? From(
-            BrowserPlayerSnapshot? report, string? artUrl, string? desktopEntry, MediaSessionInfo? session = null)
+            BrowserPlayerSnapshot? report,
+            string? artUrl,
+            string? desktopEntry,
+            MediaSessionInfo? session = null,
+            int? browserProcessId = null)
         {
             if (report is null || string.IsNullOrWhiteSpace(report.Title) || report.State == BrowserPlaybackState.Stopped)
             {
                 return null;
             }
 
-            bool sameTrack = session is not null
-                && string.Equals(session.Title?.Trim(), report.Title.Trim(), StringComparison.OrdinalIgnoreCase);
+            bool sameTrack = session is not null && MediaTitleNormalizer.LooselyMatch(session.Title, report.Title);
             double position = sameTrack && report.PositionSeconds <= 0 ? session!.PositionSeconds : report.PositionSeconds;
             double duration = sameTrack && report.DurationSeconds <= 0 ? session!.DurationSeconds : report.DurationSeconds;
             string artist = report.Artist.Trim();
@@ -117,7 +122,8 @@ namespace MosaicShell.Core.Services.Mpris
                 artist.Length > 0 ? [artist] : [],
                 string.IsNullOrWhiteSpace(report.Album) ? null : report.Album,
                 LengthMicros(duration),
-                artUrl);
+                artUrl,
+                desktopEntry is null ? null : browserProcessId);
             return new MprisExportedState(
                 PlaybackStatus(report.State),
                 track,
@@ -177,7 +183,8 @@ namespace MosaicShell.Core.Services.Mpris
                 && a.Artists.SequenceEqual(b.Artists)
                 && a.Album == b.Album
                 && a.LengthMicros == b.LengthMicros
-                && a.ArtUrl == b.ArtUrl;
+                && a.ArtUrl == b.ArtUrl
+                && a.KdePid == b.KdePid;
         }
 
         private static string ShortHash(byte[] bytes)
