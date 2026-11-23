@@ -56,6 +56,16 @@ namespace MosaicShell.Core.Modules.Tessera
             return FlyoutIngressPolicy.PresentsSession(decision);
         }
 
+        /// <summary>
+        /// Invariant: the dim never outlives every Tessera flyout. Checked whenever a Tessera window reaches Hidden, so a
+        /// dim re-opened by a request that raced an exit (the slots then hide anyway) is closed instead of staying over
+        /// the desktop with no flyout above it.
+        /// </summary>
+        public static bool ShouldCloseOrphanedDim(bool dimOpen, bool anyTesseraFlyoutShowing)
+        {
+            return dimOpen && !anyTesseraFlyoutShowing;
+        }
+
         /// <summary>Host must use this for SetLayeredWindowAttributes, never a parallel magic number.</summary>
         public static byte ResolveLayeredAlpha()
         {

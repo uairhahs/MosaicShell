@@ -112,6 +112,18 @@ namespace MosaicShell.Core.Tests
             _ = Enum.GetValues<FlyoutIngressDecision>().Should().HaveCount(9);
         }
 
+        [Theory]
+        [InlineData(true, false, true)]
+        [InlineData(true, true, false)]
+        [InlineData(false, false, false)]
+        [InlineData(false, true, false)]
+        public void The_dim_never_outlives_every_tessera_flyout(bool dimOpen, bool anyTesseraFlyoutShowing, bool expected)
+        {
+            // A request during a stacked exit re-opened the dim, then the slots finished their exit and hid; nothing
+            // closed the dim, which stayed over the desktop with no flyout above it (KDE, 2026-11-23).
+            _ = TesseraFocusDimPolicy.ShouldCloseOrphanedDim(dimOpen, anyTesseraFlyoutShowing).Should().Be(expected);
+        }
+
         [Fact]
         public void On_x11_the_window_itself_carries_the_dim_alpha()
         {

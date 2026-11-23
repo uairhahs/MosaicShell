@@ -953,7 +953,30 @@ namespace MosaicShell.Host.Capabilities
             if (ModuleIds.IsTessera(window.FlyoutRequest.ModuleId))
             {
                 _session.SetPhase(phase);
+                if (phase == TesseraFlyoutPhase.Hidden)
+                {
+                    // After the work in flight settles, so a re-present that is replacing this window wins.
+                    Dispatcher.UIThread.Post(CloseOrphanedFocusDim, DispatcherPriority.Background);
+                }
             }
+        }
+
+        private void CloseOrphanedFocusDim()
+        {
+            bool anyShowing;
+            lock (_gate)
+            {
+                anyShowing = _windows.Values.Any(static w => ModuleIds.IsTessera(w.FlyoutRequest.ModuleId) && w.IsFlyoutSessionShowing);
+            }
+
+            if (!TesseraFocusDimPolicy.ShouldCloseOrphanedDim(_focusDim is not null, anyShowing))
+            {
+                return;
+            }
+
+            Log("focusDim orphaned (no Tessera flyout showing), closing");
+            StopOutsideClickWatcher();
+            CloseFocusDim();
         }
 
         private void OnFlyoutTransientDismissed(string moduleId)
