@@ -1,4 +1,5 @@
 using FluentAssertions;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules.Tessera;
 
 namespace MosaicShell.Core.Tests
@@ -73,6 +74,42 @@ namespace MosaicShell.Core.Tests
         public void The_dim_can_show_on_any_route_but_none(FocusDimRoute route, bool expected)
         {
             _ = TesseraFocusDimPolicy.CanDim(route).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(FlyoutIngressDecision.ColdBuild)]
+        [InlineData(FlyoutIngressDecision.CloseThenColdBuild)]
+        [InlineData(FlyoutIngressDecision.ReviveHidden)]
+        [InlineData(FlyoutIngressDecision.RecreateHwnd)]
+        [InlineData(FlyoutIngressDecision.RebuildInPlace)]
+        [InlineData(FlyoutIngressDecision.RebuildStructure)]
+        [InlineData(FlyoutIngressDecision.ReviveDuringExit)]
+        public void Every_ingress_that_shows_or_rebuilds_the_flyout_syncs_the_dim(FlyoutIngressDecision decision)
+        {
+            // A revived flyout skipped the dim: transient dismiss closes it, and only a cold build or rebuild opened
+            // it again, so every press after the first came without one (KDE, 2026-11-23).
+            _ = TesseraFocusDimPolicy.MustSyncOnIngress(decision).Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData(FlyoutIngressDecision.PatchActiveSession)]
+        [InlineData(FlyoutIngressDecision.PatchVisibleCoalesced)]
+        public void A_patch_of_a_showing_session_leaves_its_dim_alone(FlyoutIngressDecision decision)
+        {
+            _ = TesseraFocusDimPolicy.MustSyncOnIngress(decision).Should().BeFalse();
+        }
+
+        [Fact]
+        public void Every_ingress_decision_has_a_dim_answer()
+        {
+            // A new decision must be added to one of the two theories above, not fall through unnoticed.
+            FlyoutIngressDecision[] patches = [FlyoutIngressDecision.PatchActiveSession, FlyoutIngressDecision.PatchVisibleCoalesced];
+            foreach (FlyoutIngressDecision decision in Enum.GetValues<FlyoutIngressDecision>())
+            {
+                _ = TesseraFocusDimPolicy.MustSyncOnIngress(decision).Should().Be(!patches.Contains(decision), decision.ToString());
+            }
+
+            _ = Enum.GetValues<FlyoutIngressDecision>().Should().HaveCount(9);
         }
 
         [Fact]

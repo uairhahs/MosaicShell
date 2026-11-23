@@ -531,12 +531,25 @@ namespace MosaicShell.Host.Capabilities
                 && decision == FlyoutIngressDecision.ReviveHidden
                 && TryPatchLive(reuse, request, resetDismiss))
             {
+                // Transient dismiss closed the dim with the hide; open it again before the flyout shows, as a cold
+                // build does, so the flyout is the later topmost peer.
+                bool syncDim = TesseraFocusDimPolicy.MustSyncOnIngress(decision);
+                if (syncDim)
+                {
+                    SyncFocusDim(request);
+                }
+
                 if (!reuse.IsVisible)
                 {
                     reuse.Show();
                 }
 
-                Log($"revive kind={request.Kind} style={request.StyleId} {reuse.MotionStateTag}");
+                if (syncDim)
+                {
+                    RestackAboveDim(reuse);
+                }
+
+                Log($"revive kind={request.Kind} style={request.StyleId} focusDim={_focusDim is not null} {reuse.MotionStateTag}");
                 reuse.PlayShowAnimation();
                 return;
             }

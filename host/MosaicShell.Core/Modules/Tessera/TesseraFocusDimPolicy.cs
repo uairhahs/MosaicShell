@@ -1,3 +1,5 @@
+using MosaicShell.Core.Capabilities.Platform;
+
 namespace MosaicShell.Core.Modules.Tessera
 {
     /// <summary>The OS mechanism that draws the focus dim translucent and click-through.</summary>
@@ -42,6 +44,16 @@ namespace MosaicShell.Core.Modules.Tessera
         public static bool ShouldCloseFocusDimOnTransientDismiss()
         {
             return InstantDismissMustCloseFocusDim;
+        }
+
+        /// <summary>
+        /// Whether an ingress must open or update the dim. Transient dismiss closes it, so every decision that shows a
+        /// flyout from hidden or rebuilds it must open it again, a revived hidden window included; only a patch of a
+        /// session that is already showing keeps the dim it has.
+        /// </summary>
+        public static bool MustSyncOnIngress(FlyoutIngressDecision decision)
+        {
+            return decision is not (FlyoutIngressDecision.PatchActiveSession or FlyoutIngressDecision.PatchVisibleCoalesced);
         }
 
         /// <summary>Host must use this for SetLayeredWindowAttributes, never a parallel magic number.</summary>
