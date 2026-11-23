@@ -423,16 +423,13 @@ namespace MosaicShell.Host.Capabilities
             foreach (FlyoutWindow window in windows)
             {
                 window.FinishLayout();
+                // Before the play check: ApplyRequest cleared it, and a slot rebuilt while visible does not replay.
+                window.PresenterDrivesMotion = TesseraNativeTranslucencyStackedPolicy.SlotMotionIsPresenterDriven(play);
             }
 
             if (!play)
             {
                 return;
-            }
-
-            foreach (FlyoutWindow window in windows)
-            {
-                window.PresenterDrivesMotion = true;
             }
 
             if (!TesseraFlyoutWindowPolicy.HideUntilCompositionReady)

@@ -232,6 +232,17 @@ namespace MosaicShell.Core.Modules.Tessera
         public const bool MustReuseRegisteredFlyoutHwndPerSlot = true;
 
         /// <summary>
+        /// Whether a stacked slot's motion is driven by the presenter (one cluster-wide entrance and exit) rather than by
+        /// the window itself. Always: a slot rebuilt while visible does not replay the entrance, and if it were left
+        /// window-driven, the presenter's exit would be followed by the window's own, a second fade-out.
+        /// </summary>
+        public static bool SlotMotionIsPresenterDriven(bool entranceReplays)
+        {
+            _ = entranceReplays;
+            return true;
+        }
+
+        /// <summary>
         /// Meter volume spine is 28 DIP. Stacked cluster relayout must not use the 40 DIP
         /// single-flyout width gate or the volume HWND never receives cluster placement.
         /// </summary>

@@ -160,6 +160,16 @@ namespace MosaicShell.Core.Tests
             _ = TesseraNativeTranslucencyStackedPolicy.SupersededSingleHwndMustCancelDismissBeforeClose.Should().BeTrue();
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void Stacked_slots_stay_presenter_driven_whether_or_not_the_entrance_replays(bool entranceReplays)
+        {
+            // ApplyRequest clears the window's flag, and only an entrance replay set it again. A slot rebuilt while
+            // visible then ran its own exit after the presenter's, so it faded out twice (KDE, 2026-11-23).
+            _ = TesseraNativeTranslucencyStackedPolicy.SlotMotionIsPresenterDriven(entranceReplays).Should().BeTrue();
+        }
+
         [Fact]
         public void Superseded_status_dismiss_must_not_cascade_into_stacked_volume()
         {
