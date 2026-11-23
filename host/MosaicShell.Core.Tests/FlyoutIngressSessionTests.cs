@@ -36,6 +36,16 @@ namespace MosaicShell.Core.Tests
             }
         }
 
+        [Theory]
+        [InlineData(true, true)]
+        [InlineData(false, false)]
+        public void Only_windows_has_the_outside_click_watcher(bool isWindows, bool expected)
+        {
+            // The watcher is a WH_MOUSE_LL hook in user32. Elsewhere every arm threw DllNotFoundException inside a
+            // dispatcher timer, which Avalonia swallowed, so outside clicks never dismissed (KDE, 2026-11-23).
+            _ = TesseraFlyoutOutsideClickPolicy.PlatformCanWatch(isWindows).Should().Be(expected);
+        }
+
         [Fact]
         public void The_dim_is_synced_whenever_the_session_is_presented()
         {

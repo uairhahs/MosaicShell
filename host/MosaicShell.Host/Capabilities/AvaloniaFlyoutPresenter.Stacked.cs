@@ -789,6 +789,11 @@ namespace MosaicShell.Host.Capabilities
                 _outsideClickArm?.Stop();
             }
 
+            if (!TesseraFlyoutOutsideClickPolicy.PlatformCanWatch(OperatingSystem.IsWindows()))
+            {
+                return;
+            }
+
             _outsideClickArm = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1500) };
             List<FlyoutWindow> captured = [.. windows];
             _outsideClickArm.Tick += (_, _) =>

@@ -30,5 +30,15 @@ namespace MosaicShell.Core.Modules.Tessera
         {
             return FlyoutIngressPolicy.PresentsSession(decision);
         }
+
+        /// <summary>
+        /// Whether this OS has the watcher at all. It is a WH_MOUSE_LL hook in user32, so only Windows does; elsewhere
+        /// the Host must not arm it (every start would throw inside a dispatcher timer) and outside clicks do not
+        /// dismiss until that platform has its own watcher. Pass <c>OperatingSystem.IsWindows()</c>.
+        /// </summary>
+        public static bool PlatformCanWatch(bool isWindows)
+        {
+            return isWindows;
+        }
     }
 }
