@@ -202,5 +202,17 @@ namespace MosaicShell.Core.Tests
 
             _ = TesseraFocusDimPolicy.ShouldShow(payload, platformCanDim).Should().Be(expected);
         }
+
+        [Theory]
+        [InlineData(FocusDimRoute.Win32LayeredAlpha, FlyoutRestack.Win32InsertAfter)]
+        [InlineData(FocusDimRoute.X11ArgbInputShape, FlyoutRestack.X11RestackWindow)]
+        [InlineData(FocusDimRoute.None, FlyoutRestack.None)]
+        public void Every_platform_with_a_layer_can_put_the_flyout_back_above_it(FocusDimRoute route, FlyoutRestack expected)
+        {
+            // A layer shown after the flyout stacks on top of it, and on X11 it is the outside-click hitbox: every click
+            // on that flyout then dismissed it (KDE: a kind switch rebuilt the hidden window, showed it, then made the
+            // layer; 14 of 137 outside-click dismisses landed inside the flyout).
+            _ = TesseraFocusDimPolicy.ResolveRestack(route).Should().Be(expected);
+        }
     }
 }

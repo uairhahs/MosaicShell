@@ -15,6 +15,18 @@ namespace MosaicShell.Core.Modules.Tessera
         X11ArgbInputShape,
     }
 
+    /// <summary>How a flyout is put back above the focus dim layer when the layer was shown after it.</summary>
+    public enum FlyoutRestack
+    {
+        None,
+
+        /// <summary>Windows: SetWindowPos with the flyout inserted above the dim.</summary>
+        Win32InsertAfter,
+
+        /// <summary>X11: an EWMH _NET_RESTACK_WINDOW request, the flyout directly above the layer.</summary>
+        X11RestackWindow,
+    }
+
     /// <summary>
     /// Subtle desktop dim behind Tessera (Focus-plugin analogue). Extremely light, not a modal scrim.
     /// Must never capture input (Win32 click-through); outside clicks dismiss Tessera instantly without swallowing the click.
@@ -114,6 +126,20 @@ namespace MosaicShell.Core.Modules.Tessera
         public static bool ShouldShow(IReadOnlyDictionary<string, string>? payload, bool platformCanDim)
         {
             return platformCanDim && EnabledFromPayload(payload);
+        }
+
+        /// <summary>
+        /// How each platform restacks a flyout above the layer. A layer mapped after the flyout lands on top of it, and on
+        /// X11 the layer is the outside-click hitbox, so the flyout's own controls would dismiss it.
+        /// </summary>
+        public static FlyoutRestack ResolveRestack(FocusDimRoute route)
+        {
+            return route switch
+            {
+                FocusDimRoute.Win32LayeredAlpha => FlyoutRestack.Win32InsertAfter,
+                FocusDimRoute.X11ArgbInputShape => FlyoutRestack.X11RestackWindow,
+                _ => FlyoutRestack.None,
+            };
         }
 
         /// <summary>On X11 the layer catches outside clicks (Wayland gives no others), so it shows with the dim off too.</summary>
