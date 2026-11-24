@@ -4,6 +4,11 @@ using NAudio.Wave;
 
 namespace MosaicShell.Core.Services
 {
+    /// <summary>
+    /// Capability hotkeys through RegisterHotKey on a message-only window. RegisterHotKey and UnregisterHotKey refuse a
+    /// window owned by another thread (ERROR_WINDOW_OF_OTHER_THREAD), so every call runs on the window's own thread
+    /// (<see cref="HotkeyWindow.Run{T}"/>); the tables are touched only there, where WM_HOTKEY also reads them.
+    /// </summary>
     public sealed class WindowsHotkeyService : IHotkeyService
     {
         private readonly Dictionary<string, int> _ids = new(StringComparer.OrdinalIgnoreCase);
@@ -18,26 +23,33 @@ namespace MosaicShell.Core.Services
 
         public bool Register(string id, ModifierKeys modifiers, int virtualKey, Action callback)
         {
-            Unregister(id);
-            if (_window.Handle == IntPtr.Zero)
+            return _window.Run(() =>
             {
-                return false;
-            }
+                UnregisterOnWindowThread(id);
+                int hotkeyId = _nextId++;
+                // MOD_NOREPEAT = 0x4000 avoids key-repeat floods
+                uint fsModifiers = (uint)modifiers | 0x4000u;
+                if (!RegisterHotKey(_window.Handle, hotkeyId, fsModifiers, (uint)virtualKey))
+                {
+                    return false;
+                }
 
-            int hotkeyId = _nextId++;
-            // MOD_NOREPEAT = 0x4000 avoids key-repeat floods
-            uint fsModifiers = (uint)modifiers | 0x4000u;
-            if (!RegisterHotKey(_window.Handle, hotkeyId, fsModifiers, (uint)virtualKey))
-            {
-                return false;
-            }
-
-            _ids[id] = hotkeyId;
-            _callbacks[hotkeyId] = callback;
-            return true;
+                _ids[id] = hotkeyId;
+                _callbacks[hotkeyId] = callback;
+                return true;
+            }, fallback: false);
         }
 
         public void Unregister(string id)
+        {
+            _ = _window.Run(() =>
+            {
+                UnregisterOnWindowThread(id);
+                return true;
+            }, fallback: false);
+        }
+
+        private void UnregisterOnWindowThread(string id)
         {
             if (!_ids.Remove(id, out int hotkeyId))
             {
@@ -58,13 +70,17 @@ namespace MosaicShell.Core.Services
 
         public void Dispose()
         {
-            foreach (int id in _ids.Values.ToList())
+            _ = _window.Run(() =>
             {
-                _ = UnregisterHotKey(_window.Handle, id);
-            }
+                foreach (int id in _ids.Values)
+                {
+                    _ = UnregisterHotKey(_window.Handle, id);
+                }
 
-            _ids.Clear();
-            _callbacks.Clear();
+                _ids.Clear();
+                _callbacks.Clear();
+                return true;
+            }, fallback: false);
             _window.Dispose();
         }
 
@@ -118,6 +134,10 @@ namespace MosaicShell.Core.Services
                         {
                             _onHotkey((int)msg.wParam);
                         }
+                        else if (msg.message == WmRunQueued)
+                        {
+                            DrainQueued();
+                        }
 
                         _ = TranslateMessage(ref msg);
                         _ = DispatchMessage(ref msg);
@@ -140,6 +160,47 @@ namespace MosaicShell.Core.Services
                 }
             }
 
+            /// <summary>
+            /// Runs <paramref name="work"/> on the window's thread and waits for it: inline when already there, else
+            /// queued behind a posted message. <paramref name="fallback"/> when the loop is gone or does not answer.
+            /// </summary>
+            public T Run<T>(Func<T> work, T fallback)
+            {
+                if (Handle == IntPtr.Zero || !_running)
+                {
+                    return fallback;
+                }
+
+                if (Environment.CurrentManagedThreadId == _thread.ManagedThreadId)
+                {
+                    return work();
+                }
+
+                TaskCompletionSource<T> done = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                _queued.Enqueue(() =>
+                {
+                    try
+                    {
+                        done.SetResult(work());
+                    }
+                    catch (Exception ex)
+                    {
+                        done.SetException(ex);
+                    }
+                });
+                return PostMessage(Handle, WmRunQueued, IntPtr.Zero, IntPtr.Zero) && done.Task.Wait(RunTimeoutMs)
+                    ? done.Task.Result
+                    : fallback;
+            }
+
+            private void DrainQueued()
+            {
+                while (_queued.TryDequeue(out Action? next))
+                {
+                    next();
+                }
+            }
+
             public void Dispose()
             {
                 _running = false;
@@ -148,6 +209,10 @@ namespace MosaicShell.Core.Services
                     _ = PostMessage(Handle, 0x0012, IntPtr.Zero, IntPtr.Zero); // WM_QUIT
                 }
             }
+
+            private const uint WmRunQueued = 0x8000 + 1; // WM_APP + 1
+            private const int RunTimeoutMs = 5000;
+            private readonly System.Collections.Concurrent.ConcurrentQueue<Action> _queued = new();
 
             private static IntPtr CreateMessageWindow()
             {

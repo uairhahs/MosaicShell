@@ -29,6 +29,7 @@
   <!-- Portable (non-Windows) build: these tests exercise the Windows service implementations. -->
   <ItemGroup Condition="'$(MosaicPortable)' == 'true'">
     <Compile Remove="WindowsAudioEndpointPolicyTests.cs" />
+    <Compile Remove="WindowsHotkeyServiceTests.cs" />
   </ItemGroup>
 
   <!-- Tests of Core's Services/Linux, which the Windows build does not compile. -->
