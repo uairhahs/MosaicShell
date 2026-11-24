@@ -111,8 +111,9 @@ namespace MosaicShell.Host.Capabilities
         }
 
         /// <summary>
-        /// A clear, click-through glint window shown now at <paramref name="near"/>, so a later <see cref="Replay"/> needs
-        /// no cold Show (<see cref="TesseraOutsideClickRippleSpec.WarmBeforeTheClick"/>). Null where it is not warmed.
+        /// A click-through glint window shown now, off every screen (<see cref="TesseraOutsideClickRippleSpec.ParkedOrigin"/>),
+        /// so a later <see cref="Replay"/> needs no cold Show (<see cref="TesseraOutsideClickRippleSpec.WarmBeforeTheClick"/>).
+        /// <paramref name="near"/> picks the scaling it is built at. Null where it is not warmed.
         /// </summary>
         public static OutsideClickRippleWindow? Warm(PixelPoint near, FocusDimRoute route, Screens? screens)
         {
@@ -121,7 +122,13 @@ namespace MosaicShell.Host.Capabilities
                 return null;
             }
 
-            OutsideClickRippleWindow ripple = new(near, ScalingAt(near, screens), route);
+            double scaling = ScalingAt(near, screens);
+            OutsideClickRippleWindow ripple = new(near, scaling, route);
+            IReadOnlyList<Avalonia.Platform.Screen> all = screens?.All ?? [];
+            int left = all.Count > 0 ? all.Min(s => s.Bounds.X) : 0;
+            int top = all.Count > 0 ? all.Min(s => s.Bounds.Y) : 0;
+            (int x, int y) = TesseraOutsideClickRippleSpec.ParkedOrigin(left, top, scaling);
+            ripple.Position = new PixelPoint(x, y);
             ripple.ApplyIdle();
             ripple.ApplyClickThrough();
             ripple.Show();

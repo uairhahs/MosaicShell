@@ -22,9 +22,22 @@ namespace MosaicShell.Core.Tests
         [InlineData(FocusDimRoute.None, false)]
         public void On_windows_the_glint_window_is_warmed_while_the_click_watcher_is_armed(FocusDimRoute route, bool expected)
         {
-            // A cold-shown Transparent HWND paints black until composition settles (HideUntilCompositionReady), and
-            // the glint lives only DurationMs: shown at the click it was a late black box (kongo, 2026-11-24).
+            // A cold-shown Transparent HWND first appeared 100 to 150 ms after Show, and the glint lives only
+            // DurationMs: shown at the click it played late (Windows 11, 2026-11-24).
             _ = TesseraOutsideClickRippleSpec.WarmBeforeTheClick(route).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(0, 0, 1.0)]
+        [InlineData(-2560, -400, 1.25)]
+        public void The_warm_window_waits_wholly_left_of_every_screen(int virtualLeft, int virtualTop, double scaling)
+        {
+            // An idle warm window never sits over the flyout: on Avalonia 12.1.1 it showed there as a black square
+            // (Windows 11, 2026-11-24).
+            (int x, int y) = TesseraOutsideClickRippleSpec.ParkedOrigin(virtualLeft, virtualTop, scaling);
+
+            _ = (x + TesseraOutsideClickRippleSpec.WindowSizePx(scaling)).Should().BeLessThan(virtualLeft);
+            _ = y.Should().Be(virtualTop);
         }
 
         [Theory]

@@ -90,10 +90,10 @@ namespace MosaicShell.Core.Modules.Tessera
         }
 
         /// <summary>
-        /// Windows: the glint window is shown clear (and click-through) when the outside-click watcher arms, then
-        /// moved to the click and played. A Transparent HWND shown cold paints black until composition settles
-        /// (<see cref="TesseraFlyoutWindowPolicy.HideUntilCompositionReady"/>), and the glint lives only
-        /// <see cref="DurationMs"/>, so shown at the click it read as a late black box. X11 shows it cold at the click.
+        /// Windows: the glint window is shown (click-through) off-screen when the outside-click watcher arms
+        /// (<see cref="ParkedOrigin"/>), then moved to the click and played, so no cold Show sits between the click and
+        /// the glint: a cold Transparent HWND first appeared 100 to 150 ms after Show, a quarter of the
+        /// <see cref="DurationMs"/> glint. X11 shows it cold at the click.
         /// </summary>
         public static bool WarmBeforeTheClick(FocusDimRoute route)
         {
@@ -227,6 +227,19 @@ namespace MosaicShell.Core.Modules.Tessera
             int size = (int)Math.Ceiling(WindowSizeDip * scale);
             return size % 2 == 0 ? size : size + 1;
         }
+
+        /// <summary>
+        /// Where a warm glint window waits: wholly left of the virtual screen (<paramref name="virtualLeft"/>,
+        /// <paramref name="virtualTop"/> is its top-left pixel), with a margin, so an idle window never sits over the
+        /// flyout. On Avalonia 12.1.1 an idle one there showed as a black square about half the time (a surface that
+        /// had presented no frame); 12.2.0 no longer does (Windows 11, 2026-11-24: 0 of 8, against 5 of 8 on 12.1.1).
+        /// </summary>
+        public static (int X, int Y) ParkedOrigin(int virtualLeft, int virtualTop, double scaling)
+        {
+            return (virtualLeft - WindowSizePx(scaling) - ParkMarginPx, virtualTop);
+        }
+
+        private const int ParkMarginPx = 64;
 
         /// <summary>Top-left pixel of the window centered on the click.</summary>
         public static (int X, int Y) WindowOrigin(int clickX, int clickY, double scaling)
