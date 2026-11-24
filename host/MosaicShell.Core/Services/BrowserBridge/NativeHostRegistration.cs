@@ -199,13 +199,17 @@ namespace MosaicShell.Core.Services.BrowserBridge
 
         /// <summary>
         /// The shared .NET root above a framework-dependent runtime directory (<c>root/shared/Microsoft.NETCore.App/ver</c>),
-        /// or null for a self-contained runtime.
+        /// or null for a self-contained runtime. Works on the path's text (Linux paths), not the file system, so it gives
+        /// the same answer when tested on Windows, where <see cref="DirectoryInfo"/> would root it at the current drive.
         /// </summary>
         public static string? DotnetRootFromRuntimeDirectory(string runtimeDirectory)
         {
-            DirectoryInfo version = new(runtimeDirectory.TrimEnd('/'));
-            return version.Parent is { Name: "Microsoft.NETCore.App" } framework && framework.Parent is { Name: "shared" } shared
-                ? shared.Parent?.FullName.TrimEnd('/')
+            string[] parts = runtimeDirectory.TrimEnd('/').Split('/');
+            return parts.Length >= 4
+                && parts[^2] == "Microsoft.NETCore.App"
+                && parts[^3] == "shared"
+                && string.Join('/', parts[..^3]) is { Length: > 0 } root
+                ? root
                 : null;
         }
 
