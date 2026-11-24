@@ -219,7 +219,8 @@ namespace MosaicShell.Core.Services
         /// <summary>
         /// Linux: media from MPRIS players, shell flyout triggers and capability hotkeys from KDE's KGlobalAccel, Plasma
         /// pop-up suppression and screen brightness from PowerDevil (all on the session bus), lock keys from KWin's
-        /// keystate protocol, and volume through pactl; every other service inert until it has a Linux implementation.
+        /// keystate protocol, master and per-app volume and the outputs through pactl; every other
+        /// service inert until it has a Linux implementation.
         /// With browser sources, Grout's report is also published as the Host's own MPRIS player
         /// (<see cref="Mpris.GroutMprisBridge"/>), so Plasma's media controls get the page's cover too.
         /// </summary>
@@ -228,6 +229,9 @@ namespace MosaicShell.Core.Services
         {
             // One PowerDevil watcher serves both the value and its changes, as Windows' pair shares one service.
             Linux.KdeScreenBrightness brightness = new();
+
+            // One pactl subscription serves per-app audio and the output devices; disposing it twice is harmless.
+            Linux.PulseAppAudioService streams = new();
             Mpris.MprisMediaSessionService mpris = new(new Linux.DBusMprisBus(), new Mpris.MprisArtSource());
             IMediaSessionService media;
             List<IDisposable> companions = [];
@@ -258,7 +262,9 @@ namespace MosaicShell.Core.Services
                 brightness,
                 companions,
                 new Linux.KGlobalAccelHotkeyService(),
-                new Linux.KWinKeystateLockKeys());
+                new Linux.KWinKeystateLockKeys(),
+                streams,
+                streams);
         }
 
         /// <summary>
@@ -296,12 +302,14 @@ namespace MosaicShell.Core.Services
             IBrightnessChangeSource? brightnessChanges = null,
             IReadOnlyList<IDisposable>? companions = null,
             IHotkeyService? hotkeys = null,
-            ILockKeysService? lockKeys = null)
+            ILockKeysService? lockKeys = null,
+            IAppAudioService? appAudio = null,
+            IAudioDeviceService? audioDevices = null)
         {
             return new HostServices
             {
                 Audio = audio ?? new NullAudioService(),
-                AppAudio = new NullAppAudioService(),
+                AppAudio = appAudio ?? new NullAppAudioService(),
                 Brightness = brightness ?? new NullBrightnessService(),
                 Media = media,
                 Hotkeys = hotkeys ?? new NullHotkeyService(),
@@ -315,7 +323,7 @@ namespace MosaicShell.Core.Services
                 Fullscreen = new NullFullscreenProbe(),
                 LockKeys = lockKeys ?? new NullLockKeysService(),
                 Airplane = new NullAirplaneModeService(),
-                AudioDevices = new NullAudioDeviceService(),
+                AudioDevices = audioDevices ?? new NullAudioDeviceService(),
                 ShellFlyoutTriggers = shellFlyoutTriggers ?? new NullShellFlyoutTriggerSource(),
                 Companions = companions ?? [],
             };
