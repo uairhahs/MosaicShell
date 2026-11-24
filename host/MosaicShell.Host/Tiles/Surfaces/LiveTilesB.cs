@@ -135,6 +135,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
         private readonly string _style;
         private readonly Slider _masterSlider;
         private bool _suppressMaster;
+        private bool _draggingApp;
 
         public MixdeckTileView(IAppAudioService apps, IAudioService master)
         {
@@ -223,6 +224,12 @@ namespace MosaicShell.Host.Tiles.Surfaces
 
         private void Refresh(TextBlock sessionCount)
         {
+            if (_draggingApp)
+            {
+                // A rebuild would replace the slider being dragged and end the drag; the next refresh after it runs.
+                return;
+            }
+
             IReadOnlyList<AppAudioSession> sessions = _apps.GetSessions();
             sessionCount.Text = $"{sessions.Count} session{(sessions.Count == 1 ? "" : "s")}";
             _list.Children.Clear();
@@ -251,6 +258,9 @@ namespace MosaicShell.Host.Tiles.Surfaces
                         _apps.SetVolume(id, slider.Value);
                     }
                 };
+                slider.AddHandler(PointerPressedEvent, (_, _) => _draggingApp = true, handledEventsToo: true);
+                slider.AddHandler(PointerReleasedEvent, (_, _) => _draggingApp = false, handledEventsToo: true);
+                slider.AddHandler(PointerCaptureLostEvent, (_, _) => _draggingApp = false, handledEventsToo: true);
                 Button mute = new()
                 {
                     Content = s.IsMuted ? "Unmute" : "Mute",
