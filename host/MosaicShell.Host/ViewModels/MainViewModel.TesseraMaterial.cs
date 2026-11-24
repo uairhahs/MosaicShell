@@ -70,20 +70,37 @@ namespace MosaicShell.Host.ViewModels
             }
 
             _watchingNativeTranslucency = true;
-            NativeTranslucencyPlatform.Changed += (_, _) => Dispatcher.UIThread.Post(() =>
+
+            // The event is static, so it holds only a weak reference: a strong one kept every view model that ever
+            // opened Tessera's settings alive. Once the view model is gone, the handler removes itself.
+            WeakReference<MainViewModel> weak = new(this);
+            void Handler(object? sender, EventArgs e)
             {
-                // Keep an unsaved pick; a saved Native choice that just became drawable is selected again.
-                TesseraMaterialChoice wanted = SelectedTesseraMaterialChoice;
-                TesseraSettings saved = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
-                if (wanted == TesseraMaterialChoice.Frosted
-                    && TesseraMaterialChoicePolicy.FromSettings(saved, TesseraNativeTranslucencySignOffPolicy.HubOffersNativeTranslucency)
-                        == TesseraMaterialChoice.NativeTranslucency)
+                if (!weak.TryGetTarget(out MainViewModel? vm))
                 {
-                    wanted = TesseraMaterialChoice.NativeTranslucency;
+                    NativeTranslucencyPlatform.Changed -= Handler;
+                    return;
                 }
 
-                SyncTesseraMaterialOptions(wanted);
-            });
+                Dispatcher.UIThread.Post(vm.OnNativeTranslucencyChanged);
+            }
+
+            NativeTranslucencyPlatform.Changed += Handler;
+        }
+
+        private void OnNativeTranslucencyChanged()
+        {
+            // Keep an unsaved pick; a saved Native choice that just became drawable is selected again.
+            TesseraMaterialChoice wanted = SelectedTesseraMaterialChoice;
+            TesseraSettings saved = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
+            if (wanted == TesseraMaterialChoice.Frosted
+                && TesseraMaterialChoicePolicy.FromSettings(saved, TesseraNativeTranslucencySignOffPolicy.HubOffersNativeTranslucency)
+                    == TesseraMaterialChoice.NativeTranslucency)
+            {
+                wanted = TesseraMaterialChoice.NativeTranslucency;
+            }
+
+            SyncTesseraMaterialOptions(wanted);
         }
     }
 
