@@ -832,7 +832,7 @@ namespace MosaicShell.Host.Capabilities
                 return;
             }
 
-            _outsideClickArm = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1500) };
+            _outsideClickArm = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(TesseraFlyoutOutsideClickPolicy.ArmDelayMs) };
             FlyoutWindow captured = window;
             _outsideClickArm.Tick += (_, _) =>
             {

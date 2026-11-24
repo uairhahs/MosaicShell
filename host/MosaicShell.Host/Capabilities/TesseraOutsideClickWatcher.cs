@@ -1,13 +1,14 @@
 using System.Runtime.InteropServices;
-using Avalonia.Platform;
 using Avalonia.Threading;
+using MosaicShell.Core.Modules.Tessera;
 
 namespace MosaicShell.Host.Capabilities
 {
     /// <summary>
     /// WH_MOUSE_LL outside-click dismiss. The hook callback must NEVER touch Avalonia;
     /// reading Bounds/Screens from the hook thread deadlocks the UI (and freezes the app).
-    /// Bounds are snapshotted on the UI thread when the watcher starts / is refreshed.
+    /// The flyouts' HWNDs are taken on the UI thread when the watcher starts / is refreshed,
+    /// and the hook reads their rects through user32 at each press.
     /// </summary>
     internal sealed class TesseraOutsideClickWatcher : IDisposable
     {
@@ -33,8 +34,7 @@ namespace MosaicShell.Host.Capabilities
         private readonly Action<Avalonia.PixelPoint> _dismiss;
         private nint _hook;
         private LowLevelMouseProc? _proc;
-        private readonly List<(int Left, int Top, int Right, int Bottom)> _rects = [];
-        private bool _hasBounds;
+        private volatile nint[] _handles = [];
         private int _dismissPosted;
 
         private const int WhMouseLl = 14;
@@ -88,67 +88,61 @@ namespace MosaicShell.Host.Capabilities
             _proc = null;
         }
 
+        /// <summary>
+        /// Takes the flyouts' HWNDs on the UI thread. Their rects are read at each press (<see cref="LiveRects"/>), so
+        /// the watcher can arm during the entrance (<see cref="TesseraFlyoutOutsideClickPolicy.ArmDelayMs"/>) and
+        /// follows a slot that moves or resizes.
+        /// </summary>
         private void CaptureBounds(IReadOnlyList<FlyoutWindow> flyouts)
         {
-            _rects.Clear();
-            try
+            List<nint> handles = [];
+            foreach (FlyoutWindow flyout in flyouts)
             {
-                foreach (FlyoutWindow flyout in flyouts)
+                try
                 {
-                    if (TryCaptureRect(flyout, out (int Left, int Top, int Right, int Bottom) rect))
+                    nint handle = flyout.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+                    if (handle != IntPtr.Zero)
                     {
-                        _rects.Add(rect);
+                        handles.Add(handle);
                     }
                 }
+                catch
+                {
+                    // a window closing under us has no handle to watch
+                }
+            }
 
-                _hasBounds = _rects.Count > 0;
-            }
-            catch
-            {
-                _hasBounds = false;
-            }
+            _handles = [.. handles];
         }
 
-        private static bool TryCaptureRect(FlyoutWindow flyout, out (int Left, int Top, int Right, int Bottom) rect)
+        /// <summary>The visible flyout HWNDs' rects now; user32 only, so safe on the hook thread.</summary>
+        private List<(int Left, int Top, int Right, int Bottom)> LiveRects()
         {
-            rect = default;
-            try
+            List<(int Left, int Top, int Right, int Bottom)> rects = [];
+            foreach (nint handle in _handles)
             {
-                if (!flyout.IsVisible)
+                if (IsWindowVisible(handle) && GetWindowRect(handle, out Rect r) && r.Right - r.Left > 1 && r.Bottom - r.Top > 1)
                 {
-                    return false;
+                    rects.Add((r.Left, r.Top, r.Right, r.Bottom));
                 }
-
-                Avalonia.PixelPoint position = flyout.Position;
-                Avalonia.Rect bounds = flyout.Bounds;
-                if (bounds.Width < 2 || bounds.Height < 2)
-                {
-                    return false;
-                }
-
-                List<Screen> screens = flyout.Screens?.All?.ToList() ?? [];
-                Screen? screen = screens.FirstOrDefault(s =>
-                {
-                    Avalonia.PixelRect b = s.Bounds;
-                    return position.X >= b.X && position.X < b.X + b.Width
-                           && position.Y >= b.Y && position.Y < b.Y + b.Height;
-                }) ?? flyout.Screens?.Primary;
-                double scale = screen?.Scaling > 0.1 ? screen.Scaling : 1.0;
-                int w = (int)Math.Ceiling(bounds.Width * scale);
-                int h = (int)Math.Ceiling(bounds.Height * scale);
-                if (w <= 0 || h <= 0)
-                {
-                    return false;
-                }
-
-                rect = (position.X, position.Y, position.X + w, position.Y + h);
-                return true;
             }
-            catch
-            {
-                return false;
-            }
+
+            return rects;
         }
+
+        private struct Rect
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        [DllImport("user32.dll")]
+        private static extern bool GetWindowRect(nint hWnd, out Rect rect);
+
+        [DllImport("user32.dll")]
+        private static extern bool IsWindowVisible(nint hWnd);
 
         private nint HookCallback(int nCode, nint wParam, nint lParam)
         {
@@ -160,7 +154,7 @@ namespace MosaicShell.Host.Capabilities
                     try
                     {
                         MsllHookStruct info = Marshal.PtrToStructure<MsllHookStruct>(lParam);
-                        if (_hasBounds && !HitTest(info.Pt.X, info.Pt.Y))
+                        if (TesseraFlyoutOutsideClickPolicy.IsOutside(info.Pt.X, info.Pt.Y, LiveRects()))
                         {
                             PostDismissOnce(new Avalonia.PixelPoint(info.Pt.X, info.Pt.Y));
                         }
@@ -173,19 +167,6 @@ namespace MosaicShell.Host.Capabilities
             }
 
             return CallNextHookEx(_hook, nCode, wParam, lParam);
-        }
-
-        private bool HitTest(int screenX, int screenY)
-        {
-            foreach ((int left, int top, int right, int bottom) in _rects)
-            {
-                if (screenX >= left && screenX < right && screenY >= top && screenY < bottom)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private void PostDismissOnce(Avalonia.PixelPoint at)
