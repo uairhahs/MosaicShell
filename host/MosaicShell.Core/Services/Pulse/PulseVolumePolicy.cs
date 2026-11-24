@@ -79,7 +79,7 @@ namespace MosaicShell.Core.Services.Pulse
             }
         }
 
-        private static bool TryReadChannels(JsonElement owner, out IReadOnlyList<PulseChannel> channels)
+        internal static bool TryReadChannels(JsonElement owner, out IReadOnlyList<PulseChannel> channels)
         {
             channels = [];
             if (!owner.TryGetProperty("volume", out JsonElement volume) || volume.ValueKind != JsonValueKind.Object)
