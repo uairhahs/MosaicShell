@@ -89,6 +89,36 @@ namespace MosaicShell.Core.Modules.Tessera
             return Math.Clamp(elapsedMs / DurationMs, 0, 1);
         }
 
+        /// <summary>
+        /// Windows: the glint window is shown clear (and click-through) when the outside-click watcher arms, then
+        /// moved to the click and played. A Transparent HWND shown cold paints black until composition settles
+        /// (<see cref="TesseraFlyoutWindowPolicy.HideUntilCompositionReady"/>), and the glint lives only
+        /// <see cref="DurationMs"/>, so shown at the click it read as a late black box. X11 shows it cold at the click.
+        /// </summary>
+        public static bool WarmBeforeTheClick(FocusDimRoute route)
+        {
+            return route == FocusDimRoute.Win32LayeredAlpha && TesseraFlyoutWindowPolicy.HideUntilCompositionReady;
+        }
+
+        /// <summary>
+        /// Progress counted from the first frame that reached the screen (<paramref name="firstFrameMs"/>, null until
+        /// then), not from Show: a cold-shown composited window first appeared 100 to 150 ms after Show (Windows
+        /// probe, 2026-11-24), a quarter of the glint.
+        /// </summary>
+        public static double ProgressSinceFirstFrame(double? firstFrameMs, double nowMs)
+        {
+            if (firstFrameMs is double start)
+            {
+                return ProgressAt(nowMs - start);
+            }
+
+            // No frame reported: count from Show after a wait, so the window still finishes and closes.
+            return nowMs >= FirstFrameWaitMs ? ProgressAt(nowMs - FirstFrameWaitMs) : 0;
+        }
+
+        /// <summary>How long the glint waits for its first frame before it counts from Show anyway.</summary>
+        public const double FirstFrameWaitMs = 250;
+
         /// <summary>Ring diameter, easing out (cubic) from <see cref="StartDiameterDip"/> down to <see cref="EndDiameterDip"/>.</summary>
         public static double DiameterAt(double progress)
         {

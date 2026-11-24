@@ -16,6 +16,33 @@ namespace MosaicShell.Core.Tests
             _ = TesseraOutsideClickRippleSpec.ShouldPlay(route).Should().Be(expected);
         }
 
+        [Theory]
+        [InlineData(FocusDimRoute.Win32LayeredAlpha, true)]
+        [InlineData(FocusDimRoute.X11ArgbInputShape, false)]
+        [InlineData(FocusDimRoute.None, false)]
+        public void On_windows_the_glint_window_is_warmed_while_the_click_watcher_is_armed(FocusDimRoute route, bool expected)
+        {
+            // A cold-shown Transparent HWND paints black until composition settles (HideUntilCompositionReady), and
+            // the glint lives only DurationMs: shown at the click it was a late black box (kongo, 2026-11-24).
+            _ = TesseraOutsideClickRippleSpec.WarmBeforeTheClick(route).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(null, 0.0, 0.0)]
+        [InlineData(null, 200.0, 0.0)]
+        [InlineData(null, TesseraOutsideClickRippleSpec.FirstFrameWaitMs + TesseraOutsideClickRippleSpec.DurationMs, 1.0)]
+        [InlineData(100.0, 100.0, 0.0)]
+        [InlineData(100.0, 360.0, 0.5)]
+        [InlineData(100.0, 2000.0, 1.0)]
+        public void Progress_counts_from_the_first_frame_on_screen_not_from_show(
+            double? firstFrameMs, double nowMs, double expected)
+        {
+            // A new composited window reaches the screen a frame or more after Show; a clock started at Show had
+            // already run part of the glint by its first visible frame, so it looked late and cut short.
+            _ = TesseraOutsideClickRippleSpec.ProgressSinceFirstFrame(firstFrameMs, nowMs)
+                .Should().BeApproximately(expected, 1e-9);
+        }
+
         [Fact]
         public void The_ripple_is_brief()
         {
