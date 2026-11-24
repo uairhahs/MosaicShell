@@ -30,6 +30,7 @@
   <ItemGroup Condition="'$(MosaicPortable)' == 'true'">
     <Compile Remove="WindowsAudioEndpointPolicyTests.cs" />
     <Compile Remove="WindowsHotkeyServiceTests.cs" />
+    <Compile Remove="WindowsLockKeysServiceTests.cs" />
   </ItemGroup>
 
   <!-- Tests of Core's Services/Linux, which the Windows build does not compile. -->

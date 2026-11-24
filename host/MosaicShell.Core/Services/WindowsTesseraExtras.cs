@@ -6,13 +6,22 @@ using NAudio.CoreAudioApi;
 namespace MosaicShell.Core.Services
 {
     /// <summary>
-    /// Caps/Num/Scroll via GetKeyState polling while armed. Does not depend on WH_KEYBOARD_LL
-    /// or the Host UI message pump (Avalonia does not reliably deliver LL hook callbacks).
+    /// Caps, Num and Scroll Lock from keyboard Raw Input (<see cref="LockKeyEventPolicy"/>): a message-only window on its
+    /// own thread sinks every keyboard event and resamples the toggles with GetKeyState, so nothing runs between key
+    /// presses. A return to the session (unlock, connect) resamples too, since the secure desktop sends no raw input.
+    /// Runs while started or subscribed; the first states are taken quietly; Changed is raised on the listener thread.
     /// </summary>
     public sealed class WindowsLockKeysService : ILockKeysService
     {
+        private const uint WmInput = 0x00FF;
+        private const uint WmWtsSessionChange = 0x02B1;
+        private const uint RidHeader = 0x10000005;
+        private const uint RidevRemove = 0x00000001;
+        private const int NotifyForThisSession = 0;
+
         private readonly Lock _gate = new();
-        private Timer? _poll;
+        private readonly Lock _stateGate = new();
+        private WindowsMessageWindow? _listener;
         private int _startRef;
         private bool _caps, _num, _scroll;
         private EventHandler<LockKeyState>? _changed;
@@ -34,7 +43,7 @@ namespace MosaicShell.Core.Services
                 lock (_gate)
                 {
                     _changed += value;
-                    EnsurePollLocked();
+                    EnsureListeningLocked();
                 }
             }
             remove
@@ -47,7 +56,7 @@ namespace MosaicShell.Core.Services
                 lock (_gate)
                 {
                     _changed -= value;
-                    TryReleasePollLocked();
+                    TryReleaseLocked();
                 }
             }
         }
@@ -58,7 +67,7 @@ namespace MosaicShell.Core.Services
             {
                 if (++_startRef == 1)
                 {
-                    EnsurePollLocked();
+                    EnsureListeningLocked();
                 }
             }
         }
@@ -73,88 +82,141 @@ namespace MosaicShell.Core.Services
                 }
 
                 --_startRef;
-                TryReleasePollLocked();
+                TryReleaseLocked();
             }
         }
 
-        private void SyncFromKeyboard()
+        private static (bool Caps, bool Num, bool Scroll) ReadToggles()
         {
-            _caps = LockKeyInputPolicy.IsToggleBitOn(GetKeyState(LockKeyInputPolicy.VkCapital));
-            _num = LockKeyInputPolicy.IsToggleBitOn(GetKeyState(LockKeyInputPolicy.VkNumlock));
-            _scroll = LockKeyInputPolicy.IsToggleBitOn(GetKeyState(LockKeyInputPolicy.VkScroll));
+            return (
+                LockKeyInputPolicy.IsToggleBitOn(GetKeyState(LockKeyInputPolicy.VkCapital)),
+                LockKeyInputPolicy.IsToggleBitOn(GetKeyState(LockKeyInputPolicy.VkNumlock)),
+                LockKeyInputPolicy.IsToggleBitOn(GetKeyState(LockKeyInputPolicy.VkScroll)));
         }
 
-        private void EnsurePollLocked()
+        // _gate guards the lifecycle only; the listener thread never takes it, so waiting on Run under it is safe.
+        private void EnsureListeningLocked()
         {
             if (IsActive)
             {
                 return;
             }
 
-            SyncFromKeyboard();
-            int ms = LockKeyPollPolicy.PollIntervalMs;
-            _poll = new Timer(PollCallback, null, ms, ms);
+            lock (_stateGate)
+            {
+                (_caps, _num, _scroll) = ReadToggles();
+            }
+
+            WindowsMessageWindow listener = new("MosaicShell.LockKeys", OnMessage);
+            // The error is read on the listener thread, where the call failed.
+            int rawError = listener.Run(
+                () => RegisterKeyboard(listener.Handle, LockKeyEventPolicy.RidevInputSink) ? 0 : Marshal.GetLastPInvokeError(),
+                fallback: -1);
+            bool session = listener.Run(
+                () => WTSRegisterSessionNotification(listener.Handle, NotifyForThisSession),
+                fallback: false);
+            _listener = listener;
             IsActive = true;
-            TryLog($"poll ok thread={Environment.CurrentManagedThreadId}");
+            TryLog($"listening raw={rawError == 0} session={session} thread={Environment.CurrentManagedThreadId}"
+                + (rawError == 0 ? "" : $" err={rawError}"));
         }
 
-        private void ReleasePollLocked()
+        private void ReleaseLocked()
         {
             if (!IsActive)
             {
                 return;
             }
 
-            _poll?.Dispose();
-            _poll = null;
+            WindowsMessageWindow? listener = _listener;
+            _listener = null;
             IsActive = false;
+            if (listener is null)
+            {
+                return;
+            }
+
+            _ = listener.Run(() =>
+            {
+                _ = RegisterKeyboard(IntPtr.Zero, RidevRemove);
+                _ = WTSUnRegisterSessionNotification(listener.Handle);
+                return true;
+            }, fallback: false);
+            listener.Dispose();
         }
 
-        private void TryReleasePollLocked()
+        private void TryReleaseLocked()
         {
             if (_startRef > 0 || _changed is not null)
             {
                 return;
             }
 
-            ReleasePollLocked();
+            ReleaseLocked();
         }
 
-        private void PollCallback(object? _)
+        /// <summary>On the listener thread: resample on keyboard input and on a return to the session.</summary>
+        private bool OnMessage(uint message, nint wParam, nint lParam)
         {
-            lock (_gate)
+            if (message == WmInput)
             {
-                if (!IsActive)
+                if (LockKeyEventPolicy.ShouldResampleOnRawInput(RawInputType(lParam)))
                 {
-                    return;
+                    Resample();
                 }
 
-                try
-                {
-                    SampleToggleLocked(LockKeyKind.CapsLock, LockKeyInputPolicy.VkCapital, ref _caps);
-                    SampleToggleLocked(LockKeyKind.NumLock, LockKeyInputPolicy.VkNumlock, ref _num);
-                    SampleToggleLocked(LockKeyKind.ScrollLock, LockKeyInputPolicy.VkScroll, ref _scroll);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[LockKeys] poll {ex.Message}");
-                }
+                // DefWindowProc still runs for WM_INPUT, which frees the input's buffer.
+                return false;
+            }
+
+            if (message == WmWtsSessionChange && LockKeyEventPolicy.ShouldResampleOnSessionChange((int)wParam))
+            {
+                Resample();
+            }
+
+            return false;
+        }
+
+        private void Resample()
+        {
+            IReadOnlyList<LockKeyState> edges;
+            lock (_stateGate)
+            {
+                (bool Caps, bool Num, bool Scroll) now = ReadToggles();
+                edges = LockKeyEventPolicy.Edges((_caps, _num, _scroll), now);
+                (_caps, _num, _scroll) = now;
+            }
+
+            foreach (LockKeyState state in edges)
+            {
+                EventHandler<LockKeyState>? handlers = _changed;
+                TryLog($"edge {state.Key} on={state.IsOn} handlers={handlers?.GetInvocationList().Length ?? 0}");
+                try { handlers?.Invoke(this, state); }
+                catch (Exception ex) { Debug.WriteLine($"[LockKeys] {ex.Message}"); }
             }
         }
 
-        private void SampleToggleLocked(LockKeyKind kind, int vk, ref bool field)
+        private static uint RawInputType(nint rawInput)
         {
-            bool on = LockKeyInputPolicy.IsToggleBitOn(GetKeyState(vk));
-            if (on == field)
-            {
-                return;
-            }
+            uint size = (uint)Marshal.SizeOf<RawInputHeader>();
+            return GetRawInputData(rawInput, RidHeader, out RawInputHeader header, ref size, size) == size
+                ? header.Type
+                : uint.MaxValue;
+        }
 
-            field = on;
-            LockKeyState state = new(kind, on);
-            TryLog($"edge {state.Key} on={state.IsOn} handlers={_changed?.GetInvocationList().Length ?? 0}");
-            try { _changed?.Invoke(this, state); }
-            catch (Exception ex) { Debug.WriteLine($"[LockKeys] {ex.Message}"); }
+        private static bool RegisterKeyboard(nint target, uint flags)
+        {
+            RawInputDevice[] devices =
+            [
+                new RawInputDevice
+                {
+                    UsagePage = LockKeyEventPolicy.RawUsagePage,
+                    Usage = LockKeyEventPolicy.RawUsageKeyboard,
+                    Flags = flags,
+                    Target = target,
+                },
+            ];
+            return RegisterRawInputDevices(devices, (uint)devices.Length, (uint)Marshal.SizeOf<RawInputDevice>());
         }
 
         private static void TryLog(string line)
@@ -167,8 +229,38 @@ namespace MosaicShell.Core.Services
             Stop();
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RawInputDevice
+        {
+            public ushort UsagePage;
+            public ushort Usage;
+            public uint Flags;
+            public nint Target;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RawInputHeader
+        {
+            public uint Type;
+            public uint Size;
+            public nint Device;
+            public nint WParam;
+        }
+
         [DllImport("user32.dll")]
         private static extern short GetKeyState(int nVirtKey);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool RegisterRawInputDevices(RawInputDevice[] devices, uint count, uint size);
+
+        [DllImport("user32.dll")]
+        private static extern uint GetRawInputData(nint rawInput, uint command, out RawInputHeader data, ref uint size, uint headerSize);
+
+        [DllImport("wtsapi32.dll", SetLastError = true)]
+        private static extern bool WTSRegisterSessionNotification(nint hWnd, int flags);
+
+        [DllImport("wtsapi32.dll")]
+        private static extern bool WTSUnRegisterSessionNotification(nint hWnd);
     }
 
     public sealed class WindowsAirplaneModeService : IAirplaneModeService
