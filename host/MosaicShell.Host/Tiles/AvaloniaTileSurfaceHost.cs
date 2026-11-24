@@ -10,6 +10,7 @@ using MosaicShell.Core.Modules;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Host.Capabilities;
+using MosaicShell.Host.Theming;
 using MosaicShell.Host.Tiles.Surfaces;
 
 namespace MosaicShell.Host.Tiles
@@ -208,13 +209,13 @@ namespace MosaicShell.Host.Tiles
             TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
             Background = Brushes.Transparent;
             // docs: OS may suppress transparency (battery saver / RDP)
-            TransparencyBackgroundFallback = new SolidColorBrush(Color.Parse("#1e1e2e"));
+            TransparencyBackgroundFallback = ThemeTokens.Brush(ThemeTokens.CardFill);
 
             Border shell = new()
             {
-                Background = new SolidColorBrush(Color.Parse("#E61e1e2e")),
-                CornerRadius = new CornerRadius(12),
-                BorderBrush = new SolidColorBrush(Color.Parse("#45475a")),
+                Background = ThemeTokens.Brush(ThemeTokens.CardFill, 0.9),
+                CornerRadius = ThemeTokens.OverlayRadius(),
+                BorderBrush = ThemeTokens.Brush(ThemeTokens.ControlStroke),
                 BorderThickness = new Thickness(1),
                 ClipToBounds = true,
                 // Content is the frame - no title strip.

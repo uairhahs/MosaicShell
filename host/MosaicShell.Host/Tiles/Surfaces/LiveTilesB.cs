@@ -9,6 +9,7 @@ using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
 using MosaicShell.Core.Styles;
+using MosaicShell.Host.Theming;
 
 namespace MosaicShell.Host.Tiles.Surfaces
 {
@@ -38,7 +39,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
             {
                 Text = media.Current?.Title ?? "No media",
                 FontSize = 12,
-                Foreground = Brush("#a6adc8")
+                Foreground = ThemeTokens.Brush(ThemeTokens.TextSecondary)
             };
             _vol.PropertyChanged += (_, e) =>
             {
@@ -94,8 +95,6 @@ namespace MosaicShell.Host.Tiles.Surfaces
             Button b = new()
             {
                 Content = _audio.IsMuted ? "Unmute" : "Mute",
-                Background = Brush("#313244"),
-                Foreground = Brush("#cdd6f4"),
                 HorizontalAlignment = HorizontalAlignment.Left,
                 Padding = new Thickness(12, 6)
             };
@@ -114,15 +113,10 @@ namespace MosaicShell.Host.Tiles.Surfaces
                 Spacing = 4,
                 Children =
             {
-                new TextBlock { Text = label, FontSize = 12, Foreground = Brush("#a6adc8") },
+                new TextBlock { Text = label, FontSize = 12, Foreground = ThemeTokens.Brush(ThemeTokens.TextSecondary) },
                 c
             }
             };
-        }
-
-        private static IBrush Brush(string hex)
-        {
-            return new SolidColorBrush(Color.Parse(hex));
         }
     }
 
@@ -149,13 +143,13 @@ namespace MosaicShell.Host.Tiles.Surfaces
                 Text = $"Mixdeck · {_style}",
                 FontSize = 16,
                 FontWeight = FontWeight.SemiBold,
-                Foreground = Brush("#cdd6f4"),
+                Foreground = ThemeTokens.Brush(ThemeTokens.TextPrimary),
                 Margin = new Thickness(0, 0, 0, 4)
             };
             TextBlock sessionCount = new()
             {
                 FontSize = 11,
-                Foreground = Brush("#6c7086"),
+                Foreground = ThemeTokens.Brush(ThemeTokens.TextTertiary),
                 Margin = new Thickness(0, 0, 0, 8)
             };
             _masterSlider = new Slider
@@ -183,7 +177,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
                     {
                         Text = _master.IsMuted ? "Master · muted" : "Master volume",
                         FontSize = 12,
-                        Foreground = Brush("#a6adc8")
+                        Foreground = ThemeTokens.Brush(ThemeTokens.TextSecondary)
                     },
                     _masterSlider
                 }
@@ -239,7 +233,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
                 TextBlock label = new()
                 {
                     Text = s.DisplayName,
-                    Foreground = Brush("#cdd6f4"),
+                    Foreground = ThemeTokens.Brush(ThemeTokens.TextPrimary),
                     VerticalAlignment = VerticalAlignment.Center,
                     Width = 110,
                     TextTrimming = TextTrimming.CharacterEllipsis
@@ -266,8 +260,6 @@ namespace MosaicShell.Host.Tiles.Surfaces
                     Content = s.IsMuted ? "Unmute" : "Mute",
                     Width = 64,
                     Padding = new Thickness(4, 2),
-                    Background = Brush("#313244"),
-                    Foreground = Brush("#cdd6f4")
                 };
                 mute.Click += (_, _) =>
                 {
@@ -285,7 +277,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
 
             if (_list.Children.Count == 0)
             {
-                _list.Children.Add(new TextBlock { Text = "No active audio sessions", Foreground = Brush("#6c7086") });
+                _list.Children.Add(new TextBlock { Text = "No active audio sessions", Foreground = ThemeTokens.Brush(ThemeTokens.TextTertiary) });
             }
         }
 
@@ -381,7 +373,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
                     {
                         Text = _win11 ? "Pinned · All apps" : "Pinned & apps",
                         FontSize = 12,
-                        Foreground = Brush("#a6adc8")
+                        Foreground = ThemeTokens.Brush(ThemeTokens.TextSecondary)
                     },
                     appArea
                 }
@@ -393,7 +385,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
             Content = new Border
             {
                 Background = Brush("#E6181825"),
-                BorderBrush = Brush("#45475a"),
+                BorderBrush = ThemeTokens.Brush(ThemeTokens.ControlStroke),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(radius),
                 Padding = new Thickness(pad),
@@ -410,7 +402,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
             {
                 Text = header,
                 FontSize = 11,
-                Foreground = Brush("#6c7086")
+                Foreground = ThemeTokens.Brush(ThemeTokens.TextTertiary)
             });
             col.Children.Add(body);
             Grid.SetColumn(col, column);
@@ -447,7 +439,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
                 _singleGrid.Children.Add(new TextBlock
                 {
                     Text = string.IsNullOrWhiteSpace(filter) ? "No apps" : $"No match for \"{filter.Trim()}\"",
-                    Foreground = Brush("#6c7086"),
+                    Foreground = ThemeTokens.Brush(ThemeTokens.TextTertiary),
                     FontSize = 12
                 });
             }
@@ -465,7 +457,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
                 column.Children.Add(new TextBlock
                 {
                     Text = emptyText,
-                    Foreground = Brush("#6c7086"),
+                    Foreground = ThemeTokens.Brush(ThemeTokens.TextTertiary),
                     FontSize = 11
                 });
             }
@@ -479,9 +471,6 @@ namespace MosaicShell.Host.Tiles.Surfaces
                 Margin = new Thickness(2),
                 Width = 104,
                 Height = 44,
-                Background = Brush("#313244"),
-                Foreground = Brush("#cdd6f4"),
-                CornerRadius = new CornerRadius(8),
                 Tag = target.Target
             };
             string launchTarget = target.Target;
@@ -539,7 +528,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
                 _actions.Children.Add(new TextBlock
                 {
                     Text = "No actions configured - add ChordSettings.Actions or type a path.",
-                    Foreground = Brush("#6c7086"),
+                    Foreground = ThemeTokens.Brush(ThemeTokens.TextTertiary),
                     FontSize = 12,
                     TextWrapping = TextWrapping.Wrap
                 });
@@ -553,7 +542,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
             _shell = new Border
             {
                 Background = Brush("#E6181825"),
-                BorderBrush = Brush("#45475a"),
+                BorderBrush = ThemeTokens.Brush(ThemeTokens.ControlStroke),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(_settings.Style.Equals("Bottom", StringComparison.OrdinalIgnoreCase) ? 16 : 10),
                 Padding = new Thickness(14),
@@ -571,9 +560,6 @@ namespace MosaicShell.Host.Tiles.Surfaces
             {
                 Content = string.IsNullOrWhiteSpace(a.Name) ? a.Target : $"{a.Name} → {a.Target}",
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = Brush("#313244"),
-                Foreground = Brush("#cdd6f4"),
-                CornerRadius = new CornerRadius(8),
                 Padding = new Thickness(10, 8),
                 Tag = a.Name
             };
@@ -651,14 +637,14 @@ namespace MosaicShell.Host.Tiles.Surfaces
             TextBlock smtcTitle = new()
             {
                 FontSize = 13,
-                Foreground = Brush("#cdd6f4"),
+                Foreground = ThemeTokens.Brush(ThemeTokens.TextPrimary),
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 VerticalAlignment = VerticalAlignment.Center
             };
             TextBlock smtcArtist = new()
             {
                 FontSize = 11,
-                Foreground = Brush("#6c7086"),
+                Foreground = ThemeTokens.Brush(ThemeTokens.TextTertiary),
                 TextTrimming = TextTrimming.CharacterEllipsis
             };
             Button playBtn = new()
@@ -666,8 +652,6 @@ namespace MosaicShell.Host.Tiles.Surfaces
                 Content = "⏯",
                 Width = 44,
                 Height = 44,
-                Background = Brush("#313244"),
-                Foreground = Brush("#cdd6f4"),
                 CornerRadius = new CornerRadius(10),
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -698,7 +682,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
             Grid.SetColumn(smtcText, 1);
             Border smtc = new()
             {
-                Background = Brush("#313244"),
+                Background = ThemeTokens.Brush(ThemeTokens.SubtleFill),
                 CornerRadius = new CornerRadius(12),
                 Padding = new Thickness(10, 8),
                 Margin = new Thickness(0, 0, 0, 10),
@@ -712,7 +696,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
             TextBlock volLabel = new()
             {
                 FontSize = 12,
-                Foreground = Brush("#a6adc8"),
+                Foreground = ThemeTokens.Brush(ThemeTokens.TextSecondary),
                 Margin = new Thickness(4, 0, 0, 8)
             };
             void UpdateVolLabel()
@@ -756,7 +740,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
             Content = new Border
             {
                 Background = Brush("#E6181825"),
-                BorderBrush = Brush("#45475a"),
+                BorderBrush = ThemeTokens.Brush(ThemeTokens.ControlStroke),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(14),
                 Padding = new Thickness(12),
@@ -778,8 +762,6 @@ namespace MosaicShell.Host.Tiles.Surfaces
                 Margin = new Thickness(4),
                 Width = 140,
                 Height = 52,
-                Background = Brush("#313244"),
-                Foreground = Brush("#cdd6f4"),
                 CornerRadius = new CornerRadius(10)
             };
             b.Click += (_, _) => act();
@@ -797,13 +779,13 @@ namespace MosaicShell.Host.Tiles.Surfaces
         private readonly TextBlock _clock = new()
         {
             FontWeight = FontWeight.Thin,
-            Foreground = Brush("#cdd6f4"),
+            Foreground = ThemeTokens.Brush(ThemeTokens.TextPrimary),
             HorizontalAlignment = HorizontalAlignment.Center
         };
         private readonly TextBlock _date = new()
         {
             FontSize = 16,
-            Foreground = Brush("#a6adc8"),
+            Foreground = ThemeTokens.Brush(ThemeTokens.TextSecondary),
             HorizontalAlignment = HorizontalAlignment.Center,
             Margin = new Thickness(0, 8, 0, 0)
         };
@@ -839,7 +821,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
                                 ? "Idle · hide on fullscreen"
                                 : "Idle",
                             FontSize = 13,
-                            Foreground = Brush("#6c7086"),
+                            Foreground = ThemeTokens.Brush(ThemeTokens.TextTertiary),
                             HorizontalAlignment = HorizontalAlignment.Center,
                             Margin = new Thickness(0, 12, 0, 0)
                         }
@@ -874,13 +856,8 @@ namespace MosaicShell.Host.Tiles.Surfaces
             {
                 Text = $"{info.DisplayName}\n{info.Description}",
                 TextWrapping = TextWrapping.Wrap,
-                Foreground = Brush("#cdd6f4")
+                Foreground = ThemeTokens.Brush(ThemeTokens.TextPrimary)
             };
-        }
-
-        private static IBrush Brush(string hex)
-        {
-            return new SolidColorBrush(Color.Parse(hex));
         }
     }
 }
