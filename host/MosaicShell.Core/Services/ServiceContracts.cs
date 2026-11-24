@@ -219,8 +219,8 @@ namespace MosaicShell.Core.Services
         /// <summary>
         /// Linux: media from MPRIS players, shell flyout triggers and capability hotkeys from KDE's KGlobalAccel, Plasma
         /// pop-up suppression and screen brightness from PowerDevil (all on the session bus), lock keys from KWin's
-        /// keystate protocol, master and per-app volume and the outputs through pactl; every other
-        /// service inert until it has a Linux implementation.
+        /// keystate protocol, master and per-app volume and the outputs through pactl, and output levels through parec; every
+        /// other service inert until it has a Linux implementation.
         /// With browser sources, Grout's report is also published as the Host's own MPRIS player
         /// (<see cref="Mpris.GroutMprisBridge"/>), so Plasma's media controls get the page's cover too.
         /// </summary>
@@ -264,6 +264,7 @@ namespace MosaicShell.Core.Services
                 new Linux.KGlobalAccelHotkeyService(),
                 new Linux.KWinKeystateLockKeys(),
                 streams,
+                new Linux.ParecAudioLevelService(),
                 streams);
         }
 
@@ -304,6 +305,7 @@ namespace MosaicShell.Core.Services
             IHotkeyService? hotkeys = null,
             ILockKeysService? lockKeys = null,
             IAppAudioService? appAudio = null,
+            IAudioLevelService? audioLevels = null,
             IAudioDeviceService? audioDevices = null)
         {
             return new HostServices
@@ -314,7 +316,7 @@ namespace MosaicShell.Core.Services
                 Media = media,
                 Hotkeys = hotkeys ?? new NullHotkeyService(),
                 Metrics = new NullSystemMetricsService(),
-                AudioLevels = new NullAudioLevelService(),
+                AudioLevels = audioLevels ?? new NullAudioLevelService(),
                 Autostart = new NullAutostartService(),
                 BrightnessChanges = brightnessChanges ?? new NullBrightnessChangeSource(),
                 OsdSuppressor = osdSuppressor ?? new NullNativeOsdSuppressor(),

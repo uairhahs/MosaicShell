@@ -316,7 +316,7 @@ namespace MosaicShell.Core.Services.Linux
     /// for SIGTERM (checked 2026-11-23), so the signals are registered here and then left to their default action.
     /// SIGKILL or a crash of the Host can still leave one behind.
     /// </summary>
-    public sealed class ProcessPactl : IPactl, IDisposable
+    public sealed class ProcessPactl : IPactl, IAudioCapture, IDisposable
     {
         private static readonly TimeSpan CallTimeout = TimeSpan.FromSeconds(3);
         private readonly string _executable;
@@ -328,6 +328,12 @@ namespace MosaicShell.Core.Services.Linux
         public ProcessPactl()
             : this("pactl")
         {
+        }
+
+        /// <summary>parec, PulseAudio's recorder, for <see cref="ParecAudioLevelService"/>; tracked and ended like pactl.</summary>
+        public static ProcessPactl Parec()
+        {
+            return new ProcessPactl("parec");
         }
 
         /// <summary>For tests: a stand-in for pactl at <paramref name="executable"/>.</summary>
@@ -417,6 +423,37 @@ namespace MosaicShell.Core.Services.Linux
                     }
 
                     yield return line;
+                }
+            }
+            finally
+            {
+                Kill(process);
+                _children.Remove(process);
+            }
+        }
+
+        public async IAsyncEnumerable<byte[]> ReadAsync(
+            IReadOnlyList<string> args, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            using Process? process = Start(args);
+            if (process is null)
+            {
+                yield break;
+            }
+
+            try
+            {
+                Stream output = process.StandardOutput.BaseStream;
+                byte[] buffer = new byte[8192];
+                while (true)
+                {
+                    int read = await output.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
+                    if (read == 0)
+                    {
+                        yield break;
+                    }
+
+                    yield return buffer[..read];
                 }
             }
             finally
