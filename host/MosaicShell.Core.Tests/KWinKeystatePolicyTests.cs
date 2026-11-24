@@ -6,7 +6,7 @@ namespace MosaicShell.Core.Tests
 {
     /// <summary>
     /// Lock keys from KWin's org_kde_kwin_keystate, spoken in the Wayland wire format. KWin 6.6 offers the global to an
-    /// ordinary client (version 5, checked with wayland-info on daishin, 2026-11-24).
+    /// ordinary client (version 5, checked with wayland-info on KDE Plasma, 2026-11-24).
     /// </summary>
     public sealed class KWinKeystatePolicyTests
     {

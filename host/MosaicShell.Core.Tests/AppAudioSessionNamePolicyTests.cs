@@ -4,7 +4,7 @@ using MosaicShell.Core.Services;
 namespace MosaicShell.Core.Tests
 {
     /// <summary>
-    /// Mixdeck's names for Windows audio sessions. The raw values are from kongo (2026-11-24): Edge's session has no
+    /// Mixdeck's names for Windows audio sessions. The raw values are from Windows 11 (2026-11-24): Edge's session has no
     /// display name, and the system sounds session reports an unresolved AudioSrv resource string.
     /// </summary>
     public class AppAudioSessionNamePolicyTests

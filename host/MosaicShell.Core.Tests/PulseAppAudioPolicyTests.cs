@@ -6,7 +6,7 @@ namespace MosaicShell.Core.Tests
 {
     /// <summary>
     /// Per-app audio from <c>pactl -f json list sink-inputs</c>. The Edge record is trimmed from pactl 17 on PipeWire
-    /// (daishin, 2026-11-24); the others follow its shape.
+    /// (2026-11-24); the others follow its shape.
     /// </summary>
     public sealed class PulseAppAudioPolicyTests
     {

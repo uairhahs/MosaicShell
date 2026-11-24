@@ -8,7 +8,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void The_watcher_arms_as_the_flyout_presents()
         {
-            // It armed 1.5 s after the present, so the first click outside a fresh flyout was ignored (kongo,
+            // It armed 1.5 s after the present, so the first click outside a fresh flyout was ignored (Windows 11,
             // 2026-11-24). The X11 layer takes clicks from the moment it shows; Windows now matches it.
             _ = TesseraFlyoutOutsideClickPolicy.ArmDelayMs.Should().Be(0);
         }

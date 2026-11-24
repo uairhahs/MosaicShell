@@ -4,7 +4,7 @@ using MosaicShell.Core.Services.Pulse;
 
 namespace MosaicShell.Core.Tests
 {
-    /// <summary>Output devices from <c>pactl -f json list sinks</c>; the HDMI sink is as daishin reported it (2026-11-24).</summary>
+    /// <summary>Output devices from <c>pactl -f json list sinks</c>; the HDMI sink is as PipeWire reported it (2026-11-24).</summary>
     public sealed class PulseOutputDevicePolicyTests
     {
         private const string Sinks =

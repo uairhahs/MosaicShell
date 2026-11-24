@@ -326,7 +326,7 @@ namespace MosaicShell.Core.Tests
         public void On_Linux_the_launcher_hands_the_relay_the_dotnet_root()
         {
             // A browser starts the relay without DOTNET_ROOT, and on NixOS .NET is not at a default path, so the
-            // framework-dependent relay could not find its runtime (daishin, 2026-11-24).
+            // framework-dependent relay could not find its runtime (NixOS, 2026-11-24).
             string relay = LinuxRelay();
 
             string launcher = NativeHostRegistration.EnsureLinuxLauncher(relay, "/nix/store/x-dotnet/share/dotnet", DataDir());
