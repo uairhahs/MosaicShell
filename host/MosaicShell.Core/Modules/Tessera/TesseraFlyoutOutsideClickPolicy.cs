@@ -40,5 +40,35 @@ namespace MosaicShell.Core.Modules.Tessera
         {
             return isWindows;
         }
+
+        /// <summary>
+        /// Delay between a present and the watcher's arm. It was 1.5 s, because the watcher snapshotted the flyout's
+        /// bounds through Avalonia and had to wait for the entrance to settle, so the first click outside a fresh
+        /// flyout was ignored. The hook now reads each flyout HWND's live rect at the press (<see cref="IsOutside"/>),
+        /// so it arms at once, as the X11 layer takes clicks from the moment it shows.
+        /// </summary>
+        public const int ArmDelayMs = 0;
+
+        /// <summary>
+        /// A press at (<paramref name="x"/>, <paramref name="y"/>) is outside when no flyout rect (left, top, right,
+        /// bottom; right and bottom exclusive, as GetWindowRect) holds it. With no rect read, nothing is outside.
+        /// </summary>
+        public static bool IsOutside(int x, int y, IReadOnlyList<(int Left, int Top, int Right, int Bottom)> rects)
+        {
+            if (rects.Count == 0)
+            {
+                return false;
+            }
+
+            foreach ((int left, int top, int right, int bottom) in rects)
+            {
+                if (x >= left && x < right && y >= top && y < bottom)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 }
