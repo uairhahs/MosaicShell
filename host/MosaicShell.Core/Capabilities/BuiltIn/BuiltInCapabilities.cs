@@ -77,8 +77,7 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
 
             if (!_services.Hotkeys.Register(_hotkeyId, mods, vk, OnHotkey))
             {
-                HotkeyError =
-                    $"Could not register {gesture} (in use by Windows or another app). Try Ctrl+Alt+Letter.";
+                HotkeyError = HotkeyGestureParser.TakenError(gesture, OperatingSystem.IsWindows());
                 IsArmed = true;
                 return Task.CompletedTask;
             }

@@ -31,6 +31,12 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                 : SafeDefault(moduleId);
         }
 
+        /// <summary>Why a gesture did not register: Windows owns some keys, and on KDE another shortcut holds it.</summary>
+        public static string TakenError(string gesture, bool windows)
+        {
+            return $"Could not register {gesture} (in use by {(windows ? "Windows" : "a desktop shortcut")} or another app). Try Ctrl+Alt+Letter.";
+        }
+
         public static string SafeDefault(string moduleId)
         {
             return moduleId.ToLowerInvariant() switch

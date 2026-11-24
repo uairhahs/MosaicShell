@@ -145,5 +145,14 @@ namespace MosaicShell.Core.Tests
         {
             _ = HotkeyGestureParser.EnsureRegisterable(moduleId, gesture!).Should().Be(expected);
         }
+
+        [Theory]
+        [InlineData(true, "Could not register Ctrl+Alt+M (in use by Windows or another app). Try Ctrl+Alt+Letter.")]
+        [InlineData(false, "Could not register Ctrl+Alt+M (in use by a desktop shortcut or another app). Try Ctrl+Alt+Letter.")]
+        public void A_taken_hotkey_names_what_can_hold_it_on_each_platform(bool windows, string expected)
+        {
+            // On KDE the key is held by another KGlobalAccel shortcut, not by Windows.
+            _ = HotkeyGestureParser.TakenError("Ctrl+Alt+M", windows).Should().Be(expected);
+        }
     }
 }
