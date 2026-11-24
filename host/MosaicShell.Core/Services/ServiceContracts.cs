@@ -217,10 +217,11 @@ namespace MosaicShell.Core.Services
 
 #if !WINDOWS
         /// <summary>
-        /// Linux: media from MPRIS players, shell flyout triggers from KDE's KGlobalAccel, Plasma pop-up suppression and
-        /// screen brightness from PowerDevil (all on the session bus), and volume through pactl; every other service inert
-        /// until it has a Linux implementation. With browser sources, Grout's report is also published as the Host's own
-        /// MPRIS player (<see cref="Mpris.GroutMprisBridge"/>), so Plasma's media controls get the page's cover too.
+        /// Linux: media from MPRIS players, shell flyout triggers and capability hotkeys from KDE's KGlobalAccel, Plasma
+        /// pop-up suppression and screen brightness from PowerDevil (all on the session bus), and volume through pactl;
+        /// every other service inert until it has a Linux implementation.
+        /// With browser sources, Grout's report is also published as the Host's own MPRIS player
+        /// (<see cref="Mpris.GroutMprisBridge"/>), so Plasma's media controls get the page's cover too.
         /// </summary>
         /// <param name="browserSources">The Grout extension source beside MPRIS (the Host passes true; tests leave it off).</param>
         public static HostServices CreateLinuxDefaults(bool browserSources = false)
@@ -255,7 +256,8 @@ namespace MosaicShell.Core.Services
                 new Linux.PulseAudioService(),
                 brightness,
                 brightness,
-                companions);
+                companions,
+                new Linux.KGlobalAccelHotkeyService());
         }
 
         /// <summary>
@@ -291,7 +293,8 @@ namespace MosaicShell.Core.Services
             IAudioService? audio = null,
             IBrightnessService? brightness = null,
             IBrightnessChangeSource? brightnessChanges = null,
-            IReadOnlyList<IDisposable>? companions = null)
+            IReadOnlyList<IDisposable>? companions = null,
+            IHotkeyService? hotkeys = null)
         {
             return new HostServices
             {
@@ -299,7 +302,7 @@ namespace MosaicShell.Core.Services
                 AppAudio = new NullAppAudioService(),
                 Brightness = brightness ?? new NullBrightnessService(),
                 Media = media,
-                Hotkeys = new NullHotkeyService(),
+                Hotkeys = hotkeys ?? new NullHotkeyService(),
                 Metrics = new NullSystemMetricsService(),
                 AudioLevels = new NullAudioLevelService(),
                 Autostart = new NullAutostartService(),
