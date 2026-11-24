@@ -218,8 +218,8 @@ namespace MosaicShell.Core.Services
 #if !WINDOWS
         /// <summary>
         /// Linux: media from MPRIS players, shell flyout triggers and capability hotkeys from KDE's KGlobalAccel, Plasma
-        /// pop-up suppression and screen brightness from PowerDevil (all on the session bus), and volume through pactl;
-        /// every other service inert until it has a Linux implementation.
+        /// pop-up suppression and screen brightness from PowerDevil (all on the session bus), lock keys from KWin's
+        /// keystate protocol, and volume through pactl; every other service inert until it has a Linux implementation.
         /// With browser sources, Grout's report is also published as the Host's own MPRIS player
         /// (<see cref="Mpris.GroutMprisBridge"/>), so Plasma's media controls get the page's cover too.
         /// </summary>
@@ -257,7 +257,8 @@ namespace MosaicShell.Core.Services
                 brightness,
                 brightness,
                 companions,
-                new Linux.KGlobalAccelHotkeyService());
+                new Linux.KGlobalAccelHotkeyService(),
+                new Linux.KWinKeystateLockKeys());
         }
 
         /// <summary>
@@ -294,7 +295,8 @@ namespace MosaicShell.Core.Services
             IBrightnessService? brightness = null,
             IBrightnessChangeSource? brightnessChanges = null,
             IReadOnlyList<IDisposable>? companions = null,
-            IHotkeyService? hotkeys = null)
+            IHotkeyService? hotkeys = null,
+            ILockKeysService? lockKeys = null)
         {
             return new HostServices
             {
@@ -311,7 +313,7 @@ namespace MosaicShell.Core.Services
                 LegacyVolumeKeys = new NullLegacyMediaKeyHook(),
                 Idle = new NullIdleService(),
                 Fullscreen = new NullFullscreenProbe(),
-                LockKeys = new NullLockKeysService(),
+                LockKeys = lockKeys ?? new NullLockKeysService(),
                 Airplane = new NullAirplaneModeService(),
                 AudioDevices = new NullAudioDeviceService(),
                 ShellFlyoutTriggers = shellFlyoutTriggers ?? new NullShellFlyoutTriggerSource(),
