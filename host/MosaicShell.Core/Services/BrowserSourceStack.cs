@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using MosaicShell.Core.Services.BrowserBridge;
 #if WINDOWS
 using MosaicShell.Core.Services.BrowserUi;
@@ -49,9 +50,11 @@ namespace MosaicShell.Core.Services
         /// </summary>
         public static IBrowserMediaSource[] CreateLinux(Func<MediaSessionInfo?> session)
         {
-            _ = NativeHostRegistration.RegisterForLinuxBrowsers(
+            string relay = NativeHostRegistration.EnsureLinuxLauncher(
                 Path.Combine(AppContext.BaseDirectory, RelayFileNameFor(isWindows: false)),
-                NativeHostRegistration.DefaultLinuxConfigHome());
+                NativeHostRegistration.DotnetRootFromRuntimeDirectory(RuntimeEnvironment.GetRuntimeDirectory()),
+                NativeHostRegistration.DefaultDataDirectory());
+            _ = NativeHostRegistration.RegisterForLinuxBrowsers(relay, NativeHostRegistration.DefaultLinuxConfigHome());
             return [BrowserMediaSource.Create(() => session()?.Title, () => session()?.AppId)];
         }
 #endif

@@ -311,5 +311,56 @@ namespace MosaicShell.Core.Tests
             // The XDG spec ignores a relative XDG_CONFIG_HOME.
             _ = NativeHostRegistration.LinuxConfigHome(xdgConfigHome, home).Should().Be(expected);
         }
+
+        [Theory]
+        [InlineData("/nix/store/x-dotnet/share/dotnet/shared/Microsoft.NETCore.App/10.0.14/", "/nix/store/x-dotnet/share/dotnet")]
+        [InlineData("/usr/share/dotnet/shared/Microsoft.NETCore.App/10.0.14", "/usr/share/dotnet")]
+        [InlineData("/opt/MosaicShell/", null)]
+        public void On_Linux_the_dotnet_root_is_where_the_host_runtime_lives(string runtimeDirectory, string? expected)
+        {
+            // A self-contained Host carries its runtime in its own folder and has no shared root to hand on.
+            _ = NativeHostRegistration.DotnetRootFromRuntimeDirectory(runtimeDirectory).Should().Be(expected);
+        }
+
+        [Fact]
+        public void On_Linux_the_launcher_hands_the_relay_the_dotnet_root()
+        {
+            // A browser starts the relay without DOTNET_ROOT, and on NixOS .NET is not at a default path, so the
+            // framework-dependent relay could not find its runtime (daishin, 2026-11-24).
+            string relay = LinuxRelay();
+
+            string launcher = NativeHostRegistration.EnsureLinuxLauncher(relay, "/nix/store/x-dotnet/share/dotnet", DataDir());
+
+            _ = launcher.Should().Be(Path.Combine(DataDir(), "grout-relay.sh"));
+            _ = File.ReadAllText(launcher).Should().Be(
+                "#!/bin/sh\nDOTNET_ROOT='/nix/store/x-dotnet/share/dotnet' exec '" + relay + "' \"$@\"\n");
+            if (!OperatingSystem.IsWindows())
+            {
+                _ = File.GetUnixFileMode(launcher).Should().HaveFlag(UnixFileMode.UserExecute);
+            }
+        }
+
+        [Fact]
+        public void On_Linux_a_quote_in_a_path_cannot_break_out_of_the_launcher()
+        {
+            string relay = Path.Combine(_root, "it's", "MosaicShell.BrowserRelay");
+            _ = Directory.CreateDirectory(Path.GetDirectoryName(relay)!);
+            File.WriteAllText(relay, "");
+
+            string launcher = NativeHostRegistration.EnsureLinuxLauncher(relay, "/opt/dotnet", DataDir());
+
+            _ = File.ReadAllText(launcher).Should().Contain("exec '" + relay.Replace("'", "'\\''") + "'");
+        }
+
+        [Fact]
+        public void On_Linux_without_a_dotnet_root_or_a_relay_the_relay_is_registered_itself()
+        {
+            string relay = LinuxRelay();
+            string missing = Path.Combine(_root, "missing", "MosaicShell.BrowserRelay");
+
+            _ = NativeHostRegistration.EnsureLinuxLauncher(relay, null, DataDir()).Should().Be(relay);
+            _ = NativeHostRegistration.EnsureLinuxLauncher(missing, "/opt/dotnet", DataDir()).Should().Be(missing);
+            _ = File.Exists(Path.Combine(DataDir(), "grout-relay.sh")).Should().BeFalse();
+        }
     }
 }
