@@ -17,7 +17,14 @@ namespace MosaicShell.Host.Tests
         public static AppBuilder BuildAvaloniaApp()
         {
             return AppBuilder.Configure<HeadlessTestApp>()
-                .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = true });
+                .UseHeadless(new AvaloniaHeadlessPlatformOptions
+                {
+                    UseHeadlessDrawing = true,
+                    // Since Avalonia 12.1.x (12.1.6 and 12.2.0 both), the UI-thread render timer delivers two
+                    // RequestAnimationFrame callbacks and then stops, so flyout motion (frame-driven) never completed
+                    // and the baseline replays timed out. The off-thread timer keeps delivering them.
+                    ShouldRenderOnUIThread = false,
+                });
         }
 
         public override void Initialize()
