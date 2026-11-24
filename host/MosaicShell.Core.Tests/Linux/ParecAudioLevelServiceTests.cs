@@ -31,7 +31,7 @@ namespace MosaicShell.Core.Tests.Linux
             byte[] bytes = new byte[count * 4];
             for (int i = 0; i < count; i++)
             {
-                BitConverter.TryWriteBytes(bytes.AsSpan(i * 4), value);
+                _ = BitConverter.TryWriteBytes(bytes.AsSpan(i * 4), value);
             }
 
             return bytes;

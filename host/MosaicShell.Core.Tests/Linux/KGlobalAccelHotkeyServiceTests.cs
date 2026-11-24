@@ -72,7 +72,7 @@ namespace MosaicShell.Core.Tests.Linux
         [LinuxBusFact]
         public void A_key_another_component_holds_fails_and_leaves_no_action()
         {
-            _kglobalaccel!.Taken.Add(CtrlAltM);
+            _ = _kglobalaccel!.Taken.Add(CtrlAltM);
 
             bool registered = _hotkeys!.Register("cap:Mixdeck", ModifierKeys.Control | ModifierKeys.Alt, 'M', () => { });
 
@@ -217,7 +217,8 @@ namespace MosaicShell.Core.Tests.Linux
                         }
 
                         using MessageWriter w = context.CreateReplyWriter("ai");
-                        w.WriteArray(new[] { free ? key : 0 });
+                        int[] bound = [free ? key : 0];
+                        w.WriteArray(bound);
                         context.Reply(w.CreateMessage());
                         break;
                     }

@@ -1,7 +1,8 @@
-using System.Runtime.InteropServices;
 using MosaicShell.Core.Services.BrowserBridge;
 #if WINDOWS
 using MosaicShell.Core.Services.BrowserUi;
+#else
+using System.Runtime.InteropServices;
 #endif
 
 namespace MosaicShell.Core.Services

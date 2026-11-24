@@ -88,11 +88,16 @@ namespace MosaicShell.Core.Tests
                 Stream(367, "Microsoft Edge", "msedge", 65536, 32768, mute: false),
                 Stream(371, "Microsoft Edge", "msedge", 65536, 65536, mute: false)))[0];
 
-            _ = PulseAppAudioPolicy.VolumeCommands(app, 0.5).Should().BeEquivalentTo(
-                new[] { new[] { "set-sink-input-volume", "367", "32768", "16384" }, new[] { "set-sink-input-volume", "371", "32768", "32768" } },
-                o => o.WithStrictOrdering());
+            string[][] volume =
+            [
+                ["set-sink-input-volume", "367", "32768", "16384"],
+                ["set-sink-input-volume", "371", "32768", "32768"],
+            ];
+            string[][] mute = [["set-sink-input-mute", "367", "1"], ["set-sink-input-mute", "371", "1"]];
+
+            _ = PulseAppAudioPolicy.VolumeCommands(app, 0.5).Should().BeEquivalentTo(volume, o => o.WithStrictOrdering());
             _ = PulseAppAudioPolicy.MuteCommands(app, true).Should().BeEquivalentTo(
-                new[] { new[] { "set-sink-input-mute", "367", "1" }, new[] { "set-sink-input-mute", "371", "1" } },
+                mute,
                 o => o.WithStrictOrdering());
         }
 
