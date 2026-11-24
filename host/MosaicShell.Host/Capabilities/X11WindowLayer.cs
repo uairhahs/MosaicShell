@@ -24,6 +24,7 @@ namespace MosaicShell.Host.Capabilities
         private static nint _display;
         private static nint _stateAtom;
         private static nint _belowAtom;
+        private static nint _restackAtom;
         private static bool _unavailable;
 
         /// <summary>Whether this process can reach an X display to ask for the state.</summary>
@@ -77,6 +78,54 @@ namespace MosaicShell.Host.Capabilities
             }
         }
 
+        /// <summary>
+        /// Asks the window manager to stack <paramref name="above"/> directly above <paramref name="below"/>
+        /// (EWMH _NET_RESTACK_WINDOW, sent as a pager request, which window managers honour without focus-stealing checks).
+        /// </summary>
+        public static string RestackAbove(Window above, Window below)
+        {
+            const nint SourcePager = 2;
+            const nint StackAbove = 0;
+            lock (Gate)
+            {
+                if (!TryOpen() || _restackAtom == 0)
+                {
+                    return "no X display";
+                }
+
+                if (Xid(above) is not { } aboveXid || Xid(below) is not { } belowXid)
+                {
+                    return "no XID";
+                }
+
+                XClientMessageEvent message = new()
+                {
+                    Type = ClientMessage,
+                    SendEvent = 1,
+                    Display = _display,
+                    Window = aboveXid,
+                    MessageType = _restackAtom,
+                    Format = 32,
+                    L0 = SourcePager,
+                    L1 = belowXid,
+                    L2 = StackAbove,
+                };
+                nint root = XDefaultRootWindow(_display);
+                int sent = XSendEvent(_display, root, propagate: 0, SubstructureRedirectMask | SubstructureNotifyMask, ref message);
+                _ = XFlush(_display);
+                return $"restack 0x{aboveXid:X} above 0x{belowXid:X} sent={sent != 0}";
+            }
+        }
+
+        private static nint? Xid(Window window)
+        {
+            return window.TryGetPlatformHandle() is { } handle
+                && string.Equals(handle.HandleDescriptor, "XID", StringComparison.Ordinal)
+                && handle.Handle != 0
+                ? handle.Handle
+                : null;
+        }
+
         private static bool TryOpen()
         {
             if (_unavailable)
@@ -102,6 +151,7 @@ namespace MosaicShell.Host.Capabilities
                 {
                     _stateAtom = XInternAtom(_display, "_NET_WM_STATE", onlyIfExists: false);
                     _belowAtom = XInternAtom(_display, "_NET_WM_STATE_BELOW", onlyIfExists: false);
+                    _restackAtom = XInternAtom(_display, "_NET_RESTACK_WINDOW", onlyIfExists: false);
                 }
             }
             catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)

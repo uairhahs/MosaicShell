@@ -604,6 +604,12 @@ namespace MosaicShell.Host.Capabilities
             EnsureTesseraSession(request, TesseraFlyoutSessionMode.Single);
             if (!reuse.IsVisible)
             {
+                // The layer first, as a cold build and a revive do: a layer shown after the flyout lands above it.
+                if (TesseraFocusDimPolicy.MustSyncOnIngress(FlyoutIngressDecision.RebuildInPlace))
+                {
+                    SyncFocusDim(request);
+                }
+
                 reuse.Show();
             }
 
@@ -850,6 +856,14 @@ namespace MosaicShell.Host.Capabilities
                     long span = TesseraFlyoutDiagnostics.BeginSpan();
                     flyout.Topmost = true;
                     _focusDim?.Topmost = true;
+
+                    if (TesseraFocusDimPolicy.ResolveRestack(X11FocusDim.ResolveRoute()) == FlyoutRestack.X11RestackWindow)
+                    {
+                        string x11 = _focusDim is { } dim ? X11WindowLayer.RestackAbove(flyout, dim) : "no layer";
+                        TesseraFlyoutDiagnostics.EndSpan(span, $"zorder when={when}");
+                        Log($"z-order {when} {x11}");
+                        return;
+                    }
 
                     bool ok = Win32WindowChrome.TryStackAbove(flyout, _focusDim, out string? detail);
                     TesseraFlyoutDiagnostics.EndSpan(span, $"zorder when={when}");
