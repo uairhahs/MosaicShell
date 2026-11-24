@@ -11,7 +11,7 @@
         x:DataType="vm:MainViewModel"
         Width="1100" Height="750"
         MinWidth="780" MinHeight="560"
-        Background="#11111b"
+        Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
         ExtendClientAreaToDecorationsHint="True"
         Icon="avares://MosaicShell.Host/Assets/mosaicshell.ico"
         Title="MosaicShell">
@@ -22,35 +22,19 @@
 
   <Window.Styles>
     <Style Selector="Button.nav">
+      <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Background" Value="Transparent" />
-      <Setter Property="Foreground" Value="#a6adc8" />
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
       <Setter Property="Padding" Value="18,10" />
-      <Setter Property="CornerRadius" Value="8" />
       <Setter Property="FontSize" Value="13" />
     </Style>
     <Style Selector="Button.nav:pointerover">
-      <Setter Property="Background" Value="#313244" />
-      <Setter Property="Foreground" Value="#cdd6f4" />
+      <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
     </Style>
     <Style Selector="Button.nav.active">
-      <Setter Property="Background" Value="#45475a" />
-      <Setter Property="Foreground" Value="#cdd6f4" />
-      <Setter Property="FontWeight" Value="SemiBold" />
-    </Style>
-    <Style Selector="Button.action">
-      <Setter Property="Background" Value="#313244" />
-      <Setter Property="Foreground" Value="#cdd6f4" />
-      <Setter Property="Padding" Value="14,8" />
-      <Setter Property="CornerRadius" Value="8" />
-    </Style>
-    <Style Selector="Button.action:pointerover">
-      <Setter Property="Background" Value="#45475a" />
-    </Style>
-    <Style Selector="Button.primary">
-      <Setter Property="Background" Value="#89dceb" />
-      <Setter Property="Foreground" Value="#11111b" />
-      <Setter Property="Padding" Value="16,8" />
-      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
     <Style Selector="Button.icon">
@@ -58,23 +42,8 @@
       <Setter Property="Height" Value="36" />
       <Setter Property="MinWidth" Value="36" />
       <Setter Property="Padding" Value="0" />
-      <Setter Property="CornerRadius" Value="8" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
-    </Style>
-    <Style Selector="Button.icon.action">
-      <Setter Property="Background" Value="#313244" />
-      <Setter Property="Foreground" Value="#cdd6f4" />
-    </Style>
-    <Style Selector="Button.icon.action:pointerover">
-      <Setter Property="Background" Value="#45475a" />
-    </Style>
-    <Style Selector="Button.icon.primary">
-      <Setter Property="Background" Value="#89dceb" />
-      <Setter Property="Foreground" Value="#11111b" />
-    </Style>
-    <Style Selector="Button.icon.primary:pointerover">
-      <Setter Property="Background" Value="#b4f0f8" />
     </Style>
     <Style Selector="Button.icon /template/ ContentPresenter">
       <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -95,28 +64,28 @@
       <Setter Property="Cursor" Value="Hand" />
     </Style>
     <Style Selector="Button.accentSwatch:pointerover">
-      <Setter Property="BorderBrush" Value="#a6adc8" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TextFillColorSecondaryBrush}" />
     </Style>
     <Style Selector="Button.accentSwatch.selected">
-      <Setter Property="BorderBrush" Value="#cdd6f4" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
     </Style>
     <Style Selector="Border.card">
-      <Setter Property="Background" Value="#1e1e2e" />
-      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+      <Setter Property="CornerRadius" Value="{DynamicResource OverlayCornerRadius}" />
       <Setter Property="Padding" Value="20" />
       <Setter Property="Cursor" Value="Hand" />
     </Style>
     <Style Selector="Border.card:pointerover">
-      <Setter Property="Background" Value="#313244" />
+      <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
     </Style>
     <Style Selector="Border.row">
-      <Setter Property="Background" Value="#1e1e2e" />
+      <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
       <Setter Property="CornerRadius" Value="10" />
       <Setter Property="Padding" Value="12" />
       <Setter Property="Margin" Value="0,0,0,8" />
     </Style>
     <Style Selector="Border.row:pointerover">
-      <Setter Property="Background" Value="#252536" />
+      <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
     </Style>
     <Style Selector="Button.tileCog">
       <Setter Property="Background" Value="Transparent" />
@@ -142,8 +111,8 @@
       <Setter Property="Cursor" Value="Hand" />
     </Style>
     <Style Selector="Border.section">
-      <Setter Property="Background" Value="#1e1e2e" />
-      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+      <Setter Property="CornerRadius" Value="{DynamicResource OverlayCornerRadius}" />
       <Setter Property="Padding" Value="20" />
       <Setter Property="Margin" Value="0,0,0,14" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -151,12 +120,12 @@
     <Style Selector="TextBlock.sectionTitle">
       <Setter Property="FontSize" Value="15" />
       <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Foreground" Value="#cdd6f4" />
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
       <Setter Property="Margin" Value="0,0,0,4" />
     </Style>
     <Style Selector="TextBlock.sectionHint">
       <Setter Property="FontSize" Value="12" />
-      <Setter Property="Foreground" Value="#6c7086" />
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}" />
       <Setter Property="TextWrapping" Value="Wrap" />
       <Setter Property="Margin" Value="0,0,0,12" />
     </Style>
@@ -178,34 +147,24 @@
       <Setter Property="Background" Value="Transparent" />
     </Style>
     <Style Selector="Button.motionCard Border.motionFace">
-      <Setter Property="Background" Value="#181825" />
-      <Setter Property="BorderBrush" Value="#313244" />
+      <Setter Property="Background" Value="{DynamicResource SolidBackgroundFillColorSecondaryBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DividerStrokeColorDefaultBrush}" />
       <Setter Property="BorderThickness" Value="2" />
       <Setter Property="CornerRadius" Value="12" />
       <Setter Property="Padding" Value="8" />
     </Style>
     <Style Selector="Button.motionCard:pointerover Border.motionFace">
-      <Setter Property="BorderBrush" Value="#585b70" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ControlStrongStrokeColorDefaultBrush}" />
     </Style>
     <Style Selector="Button.motionCard Border.motionFace.selected">
-      <Setter Property="BorderBrush" Value="#89b4fa" />
-      <Setter Property="Background" Value="#1e2233" />
-    </Style>
-    <Style Selector="Expander.motionFold /template/ ToggleButton#ExpanderHeader">
-      <Setter Property="Background" Value="#181825" />
-      <Setter Property="Foreground" Value="#cdd6f4" />
-      <Setter Property="CornerRadius" Value="8" />
-      <Setter Property="Padding" Value="12,10" />
-    </Style>
-    <Style Selector="Expander.motionFold /template/ Border#ExpanderContent">
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+      <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
     </Style>
     <Style Selector="RadioButton.motionDir">
       <Setter Property="MinWidth" Value="84" />
       <Setter Property="Margin" Value="0,0,6,0" />
       <Setter Property="Padding" Value="10,6" />
-      <Setter Property="Foreground" Value="#cdd6f4" />
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
     </Style>
     <!-- Readable NumericUpDown sizing -->
     <Style Selector="NumericUpDown.config">
@@ -214,11 +173,6 @@
       <Setter Property="MinHeight" Value="40" />
       <Setter Property="FontSize" Value="16" />
       <Setter Property="Padding" Value="12,8" />
-      <Setter Property="Background" Value="#313244" />
-      <Setter Property="Foreground" Value="#cdd6f4" />
-      <Setter Property="BorderBrush" Value="#45475a" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="8" />
       <Setter Property="HorizontalContentAlignment" Value="Left" />
       <Setter Property="ShowButtonSpinner" Value="True" />
       <Setter Property="AllowSpin" Value="True" />
@@ -227,25 +181,24 @@
       <Setter Property="FontSize" Value="16" />
       <Setter Property="MinHeight" Value="28" />
       <Setter Property="Padding" Value="8,4" />
-      <Setter Property="Foreground" Value="#cdd6f4" />
     </Style>
   </Window.Styles>
 
   <DockPanel Margin="0,28,0,0">
-    <Border DockPanel.Dock="Bottom" Background="#181825" Padding="24,8"
-            BorderBrush="#313244" BorderThickness="0,1,0,0">
-      <TextBlock Text="{Binding StatusMessage}" Foreground="#6c7086" FontSize="12"
+    <Border DockPanel.Dock="Bottom" Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}" Padding="24,8"
+            BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
+      <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12"
                  TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
     </Border>
 
-    <Border DockPanel.Dock="Bottom" Background="#1e1e2e" Padding="24,12"
-            BorderBrush="#313244" BorderThickness="0,1,0,0">
+    <Border DockPanel.Dock="Bottom" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Padding="24,12"
+            BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
       <Grid ColumnDefinitions="Auto,*,Auto">
         <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
           <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="28" Height="28"
                  RenderOptions.BitmapInterpolationMode="HighQuality" />
           <TextBlock Text="MosaicShell" FontWeight="SemiBold" FontSize="14"
-                     Foreground="#cdd6f4" VerticalAlignment="Center" />
+                     Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
           <Button Classes="nav" Content="Home"
@@ -255,7 +208,7 @@
                   Classes.active="{Binding IsSettings}"
                   Command="{Binding NavigateCommand}" CommandParameter="Settings" />
         </StackPanel>
-        <Button Grid.Column="2" Classes="action" Content="GitHub"
+        <Button Grid.Column="2" Content="GitHub"
                 Command="{Binding OpenGitHubCommand}" VerticalAlignment="Center" />
       </Grid>
     </Border>
@@ -271,11 +224,11 @@
                 <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="48" Height="48"
                        RenderOptions.BitmapInterpolationMode="HighQuality" />
                 <StackPanel VerticalAlignment="Center">
-                  <TextBlock Text="Home" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
-                  <TextBlock Text="Compose your desktop from modules and widgets." Foreground="#a6adc8" FontSize="13" />
+                  <TextBlock Text="Home" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                  <TextBlock Text="Compose your desktop from modules and widgets." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13" />
                 </StackPanel>
               </StackPanel>
-              <Button Grid.Column="1" Classes="action" Content="Check catalog"
+              <Button Grid.Column="1" Content="Check catalog"
                       Command="{Binding CheckUpdatesCommand}" VerticalAlignment="Center" />
             </Grid>
             <ItemsControl ItemsSource="{Binding HomeCards}"
@@ -293,14 +246,14 @@
                           PointerPressed="OnDiscoverCardPressed">
                     <Grid ColumnDefinitions="Auto,*">
                       <Border Width="48" Height="48" CornerRadius="12" Margin="0,0,20,0"
-                              Background="#313244" VerticalAlignment="Center">
+                              Background="{DynamicResource SubtleFillColorSecondaryBrush}" VerticalAlignment="Center">
                         <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="26" Height="26"
                                             HorizontalAlignment="Center" VerticalAlignment="Center"
                                             Foreground="{Binding GlyphBrush}" />
                       </Border>
                       <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold" Foreground="#cdd6f4" />
-                        <TextBlock Text="{Binding Body}" FontSize="14" Foreground="#a6adc8" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                        <TextBlock Text="{Binding Body}" FontSize="14" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
                       </StackPanel>
                     </Grid>
                   </Border>
@@ -312,7 +265,7 @@
         <!-- Tiles -->
         <DockPanel IsVisible="{Binding IsTiles}">
           <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,16">
-            <Button Classes="action" Command="{Binding GoBackCommand}"
+            <Button Command="{Binding GoBackCommand}"
                     VerticalAlignment="Center" Margin="0,0,16,0" Padding="10,8"
                     ToolTip.Tip="Back">
               <StackPanel Orientation="Horizontal" Spacing="6">
@@ -321,20 +274,20 @@
               </StackPanel>
             </Button>
             <StackPanel Grid.Column="1">
-              <TextBlock Text="Tiles" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
+              <TextBlock Text="Tiles" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
               <TextBlock Text="Capabilities: install, arm/disarm background hosts. Widgets: play/stop overlays. Cog opens tile settings."
-                         Foreground="#6c7086" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0" />
+                         Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0" />
             </StackPanel>
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-              <Button Classes="action" Content="Batch install" Command="{Binding BatchInstallCommand}" />
-              <Button Classes="action" Content="Refresh"
+              <Button Content="Batch install" Command="{Binding BatchInstallCommand}" />
+              <Button Content="Refresh"
                       Command="{Binding NavigateCommand}" CommandParameter="Tiles" />
             </StackPanel>
           </Grid>
           <Grid ColumnDefinitions="*,24,*">
             <DockPanel Grid.Column="0">
               <TextBlock DockPanel.Dock="Top" Text="Modules" FontSize="16" FontWeight="SemiBold"
-                         Foreground="#cdd6f4" Margin="0,0,0,8" />
+                         Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,8" />
               <ScrollViewer>
                 <ItemsControl ItemsSource="{Binding Modules}">
                   <ItemsControl.ItemTemplate>
@@ -343,7 +296,7 @@
                         <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
                           <CheckBox Grid.Column="0" IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center" Margin="0,0,6,0" />
                           <Border Grid.Column="1" Width="36" Height="36" CornerRadius="8" Margin="0,0,8,0"
-                                  Background="#313244" VerticalAlignment="Center">
+                                  Background="{DynamicResource SubtleFillColorSecondaryBrush}" VerticalAlignment="Center">
                             <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="20" Height="20"
                                                 HorizontalAlignment="Center" VerticalAlignment="Center"
                                                 Foreground="{Binding GlyphBrush}" />
@@ -360,22 +313,22 @@
                                   <icons:MaterialIcon Kind="Cog" Width="16" Height="16" />
                                 </Button>
                                 <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
-                                           Foreground="#cdd6f4" VerticalAlignment="Center" />
+                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
                                 <TextBlock Text="{Binding StatusText}" FontSize="12"
                                            Foreground="{Binding StatusBrush}"
                                            VerticalAlignment="Center" />
                               </StackPanel>
-                              <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#6c7086"
+                              <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                          TextWrapping="Wrap" Margin="0,4,0,0" />
                             </StackPanel>
                           </Border>
-                          <Button Grid.Column="3" Classes="icon action" Margin="0,0,6,0"
+                          <Button Grid.Column="3" Classes="icon" Margin="0,0,6,0"
                                   Command="{Binding #Root.((vm:MainViewModel)DataContext).UninstallModuleCommand}"
                                   CommandParameter="{Binding}"
                                   ToolTip.Tip="Uninstall">
                             <icons:MaterialIcon Kind="Minus" Width="18" Height="18" />
                           </Button>
-                          <Button Grid.Column="4" Classes="icon primary"
+                          <Button Grid.Column="4" Classes="icon accent"
                                   IsEnabled="{Binding !IsInstalling}"
                                   Command="{Binding #Root.((vm:MainViewModel)DataContext).InstallModuleCommand}"
                                   CommandParameter="{Binding}"
@@ -391,7 +344,7 @@
             </DockPanel>
             <DockPanel Grid.Column="2">
               <TextBlock DockPanel.Dock="Top" Text="Widgets" FontSize="16" FontWeight="SemiBold"
-                         Foreground="#cdd6f4" Margin="0,0,0,8" />
+                         Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,8" />
               <ScrollViewer>
                 <ItemsControl ItemsSource="{Binding Widgets}">
                   <ItemsControl.ItemTemplate>
@@ -400,7 +353,7 @@
                         <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
                           <CheckBox Grid.Column="0" IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center" Margin="0,0,6,0" />
                           <Border Grid.Column="1" Width="36" Height="36" CornerRadius="8" Margin="0,0,8,0"
-                                  Background="#313244" VerticalAlignment="Center">
+                                  Background="{DynamicResource SubtleFillColorSecondaryBrush}" VerticalAlignment="Center">
                             <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="20" Height="20"
                                                 HorizontalAlignment="Center" VerticalAlignment="Center"
                                                 Foreground="{Binding GlyphBrush}" />
@@ -417,22 +370,22 @@
                                   <icons:MaterialIcon Kind="Cog" Width="16" Height="16" />
                                 </Button>
                                 <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
-                                           Foreground="#cdd6f4" VerticalAlignment="Center" />
+                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
                                 <TextBlock Text="{Binding StatusText}" FontSize="12"
                                            Foreground="{Binding StatusBrush}"
                                            VerticalAlignment="Center" />
                               </StackPanel>
-                              <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#6c7086"
+                              <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                          TextWrapping="Wrap" Margin="0,4,0,0" />
                             </StackPanel>
                           </Border>
-                          <Button Grid.Column="3" Classes="icon action" Margin="0,0,6,0"
+                          <Button Grid.Column="3" Classes="icon" Margin="0,0,6,0"
                                   Command="{Binding #Root.((vm:MainViewModel)DataContext).UninstallModuleCommand}"
                                   CommandParameter="{Binding}"
                                   ToolTip.Tip="Uninstall">
                             <icons:MaterialIcon Kind="Minus" Width="18" Height="18" />
                           </Button>
-                          <Button Grid.Column="4" Classes="icon primary"
+                          <Button Grid.Column="4" Classes="icon accent"
                                   IsEnabled="{Binding !IsInstalling}"
                                   Command="{Binding #Root.((vm:MainViewModel)DataContext).InstallModuleCommand}"
                                   CommandParameter="{Binding}"
@@ -452,7 +405,7 @@
         <!-- Module config (from tile cog) -->
         <DockPanel IsVisible="{Binding IsModuleConfig}">
           <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" Margin="0,0,0,16">
-            <Button Classes="action" Command="{Binding GoBackCommand}"
+            <Button Command="{Binding GoBackCommand}"
                     VerticalAlignment="Center" Margin="0,0,16,0" Padding="10,8"
                     ToolTip.Tip="Back to Tiles">
               <StackPanel Orientation="Horizontal" Spacing="6">
@@ -461,7 +414,7 @@
               </StackPanel>
             </Button>
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-              <TextBlock FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4">
+              <TextBlock FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
                 <TextBlock.Text>
                   <MultiBinding StringFormat="{}{0} settings">
                     <Binding Path="ConfigModuleTitle" />
@@ -489,7 +442,7 @@
                       <TextBlock Classes="sectionHint"
                                  Text="Where the flyout sits on the chosen monitor’s work area (default: top left, like JaxCore). Insets are pixels from that edge." />
                       <StackPanel Spacing="4">
-                        <TextBlock Text="Corner" Foreground="#a6adc8" FontSize="12" />
+                        <TextBlock Text="Corner" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                         <ComboBox MinWidth="200" HorizontalAlignment="Left"
                                   ItemsSource="{Binding TesseraPositionChoices}"
                                   SelectedItem="{Binding SelectedTesseraPosition}"
@@ -497,19 +450,19 @@
                       </StackPanel>
                       <StackPanel Spacing="12">
                         <StackPanel Spacing="4">
-                          <TextBlock Text="Monitor" Foreground="#a6adc8" FontSize="12" />
+                          <TextBlock Text="Monitor" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                           <NumericUpDown Classes="config" Minimum="1" Maximum="8"
                                          FormatString="0" Value="{Binding TesseraMonitorIndex}"
                                          ToolTip.Tip="1 = primary display; 2+ follow Avalonia screen order" />
                         </StackPanel>
                         <StackPanel Spacing="4">
-                          <TextBlock Text="Horizontal inset (px)" Foreground="#a6adc8" FontSize="12" />
+                          <TextBlock Text="Horizontal inset (px)" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                           <NumericUpDown Classes="config" Minimum="0" Maximum="200"
                                          FormatString="0" Value="{Binding TesseraXPad}"
                                          ToolTip.Tip="Pixels from the left or right edge of the work area" />
                         </StackPanel>
                         <StackPanel Spacing="4">
-                          <TextBlock Text="Vertical inset (px)" Foreground="#a6adc8" FontSize="12" />
+                          <TextBlock Text="Vertical inset (px)" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                           <NumericUpDown Classes="config" Minimum="0" Maximum="200"
                                          FormatString="0" Value="{Binding TesseraYPad}"
                                          ToolTip.Tip="Pixels from the top or bottom edge of the work area" />
@@ -525,7 +478,7 @@
                       <StackPanel Orientation="Horizontal" Spacing="8">
                         <NumericUpDown Classes="config" Minimum="0.5" Maximum="20" Increment="0.25"
                                        FormatString="0.##" Value="{Binding TesseraAutoDismissSeconds}" />
-                        <TextBlock Text="seconds" VerticalAlignment="Center" Foreground="#a6adc8" FontSize="14" />
+                        <TextBlock Text="seconds" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14" />
                       </StackPanel>
                     </StackPanel>
                   </Border>
@@ -538,13 +491,13 @@
                           <TextBlock Classes="sectionHint" Margin="0"
                                      Text="How the flyout arrives and leaves. Pick a look, then fine tune it below." />
                         </StackPanel>
-                        <Button Grid.Column="1" Classes="action" Content="Play on screen" VerticalAlignment="Top"
+                        <Button Grid.Column="1" Content="Play on screen" VerticalAlignment="Top"
                                 Command="{Binding PreviewTesseraFlyoutCommand}"
                                 ToolTip.Tip="Save these settings and play a volume flyout on the desktop" />
                       </Grid>
 
                       <!-- What it will look like -->
-                      <Border Background="#11111b" CornerRadius="10" Padding="12">
+                      <Border Background="{DynamicResource SolidBackgroundFillColorBaseBrush}" CornerRadius="10" Padding="12">
                         <Grid ColumnDefinitions="260,*">
                           <tessera:TesseraMotionPreview Width="260" VerticalAlignment="Center"
                                                         Ani="{Binding TesseraMotionCurrent.Ani}"
@@ -553,9 +506,9 @@
                                                         AniDir="{Binding TesseraMotionCurrent.AniDir}"
                                                         DisplacementPx="{Binding TesseraMotionCurrent.DisplacementPx}" />
                           <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Spacing="4">
-                            <TextBlock Text="{Binding TesseraMotionPresetName}" FontSize="20" FontWeight="SemiBold" Foreground="#cdd6f4" />
-                            <TextBlock Text="{Binding TesseraMotionSummary}" FontSize="12" Foreground="#a6adc8" TextWrapping="Wrap" />
-                            <TextBlock FontSize="11" Foreground="#6c7086" TextWrapping="Wrap" Margin="0,6,0,0">
+                            <TextBlock Text="{Binding TesseraMotionPresetName}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                            <TextBlock Text="{Binding TesseraMotionSummary}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                            <TextBlock FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" TextWrapping="Wrap" Margin="0,6,0,0">
                               <Run Text="{Binding TesseraMotionDurationLabel}" />
                               <Run Text="·" />
                               <Run Text="{Binding TesseraMotionDistanceLabel}" />
@@ -586,7 +539,7 @@
                                                                 AniDir="{Binding AniDir}"
                                                                 DisplacementPx="{Binding DisplacementPx}" />
                                   <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
-                                             Foreground="#cdd6f4" HorizontalAlignment="Center" />
+                                             Foreground="{DynamicResource TextFillColorPrimaryBrush}" HorizontalAlignment="Center" />
                                 </StackPanel>
                               </Border>
                             </Button>
@@ -608,32 +561,32 @@
 
                           <StackPanel Spacing="4" IsEnabled="{Binding TesseraMotionSlides}">
                             <Grid ColumnDefinitions="*,Auto">
-                              <TextBlock Text="Speed" Foreground="#a6adc8" FontSize="12" />
-                              <TextBlock Grid.Column="1" Text="{Binding TesseraMotionDurationLabel}" Foreground="#cdd6f4" FontSize="12" />
+                              <TextBlock Text="Speed" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                              <TextBlock Grid.Column="1" Text="{Binding TesseraMotionDurationLabel}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="12" />
                             </Grid>
                             <Slider Minimum="160" Maximum="640" SmallChange="16" LargeChange="64" TickFrequency="16"
                                     IsSnapToTickEnabled="True" Value="{Binding TesseraMotionDurationMs}" />
                             <Grid ColumnDefinitions="*,*">
-                              <TextBlock Text="Faster" FontSize="11" Foreground="#6c7086" />
-                              <TextBlock Grid.Column="1" Text="Slower" FontSize="11" Foreground="#6c7086" HorizontalAlignment="Right" />
+                              <TextBlock Text="Faster" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                              <TextBlock Grid.Column="1" Text="Slower" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" HorizontalAlignment="Right" />
                             </Grid>
                           </StackPanel>
 
                           <StackPanel Spacing="4" IsEnabled="{Binding TesseraMotionSlides}">
                             <Grid ColumnDefinitions="*,Auto">
-                              <TextBlock Text="Distance" Foreground="#a6adc8" FontSize="12" />
-                              <TextBlock Grid.Column="1" Text="{Binding TesseraMotionDistanceLabel}" Foreground="#cdd6f4" FontSize="12" />
+                              <TextBlock Text="Distance" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                              <TextBlock Grid.Column="1" Text="{Binding TesseraMotionDistanceLabel}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="12" />
                             </Grid>
                             <Slider Minimum="10" Maximum="200" SmallChange="5" LargeChange="20" TickFrequency="5"
                                     IsSnapToTickEnabled="True" Value="{Binding TesseraAnimationDisplacement}" />
                             <Grid ColumnDefinitions="*,*">
-                              <TextBlock Text="Short" FontSize="11" Foreground="#6c7086" />
-                              <TextBlock Grid.Column="1" Text="Far" FontSize="11" Foreground="#6c7086" HorizontalAlignment="Right" />
+                              <TextBlock Text="Short" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                              <TextBlock Grid.Column="1" Text="Far" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" HorizontalAlignment="Right" />
                             </Grid>
                           </StackPanel>
 
                           <StackPanel Spacing="6" IsEnabled="{Binding TesseraMotionSlides}">
-                            <TextBlock Text="Slides in from" Foreground="#a6adc8" FontSize="12" />
+                            <TextBlock Text="Slides in from" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                             <StackPanel Orientation="Horizontal">
                               <RadioButton Classes="motionDir" GroupName="TesseraMotionFrom" Content="← Left"
                                            IsChecked="{Binding TesseraMotionFromLeft}" />
@@ -647,7 +600,7 @@
                           </StackPanel>
 
                           <StackPanel Spacing="4">
-                            <TextBlock Text="Feel" Foreground="#a6adc8" FontSize="12" />
+                            <TextBlock Text="Feel" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                             <ComboBox MinWidth="220" HorizontalAlignment="Left"
                                       ItemsSource="{Binding TesseraMotionCurves}"
                                       SelectedItem="{Binding SelectedTesseraMotionCurve}"
@@ -657,14 +610,14 @@
                           <Expander Classes="motionFold" Header="All curves" HorizontalAlignment="Stretch" Background="Transparent">
                             <Grid ColumnDefinitions="*,*" Margin="0,8,0,0">
                               <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,8,0">
-                                <TextBlock Text="Family" Foreground="#a6adc8" FontSize="12" />
+                                <TextBlock Text="Family" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                                 <ComboBox HorizontalAlignment="Stretch"
                                           ItemsSource="{Binding TesseraEaseFamilies}"
                                           SelectedItem="{Binding TesseraEaseFamily}" />
                               </StackPanel>
                               <StackPanel Grid.Column="1" Spacing="4" Margin="8,0,0,0"
                                           IsVisible="{Binding TesseraEaseVariantEnabled}">
-                                <TextBlock Text="Shape" Foreground="#a6adc8" FontSize="12" />
+                                <TextBlock Text="Shape" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                                 <ComboBox HorizontalAlignment="Stretch"
                                           ItemsSource="{Binding TesseraEaseVariants}"
                                           SelectedItem="{Binding TesseraEaseVariant}"
@@ -696,11 +649,11 @@
                       <CheckBox Content="Legacy volume key hooks" IsChecked="{Binding TesseraLegacyVol}"
                                 ToolTip.Tip="Intercept volume keys so Tessera owns the gesture (recommended on Win11)" />
                       <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding TesseraLegacyVol}">
-                        <TextBlock Text="Volume step" VerticalAlignment="Center" Foreground="#a6adc8" />
+                        <TextBlock Text="Volume step" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                         <NumericUpDown Classes="config" Minimum="1" Maximum="25" Increment="1"
                                        FormatString="0" Value="{Binding TesseraLegacyStepPercent}"
                                        ToolTip.Tip="Percent points per legacy volume key press (e.g. 2 = ±2%)" />
-                        <TextBlock Text="/ 100" VerticalAlignment="Center" Foreground="#6c7086" FontSize="13" />
+                        <TextBlock Text="/ 100" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="13" />
                       </StackPanel>
                       <TextBlock Classes="sectionHint" Margin="0"
                                  Text="Stock Windows volume HUD is hidden best-effort (WinEvent + ShellHook) while Tessera is armed. Vendor laptop OSDs (Dell/HP/…) unsupported. Media is SMTC-only. Re-arm after changing hooks." />
@@ -725,7 +678,7 @@
                               ItemsSource="{Binding ModuleStyleOptions}"
                               SelectedItem="{Binding SelectedModuleStyle}" />
                     <TextBlock Text="Saves on Try now / Save"
-                               Foreground="#6c7086" FontSize="12" />
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12" />
                     <tessera:TesseraStylePreview IsVisible="{Binding TesseraConfigPreviewReady}"
                                                  StyleId="{Binding ModuleStyle}"
                                                  ShowMediaStrip="{Binding TesseraMediaStrip}"
@@ -739,7 +692,7 @@
                     <TextBlock Classes="sectionHint" Margin="0"
                                Text="Host material language: soft frost tint (not native translucency). Optional baked wash is a light MagickMeter-style texture." />
                     <StackPanel Spacing="8">
-                      <TextBlock Text="Accent colour" Foreground="#a6adc8" FontSize="12" />
+                      <TextBlock Text="Accent colour" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                       <ItemsControl ItemsSource="{Binding TesseraAccentSwatches}">
                         <ItemsControl.ItemsPanel>
                           <ItemsPanelTemplate>
@@ -757,7 +710,7 @@
                                 <Ellipse Width="20" Height="20" Fill="{Binding Fill}" />
                                 <icons:MaterialIcon Kind="Palette" Width="11" Height="11"
                                                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                    Foreground="#11111b"
+                                                    Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
                                                     IsVisible="{Binding IsSystem}" />
                               </Panel>
                             </Button>
@@ -769,20 +722,20 @@
                                ToolTip.Tip="Hex accent used by every Tessera style (sliders, play, toggles, highlights). Empty = system accent." />
                     </StackPanel>
                     <StackPanel Spacing="4">
-                      <TextBlock Text="Material" Foreground="#a6adc8" FontSize="12" />
+                      <TextBlock Text="Material" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                       <ComboBox MinWidth="220" HorizontalAlignment="Left"
                                 ItemsSource="{Binding TesseraMaterialOptions}"
                                 SelectedItem="{Binding SelectedTesseraMaterial}"
                                 IsEnabled="{Binding TesseraMaterialSelectable}"
                                 ToolTip.Tip="Solid: a dense panel. Frosted: Tessera's own translucent frost, drawn by the app. Native Translucency: the operating system blurs the desktop behind the card (acrylic on Windows 11, KWin blur on KDE Plasma); listed only where the system can draw it. After switching Native Translucency on Windows, restart Host so the corner radius applies." />
-                      <TextBlock Text="{Binding TesseraMaterialFixedNote}" Foreground="#a6adc8" FontSize="11"
+                      <TextBlock Text="{Binding TesseraMaterialFixedNote}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11"
                                  TextWrapping="Wrap" MaxWidth="320" HorizontalAlignment="Left"
                                  IsVisible="{Binding !TesseraMaterialSelectable}" />
                     </StackPanel>
                     <CheckBox Content="Subtle desktop dim (Focus)" IsChecked="{Binding TesseraFocusDim}"
                               ToolTip.Tip="Very light dim behind the flyout. Never blocks input; outside click dismisses instantly." />
                     <StackPanel Spacing="4" Margin="0,4,0,0">
-                      <TextBlock Text="Flyout scale %" Foreground="#a6adc8" FontSize="12" />
+                      <TextBlock Text="Flyout scale %" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                       <NumericUpDown Classes="config" Minimum="50" Maximum="150" Increment="5"
                                      FormatString="0" Value="{Binding TesseraFlyoutScalePercent}"
                                      ToolTip.Tip="Size multiplier for Tessera flyouts on the desktop (100 = default)." />
@@ -795,9 +748,9 @@
 
             <Border Grid.Row="1" Classes="section" Margin="0,8,0,0" Padding="16,12">
               <Grid ColumnDefinitions="Auto,*">
-                <Button Classes="primary" Content="Save"
+                <Button Classes="accent" Content="Save"
                         Command="{Binding SaveModuleConfigCommand}" />
-                <Button Grid.Column="1" Classes="action" Content="Try Now"
+                <Button Grid.Column="1" Content="Try Now"
                         HorizontalAlignment="Right"
                         Command="{Binding PreviewTesseraFlyoutCommand}"
                         ToolTip.Tip="Save placement/style and preview a volume flyout on the desktop" />
@@ -809,9 +762,9 @@
           <DockPanel IsVisible="{Binding !ShowTesseraExtras}">
             <Border DockPanel.Dock="Bottom" Classes="section" Margin="0,8,0,0" Padding="16,12">
               <StackPanel Orientation="Horizontal" Spacing="10">
-                <Button Classes="primary" Content="Save" HorizontalAlignment="Left"
+                <Button Classes="accent" Content="Save" HorizontalAlignment="Left"
                         Command="{Binding SaveModuleConfigCommand}" />
-                <Button Classes="action" Content="Try Now"
+                <Button Content="Try Now"
                         IsVisible="{Binding ConfigCanTryOverlay}"
                         Command="{Binding TryCapabilityOverlayCommand}"
                         ToolTip.Tip="Arm (if needed) and open the overlay so you can see what this module does" />
@@ -824,9 +777,9 @@
                   <StackPanel Spacing="8">
                     <TextBlock Classes="sectionTitle" Text="What this does" Margin="0" />
                     <TextBlock Text="{Binding ConfigUsageSummary}" TextWrapping="Wrap"
-                               Foreground="#cdd6f4" FontSize="14" />
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="14" />
                     <TextBlock Text="{Binding ConfigHowToTrigger}" TextWrapping="Wrap"
-                               Foreground="#89dceb" FontSize="13" />
+                               Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" FontSize="13" />
                   </StackPanel>
                 </Border>
 
@@ -836,19 +789,19 @@
                     <TextBlock Classes="sectionHint" Margin="0"
                                Text="Capture a shortcut (Ctrl/Alt/Shift/Win + key). Win+S / Win+A / Win+Q are reserved by Windows and will be replaced automatically." />
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                      <Border Background="#181825" CornerRadius="8" Padding="12,8" MinWidth="160"
-                              BorderThickness="1" BorderBrush="#45475a">
+                      <Border Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}" CornerRadius="8" Padding="12,8" MinWidth="160"
+                              BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
                         <TextBlock Text="{Binding ConfigHotkeyGesture}" FontSize="16" FontWeight="SemiBold"
-                                   Foreground="#cdd6f4" VerticalAlignment="Center" />
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
                       </Border>
-                      <Button Classes="primary" Content="Capture"
+                      <Button Classes="accent" Content="Capture"
                               Command="{Binding BeginHotkeyCaptureCommand}"
                               IsVisible="{Binding !IsCapturingHotkey}" />
-                      <Button Classes="action" Content="Cancel"
+                      <Button Content="Cancel"
                               Command="{Binding CancelHotkeyCaptureCommand}"
                               IsVisible="{Binding IsCapturingHotkey}" />
                     </StackPanel>
-                    <TextBlock Text="{Binding HotkeyCaptureHint}" Foreground="#89dceb" FontSize="12" />
+                    <TextBlock Text="{Binding HotkeyCaptureHint}" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" FontSize="12" />
 
                     <StackPanel Spacing="8" IsVisible="{Binding ShowInlayPins}" Margin="0,8,0,0">
                       <TextBlock Classes="sectionTitle" Text="Pins" Margin="0" />
@@ -860,20 +813,20 @@
                                          ItemsSource="{Binding LaunchTargetChoices}"
                                          Text="{Binding LaunchTargetQuery}"
                                          PlaceholderText="Search targets…" />
-                        <Button Classes="action" Content="Add pin"
+                        <Button Content="Add pin"
                                 Command="{Binding AddLaunchTargetPinCommand}" />
                       </StackPanel>
                       <ItemsControl ItemsSource="{Binding ConfigPins}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate>
                             <DockPanel Margin="0,2">
-                              <Button DockPanel.Dock="Right" Classes="icon action"
+                              <Button DockPanel.Dock="Right" Classes="icon"
                                       Command="{Binding #Root.((vm:MainViewModel)DataContext).RemoveConfigPinCommand}"
                                       CommandParameter="{Binding}"
                                       ToolTip.Tip="Remove">
                                 <icons:MaterialIcon Kind="Close" Width="16" Height="16" />
                               </Button>
-                              <TextBlock Text="{Binding}" Foreground="#cdd6f4" VerticalAlignment="Center" />
+                              <TextBlock Text="{Binding}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
                             </DockPanel>
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -892,20 +845,20 @@
                                          ItemsSource="{Binding LaunchTargetChoices}"
                                          Text="{Binding LaunchTargetQuery}"
                                          PlaceholderText="Search targets…" />
-                        <Button Classes="action" Content="Add action"
+                        <Button Content="Add action"
                                 Command="{Binding AddChordActionFromPickerCommand}" />
                       </StackPanel>
                       <ItemsControl ItemsSource="{Binding ConfigChordActions}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate x:DataType="vm:ChordActionRow">
                             <DockPanel Margin="0,2">
-                              <Button DockPanel.Dock="Right" Classes="icon action"
+                              <Button DockPanel.Dock="Right" Classes="icon"
                                       Command="{Binding #Root.((vm:MainViewModel)DataContext).RemoveChordActionCommand}"
                                       CommandParameter="{Binding}"
                                       ToolTip.Tip="Remove">
                                 <icons:MaterialIcon Kind="Close" Width="16" Height="16" />
                               </Button>
-                              <TextBlock Text="{Binding Label}" Foreground="#cdd6f4" VerticalAlignment="Center" />
+                              <TextBlock Text="{Binding Label}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
                             </DockPanel>
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -926,12 +879,12 @@
                               ItemsSource="{Binding ModuleStyleOptions}"
                               SelectedItem="{Binding SelectedModuleStyle}" />
                     <StackPanel Spacing="8" IsVisible="{Binding ShowChronoExtras}">
-                      <Border Height="1" Background="#313244" Margin="0,4" />
+                      <Border Height="1" Background="{DynamicResource DividerStrokeColorDefaultBrush}" Margin="0,4" />
                       <CheckBox Content="Show seconds" IsChecked="{Binding ChronoSeconds}" />
                     </StackPanel>
                     <StackPanel Spacing="8" IsVisible="{Binding ShowSlateExtras}">
-                      <Border Height="1" Background="#313244" Margin="0,4" />
-                      <TextBlock Text="Idle timeout (seconds)" Foreground="#a6adc8" FontSize="12" />
+                      <Border Height="1" Background="{DynamicResource DividerStrokeColorDefaultBrush}" Margin="0,4" />
+                      <TextBlock Text="Idle timeout (seconds)" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                       <NumericUpDown Classes="config" Minimum="30" Maximum="3600" FormatString="0"
                                      Value="{Binding ConfigIdleSeconds}" />
                       <CheckBox Content="Hide when foreground app is fullscreen"
@@ -947,7 +900,7 @@
 
         <!-- Welcome -->
         <StackPanel IsVisible="{Binding IsWelcome}" Spacing="14" MaxWidth="640" HorizontalAlignment="Left">
-          <Button Classes="action" Command="{Binding GoBackCommand}"
+          <Button Command="{Binding GoBackCommand}"
                   HorizontalAlignment="Left" IsVisible="{Binding ShowBackButton}" Padding="10,8">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <icons:MaterialIcon Kind="ArrowLeft" Width="18" Height="18" />
@@ -956,21 +909,21 @@
           </Button>
           <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" MaxWidth="280" HorizontalAlignment="Left"
                  RenderOptions.BitmapInterpolationMode="HighQuality" />
-          <TextBlock Text="Welcome" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
-          <TextBlock Text="Your desktop, composed." Foreground="#89dceb" FontSize="14" />
-          <TextBlock TextWrapping="Wrap" Foreground="#a6adc8" FontSize="14" LineHeight="22"
+          <TextBlock Text="Welcome" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+          <TextBlock Text="Your desktop, composed." Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" FontSize="14" />
+          <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14" LineHeight="22"
                      Text="Install the tiles you want, then arm capabilities like Tessera or Mixdeck so they run from the tray Host. Widgets open as overlays when you launch them from Tiles." />
-          <TextBlock TextWrapping="Wrap" Foreground="#6c7086" FontSize="13" LineHeight="20"
+          <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="13" LineHeight="20"
                      Text="Open Tiles to pick modules (use the checkboxes, then Batch install). When you are ready, finish welcome to land on Home. Closing the hub can keep the Host in the tray; settings control that." />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Classes="primary" Content="Finish welcome" Command="{Binding CompleteWelcomeCommand}" />
-            <Button Classes="action" Content="Open Tiles" Command="{Binding NavigateCommand}" CommandParameter="Tiles" />
+            <Button Classes="accent" Content="Finish welcome" Command="{Binding CompleteWelcomeCommand}" />
+            <Button Content="Open Tiles" Command="{Binding NavigateCommand}" CommandParameter="Tiles" />
           </StackPanel>
         </StackPanel>
 
         <!-- About -->
         <StackPanel IsVisible="{Binding IsAbout}" Spacing="14" MaxWidth="640" HorizontalAlignment="Left">
-          <Button Classes="action" Command="{Binding GoBackCommand}"
+          <Button Command="{Binding GoBackCommand}"
                   HorizontalAlignment="Left" Padding="10,8">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <icons:MaterialIcon Kind="ArrowLeft" Width="18" Height="18" />
@@ -981,19 +934,19 @@
             <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="72" Height="72"
                    RenderOptions.BitmapInterpolationMode="HighQuality" />
             <StackPanel VerticalAlignment="Center">
-              <TextBlock Text="MosaicShell" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4" />
-              <TextBlock Text="Your desktop, composed." Foreground="#89dceb" FontSize="14" />
+              <TextBlock Text="MosaicShell" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+              <TextBlock Text="Your desktop, composed." Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" FontSize="14" />
               <TextBlock Text="{Binding HostBuildLabel, StringFormat=Build {0}}"
-                         Foreground="#6c7086" FontSize="12" Margin="0,4,0,0" />
+                         Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12" Margin="0,4,0,0" />
             </StackPanel>
           </StackPanel>
-          <TextBlock TextWrapping="Wrap" Foreground="#a6adc8" FontSize="14" LineHeight="22"
+          <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14" LineHeight="22"
                      Text="MosaicShell is a native Windows desktop shell. Install tiles for flyouts, launchers, clocks, and overlays; arm capabilities in the tray Host so they stay available without keeping the hub window open." />
-          <TextBlock TextWrapping="Wrap" Foreground="#a6adc8" FontSize="14" LineHeight="22"
+          <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14" LineHeight="22"
                      Text="Built as an Avalonia rewrite of the JaxCore / Rainmeter era, with the same idea of composable surfaces, without Rainmeter or .rmskin installs. Tessera and Mixdeck are first-party capabilities; widgets run as native overlays." />
-          <TextBlock TextWrapping="Wrap" Foreground="#6c7086" FontSize="13" LineHeight="20"
+          <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="13" LineHeight="20"
                      Text="Honest about fidelity: flagship layouts work; pixel-perfect Jax-Core parity is still iterative. Issues and modules welcome on GitHub." />
-          <Button Classes="action" Content="View on GitHub" HorizontalAlignment="Left"
+          <Button Content="View on GitHub" HorizontalAlignment="Left"
                   Command="{Binding OpenGitHubCommand}" />
         </StackPanel>
         </Grid>
@@ -1002,7 +955,7 @@
       <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="12" Margin="40,8,40,16">
         <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="40" Height="40"
                RenderOptions.BitmapInterpolationMode="HighQuality" />
-        <TextBlock Text="Settings" FontSize="28" FontWeight="SemiBold" Foreground="#cdd6f4"
+        <TextBlock Text="Settings" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                    VerticalAlignment="Center" />
       </StackPanel>
       <ScrollViewer HorizontalScrollBarVisibility="Disabled"
@@ -1015,7 +968,7 @@
               <TextBlock Classes="sectionTitle" Text="Services" />
               <TextBlock Classes="sectionHint"
                          Text="Live probe of audio, metrics, media, and armed capabilities." />
-              <TextBlock Text="{Binding ServiceProbe}" Foreground="#a6adc8" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding ServiceProbe}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
             </StackPanel>
           </Border>
 
@@ -1025,16 +978,16 @@
               <TextBlock Classes="sectionHint"
                          Text="What the window close button does. Tray menu Exit always quits and stops tiles." />
               <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Classes="action" Content="Minimize to tray"
+                <Button Content="Minimize to tray"
                         Command="{Binding SetCloseMinimizesToTrayCommand}" CommandParameter="tray"
                         Classes.active="{Binding CloseMinimizesToTray}" />
-                <Button Classes="action" Content="Exit application"
+                <Button Content="Exit application"
                         Command="{Binding SetCloseMinimizesToTrayCommand}" CommandParameter="exit"
                         Classes.active="{Binding !CloseMinimizesToTray}" />
               </StackPanel>
-              <TextBlock IsVisible="{Binding CloseMinimizesToTray}" Foreground="#a6adc8" FontSize="12"
+              <TextBlock IsVisible="{Binding CloseMinimizesToTray}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"
                          Text="Close hides the hub; capabilities keep running in the tray." />
-              <TextBlock IsVisible="{Binding !CloseMinimizesToTray}" Foreground="#a6adc8" FontSize="12"
+              <TextBlock IsVisible="{Binding !CloseMinimizesToTray}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"
                          Text="Close exits MosaicShell and stops armed tiles." />
             </StackPanel>
           </Border>
@@ -1044,7 +997,7 @@
               <TextBlock Classes="sectionTitle" Text="Startup" />
               <TextBlock Classes="sectionHint"
                          Text="Launch MosaicShell Host when you sign in to Windows." />
-              <Button Classes="action" Content="{Binding AutostartEnabled, StringFormat=Autostart: {0}}"
+              <Button Content="{Binding AutostartEnabled, StringFormat=Autostart: {0}}"
                       Command="{Binding ToggleAutostartCommand}" HorizontalAlignment="Left" />
             </StackPanel>
           </Border>
@@ -1055,10 +1008,10 @@
               <TextBlock Classes="sectionHint"
                          Text="Compare the installed host build against the latest GitHub release (date+build tags)." />
               <TextBlock Text="{Binding HostBuildLabel, StringFormat=Installed build: {0}}"
-                         Foreground="#a6adc8" FontSize="12" />
+                         Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
               <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Classes="action" Content="Check GitHub releases" Command="{Binding CheckUpdatesCommand}" />
-                <TextBlock Text="{Binding UpdateStatus}" Foreground="#a6adc8" VerticalAlignment="Center"
+                <Button Content="Check GitHub releases" Command="{Binding CheckUpdatesCommand}" />
+                <TextBlock Text="{Binding UpdateStatus}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"
                            TextWrapping="Wrap" />
               </StackPanel>
             </StackPanel>
@@ -1069,7 +1022,7 @@
               <TextBlock Classes="sectionTitle" Text="Data location" />
               <TextBlock Classes="sectionHint"
                          Text="Config, modules, sessions, and capability arm state live here." />
-              <TextBlock Text="%LocalAppData%\MosaicShell" Foreground="#a6adc8" FontSize="13"
+              <TextBlock Text="%LocalAppData%\MosaicShell" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13"
                          FontFamily="Cascadia Mono, Consolas, monospace" />
             </StackPanel>
           </Border>

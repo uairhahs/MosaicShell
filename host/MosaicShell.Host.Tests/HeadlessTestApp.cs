@@ -1,7 +1,7 @@
 using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Styling;
-using Avalonia.Themes.Fluent;
+using Avalonia.Themes.Fluent2;
 using MosaicShell.Host.Tests;
 
 [assembly: AvaloniaTestApplication(typeof(HeadlessTestApp))]
@@ -30,7 +30,7 @@ namespace MosaicShell.Host.Tests
         public override void Initialize()
         {
             RequestedThemeVariant = ThemeVariant.Dark;
-            Styles.Add(new FluentTheme());
+            Styles.Add(new Fluent2Theme());
             // The compiled form of the Host's StyleInclude of MaterialIconStyles.xaml.
             Styles.Add(new Material.Icons.Avalonia.MaterialIconStyles(null));
         }

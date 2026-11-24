@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="MosaicShell.Host.App"
              xmlns:local="using:MosaicShell.Host"
+             xmlns:f2="using:Avalonia.Themes.Fluent2"
              RequestedThemeVariant="Dark">
 
     <Application.DataTemplates>
@@ -24,8 +25,51 @@
         </TrayIcons>
     </TrayIcon.Icons>
 
+    <!--
+        The house palette (Catppuccin Mocha) is fed to Fluent 2 once, here: its own controls derive their text,
+        fill, region and accent shades from the palette. The Hub's own surfaces reference the same Fluent 2 tokens
+        with DynamicResource, so no view carries a colour of its own.
+    -->
+    <Application.Resources>
+        <ResourceDictionary>
+            <!-- Fluent 2 defaults are 4 and 8; the house shape is a little rounder. -->
+            <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
+            <CornerRadius x:Key="OverlayCornerRadius">12</CornerRadius>
+            <ResourceDictionary.ThemeDictionaries>
+                <!-- Tokens Fluent 2 does not derive from the palette: card, layer, subtle fill and stroke surfaces. -->
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="SolidBackgroundFillColorBaseBrush" Color="#11111b" />
+                    <SolidColorBrush x:Key="SolidBackgroundFillColorSecondaryBrush" Color="#181825" />
+                    <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="#1e1e2e" />
+                    <SolidColorBrush x:Key="CardBackgroundFillColorSecondaryBrush" Color="#181825" />
+                    <SolidColorBrush x:Key="SubtleFillColorSecondaryBrush" Color="#313244" />
+                    <SolidColorBrush x:Key="SubtleFillColorTertiaryBrush" Color="#45475a" />
+                    <SolidColorBrush x:Key="ControlStrokeColorDefaultBrush" Color="#45475a" />
+                    <SolidColorBrush x:Key="DividerStrokeColorDefaultBrush" Color="#313244" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
     <Application.Styles>
-        <FluentTheme />
+        <f2:Fluent2Theme>
+            <f2:Fluent2Theme.Palettes>
+                <!--
+                    Fluent 2 derives from these rather than using them as-is: dark-mode accent fills are lighter
+                    shades of Accent (so the deeper sky, whose light shades land near the house sky #89dceb), and
+                    secondary and tertiary text are alpha ramps of one ink (so all three Base inks are the text colour).
+                -->
+                <f2:ColorPaletteResources x:Key="Dark"
+                                          Accent="#04a5e5"
+                                          RegionColor="#11111b"
+                                          ChromeMedium="#181825"
+                                          BaseHigh="#cdd6f4"
+                                          BaseMediumHigh="#cdd6f4"
+                                          BaseMedium="#cdd6f4"
+                                          BaseLow="#313244"
+                                          ErrorText="#f38ba8" />
+            </f2:Fluent2Theme.Palettes>
+        </f2:Fluent2Theme>
         <StyleInclude Source="avares://Material.Icons.Avalonia/MaterialIconStyles.xaml" />
     </Application.Styles>
 </Application>
