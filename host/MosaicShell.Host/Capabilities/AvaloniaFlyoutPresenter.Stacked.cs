@@ -848,6 +848,10 @@ namespace MosaicShell.Host.Capabilities
             StopOutsideClickWatcher();
             _outsideClick = new TesseraOutsideClickWatcher(windows, DismissTesseraImmediate);
             _outsideClick.Start();
+            if (windows.Count > 0)
+            {
+                WarmOutsideClickRipple(windows[0]);
+            }
         }
 
         private void OnStackedSlotClosed(string slotKey, FlyoutWindow window)

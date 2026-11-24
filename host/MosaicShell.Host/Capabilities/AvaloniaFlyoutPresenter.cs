@@ -978,6 +978,7 @@ namespace MosaicShell.Host.Capabilities
             StopOutsideClickWatcher();
             _outsideClick = new TesseraOutsideClickWatcher(flyout, DismissTesseraImmediate);
             _outsideClick.Start();
+            WarmOutsideClickRipple(flyout);
         }
 
         private void StopOutsideClickWatcher()
@@ -986,6 +987,30 @@ namespace MosaicShell.Host.Capabilities
             _outsideClickArm = null;
             _outsideClick?.Dispose();
             _outsideClick = null;
+            CloseWarmRipple();
+        }
+
+        /// <summary>The glint window shown clear while the watcher is armed (<see cref="TesseraOutsideClickRippleSpec.WarmBeforeTheClick"/>).</summary>
+        private OutsideClickRippleWindow? _warmRipple;
+
+        private void WarmOutsideClickRipple(FlyoutWindow near)
+        {
+            CloseWarmRipple();
+            try
+            {
+                _warmRipple = OutsideClickRippleWindow.Warm(near.Position, X11FocusDim.ResolveRoute(), near.Screens);
+            }
+            catch (Exception ex)
+            {
+                Log($"ripple warm failed: {ex.Message}");
+            }
+        }
+
+        private void CloseWarmRipple()
+        {
+            OutsideClickRippleWindow? warm = _warmRipple;
+            _warmRipple = null;
+            try { warm?.Close(); } catch { /* ignore */ }
         }
 
         private void DismissTesseraImmediate(PixelPoint at)
@@ -1006,6 +1031,16 @@ namespace MosaicShell.Host.Capabilities
         {
             try
             {
+                // Taken off the presenter first, so the dismiss's watcher stop does not close it mid-play.
+                OutsideClickRippleWindow? warm = _warmRipple;
+                _warmRipple = null;
+                if (warm is not null)
+                {
+                    warm.Replay(at);
+                    LogRippleFirstFrame(warm, "warm");
+                    return;
+                }
+
                 Screens? screens = _focusDim?.Screens;
                 if (screens is null)
                 {
@@ -1015,12 +1050,24 @@ namespace MosaicShell.Host.Capabilities
                     }
                 }
 
-                _ = OutsideClickRippleWindow.Play(at, X11FocusDim.ResolveRoute(), screens);
+                OutsideClickRippleWindow? cold = OutsideClickRippleWindow.Play(at, X11FocusDim.ResolveRoute(), screens);
+                if (cold is not null)
+                {
+                    LogRippleFirstFrame(cold, "cold");
+                }
             }
             catch (Exception ex)
             {
                 Log($"ripple failed: {ex.Message}");
             }
+        }
+
+        /// <summary>Logs how long after the play the glint's first frame came, and the window's transparency.</summary>
+        private void LogRippleFirstFrame(OutsideClickRippleWindow ripple, string start)
+        {
+            _ = DispatcherTimer.RunOnce(() => Log(
+                $"ripple start={start} firstFrameMs={ripple.FirstFrameLatencyMs?.ToString("0") ?? "none"} " +
+                $"actual={ripple.ActualTransparencyLevel}"), TimeSpan.FromMilliseconds(300));
         }
 
         private void WireTesseraSession(FlyoutWindow window)

@@ -80,6 +80,8 @@ namespace MosaicShell.Host.Capabilities
             stage.Children.Add(_ring);
             Content = stage;
             ApplyFrame(0);
+            // As the flyouts: a Transparent window whose composition has not settled shows this, not a theme fill.
+            TransparencyBackgroundFallback = Brushes.Transparent;
 
             _frames = new DispatcherTimer(DispatcherPriority.Render)
             {
@@ -90,6 +92,9 @@ namespace MosaicShell.Host.Capabilities
             Closed += (_, _) => _frames.Stop();
         }
 
+        /// <summary>Show to first rendered frame of the last play, in ms; null until that frame (for the log).</summary>
+        public double? FirstFrameLatencyMs { get; private set; }
+
         /// <summary>Plays one ripple centered on <paramref name="click"/> (screen pixels), where the route allows it.</summary>
         public static OutsideClickRippleWindow? Play(PixelPoint click, FocusDimRoute route, Screens? screens)
         {
@@ -98,24 +103,84 @@ namespace MosaicShell.Host.Capabilities
                 return null;
             }
 
-            double scaling = screens?.ScreenFromPoint(click)?.Scaling ?? 1.0;
-            OutsideClickRippleWindow ripple = new(click, scaling > 0.1 ? scaling : 1.0, route);
+            OutsideClickRippleWindow ripple = new(click, ScalingAt(click, screens), route);
             ripple.ApplyClickThrough();
             ripple.Show();
-            ripple._clock.Start();
-            ripple._frames.Start();
+            ripple.Start(closeWhenDone: true);
             return ripple;
+        }
+
+        /// <summary>
+        /// A clear, click-through glint window shown now at <paramref name="near"/>, so a later <see cref="Replay"/> needs
+        /// no cold Show (<see cref="TesseraOutsideClickRippleSpec.WarmBeforeTheClick"/>). Null where it is not warmed.
+        /// </summary>
+        public static OutsideClickRippleWindow? Warm(PixelPoint near, FocusDimRoute route, Screens? screens)
+        {
+            if (!TesseraOutsideClickRippleSpec.ShouldPlay(route) || !TesseraOutsideClickRippleSpec.WarmBeforeTheClick(route))
+            {
+                return null;
+            }
+
+            OutsideClickRippleWindow ripple = new(near, ScalingAt(near, screens), route);
+            ripple.ApplyIdle();
+            ripple.ApplyClickThrough();
+            ripple.Show();
+            return ripple;
+        }
+
+        /// <summary>Moves a warmed window to <paramref name="click"/> and plays it; it closes when done.</summary>
+        public void Replay(PixelPoint click)
+        {
+            double scaling = ScalingAt(click, Screens);
+            (int x, int y) = TesseraOutsideClickRippleSpec.WindowOrigin(click.X, click.Y, scaling);
+            Position = new PixelPoint(x, y);
+            Start(closeWhenDone: true);
+        }
+
+        private static double ScalingAt(PixelPoint point, Screens? screens)
+        {
+            double scaling = screens?.ScreenFromPoint(point)?.Scaling ?? 1.0;
+            return scaling > 0.1 ? scaling : 1.0;
+        }
+
+        private bool _closeWhenDone;
+        private double? _firstFrameMs;
+
+        private void Start(bool closeWhenDone)
+        {
+            _closeWhenDone = closeWhenDone;
+            _firstFrameMs = null;
+            FirstFrameLatencyMs = null;
+            ApplyFrame(0);
+            _clock.Restart();
+            RequestAnimationFrame(_ =>
+            {
+                _firstFrameMs = _clock.Elapsed.TotalMilliseconds;
+                FirstFrameLatencyMs = _firstFrameMs;
+            });
+            _frames.Start();
         }
 
         private void OnFrame()
         {
-            double elapsed = _clock.Elapsed.TotalMilliseconds;
-            ApplyFrame(TesseraOutsideClickRippleSpec.ProgressAt(elapsed));
-            if (elapsed >= TesseraOutsideClickRippleSpec.DurationMs)
+            double now = _clock.Elapsed.TotalMilliseconds;
+            double progress = TesseraOutsideClickRippleSpec.ProgressSinceFirstFrame(_firstFrameMs, now);
+            ApplyFrame(progress);
+            if (progress >= 1)
             {
                 _frames.Stop();
-                try { Close(); } catch { /* ignore */ }
+                if (_closeWhenDone)
+                {
+                    try { Close(); } catch { /* ignore */ }
+                }
             }
+        }
+
+        /// <summary>Nothing drawn: the warmed window waits clear for the click.</summary>
+        private void ApplyIdle()
+        {
+            _glow.Opacity = 0;
+            _ring.Opacity = 0;
         }
 
         private void ApplyFrame(double progress)
