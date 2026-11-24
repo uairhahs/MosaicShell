@@ -37,10 +37,14 @@ namespace MosaicShell.Host.Capabilities
                 if (runtime.IsRunning(moduleId))
                 {
                     tileHost.Focus(moduleId);
+                    DiagnosticLog.Append("hotkeys.log", $"{moduleId} overlay focused");
                 }
                 else
                 {
-                    _ = runtime.Start(moduleId);
+                    ModuleLaunchResult started = runtime.Start(moduleId);
+                    DiagnosticLog.Append(
+                        "hotkeys.log",
+                        $"{moduleId} overlay start -> {started.Started} {started.Blocker} {started.Message}");
                 }
             }).GetTask();
         }
