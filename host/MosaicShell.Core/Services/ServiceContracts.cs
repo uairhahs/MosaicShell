@@ -159,6 +159,7 @@ namespace MosaicShell.Core.Services
             OsdSuppressor.Dispose();
             LegacyVolumeKeys.Dispose();
             Idle.Dispose();
+            (Fullscreen as IDisposable)?.Dispose();
             LockKeys.Dispose();
             Airplane.Dispose();
             AudioDevices.Dispose();
@@ -265,7 +266,12 @@ namespace MosaicShell.Core.Services
                 new Linux.KWinKeystateLockKeys(),
                 streams,
                 new Linux.ParecAudioLevelService(),
-                streams);
+                streams,
+                new Linux.ProcSystemMetricsService(),
+                Linux.XdgAutostartService.ForCurrentProcess(),
+                new Linux.WaylandIdleService(),
+                new Linux.KWinFullscreenProbe(),
+                new Linux.RfkillAirplaneModeService());
         }
 
         /// <summary>
@@ -306,7 +312,12 @@ namespace MosaicShell.Core.Services
             ILockKeysService? lockKeys = null,
             IAppAudioService? appAudio = null,
             IAudioLevelService? audioLevels = null,
-            IAudioDeviceService? audioDevices = null)
+            IAudioDeviceService? audioDevices = null,
+            ISystemMetricsService? metrics = null,
+            IAutostartService? autostart = null,
+            IIdleService? idle = null,
+            IFullscreenProbe? fullscreen = null,
+            IAirplaneModeService? airplane = null)
         {
             return new HostServices
             {
@@ -315,16 +326,16 @@ namespace MosaicShell.Core.Services
                 Brightness = brightness ?? new NullBrightnessService(),
                 Media = media,
                 Hotkeys = hotkeys ?? new NullHotkeyService(),
-                Metrics = new NullSystemMetricsService(),
+                Metrics = metrics ?? new NullSystemMetricsService(),
                 AudioLevels = audioLevels ?? new NullAudioLevelService(),
-                Autostart = new NullAutostartService(),
+                Autostart = autostart ?? new NullAutostartService(),
                 BrightnessChanges = brightnessChanges ?? new NullBrightnessChangeSource(),
                 OsdSuppressor = osdSuppressor ?? new NullNativeOsdSuppressor(),
                 LegacyVolumeKeys = new NullLegacyMediaKeyHook(),
-                Idle = new NullIdleService(),
-                Fullscreen = new NullFullscreenProbe(),
+                Idle = idle ?? new NullIdleService(),
+                Fullscreen = fullscreen ?? new NullFullscreenProbe(),
                 LockKeys = lockKeys ?? new NullLockKeysService(),
-                Airplane = new NullAirplaneModeService(),
+                Airplane = airplane ?? new NullAirplaneModeService(),
                 AudioDevices = audioDevices ?? new NullAudioDeviceService(),
                 ShellFlyoutTriggers = shellFlyoutTriggers ?? new NullShellFlyoutTriggerSource(),
                 Companions = companions ?? [],

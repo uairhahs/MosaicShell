@@ -78,6 +78,8 @@ namespace MosaicShell.Core.Tests.Linux
             _ = hub.Audio.Should().BeOfType<PulseAudioService>();
             _ = hub.Brightness.Should().BeOfType<KdeScreenBrightness>();
             _ = hub.BrightnessChanges.Should().BeSameAs(hub.Brightness, "one PowerDevil watcher serves both roles");
+            _ = hub.Metrics.Should().BeOfType<ProcSystemMetricsService>();
+            _ = hub.Autostart.Should().BeOfType<XdgAutostartService>();
             _ = hub.Airplane.IsSupported.Should().BeFalse();
         }
     }
