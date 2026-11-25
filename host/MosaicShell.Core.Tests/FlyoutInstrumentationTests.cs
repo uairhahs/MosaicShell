@@ -14,10 +14,10 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Summary_compares_measured_duration_with_the_planned_one()
         {
-            // 4 steps at 16 ms between them: planned 64 ms. The delays ran long.
-            FlyoutPhaseTiming.Summary s = FlyoutPhaseTiming.Summarize([0, 20, 45, 70, 100], plannedSteps: 4, intervalMs: 16);
+            // Planned 64 ms, driven by rendered frames: the last frame landed at 100 ms.
+            FlyoutPhaseTiming.Summary s = FlyoutPhaseTiming.SummarizeFrames([0, 20, 45, 70, 100], plannedMs: 64);
 
-            _ = s.StepsRun.Should().Be(5);
+            _ = s.FramesRun.Should().Be(5);
             _ = s.PlannedMs.Should().Be(64);
             _ = s.TotalMs.Should().Be(100);
             _ = s.MaxGapMs.Should().Be(30);
@@ -28,31 +28,32 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void A_cancelled_run_is_reported_as_incomplete()
         {
-            FlyoutPhaseTiming.Summary s = FlyoutPhaseTiming.Summarize([0, 18], plannedSteps: 4, intervalMs: 16);
+            FlyoutPhaseTiming.Summary s = FlyoutPhaseTiming.SummarizeFrames([0, 18], plannedMs: 64);
 
             _ = s.Completed.Should().BeFalse();
-            _ = s.StepsRun.Should().Be(2);
+            _ = s.FramesRun.Should().Be(2);
         }
 
         [Fact]
         public void An_empty_run_has_zero_durations()
         {
-            FlyoutPhaseTiming.Summary s = FlyoutPhaseTiming.Summarize([], plannedSteps: 4, intervalMs: 16);
+            FlyoutPhaseTiming.Summary s = FlyoutPhaseTiming.SummarizeFrames([], plannedMs: 64);
 
-            _ = s.StepsRun.Should().Be(0);
+            _ = s.FramesRun.Should().Be(0);
             _ = s.TotalMs.Should().Be(0);
             _ = s.MaxGapMs.Should().Be(0);
             _ = s.MeanGapMs.Should().Be(0);
+            _ = s.Completed.Should().BeFalse();
         }
 
         [Fact]
         public void Line_carries_every_number_needed_to_judge_pacing()
         {
-            FlyoutPhaseTiming.Summary s = FlyoutPhaseTiming.Summarize([0, 20, 45, 70, 100], plannedSteps: 4, intervalMs: 16);
+            FlyoutPhaseTiming.Summary s = FlyoutPhaseTiming.SummarizeFrames([0, 20, 45, 70, 100], plannedMs: 64);
 
             string line = FlyoutPhaseTiming.Format("Fluent", entrance: true, s);
 
-            _ = line.Should().Be("phase2 style=Fluent entrance=True steps=5/5 planned=64ms actual=100ms gapMean=25.0ms gapMax=30.0ms completed=True");
+            _ = line.Should().Be("phase2 style=Fluent entrance=True frames=5 planned=64ms actual=100ms gapMean=25.0ms gapMax=30.0ms completed=True");
         }
     }
 

@@ -4,40 +4,62 @@ using NAudio.Wave;
 
 namespace MosaicShell.Core.Services
 {
+    /// <summary>
+    /// Capability hotkeys through RegisterHotKey on a message-only window. RegisterHotKey and UnregisterHotKey refuse a
+    /// window owned by another thread (ERROR_WINDOW_OF_OTHER_THREAD), so every call runs on the window's own thread
+    /// (<see cref="WindowsMessageWindow.Run{T}"/>); the tables are touched only there, where WM_HOTKEY also reads them.
+    /// </summary>
     public sealed class WindowsHotkeyService : IHotkeyService
     {
+        private const uint WmHotkey = 0x0312;
         private readonly Dictionary<string, int> _ids = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<int, Action> _callbacks = [];
         private int _nextId = 1;
-        private readonly HotkeyWindow _window;
+        private readonly WindowsMessageWindow _window;
 
         public WindowsHotkeyService()
         {
-            _window = new HotkeyWindow(OnHotkey);
+            _window = new WindowsMessageWindow("MosaicShell.Hotkeys", (message, wParam, _) =>
+            {
+                if (message != WmHotkey)
+                {
+                    return false;
+                }
+
+                OnHotkey((int)wParam);
+                return true;
+            });
         }
 
         public bool Register(string id, ModifierKeys modifiers, int virtualKey, Action callback)
         {
-            Unregister(id);
-            if (_window.Handle == IntPtr.Zero)
+            return _window.Run(() =>
             {
-                return false;
-            }
+                UnregisterOnWindowThread(id);
+                int hotkeyId = _nextId++;
+                // MOD_NOREPEAT = 0x4000 avoids key-repeat floods
+                uint fsModifiers = (uint)modifiers | 0x4000u;
+                if (!RegisterHotKey(_window.Handle, hotkeyId, fsModifiers, (uint)virtualKey))
+                {
+                    return false;
+                }
 
-            int hotkeyId = _nextId++;
-            // MOD_NOREPEAT = 0x4000 avoids key-repeat floods
-            uint fsModifiers = (uint)modifiers | 0x4000u;
-            if (!RegisterHotKey(_window.Handle, hotkeyId, fsModifiers, (uint)virtualKey))
-            {
-                return false;
-            }
-
-            _ids[id] = hotkeyId;
-            _callbacks[hotkeyId] = callback;
-            return true;
+                _ids[id] = hotkeyId;
+                _callbacks[hotkeyId] = callback;
+                return true;
+            }, fallback: false);
         }
 
         public void Unregister(string id)
+        {
+            _ = _window.Run(() =>
+            {
+                UnregisterOnWindowThread(id);
+                return true;
+            }, fallback: false);
+        }
+
+        private void UnregisterOnWindowThread(string id)
         {
             if (!_ids.Remove(id, out int hotkeyId))
             {
@@ -58,13 +80,17 @@ namespace MosaicShell.Core.Services
 
         public void Dispose()
         {
-            foreach (int id in _ids.Values.ToList())
+            _ = _window.Run(() =>
             {
-                _ = UnregisterHotKey(_window.Handle, id);
-            }
+                foreach (int id in _ids.Values)
+                {
+                    _ = UnregisterHotKey(_window.Handle, id);
+                }
 
-            _ids.Clear();
-            _callbacks.Clear();
+                _ids.Clear();
+                _callbacks.Clear();
+                return true;
+            }, fallback: false);
             _window.Dispose();
         }
 
@@ -73,187 +99,6 @@ namespace MosaicShell.Core.Services
 
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
-
-        private sealed class HotkeyWindow : IDisposable
-        {
-            private readonly Action<int> _onHotkey;
-            private readonly Thread _thread;
-            private volatile bool _running = true;
-            public IntPtr Handle { get; private set; }
-
-            public HotkeyWindow(Action<int> onHotkey)
-            {
-                _onHotkey = onHotkey;
-                using ManualResetEventSlim ready = new(false);
-                Exception? startError = null;
-                _thread = new Thread(() =>
-                {
-                    try
-                    {
-                        Handle = CreateMessageWindow();
-                        if (Handle == IntPtr.Zero)
-                        {
-                            startError = new InvalidOperationException(
-                                "CreateWindowEx failed for hotkey HWND_MESSAGE (err=" +
-                                Marshal.GetLastWin32Error() + ").");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        startError = ex;
-                    }
-                    finally
-                    {
-                        ready.Set();
-                    }
-
-                    if (Handle == IntPtr.Zero)
-                    {
-                        return;
-                    }
-
-                    while (_running && GetMessage(out MSG msg, IntPtr.Zero, 0, 0) > 0)
-                    {
-                        if (msg.message == 0x0312) // WM_HOTKEY
-                        {
-                            _onHotkey((int)msg.wParam);
-                        }
-
-                        _ = TranslateMessage(ref msg);
-                        _ = DispatchMessage(ref msg);
-                    }
-                })
-                {
-                    IsBackground = true,
-                    Name = "MosaicShell.Hotkeys"
-                };
-                _thread.SetApartmentState(ApartmentState.STA);
-                _thread.Start();
-                if (!ready.Wait(5000))
-                {
-                    throw new InvalidOperationException("Timed out creating hotkey message window.");
-                }
-
-                if (Handle == IntPtr.Zero)
-                {
-                    throw new InvalidOperationException("Failed to create hotkey message window.", startError);
-                }
-            }
-
-            public void Dispose()
-            {
-                _running = false;
-                if (Handle != IntPtr.Zero)
-                {
-                    _ = PostMessage(Handle, 0x0012, IntPtr.Zero, IntPtr.Zero); // WM_QUIT
-                }
-            }
-
-            private static IntPtr CreateMessageWindow()
-            {
-                string className = "MosaicShellHotkeyWnd." + Guid.NewGuid().ToString("N");
-                nint hInstance = GetModuleHandle(null);
-                WNDCLASS wndClass = new()
-                {
-                    style = 0,
-                    lpfnWndProc = Marshal.GetFunctionPointerForDelegate(s_wndProc),
-                    cbClsExtra = 0,
-                    cbWndExtra = 0,
-                    hInstance = hInstance,
-                    hIcon = IntPtr.Zero,
-                    hCursor = IntPtr.Zero,
-                    hbrBackground = IntPtr.Zero,
-                    lpszMenuName = null,
-                    lpszClassName = className
-                };
-
-                ushort atom = RegisterClass(ref wndClass);
-                if (atom == 0)
-                {
-                    int err = Marshal.GetLastWin32Error();
-                    if (err != 1410) // ERROR_CLASS_ALREADY_EXISTS
-                    {
-                        return IntPtr.Zero;
-                    }
-                }
-
-                return CreateWindowEx(
-                    0,
-                    className,
-                    "MosaicShellHotkeys",
-                    0,
-                    0, 0, 0, 0,
-                    HWND_MESSAGE,
-                    IntPtr.Zero,
-                    hInstance,
-                    IntPtr.Zero);
-            }
-
-            private static readonly WndProc s_wndProc = DefWindowProc;
-            private static readonly IntPtr HWND_MESSAGE = new(-3);
-
-            private delegate IntPtr WndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
-
-            [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-            private struct WNDCLASS
-            {
-                public uint style;
-                public IntPtr lpfnWndProc;
-                public int cbClsExtra;
-                public int cbWndExtra;
-                public IntPtr hInstance;
-                public IntPtr hIcon;
-                public IntPtr hCursor;
-                public IntPtr hbrBackground;
-                public string? lpszMenuName;
-                public string lpszClassName;
-            }
-
-            [StructLayout(LayoutKind.Sequential)]
-            private struct MSG
-            {
-                public IntPtr hwnd;
-                public uint message;
-                public IntPtr wParam;
-                public IntPtr lParam;
-                public uint time;
-                public int pt_x;
-                public int pt_y;
-            }
-
-            [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-            private static extern IntPtr GetModuleHandle(string? lpModuleName);
-
-            [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-            private static extern ushort RegisterClass(ref WNDCLASS lpWndClass);
-
-            [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-            private static extern IntPtr CreateWindowEx(
-                int dwExStyle,
-                string lpClassName,
-                string lpWindowName,
-                int dwStyle,
-                int x, int y, int nWidth, int nHeight,
-                IntPtr hWndParent,
-                IntPtr hMenu,
-                IntPtr hInstance,
-                IntPtr lpParam);
-
-            [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-            private static extern IntPtr DefWindowProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam);
-
-            [DllImport("user32.dll")]
-            private static extern int GetMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
-
-            [DllImport("user32.dll")]
-            private static extern bool TranslateMessage(ref MSG lpMsg);
-
-            [DllImport("user32.dll")]
-            private static extern IntPtr DispatchMessage(ref MSG lpMsg);
-
-            [DllImport("user32.dll")]
-            private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
-        }
     }
 
     public sealed class WindowsAudioLevelService : IAudioLevelService

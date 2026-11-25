@@ -1,4 +1,5 @@
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Core.Modules.Tessera
 {
@@ -8,7 +9,7 @@ namespace MosaicShell.Core.Modules.Tessera
         public static string Format(FlyoutRequest request)
         {
             bool on = request.Payload?.GetValueOrDefault("on") == "1";
-            if (request.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase))
+            if (FlyoutKinds.Is(request.Kind, FlyoutKinds.Flight))
             {
                 return on ? "Airplane mode On" : "Airplane mode Off";
             }

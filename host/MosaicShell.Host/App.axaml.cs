@@ -16,6 +16,8 @@ using MosaicShell.Core.Capabilities.Ipc;
 
 using MosaicShell.Core.Capabilities.Platform;
 
+using MosaicShell.Core.HostPlatform;
+
 using MosaicShell.Core.Runtime;
 
 using MosaicShell.Core.Services;
@@ -82,7 +84,19 @@ namespace MosaicShell.Host
 
                 desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
-                _services = HostServices.CreateWindowsDefaults(browserSources: true);
+                if (HostLaunchOptions.Mode == HostLaunchMode.GlintCapture && HostLaunchOptions.GlintCaptureDirectory is string captureDir)
+                {
+                    // Reference images only: nothing else starts (no tray, Hub, services or capability daemon).
+                    Dispatcher.UIThread.Post(async () =>
+                    {
+                        try { await Diagnostics.GlintReferenceCapture.RunAsync(captureDir); }
+                        finally { desktop.Shutdown(); }
+                    });
+                    base.OnFrameworkInitializationCompleted();
+                    return;
+                }
+
+                _services = HostServices.CreatePlatformDefaults(browserSources: true);
 
 
 
@@ -221,7 +235,8 @@ namespace MosaicShell.Host
 
             if (_localDaemon is not null)
             {
-                await _localDaemon.DisarmAllAsync();
+                // Stop the modules but keep the saved armed list: it is what arms them again on the next start.
+                await _localDaemon.DisarmAllAsync(persist: false);
             }
 
             _ipcFlyoutServer?.Dispose();
@@ -249,7 +264,24 @@ namespace MosaicShell.Host
 
             bool minimizeToTray = _vm?.Hub.CloseMinimizesToTray ?? true;
 
-            if (minimizeToTray)
+            MainWindowCloseTrigger trigger = e.CloseReason switch
+            {
+                WindowCloseReason.OSShutdown => MainWindowCloseTrigger.SessionEnding,
+                WindowCloseReason.ApplicationShutdown => MainWindowCloseTrigger.ApplicationShutdown,
+                _ => MainWindowCloseTrigger.User,
+            };
+
+            MainWindowCloseAction action = MainWindowClosePolicy.Decide(trigger, minimizeToTray);
+
+            if (action == MainWindowCloseAction.AllowClose)
+            {
+                // Logout or app shutdown: cancelling would veto it. Save now; the lifetime's Exit runs teardown.
+                _tileHost?.PersistAll();
+                _capabilityHost?.Persist();
+                return;
+            }
+
+            if (action == MainWindowCloseAction.HideToTray)
 
             {
 
@@ -314,6 +346,12 @@ namespace MosaicShell.Host
         private async void TrayExit_OnClick(object? sender, EventArgs e)
         {
             await ExitApplicationAsync();
+        }
+
+        /// <summary>A second launch asked this Host to show itself (<see cref="HostSingleInstance"/>).</summary>
+        internal void ShowHubOnRequest()
+        {
+            ShowMainWindow();
         }
 
         private void ShowMainWindow()

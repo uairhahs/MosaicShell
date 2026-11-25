@@ -77,12 +77,13 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
 
             if (!_services.Hotkeys.Register(_hotkeyId, mods, vk, OnHotkey))
             {
-                HotkeyError =
-                    $"Could not register {gesture} (in use by Windows or another app). Try Ctrl+Alt+Letter.";
+                HotkeyError = HotkeyGestureParser.TakenError(gesture, OperatingSystem.IsWindows());
+                DiagnosticLog.Append("hotkeys.log", $"{ModuleId} {gesture} not registered: {HotkeyError}");
                 IsArmed = true;
                 return Task.CompletedTask;
             }
 
+            DiagnosticLog.Append("hotkeys.log", $"{ModuleId} {gesture} registered");
             HotkeyRegistered = true;
             IsArmed = true;
             return Task.CompletedTask;
@@ -104,7 +105,12 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
 
         private void OnHotkey()
         {
-            _ = _hostUi.OpenOverlayAsync(_overlayModuleId);
+            DiagnosticLog.Append("hotkeys.log", $"{ModuleId} pressed, opening {_overlayModuleId}");
+            _ = _hostUi.OpenOverlayAsync(_overlayModuleId).ContinueWith(
+                t => DiagnosticLog.Append("hotkeys.log", $"{_overlayModuleId} open failed: {t.Exception?.GetBaseException().Message}"),
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted,
+                TaskScheduler.Default);
         }
 
         public void Dispose()

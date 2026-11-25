@@ -41,7 +41,7 @@ namespace MosaicShell.Core.Modules.Tessera
 
     /// <summary>
     /// Animated targets plus rest DIP for clip, HWND region, and stacked placement.
-    /// <c>LayoutKind</c>, <c>SupportsStackedOsAcrylic</c>, and <c>StackedGapDip</c> back
+    /// <c>LayoutKind</c>, <c>SupportsStackedNativeTranslucency</c>, and <c>StackedGapDip</c> back
     /// <see cref="TesseraStackedPlacementPolicy"/>'s per-style switches; the consistency test
     /// suite in MosaicShell.Core.Tests asserts they never drift from that policy's own answers.
     /// </summary>
@@ -53,7 +53,7 @@ namespace MosaicShell.Core.Modules.Tessera
         double MediaWidthDip,
         double MediaHeightDip,
         TesseraStackedLayoutKind LayoutKind,
-        bool SupportsStackedOsAcrylic,
+        bool SupportsStackedNativeTranslucency,
         double StackedGapDip,
         float VolumeCornerRadiusDip,
         float MediaCornerRadiusDip,
@@ -70,11 +70,6 @@ namespace MosaicShell.Core.Modules.Tessera
     /// </summary>
     public static class TesseraFlyoutTweenTargetCatalog
     {
-        /// <summary>
-        /// Album art, title, transport, and scrubber live inside MediaC. They must not get
-        /// their own TweenNode1 binders.
-        /// </summary>
-        public const bool IndependentMediaChildrenMustInheritContainer = true;
 
         public static IReadOnlyList<TesseraTweenTarget> ResolveAnimated(string? styleId)
         {
@@ -100,10 +95,10 @@ namespace MosaicShell.Core.Modules.Tessera
                 TesseraFluentLayoutSpec.MediaWidthDip,
                 TesseraFluentLayoutSpec.HeightDip,
                 TesseraStackedLayoutKind.HorizontalVolumeFirst,
-                SupportsStackedOsAcrylic: false,
+                SupportsStackedNativeTranslucency: false,
                 StackedGapDip: TesseraStackedPlacementPolicy.VerticalGapDip,
-                VolumeCornerRadiusDip: TesseraOsAcrylicTrialPolicy.SpikeCornerRadius,
-                MediaCornerRadiusDip: TesseraOsAcrylicTrialPolicy.SpikeCornerRadius,
+                VolumeCornerRadiusDip: TesseraNativeTranslucencyPolicy.SpikeCornerRadius,
+                MediaCornerRadiusDip: TesseraNativeTranslucencyPolicy.SpikeCornerRadius,
                 SupportsCoreUiMultiTile: false,
                 PhaseTwoWithoutMediaStrip: false,
                 PhaseTwoUsesInLayoutMedia: false,
@@ -122,10 +117,10 @@ namespace MosaicShell.Core.Modules.Tessera
                     TesseraStackedPlacementSpec.Win11WidthDip,
                     TesseraStackedPlacementSpec.Win11MediaHeightDip,
                     TesseraStackedLayoutKind.VerticalWin11,
-                    SupportsStackedOsAcrylic: false,
+                    SupportsStackedNativeTranslucency: false,
                     StackedGapDip: TesseraStackedPlacementPolicy.VerticalGapDip,
-                    VolumeCornerRadiusDip: TesseraOsAcrylicTrialPolicy.SpikeCornerRadius,
-                    MediaCornerRadiusDip: TesseraOsAcrylicTrialPolicy.SpikeCornerRadius,
+                    VolumeCornerRadiusDip: TesseraNativeTranslucencyPolicy.SpikeCornerRadius,
+                    MediaCornerRadiusDip: TesseraNativeTranslucencyPolicy.SpikeCornerRadius,
                     SupportsCoreUiMultiTile: false,
                     PhaseTwoWithoutMediaStrip: false,
                     PhaseTwoUsesInLayoutMedia: false,
@@ -144,7 +139,7 @@ namespace MosaicShell.Core.Modules.Tessera
                     TesseraStackedPlacementSpec.GnomeMediaWidthDip,
                     TesseraStackedPlacementSpec.GnomeMediaHeightDip,
                     TesseraStackedLayoutKind.VerticalMediaFirst,
-                    SupportsStackedOsAcrylic: true,
+                    SupportsStackedNativeTranslucency: true,
                     StackedGapDip: TesseraStackedPlacementPolicy.VerticalGapDip,
                     VolumeCornerRadiusDip: TesseraStackedPlacementSpec.GnomePillCornerRadiusDip,
                     MediaCornerRadiusDip: TesseraStackedPlacementSpec.GnomePillCornerRadiusDip,
@@ -165,7 +160,7 @@ namespace MosaicShell.Core.Modules.Tessera
                     double.NaN,
                     double.NaN,
                     TesseraStackedLayoutKind.VerticalVolumeFirst,
-                    SupportsStackedOsAcrylic: false,
+                    SupportsStackedNativeTranslucency: false,
                     StackedGapDip: TesseraStackedPlacementPolicy.VerticalGapDip,
                     VolumeCornerRadiusDip: (float)TesseraStackedPlacementSpec.SquareCornerRadiusDip,
                     MediaCornerRadiusDip: (float)TesseraStackedPlacementSpec.SquareCornerRadiusDip,
@@ -187,7 +182,7 @@ namespace MosaicShell.Core.Modules.Tessera
                     TesseraCoreUiLayoutSpec.InnerRowWidthDip,
                     TesseraCoreUiLayoutSpec.MediaHeightDip,
                     TesseraStackedLayoutKind.VerticalVolumeFirst,
-                    SupportsStackedOsAcrylic: false,
+                    SupportsStackedNativeTranslucency: false,
                     StackedGapDip: TesseraStackedPlacementPolicy.VerticalGapDip,
                     VolumeCornerRadiusDip: (float)TesseraStackedPlacementSpec.CoreUiShellCornerRadiusDip,
                     MediaCornerRadiusDip: (float)TesseraStackedPlacementSpec.CoreUiShellCornerRadiusDip,
@@ -208,7 +203,7 @@ namespace MosaicShell.Core.Modules.Tessera
                     TesseraStackedPlacementSpec.PlainTextWidthDip,
                     TesseraStackedPlacementSpec.PlainTextMediaHeightDip,
                     TesseraStackedLayoutKind.PlainTextColumn,
-                    SupportsStackedOsAcrylic: false,
+                    SupportsStackedNativeTranslucency: false,
                     StackedGapDip: TesseraStackedPlacementPolicy.VerticalGapDip,
                     VolumeCornerRadiusDip: (float)TesseraStackedPlacementSpec.PlainTextShellCornerRadiusDip,
                     MediaCornerRadiusDip: (float)TesseraStackedPlacementSpec.PlainTextShellCornerRadiusDip,
@@ -232,7 +227,7 @@ namespace MosaicShell.Core.Modules.Tessera
                     TesseraStackedPlacementSpec.MeterMediaWidthDip,
                     TesseraStackedPlacementSpec.MeterMediaHeightDip,
                     TesseraStackedLayoutKind.HorizontalMediaFirst,
-                    SupportsStackedOsAcrylic: true,
+                    SupportsStackedNativeTranslucency: true,
                     StackedGapDip: TesseraStackedPlacementPolicy.VerticalGapDip,
                     VolumeCornerRadiusDip: TesseraStackedPlacementSpec.MeterVolumeCornerRadiusDip,
                     MediaCornerRadiusDip: TesseraStackedPlacementSpec.MeterMediaCornerRadiusDip,
@@ -253,10 +248,10 @@ namespace MosaicShell.Core.Modules.Tessera
                     TesseraStackedPlacementSpec.CompactMediaWidthDip,
                     TesseraStackedPlacementSpec.CompactMediaHeightDip,
                     TesseraStackedLayoutKind.VerticalVolumeFirst,
-                    SupportsStackedOsAcrylic: true,
+                    SupportsStackedNativeTranslucency: true,
                     StackedGapDip: TesseraStackedPlacementSpec.CompactGapDip,
-                    VolumeCornerRadiusDip: TesseraOsAcrylicTrialPolicy.SpikeCornerRadius,
-                    MediaCornerRadiusDip: TesseraOsAcrylicTrialPolicy.SpikeCornerRadius,
+                    VolumeCornerRadiusDip: TesseraNativeTranslucencyPolicy.SpikeCornerRadius,
+                    MediaCornerRadiusDip: TesseraNativeTranslucencyPolicy.SpikeCornerRadius,
                     SupportsCoreUiMultiTile: false,
                     PhaseTwoWithoutMediaStrip: false,
                     PhaseTwoUsesInLayoutMedia: false,
@@ -274,10 +269,10 @@ namespace MosaicShell.Core.Modules.Tessera
                     TesseraStackedPlacementSpec.ModernFlyoutsMediaWidthDip,
                     TesseraStackedPlacementSpec.ModernFlyoutsMediaHeightDip,
                     TesseraStackedLayoutKind.VerticalVolumeFirst,
-                    SupportsStackedOsAcrylic: true,
+                    SupportsStackedNativeTranslucency: true,
                     StackedGapDip: TesseraStackedPlacementSpec.ModernFlyoutsGapDip,
-                    VolumeCornerRadiusDip: TesseraOsAcrylicTrialPolicy.SpikeCornerRadius,
-                    MediaCornerRadiusDip: TesseraOsAcrylicTrialPolicy.SpikeCornerRadius,
+                    VolumeCornerRadiusDip: TesseraNativeTranslucencyPolicy.SpikeCornerRadius,
+                    MediaCornerRadiusDip: TesseraNativeTranslucencyPolicy.SpikeCornerRadius,
                     SupportsCoreUiMultiTile: false,
                     PhaseTwoWithoutMediaStrip: false,
                     PhaseTwoUsesInLayoutMedia: false,
@@ -295,10 +290,10 @@ namespace MosaicShell.Core.Modules.Tessera
                     TesseraFlyoutAnimatedTargetSpec.MaterialYouColumnWidthDip,
                     double.NaN,
                     TesseraStackedLayoutKind.VerticalVolumeFirst,
-                    SupportsStackedOsAcrylic: false,
+                    SupportsStackedNativeTranslucency: false,
                     StackedGapDip: TesseraStackedPlacementPolicy.VerticalGapDip,
-                    VolumeCornerRadiusDip: TesseraOsAcrylicTrialPolicy.SpikeCornerRadius,
-                    MediaCornerRadiusDip: TesseraOsAcrylicTrialPolicy.SpikeCornerRadius,
+                    VolumeCornerRadiusDip: TesseraNativeTranslucencyPolicy.SpikeCornerRadius,
+                    MediaCornerRadiusDip: TesseraNativeTranslucencyPolicy.SpikeCornerRadius,
                     SupportsCoreUiMultiTile: false,
                     PhaseTwoWithoutMediaStrip: false,
                     PhaseTwoUsesInLayoutMedia: true,
@@ -317,7 +312,7 @@ namespace MosaicShell.Core.Modules.Tessera
                     TesseraStackedPlacementSpec.RadialMediaWidthDip,
                     TesseraStackedPlacementSpec.RadialPanelHeightDip,
                     TesseraStackedLayoutKind.HorizontalRadial,
-                    SupportsStackedOsAcrylic: false,
+                    SupportsStackedNativeTranslucency: false,
                     StackedGapDip: TesseraStackedPlacementPolicy.VerticalGapDip,
                     VolumeCornerRadiusDip: (float)TesseraStackedPlacementSpec.RadialShellCornerRadiusDip,
                     MediaCornerRadiusDip: (float)TesseraStackedPlacementSpec.RadialShellCornerRadiusDip,
@@ -335,10 +330,10 @@ namespace MosaicShell.Core.Modules.Tessera
                     double.NaN,
                     double.NaN,
                     TesseraStackedLayoutKind.VerticalVolumeFirst,
-                    SupportsStackedOsAcrylic: false,
+                    SupportsStackedNativeTranslucency: false,
                     StackedGapDip: TesseraStackedPlacementPolicy.VerticalGapDip,
-                    VolumeCornerRadiusDip: TesseraOsAcrylicTrialPolicy.SpikeCornerRadius,
-                    MediaCornerRadiusDip: TesseraOsAcrylicTrialPolicy.SpikeCornerRadius,
+                    VolumeCornerRadiusDip: TesseraNativeTranslucencyPolicy.SpikeCornerRadius,
+                    MediaCornerRadiusDip: TesseraNativeTranslucencyPolicy.SpikeCornerRadius,
                     SupportsCoreUiMultiTile: false,
                     PhaseTwoWithoutMediaStrip: false,
                     PhaseTwoUsesInLayoutMedia: false,
@@ -405,20 +400,6 @@ namespace MosaicShell.Core.Modules.Tessera
             }
 
             return false;
-        }
-
-        public static bool VolumeStaysOpaqueDuringPhase2(string? styleId)
-        {
-            return !HasChannel(styleId, TesseraTweenChannel.VolumeFillOpacity);
-        }
-
-        /// <summary>Rest media panel size for stacked HWND clip/slide binders. NaN when unused.</summary>
-        public static bool TryResolveMediaRestSizeDip(string? styleId, out double widthDip, out double heightDip)
-        {
-            TesseraFlyoutStyleProfile profile = ResolveProfile(styleId);
-            widthDip = profile.MediaWidthDip;
-            heightDip = profile.MediaHeightDip;
-            return profile.MediaWidthDip > 1 || profile.MediaHeightDip > 1;
         }
     }
 }

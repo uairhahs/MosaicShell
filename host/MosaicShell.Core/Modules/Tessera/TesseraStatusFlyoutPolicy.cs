@@ -4,7 +4,7 @@ namespace MosaicShell.Core.Modules.Tessera
 {
     /// <summary>
     /// Ephemeral status flyouts (caps/airplane). Warm toggles Patch in place (dismiss timer
-    /// reset via TryApplyLive); cold/hidden sessions Present/revive via TesseraFlyoutRefreshPolicy.
+    /// reset via TryApplyLive); cold/hidden sessions Present/revive via FlyoutResolver.
     /// Status must never share volume/media stacked HWNDs (H3 acrylic): one chip, one window.
     /// </summary>
     public static class TesseraStatusFlyoutPolicy
@@ -21,7 +21,7 @@ namespace MosaicShell.Core.Modules.Tessera
         /// <summary>Status chip must never inherit media-shell height.</summary>
         public const double ChipMaxHeightDip = 72;
 
-        /// <summary>Default rounded clip for OS acrylic status HWNDs.</summary>
+        /// <summary>Default rounded clip for native translucency status HWNDs.</summary>
         public const float ChipCornerRadiusDip = 12f;
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace MosaicShell.Core.Modules.Tessera
 
         /// <summary>
         /// Caps/airplane replace any open volume+media session with a dedicated status HWND.
-        /// Never route through <see cref="TesseraOsAcrylicStackedPolicy.UseMultiWindow"/>.
+        /// Never route through <see cref="TesseraNativeTranslucencyStackedPolicy.UseMultiWindow"/>.
         /// </summary>
         public static bool MustUseDedicatedSingleWindow(string? kind)
         {
@@ -47,7 +47,7 @@ namespace MosaicShell.Core.Modules.Tessera
         /// late Tick cannot dismiss the replacement volume/media session.
         /// </summary>
         public static bool SupersededStatusMustCancelDismissBeforeClose =>
-            TesseraOsAcrylicStackedPolicy.SupersededSingleHwndMustCancelDismissBeforeClose;
+            TesseraNativeTranslucencyStackedPolicy.SupersededSingleHwndMustCancelDismissBeforeClose;
 
         /// <summary>
         /// Status chips must measure to content. Forcing volume Width×Height leaves a square
@@ -56,10 +56,10 @@ namespace MosaicShell.Core.Modules.Tessera
         public static bool ForbidFixedVolumeShellSize => true;
 
         /// <summary>
-        /// Under OS acrylic, skip nested Skia Glass (edge-only / transparent chrome) and clip
+        /// Under native translucency, skip nested Skia Glass (edge-only / transparent chrome) and clip
         /// the HWND to <see cref="ResolveChipCornerRadiusDip"/>.
         /// </summary>
-        public static bool PreferOsAcrylicEdgeOnlyChrome => true;
+        public static bool PreferNativeTranslucencyEdgeOnlyChrome => true;
 
         /// <summary>
         /// SoftFrost Transparent and AcrylicBlur status HWNDs are rectangular. Composition clears
@@ -72,12 +72,6 @@ namespace MosaicShell.Core.Modules.Tessera
         /// unclipped HWND corners paint solid black on first frames.
         /// </summary>
         public const bool SoftFrostMustRoundClipHwnd = true;
-
-        /// <summary>
-        /// Media→CapsLock: never size/clip with <c>Max(Bounds, Desired)</c>. Stale media Bounds
-        /// keep a black acrylic rectangle around the chip after kind handoff.
-        /// </summary>
-        public const bool StatusLayoutMustPreferDesiredSizeOverStaleBounds = true;
 
         /// <summary>
         /// Stacked volume/media→status: Opacity-hide slots before status Present. Close()-only

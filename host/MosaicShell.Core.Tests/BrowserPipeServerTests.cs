@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO.Pipes;
+using System.Runtime.Versioning;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
@@ -219,7 +220,8 @@ namespace MosaicShell.Core.Tests
             _ = clock.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(2), "queueing a message never waits on the relay");
         }
 
-        [Fact]
+        [WindowsFact]
+        [SupportedOSPlatform("windows")]
         public async Task The_pipe_grants_access_to_the_current_user_only()
         {
             _ = Start();

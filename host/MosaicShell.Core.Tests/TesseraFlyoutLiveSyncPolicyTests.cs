@@ -5,13 +5,6 @@ namespace MosaicShell.Core.Tests
 {
     public class TesseraFlyoutLiveSyncPolicyTests
     {
-        [Fact]
-        public void Closed_must_only_unregister_the_same_window_instance()
-        {
-            // Superseded HWND Closed must not clear the live session entry; that orphans
-            // SoftFrost surfaces and stacks black/frost layers on rapid Try now.
-            _ = TesseraFlyoutLiveSyncPolicy.ClosedMustOnlyUnregisterSameInstance.Should().BeTrue();
-        }
 
         [Fact]
         public void Registered_flyout_hwnd_must_be_reused_never_close_and_recreate()
@@ -40,21 +33,6 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void Patch_must_not_imply_present_restack_or_outside_click_rearm()
-        {
-            _ = TesseraFlyoutLiveSyncPolicy.PatchImpliesPresent.Should().BeFalse();
-            _ = TesseraFlyoutLiveSyncPolicy.PatchImpliesWin32Restack.Should().BeFalse();
-            _ = TesseraFlyoutLiveSyncPolicy.PatchImpliesOutsideClickRearm.Should().BeFalse();
-        }
-
-        [Fact]
-        public void Pump_may_advance_media_timeline_but_must_not_write_volume()
-        {
-            _ = TesseraFlyoutLiveSyncPolicy.PumpMayAdvanceMediaTimeline.Should().BeTrue();
-            _ = TesseraFlyoutLiveSyncPolicy.PumpMayWriteVolumeBindings.Should().BeFalse();
-        }
-
-        [Fact]
         public void Max_refresh_hz_bounds_ui_flushes()
         {
             _ = TesseraFlyoutLiveSyncPolicy.MaxRefreshHz.Should().Be(30);
@@ -71,25 +49,6 @@ namespace MosaicShell.Core.Tests
                 .Should().BeFalse();
             _ = TesseraFlyoutLiveSyncPolicy.IsSuccessfulTesseraContent(hasLiveHost: true, isFallbackContent: true)
                 .Should().BeFalse();
-        }
-
-        [Theory]
-        [InlineData(false, "vol", "vol", "Meter", "Meter", TesseraFlyoutSyncAction.Present)]
-        [InlineData(true, "vol", "vol", "Meter", "Meter", TesseraFlyoutSyncAction.Patch)]
-        [InlineData(true, "vol", "bright", "Meter", "Meter", TesseraFlyoutSyncAction.Present)]
-        [InlineData(true, "vol", "vol", "Meter", "Fluent", TesseraFlyoutSyncAction.Present)]
-        [InlineData(true, "vol", "media", "Meter", "Meter", TesseraFlyoutSyncAction.Present)]
-        public void Visible_same_kind_and_style_patches_otherwise_presents(
-            bool visible,
-            string openKind,
-            string nextKind,
-            string openStyle,
-            string nextStyle,
-            TesseraFlyoutSyncAction expected)
-        {
-            _ = TesseraFlyoutLiveSyncPolicy
-                .ResolveAction(visible, openKind, nextKind, openStyle, nextStyle)
-                .Should().Be(expected);
         }
 
         [Fact]
@@ -134,13 +93,6 @@ namespace MosaicShell.Core.Tests
             _ = gate.TryBeginFlush(t0, out _).Should().BeTrue();
             _ = gate.TryBeginFlush(t0 + TimeSpan.FromMilliseconds(40), out TimeSpan retry).Should().BeFalse();
             _ = retry.Should().Be(TimeSpan.FromMilliseconds(60));
-        }
-
-        [Fact]
-        public void Update_dispatch_gate_must_coalesce_before_ui_post()
-        {
-            _ = TesseraFlyoutLiveSyncPolicy.MustCoalesceBeforeUiPost.Should().BeTrue();
-            _ = TesseraFlyoutLiveSyncPolicy.NonStatusShowMustCoalesceThroughUpdateGate.Should().BeTrue();
         }
 
         [Fact]

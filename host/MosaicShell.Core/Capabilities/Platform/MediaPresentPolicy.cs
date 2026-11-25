@@ -10,7 +10,7 @@ namespace MosaicShell.Core.Capabilities.Platform
 
         public static bool ShouldSchedulePresentSettle(string kind, FlyoutSyncAction action)
         {
-            return kind.Equals("media", StringComparison.OrdinalIgnoreCase)
+            return FlyoutKinds.Is(kind, FlyoutKinds.Media)
             && action == FlyoutSyncAction.Present;
         }
 

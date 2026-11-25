@@ -4,7 +4,7 @@ namespace MosaicShell.Core.Services.BrowserBridge
     /// The browser source fed by the MosaicShell extension: presents the tab the extension reports as the player the
     /// flyout shows, fetches its cover in the background, and turns like and dislike into commands for the extension.
     /// </summary>
-    public sealed class BrowserMediaSource : IBrowserMediaSource
+    public sealed class BrowserMediaSource : IBrowserMediaSource, IBrowserPlayerList
     {
         private readonly BrowserSessionHub _hub;
         private readonly BrowserArtworkFetcher _fetcher;
@@ -44,6 +44,17 @@ namespace MosaicShell.Core.Services.BrowserBridge
         }
 
         public event EventHandler? Changed;
+
+        /// <summary>Every tab worth showing, each keyed by its connection and tab (<see cref="PlayerKey"/>).</summary>
+        public IReadOnlyList<BrowserTabPlayer> Players =>
+            [.. _hub.ShownSessions.Select(e => new BrowserTabPlayer(PlayerKey(e.ConnectionId, e.Report.TabId), ToSnapshot(e.Report, CoverFor(e.Report))))];
+
+        /// <summary>A tab's key: letters, digits and underscores, starting with a letter, so it can end a D-Bus name.</summary>
+        public static string PlayerKey(int connectionId, int tabId)
+        {
+            string tab = tabId < 0 ? "m" + (-(long)tabId) : tabId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return "c" + connectionId.ToString(System.Globalization.CultureInfo.InvariantCulture) + "_t" + tab;
+        }
 
         /// <summary>The source, its pipe and its artwork cache, listening for the extension's relay.</summary>
         public static BrowserMediaSource Create(Func<string?> smtcTitle, Func<string?> smtcAppId)

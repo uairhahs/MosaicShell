@@ -11,6 +11,19 @@ namespace MosaicShell.Core.Tests
     public class TesseraStackedPlacementPolicyTests
 
     {
+        /// <summary>Vertical DIP budget for stacked Meter media: pad + art + title/artist + transport.</summary>
+        private static double MeterMediaMinContentHeightDip =>
+            TesseraStackedPlacementSpec.MeterMediaPadTopDip
+            + TesseraStackedPlacementSpec.MeterMediaArtDip
+            + TesseraStackedPlacementSpec.MeterMediaArtBottomMarginDip
+            + TesseraStackedPlacementSpec.MeterMediaHeaderSpacingDip
+            + TesseraStackedPlacementSpec.MeterMediaTitleLineDip
+            + TesseraStackedPlacementSpec.MeterMediaHeaderSpacingDip
+            + TesseraStackedPlacementSpec.MeterMediaArtistLineDip
+            + TesseraStackedPlacementSpec.MeterMediaTransportTopMarginDip
+            + TesseraStackedPlacementSpec.MeterMediaTransportBtnDip
+            + TesseraStackedPlacementSpec.MeterMediaPadBottomDip;
+
 
         [Theory]
 
@@ -178,10 +191,10 @@ namespace MosaicShell.Core.Tests
 
         {
 
-            _ = TesseraStackedPlacementSpec.MeterMediaMinContentHeightDip.Should().Be(224);
+            _ = MeterMediaMinContentHeightDip.Should().Be(224);
 
             _ = TesseraStackedPlacementSpec.MeterMediaHeightDip
-                .Should().BeGreaterThanOrEqualTo(TesseraStackedPlacementSpec.MeterMediaMinContentHeightDip);
+                .Should().BeGreaterThanOrEqualTo(MeterMediaMinContentHeightDip);
 
             _ = TesseraStackedPlacementSpec.MeterMediaHeightDip
                 .Should().BeGreaterThan(TesseraStackedPlacementSpec.MeterVolumeHeightDip);
@@ -458,9 +471,9 @@ namespace MosaicShell.Core.Tests
 
         [InlineData(StyleIds.Radial, false)]
 
-        public void Supports_stacked_os_acrylic(string styleId, bool supported)
+        public void Supports_stacked_native_translucency(string styleId, bool supported)
         {
-            _ = TesseraStackedPlacementPolicy.SupportsStackedOsAcrylic(styleId).Should().Be(supported);
+            _ = TesseraStackedPlacementPolicy.SupportsStackedNativeTranslucency(styleId).Should().Be(supported);
         }
 
         [Fact]

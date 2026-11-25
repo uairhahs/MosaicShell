@@ -5,22 +5,16 @@ namespace MosaicShell.Core.Services
     /// Binding once at construction breaks at log-on, when the shell starts before the default device exists or while
     /// Windows is still settling it, and again whenever the default device changes later.
     /// </summary>
-    public sealed class DefaultEndpointBinding<T> : IDisposable where T : class
+    public sealed class DefaultEndpointBinding<T>(Func<T?> resolve, Action<T>? onBound = null, Action<T>? onUnbound = null)
+        : IDisposable where T : class
     {
-        private readonly Func<T?> _resolve;
-        private readonly Action<T>? _onBound;
-        private readonly Action<T>? _onUnbound;
-        private readonly object _gate = new();
+        private readonly Func<T?> _resolve = resolve;
+        private readonly Action<T>? _onBound = onBound;
+        private readonly Action<T>? _onUnbound = onUnbound;
+        private readonly Lock _gate = new();
         private T? _current;
         private bool _stale = true;
         private bool _disposed;
-
-        public DefaultEndpointBinding(Func<T?> resolve, Action<T>? onBound = null, Action<T>? onUnbound = null)
-        {
-            _resolve = resolve;
-            _onBound = onBound;
-            _onUnbound = onUnbound;
-        }
 
         /// <summary>Forces the next use to resolve the default endpoint again.</summary>
         public void MarkStale()

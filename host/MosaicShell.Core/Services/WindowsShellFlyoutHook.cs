@@ -204,39 +204,4 @@ namespace MosaicShell.Core.Services
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
         private static extern IntPtr GetModuleHandle(string? lpModuleName);
     }
-
-    public sealed class NullShellFlyoutTriggerSource : IShellFlyoutTriggerSource
-    {
-        public bool IsActive => false;
-        public event EventHandler<ShellFlyoutKind>? Triggered { add { } remove { } }
-        public void Start() { }
-        public void Stop() { }
-        public void Dispose() { }
-    }
-
-    /// <summary>Test double - raise Triggered manually.</summary>
-    public sealed class FakeShellFlyoutTriggerSource : IShellFlyoutTriggerSource
-    {
-        public bool IsActive { get; private set; }
-        public event EventHandler<ShellFlyoutKind>? Triggered;
-        public void Start()
-        {
-            IsActive = true;
-        }
-
-        public void Stop()
-        {
-            IsActive = false;
-        }
-
-        public void Dispose()
-        {
-            Stop();
-        }
-
-        public void Raise(ShellFlyoutKind kind)
-        {
-            Triggered?.Invoke(this, kind);
-        }
-    }
 }

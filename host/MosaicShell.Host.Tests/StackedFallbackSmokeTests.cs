@@ -10,8 +10,8 @@ using MosaicShell.Host.Capabilities;
 namespace MosaicShell.Host.Tests
 {
     /// <summary>
-    /// The stacked (N-window OS acrylic) path cannot run headless: it needs Windows composition.
-    /// What can run is its gate. With OS acrylic forced off (<c>--tessera-software-render</c>), a
+    /// The stacked (N-window native translucency) path cannot run headless: it needs Windows composition.
+    /// What can run is its gate. With native translucency forced off (<c>--tessera-software-render</c>), a
     /// request that would otherwise be stacked must take the single-window path, and the presenter's
     /// session bookkeeping (mode, kind, style, visibility) must say so through every entry point.
     /// The stacked windows themselves stay a desktop check.
@@ -53,10 +53,10 @@ namespace MosaicShell.Host.Tests
         {
             // Guards the premise: if this request stopped being stacked-eligible, the tests below
             // would pass without exercising the fallback at all.
-            _ = TesseraOsAcrylicStackedPolicy.UseMultiWindow(
-                StackedPayload, StackedStyle, trialRequested: true, osSupportsWinUiAcrylic: true,
-                osAcrylicRenderingAvailable: true, kind: "vol").Should().BeTrue();
-            _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(StackedPayload, StackedStyle, "vol").Should().BeFalse();
+            _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindow(
+                StackedPayload, StackedStyle, trialRequested: true, platformSupported: true,
+                nativeTranslucencyRenderingAvailable: true, kind: "vol").Should().BeTrue();
+            _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(StackedPayload, StackedStyle, "vol").Should().BeFalse();
         }
 
         [AvaloniaFact]

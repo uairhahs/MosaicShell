@@ -13,7 +13,11 @@ namespace MosaicShell.Core.Capabilities
         Task<bool> ReArmAsync(string moduleId, CancellationToken cancellationToken = default);
         string? GetHotkeyError(string moduleId);
         Task RestoreAsync(CancellationToken cancellationToken = default);
-        Task DisarmAllAsync(CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Stops every capability. With <paramref name="persist"/> false the saved armed list is left as it was, which is
+        /// what a shutdown wants: the same modules arm again on the next start.
+        /// </summary>
+        Task DisarmAllAsync(bool persist = true, CancellationToken cancellationToken = default);
         void Persist();
     }
 }

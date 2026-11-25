@@ -4,6 +4,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Material.Icons.Avalonia;
 using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {
@@ -16,7 +17,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 return StatusChip(vm, TesseraStatusFlyoutPolicy.ResolveChipCornerRadiusDip("Fluent"));
             }
 
-            if (vm.Kind.Equals("media", StringComparison.OrdinalIgnoreCase)
+            if (FlyoutKinds.Is(vm.Kind, FlyoutKinds.Media)
                 && !TesseraStackedBuildContext.IsActive)
             {
                 // Must go through FluentMediaReveal, not TesseraChrome.Shell directly: phase 2

@@ -201,5 +201,155 @@ namespace MosaicShell.Core.Tests
                 _ = Values.Remove(subKey);
             }
         }
+
+        private string ConfigHome()
+        {
+            return Path.Combine(_root, "config");
+        }
+
+        private string LinuxRelay()
+        {
+            string path = Path.Combine(_root, "install", "MosaicShell.BrowserRelay");
+            _ = Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, "");
+            return path;
+        }
+
+        private string ManifestIn(string browserDir)
+        {
+            return Path.Combine(ConfigHome(), browserDir, "NativeMessagingHosts", "com.mosaicshell.grout.json");
+        }
+
+        [Fact]
+        public void On_Linux_each_installed_browser_gets_the_manifest_in_its_own_config()
+        {
+            // Chromium browsers on Linux find a native host by file, not by registry: <config>/<browser>/NativeMessagingHosts.
+            _ = Directory.CreateDirectory(Path.Combine(ConfigHome(), "microsoft-edge"));
+            _ = Directory.CreateDirectory(Path.Combine(ConfigHome(), "google-chrome", "NativeMessagingHosts"));
+            string relay = LinuxRelay();
+
+            int registered = NativeHostRegistration.RegisterForLinuxBrowsers(relay, ConfigHome());
+
+            _ = registered.Should().Be(2);
+            foreach (string browser in new[] { "microsoft-edge", "google-chrome" })
+            {
+                using JsonDocument manifest = JsonDocument.Parse(File.ReadAllText(ManifestIn(browser)));
+                _ = manifest.RootElement.GetProperty("path").GetString().Should().Be(relay);
+                _ = manifest.RootElement.GetProperty("allowed_origins").EnumerateArray().Select(o => o.GetString())
+                    .Should().Contain("chrome-extension://" + NativeHostRegistration.WebStoreExtensionId + "/");
+            }
+        }
+
+        [Fact]
+        public void On_Linux_a_browser_that_is_not_installed_gets_nothing()
+        {
+            _ = Directory.CreateDirectory(Path.Combine(ConfigHome(), "microsoft-edge"));
+
+            _ = NativeHostRegistration.RegisterForLinuxBrowsers(LinuxRelay(), ConfigHome());
+
+            _ = Directory.Exists(Path.Combine(ConfigHome(), "chromium")).Should().BeFalse("registering must not create a browser's profile");
+            _ = Directory.Exists(Path.Combine(ConfigHome(), "BraveSoftware")).Should().BeFalse();
+        }
+
+        [Fact]
+        public void On_Linux_the_known_browsers_include_edge_chrome_chromium_and_brave()
+        {
+            _ = NativeHostRegistration.LinuxBrowserConfigDirs.Should().Contain(
+            [
+                "microsoft-edge", "microsoft-edge-beta", "microsoft-edge-dev",
+                "google-chrome", "chromium", Path.Combine("BraveSoftware", "Brave-Browser"),
+            ]);
+        }
+
+        [Fact]
+        public void On_Linux_registering_again_rewrites_nothing_that_is_already_right()
+        {
+            _ = Directory.CreateDirectory(Path.Combine(ConfigHome(), "microsoft-edge"));
+            string relay = LinuxRelay();
+            _ = NativeHostRegistration.RegisterForLinuxBrowsers(relay, ConfigHome());
+            DateTime first = File.GetLastWriteTimeUtc(ManifestIn("microsoft-edge"));
+            File.SetLastWriteTimeUtc(ManifestIn("microsoft-edge"), first.AddMinutes(-5));
+            DateTime aged = File.GetLastWriteTimeUtc(ManifestIn("microsoft-edge"));
+
+            _ = NativeHostRegistration.RegisterForLinuxBrowsers(relay, ConfigHome());
+
+            _ = File.GetLastWriteTimeUtc(ManifestIn("microsoft-edge")).Should().Be(aged);
+        }
+
+        [Fact]
+        public void On_Linux_a_relay_that_is_not_there_registers_nothing()
+        {
+            _ = Directory.CreateDirectory(Path.Combine(ConfigHome(), "microsoft-edge"));
+
+            int registered = NativeHostRegistration.RegisterForLinuxBrowsers(Path.Combine(_root, "missing", "MosaicShell.BrowserRelay"), ConfigHome());
+
+            _ = registered.Should().Be(0);
+            _ = File.Exists(ManifestIn("microsoft-edge")).Should().BeFalse();
+        }
+
+        [Fact]
+        public void On_Linux_unregistering_removes_only_our_manifest()
+        {
+            _ = Directory.CreateDirectory(Path.Combine(ConfigHome(), "microsoft-edge", "NativeMessagingHosts"));
+            string other = Path.Combine(ConfigHome(), "microsoft-edge", "NativeMessagingHosts", "com.other.json");
+            File.WriteAllText(other, "{}");
+            _ = NativeHostRegistration.RegisterForLinuxBrowsers(LinuxRelay(), ConfigHome());
+
+            NativeHostRegistration.UnregisterForLinuxBrowsers(ConfigHome());
+
+            _ = File.Exists(ManifestIn("microsoft-edge")).Should().BeFalse();
+            _ = File.Exists(other).Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("/nix/store/x-dotnet/share/dotnet/shared/Microsoft.NETCore.App/10.0.14/", "/nix/store/x-dotnet/share/dotnet")]
+        [InlineData("/usr/share/dotnet/shared/Microsoft.NETCore.App/10.0.14", "/usr/share/dotnet")]
+        [InlineData("/opt/MosaicShell/", null)]
+        public void On_Linux_the_dotnet_root_is_where_the_host_runtime_lives(string runtimeDirectory, string? expected)
+        {
+            // A self-contained Host carries its runtime in its own folder and has no shared root to hand on.
+            _ = NativeHostRegistration.DotnetRootFromRuntimeDirectory(runtimeDirectory).Should().Be(expected);
+        }
+
+        [Fact]
+        public void On_Linux_the_launcher_hands_the_relay_the_dotnet_root()
+        {
+            // A browser starts the relay without DOTNET_ROOT, and on NixOS .NET is not at a default path, so the
+            // framework-dependent relay could not find its runtime (NixOS, 2026-11-24).
+            string relay = LinuxRelay();
+
+            string launcher = NativeHostRegistration.EnsureLinuxLauncher(relay, "/nix/store/x-dotnet/share/dotnet", DataDir());
+
+            _ = launcher.Should().Be(Path.Combine(DataDir(), "grout-relay.sh"));
+            _ = File.ReadAllText(launcher).Should().Be(
+                "#!/bin/sh\nDOTNET_ROOT='/nix/store/x-dotnet/share/dotnet' exec '" + relay + "' \"$@\"\n");
+            if (!OperatingSystem.IsWindows())
+            {
+                _ = File.GetUnixFileMode(launcher).Should().HaveFlag(UnixFileMode.UserExecute);
+            }
+        }
+
+        [Fact]
+        public void On_Linux_a_quote_in_a_path_cannot_break_out_of_the_launcher()
+        {
+            string relay = Path.Combine(_root, "it's", "MosaicShell.BrowserRelay");
+            _ = Directory.CreateDirectory(Path.GetDirectoryName(relay)!);
+            File.WriteAllText(relay, "");
+
+            string launcher = NativeHostRegistration.EnsureLinuxLauncher(relay, "/opt/dotnet", DataDir());
+
+            _ = File.ReadAllText(launcher).Should().Contain("exec '" + relay.Replace("'", "'\\''") + "'");
+        }
+
+        [Fact]
+        public void On_Linux_without_a_dotnet_root_or_a_relay_the_relay_is_registered_itself()
+        {
+            string relay = LinuxRelay();
+            string missing = Path.Combine(_root, "missing", "MosaicShell.BrowserRelay");
+
+            _ = NativeHostRegistration.EnsureLinuxLauncher(relay, null, DataDir()).Should().Be(relay);
+            _ = NativeHostRegistration.EnsureLinuxLauncher(missing, "/opt/dotnet", DataDir()).Should().Be(missing);
+            _ = File.Exists(Path.Combine(DataDir(), "grout-relay.sh")).Should().BeFalse();
+        }
     }
 }

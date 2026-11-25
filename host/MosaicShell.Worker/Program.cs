@@ -44,30 +44,38 @@ namespace MosaicShell.Worker
                 return 1;
             }
 
-            using HostServices services = HostServices.CreateWindowsDefaults();
+            using HostServices services = HostServices.CreatePlatformDefaults();
             using IpcFlyoutPresenter flyouts = new();
+            WorkerCapabilityUiBridge ui = new(flyouts);
+            CapabilityRegistry registry = new();
+            BuiltInCapabilityFactories.RegisterAll(registry);
+            using CapabilityDaemon daemon = new(registry, services, ui);
 
-            Console.WriteLine("MosaicShell Worker: connecting flyout IPC to Host...");
+            // The control server comes up before the wait for Host's flyout pipe. Host connects to it once, at its own
+            // startup, before it opens the flyout pipe the Worker is waiting for; starting it after that wait left each
+            // side waiting for the other and Host without a control channel.
+            using CapabilityIpcControlServer controlServer = new(daemon);
+            controlServer.Start();
+
+            Console.WriteLine("MosaicShell Worker: waiting for Host's flyout IPC (start Host; gives up after 2 minutes)...");
             try
             {
-                await flyouts.ConnectAsync().ConfigureAwait(false);
+                await flyouts.ConnectWithRetryAsync(TimeSpan.FromMilliseconds(CapabilityIpcPolicy.WorkerConnectWindowMs))
+                    .ConfigureAwait(false);
                 Console.WriteLine("Connected to Host flyout presenter.");
             }
             catch (Exception ex)
             {
                 Console.Error.WriteLine(
                     "Could not connect to MosaicShell Host flyout IPC ({0}). " +
-                    "Start Host first (tray-only: MosaicShell.Host.exe --tray-only).",
+                    "Start Host (tray-only: MosaicShell.Host.exe --tray-only) while the Worker is waiting.",
                     ex.Message);
                 return 1;
             }
 
-            WorkerCapabilityUiBridge ui = new(flyouts);
-            CapabilityRegistry registry = new();
-            BuiltInCapabilityFactories.RegisterAll(registry);
-            using CapabilityDaemon daemon = new(registry, services, ui);
-            using CapabilityIpcControlServer controlServer = new(daemon);
-            controlServer.Start();
+            // Host can restart while the Worker runs; reconnect to its new flyout pipe instead of losing flyouts.
+            using CancellationTokenSource stopReconnecting = new();
+            Task keepConnected = flyouts.KeepConnectedAsync(stopReconnecting.Token);
 
             await daemon.RestoreAsync().ConfigureAwait(false);
             IReadOnlyList<string> armed = daemon.ArmedModuleIds;
@@ -85,7 +93,9 @@ namespace MosaicShell.Worker
             Console.WriteLine("Worker running. Press Enter to disarm all and exit.");
             _ = await Task.Run(Console.ReadLine).ConfigureAwait(false);
 
-            await daemon.DisarmAllAsync().ConfigureAwait(false);
+            await daemon.DisarmAllAsync(persist: false).ConfigureAwait(false);
+            await stopReconnecting.CancelAsync().ConfigureAwait(false);
+            await keepConnected.ConfigureAwait(false);
             return 0;
         }
     }

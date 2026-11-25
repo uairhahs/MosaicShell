@@ -1,5 +1,9 @@
 using MosaicShell.Core.Services.BrowserBridge;
+#if WINDOWS
 using MosaicShell.Core.Services.BrowserUi;
+#else
+using System.Runtime.InteropServices;
+#endif
 
 namespace MosaicShell.Core.Services
 {
@@ -11,7 +15,11 @@ namespace MosaicShell.Core.Services
     /// </summary>
     public static class BrowserSourceStack
     {
-        public const string RelayFileName = "MosaicShell.BrowserRelay.exe";
+        /// <summary>The relay's apphost next to the Host, the program the browser starts for the extension.</summary>
+        public static string RelayFileNameFor(bool isWindows)
+        {
+            return isWindows ? "MosaicShell.BrowserRelay.exe" : "MosaicShell.BrowserRelay";
+        }
 
         /// <summary>
         /// The session the fallback may read: none while <paramref name="preferred"/> has a player of its own, so the
@@ -23,11 +31,12 @@ namespace MosaicShell.Core.Services
             return () => preferred.Active is null ? session() : null;
         }
 
+#if WINDOWS
         /// <summary>The extension source first, then the accessibility fallback, both reading Windows' current session.</summary>
         public static IBrowserMediaSource[] Create(Func<MediaSessionInfo?> session)
         {
             _ = NativeHostRegistration.Register(
-                Path.Combine(AppContext.BaseDirectory, RelayFileName),
+                Path.Combine(AppContext.BaseDirectory, RelayFileNameFor(isWindows: true)),
                 NativeHostRegistration.DefaultDataDirectory(),
                 new CurrentUserRegistry());
 
@@ -35,5 +44,20 @@ namespace MosaicShell.Core.Services
             BrowserUiSource fallback = new(new WindowsBrowserUi(), FallbackSession(extension, session), TimeProvider.System);
             return [extension, fallback];
         }
+#else
+        /// <summary>
+        /// Linux: the extension source, reading the MPRIS session. The browsers find the relay through a manifest in each
+        /// one's config folder. There is no accessibility fallback here yet.
+        /// </summary>
+        public static IBrowserMediaSource[] CreateLinux(Func<MediaSessionInfo?> session)
+        {
+            string relay = NativeHostRegistration.EnsureLinuxLauncher(
+                Path.Combine(AppContext.BaseDirectory, RelayFileNameFor(isWindows: false)),
+                NativeHostRegistration.DotnetRootFromRuntimeDirectory(RuntimeEnvironment.GetRuntimeDirectory()),
+                NativeHostRegistration.DefaultDataDirectory());
+            _ = NativeHostRegistration.RegisterForLinuxBrowsers(relay, Xdg.XdgBaseDirectories.CurrentConfigHome());
+            return [BrowserMediaSource.Create(() => session()?.Title, () => session()?.AppId)];
+        }
+#endif
     }
 }

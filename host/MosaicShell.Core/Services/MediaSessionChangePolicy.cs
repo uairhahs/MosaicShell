@@ -115,5 +115,44 @@ namespace MosaicShell.Core.Services
                 ? incomingSeconds
                 : incomingSeconds + PlayingPositionJitterSeconds >= committedSeconds ? incomingSeconds : committedSeconds;
         }
+
+        /// <summary>
+        /// Whether a new snapshot is a different moment for the user (track, artist, app, play state, or a position jump
+        /// that only a new track explains) and so raises <c>Changed</c>. Everything else is <c>ProgressChanged</c>.
+        /// Shared by every platform's media service so they present on the same events.
+        /// </summary>
+        public static bool IsMeaningfulSessionChange(MediaSessionInfo? prev, MediaSessionInfo next)
+        {
+            if (prev is null)
+            {
+                return true;
+            }
+
+            if (!string.Equals(prev.Title, next.Title, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (!string.Equals(prev.Artist, next.Artist, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (!string.Equals(prev.AppId, next.AppId, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (prev.IsPlaying != next.IsPlaying)
+            {
+                return true;
+            }
+
+            // Thumbnail-only differences are deliberately excluded: late-arriving art for a
+            // track whose identity already settled must patch in via ProgressChanged, not
+            // restart Tessera's entrance animation. See the caller's IsArtOnlyRefresh check.
+            return LooksLikeNewTrackPosition(
+                prev.PositionSeconds, next.PositionSeconds);
+        }
     }
 }

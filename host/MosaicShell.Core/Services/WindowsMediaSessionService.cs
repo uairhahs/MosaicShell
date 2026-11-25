@@ -224,7 +224,7 @@ namespace MosaicShell.Core.Services
 
                 Current = next;
 
-                if (IsMeaningfulSessionChange(prev, next))
+                if (MediaSessionChangePolicy.IsMeaningfulSessionChange(prev, next))
                 {
                     _timelineSamplePos = pos;
                     _timelineSampleUtc = DateTimeOffset.UtcNow;
@@ -239,40 +239,6 @@ namespace MosaicShell.Core.Services
                 }
             }
             catch { /* ignore */ }
-        }
-
-        private static bool IsMeaningfulSessionChange(MediaSessionInfo? prev, MediaSessionInfo next)
-        {
-            if (prev is null)
-            {
-                return true;
-            }
-
-            if (!string.Equals(prev.Title, next.Title, StringComparison.Ordinal))
-            {
-                return true;
-            }
-
-            if (!string.Equals(prev.Artist, next.Artist, StringComparison.Ordinal))
-            {
-                return true;
-            }
-
-            if (!string.Equals(prev.AppId, next.AppId, StringComparison.Ordinal))
-            {
-                return true;
-            }
-
-            if (prev.IsPlaying != next.IsPlaying)
-            {
-                return true;
-            }
-
-            // Thumbnail-only differences are deliberately excluded: late-arriving art for a
-            // track whose identity already settled must patch in via ProgressChanged, not
-            // restart Tessera's entrance animation. See the caller's IsArtOnlyRefresh check.
-            return MediaSessionChangePolicy.LooksLikeNewTrackPosition(
-                prev.PositionSeconds, next.PositionSeconds);
         }
 
         private DateTimeOffset _timelineSampleUtc = DateTimeOffset.MinValue;

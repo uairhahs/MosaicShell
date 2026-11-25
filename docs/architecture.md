@@ -27,7 +27,7 @@ MosaicShell.Host (tray, Avalonia UI thread)
 | `MosaicShell.Worker.exe`           | Headless daemon; flyouts via IPC to Host                                 |
 | `Mosaicist.exe`                    | Install CLI (`install-module`, `install-package`): Core only, no Host UI |
 
-`CapabilityStore` persists a **list** of armed module ids; one daemon runs Tessera, Mixdeck, Slate, and any other armed capabilities together, and that's the normal mode. Whichever process starts first owns the daemon; a Host that starts second controls the Worker's daemon over IPC instead. Worker also needs Host's flyout IPC server, and waits only `ConnectTimeoutMs` (4 s) for it, so when splitting them start Worker and then Host straight away. Worker has no browser media sources (Grout), so its media flyouts carry SMTC data only.
+`CapabilityStore` persists a **list** of armed module ids; one daemon runs Tessera, Mixdeck, Slate, and any other armed capabilities together, and that's the normal mode. Whichever process starts first owns the daemon; a Host that starts second controls the Worker's daemon over IPC instead. Worker also needs Host's flyout IPC server and keeps retrying for 2 minutes, so start Host within that time after Worker. Worker has no browser media sources (Grout), so its media flyouts carry SMTC data only.
 
 ## Dependency hierarchy
 
@@ -104,7 +104,7 @@ Runtime: `TesseraCapability` (thin) plus `Capabilities/Platform/*` (Core platfor
 
 Every style's per-style facts (which "Animated" meters it addresses, its reveal kind, its rest dimensions, whether it uses stacked HWNDs vs in-layout media, corner radii, and so on) are meant to flow from one place, `TesseraFlyoutTweenTargetCatalog.ResolveProfile`, with every consumer reading that profile rather than re-deriving the same answer locally. This is an actively enforced convention, not just a preference: duplicated per-style dispatch is exactly the failure mode that produces silent drift between what a style's layout does and what its animation policy assumes.
 
-Motion runs in two phases. Phase 1 is a window-level slide and fade driven by Avalonia's real `Animation`/`KeyFrame` API (`FlyoutMotionController.AnimateSteppedAsync`). Phase 2 (when a style has animated targets) reveals per-control content, such as clip, divider, or scale, keyed off a shared `RevealProgress`. Media content fades and clips in place; it does not carry an independent slide direction of its own, since that would disagree with whichever direction the window's own phase-1 motion is configured to enter from.
+Motion runs in two phases. Phase 1 is a window-level slide and fade driven by Avalonia's real `Animation`/`KeyFrame` API (`FlyoutMotionController.AnimateSteppedAsync`). Phase 2 (when a style has animated targets) reveals per-control content, such as clip, divider, or scale, keyed off a shared `RevealProgress`, and is paced by elapsed time (the interpolated value at each wake-up) so its duration is the planned one. Both phases play the chosen easing curve exactly as picked, entering and leaving; the Hub's Motion section offers a few named looks (`TesseraMotionPresets`) that are just sets of the same settings, with a live preview that samples the same policy functions. Media content fades and clips in place; it does not carry an independent slide direction of its own, since that would disagree with whichever direction the window's own phase-1 motion is configured to enter from.
 
 ### Known gaps vs YourFlyouts
 

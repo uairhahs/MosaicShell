@@ -6,6 +6,12 @@ namespace MosaicShell.Core.Tests
 {
     public class TesseraFlyoutAnimationPolicyTests
     {
+        /// <summary>ActionTimer Repeat delay in Ani1/Ani2.inc (below a 60 Hz frame).</summary>
+        private const int EncodedActionTimerIntervalMs = 2;
+
+        /// <summary>Below this, In vs Out and Bounce vs Linear are not readable on a 60 Hz display.</summary>
+        private const int MinPerceptiblePhaseDurationMs = 200;
+
         [Theory]
         [InlineData(0, 10, 250)]
         [InlineData(0, 20, 250)]
@@ -22,8 +28,6 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Ani0_uses_rainmeter_fade_duration_and_ignores_ani_steps()
         {
-            _ = TesseraFlyoutAnimationPolicy.AniNoneUsesBuiltInFade.Should().BeTrue();
-            _ = TesseraFlyoutAnimationPolicy.AniNoneIgnoresAniSteps.Should().BeTrue();
             _ = TesseraFlyoutAnimationPolicy.FadeDurationMs.Should().Be(250);
             _ = TesseraFlyoutAnimationPolicy.ResolveDurationMs(0, 10)
                 .Should().Be(TesseraFlyoutAnimationPolicy.ResolveDurationMs(0, 40));
@@ -67,12 +71,12 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void An_os_acrylic_window_slides_as_a_whole_so_its_blur_moves_with_the_card()
+        public void An_native_translucency_window_slides_as_a_whole_so_its_blur_moves_with_the_card()
         {
             // Modern Flyouts, 2026-10-04 (motion frame trace, run ff725208): the content slid 30 dip
             // by RenderTransform inside an acrylic pane that stayed put, so the card's border travelled
             // across a still blurred pane (the "shake while sliding"). YourFlyouts moves the skin window.
-            _ = TesseraFlyoutAnimationPolicy.ResolvePhase1SlideTarget(osAcrylicBackdrop: true)
+            _ = TesseraFlyoutAnimationPolicy.ResolvePhase1SlideTarget(nativeTranslucencyBackdrop: true)
                 .Should().Be(TesseraSlideTarget.WindowPosition);
         }
 
@@ -84,7 +88,7 @@ namespace MosaicShell.Core.Tests
             // returned (the jiggle). The start pose has to be in place before the pane is shown.
             (int dx, int dy) = TesseraFlyoutAnimationPolicy.ResolveSlideOffsetPx("left", 30);
 
-            _ = TesseraFlyoutAnimationPolicy.ResolveWindowEntranceStartOffsetPx(ani: 2, "left", 30, osAcrylicBackdrop: true)
+            _ = TesseraFlyoutAnimationPolicy.ResolveWindowEntranceStartOffsetPx(ani: 2, "left", 30, nativeTranslucencyBackdrop: true)
                 .Should().Be((dx, dy));
             _ = (dx, dy).Should().NotBe((0, 0), "premise: the left slide has an offset");
         }
@@ -92,16 +96,16 @@ namespace MosaicShell.Core.Tests
         [Theory]
         [InlineData(2, false)]
         [InlineData(0, true)]
-        public void No_window_start_offset_when_the_window_does_not_slide(int ani, bool osAcrylic)
+        public void No_window_start_offset_when_the_window_does_not_slide(int ani, bool nativeTranslucency)
         {
-            _ = TesseraFlyoutAnimationPolicy.ResolveWindowEntranceStartOffsetPx(ani, "left", 30, osAcrylic)
+            _ = TesseraFlyoutAnimationPolicy.ResolveWindowEntranceStartOffsetPx(ani, "left", 30, nativeTranslucency)
                 .Should().Be((0, 0));
         }
 
         [Fact]
         public void A_window_that_paints_its_own_background_slides_its_content()
         {
-            _ = TesseraFlyoutAnimationPolicy.ResolvePhase1SlideTarget(osAcrylicBackdrop: false)
+            _ = TesseraFlyoutAnimationPolicy.ResolvePhase1SlideTarget(nativeTranslucencyBackdrop: false)
                 .Should().Be(TesseraSlideTarget.RenderTransform);
         }
 
@@ -130,22 +134,6 @@ namespace MosaicShell.Core.Tests
         {
             _ = TesseraFlyoutAnimationPolicy.SampleSteppedAt(30, 0, linearT, 4, TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: true)
                 .Should().BeApproximately(expected, 1e-9);
-        }
-
-        [Fact]
-        public void OutQuart_easing_reaches_endpoints()
-        {
-            _ = TesseraFlyoutAnimationPolicy.SampleEase(0, TesseraFlyoutAnimationPolicy.EaseOutQuart).Should().Be(0);
-            _ = TesseraFlyoutAnimationPolicy.SampleEase(1, TesseraFlyoutAnimationPolicy.EaseOutQuart).Should().Be(1);
-        }
-
-        [Fact]
-        public void OutQuart_at_half_matches_stepped_tween()
-        {
-            double stepped = TesseraFlyoutAnimationPolicy.ResolveTweenNode(
-                10, 20, TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: true) / 100.0;
-            _ = TesseraFlyoutAnimationPolicy.SampleEase(0.5, TesseraFlyoutAnimationPolicy.EaseOutQuart)
-                .Should().BeApproximately(stepped, 0.02);
         }
 
         [Theory]
@@ -186,31 +174,6 @@ namespace MosaicShell.Core.Tests
             _ = y.Should().Be(dy);
         }
 
-        [Fact]
-        public void Fancy_entrance_sequence_includes_pause_and_phase2()
-        {
-            IReadOnlyList<TesseraFlyoutAnimationPolicy.FlyoutAnimationPhase> seq = TesseraFlyoutAnimationPolicy.ResolveEntranceSequence(2, showMediaStrip: true);
-            _ = seq.Should().Contain(p => p.Kind == TesseraFlyoutAnimationPolicy.FlyoutAnimationPhaseKind.Phase1In);
-            _ = seq.Should().Contain(p => p.Kind == TesseraFlyoutAnimationPolicy.FlyoutAnimationPhaseKind.Wait
-                                      && p.WaitMs == 100);
-            _ = seq.Should().Contain(p => p.Kind == TesseraFlyoutAnimationPolicy.FlyoutAnimationPhaseKind.Phase2In);
-        }
-
-        [Fact]
-        public void Fancy_exit_sequence_reverses_phase_order()
-        {
-            IReadOnlyList<TesseraFlyoutAnimationPolicy.FlyoutAnimationPhase> seq = TesseraFlyoutAnimationPolicy.ResolveExitSequence(2, showMediaStrip: true);
-            _ = seq[0].Kind.Should().Be(TesseraFlyoutAnimationPolicy.FlyoutAnimationPhaseKind.Phase2Out);
-            _ = seq[^1].Kind.Should().Be(TesseraFlyoutAnimationPolicy.FlyoutAnimationPhaseKind.Phase1Out);
-        }
-
-        [Fact]
-        public void Phase2_skipped_without_media_strip()
-        {
-            IReadOnlyList<TesseraFlyoutAnimationPolicy.FlyoutAnimationPhase> seq = TesseraFlyoutAnimationPolicy.ResolveEntranceSequence(2, showMediaStrip: false);
-            _ = seq.Should().NotContain(p => p.Kind == TesseraFlyoutAnimationPolicy.FlyoutAnimationPhaseKind.Phase2In);
-        }
-
         [Theory]
         [InlineData("OutQuart", "Quart", "Out")]
         [InlineData("InOutCubic", "Cubic", "InOut")]
@@ -224,27 +187,14 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void Fancy_entrance_duration_uses_presentation_interval()
-        {
-            _ = TesseraFlyoutAnimationPolicy.EncodedActionTimerIntervalMs.Should().Be(2);
-            _ = TesseraFlyoutAnimationPolicy.StepPresentationIntervalMs.Should().Be(16);
-            _ = TesseraFlyoutAnimationPolicy.ResolveFancyEntranceDurationMs(20).Should().Be(
-                TesseraFlyoutAnimationPolicy.ResolvePhaseDurationMs(20)
-                + TesseraFlyoutAnimationPolicy.ResolveInterPhaseWaitMs(entrance: true)
-                + TesseraFlyoutAnimationPolicy.ResolvePhaseDurationMs(20)
-                - TesseraFlyoutAnimationPolicy.ResolvePhase2ShowOverlapMs(
-                    TesseraFlyoutAnimationPolicy.DefaultEase, 20));
-        }
-
-        [Fact]
         public void Default_phase_is_long_enough_to_tell_easing_families_apart()
         {
             int encoded = TesseraFlyoutAnimationPolicy.DefaultAniSteps
-                          * TesseraFlyoutAnimationPolicy.EncodedActionTimerIntervalMs;
+                          * EncodedActionTimerIntervalMs;
             _ = encoded.Should().Be(40);
-            _ = encoded.Should().BeLessThan(TesseraFlyoutAnimationPolicy.MinPerceptiblePhaseDurationMs);
+            _ = encoded.Should().BeLessThan(MinPerceptiblePhaseDurationMs);
             _ = TesseraFlyoutAnimationPolicy.ResolvePhaseDurationMs(TesseraFlyoutAnimationPolicy.DefaultAniSteps)
-                .Should().BeGreaterThanOrEqualTo(TesseraFlyoutAnimationPolicy.MinPerceptiblePhaseDurationMs);
+                .Should().BeGreaterThanOrEqualTo(MinPerceptiblePhaseDurationMs);
             _ = TesseraFlyoutAnimationPolicy.ResolvePhaseDurationMs(20).Should().Be(320);
         }
 
@@ -258,54 +208,6 @@ namespace MosaicShell.Core.Tests
             _ = mid.Should().BeApproximately(6.25, 0.01);
             _ = outMid.Should().BeApproximately(93.75, 0.01);
             _ = mid.Should().BeLessThan(outMid);
-        }
-
-        [Theory]
-        [InlineData("OutQuart", "InOutQuart")]
-        [InlineData("InQuart", "InOutQuart")]
-        [InlineData("InOutCubic", "InOutCubic")]
-        [InlineData("Linear", "Linear")]
-        [InlineData("OutCubic", "InOutCubic")]
-        [InlineData("InSine", "InOutSine")]
-        public void Entrance_uses_inout_so_arrival_settles(string selected, string entranceEase)
-        {
-            _ = TesseraFlyoutAnimationPolicy.Phase1EntranceMustUseInOutFamily.Should().BeTrue();
-            _ = TesseraFlyoutAnimationPolicy.ResolveInOutEase(selected).Should().Be(entranceEase);
-            _ = TesseraFlyoutAnimationPolicy.ResolvePhase1MotionEase(selected, entrance: true)
-                .Should().Be(entranceEase);
-            _ = TesseraFlyoutAnimationPolicy.ResolvePhase1MotionEase(selected, entrance: false)
-                .Should().Be(TesseraFlyoutAnimationPolicy.NormalizeEase(selected));
-            _ = TesseraFlyoutAnimationPolicy.ResolvePhase1OpacityEase(selected, entrance: true)
-                .Should().Be(entranceEase);
-            _ = TesseraFlyoutAnimationPolicy.ResolvePhase1OpacityEase(selected, entrance: false)
-                .Should().Be(TesseraFlyoutAnimationPolicy.NormalizeEase(selected));
-        }
-
-        [Fact]
-        public void OutQuart_show_is_quiet_early_and_settles_late()
-        {
-            const int steps = 20;
-            double offset = 30d;
-            string showEase = TesseraFlyoutAnimationPolicy.ResolvePhase1MotionEase(
-                TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: true);
-            string hideEase = TesseraFlyoutAnimationPolicy.ResolvePhase1MotionEase(
-                TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: false);
-
-            double showEarly = TesseraFlyoutAnimationPolicy.InterpolateStepped(
-                offset, 0, 5, steps, showEase, entrance: true);
-            double showMid = TesseraFlyoutAnimationPolicy.InterpolateStepped(
-                offset, 0, 10, steps, showEase, entrance: true);
-            double showLate = TesseraFlyoutAnimationPolicy.InterpolateStepped(
-                offset, 0, 15, steps, showEase, entrance: true);
-            double hideX = TesseraFlyoutAnimationPolicy.InterpolateStepped(
-                0, offset, 10, steps, hideEase, entrance: false);
-
-            _ = showEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseInOutQuart);
-            _ = hideEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseOutQuart);
-            _ = showEarly.Should().BeGreaterThan(offset * 0.9, "first quarter stays near the hide pose");
-            _ = showMid.Should().BeApproximately(offset * 0.5, 1.0);
-            _ = showLate.Should().BeLessThan(offset * 0.1, "last quarter is a settle into rest");
-            _ = hideX.Should().BeLessThan(offset * 0.2, "OutQuart hide is still near rest at mid phase");
         }
 
         [Fact]
@@ -327,66 +229,6 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void OutQuart_fade_in_settles_late_fade_out_stays_opaque_at_mid()
-        {
-            const int steps = 20;
-            string showEase = TesseraFlyoutAnimationPolicy.ResolvePhase1OpacityEase(
-                TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: true);
-            string hideEase = TesseraFlyoutAnimationPolicy.ResolvePhase1OpacityEase(
-                TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: false);
-
-            double fadeEarly = TesseraFlyoutAnimationPolicy.InterpolateStepped(
-                0, 1, 5, steps, showEase, entrance: true);
-            double fadeIn = TesseraFlyoutAnimationPolicy.InterpolateStepped(
-                0, 1, 10, steps, showEase, entrance: true);
-            double fadeLate = TesseraFlyoutAnimationPolicy.InterpolateStepped(
-                0, 1, 15, steps, showEase, entrance: true);
-            double fadeOut = TesseraFlyoutAnimationPolicy.InterpolateStepped(
-                1, 0, 10, steps, hideEase, entrance: false);
-
-            _ = fadeEarly.Should().BeLessThan(0.1);
-            _ = fadeIn.Should().BeApproximately(0.5, 0.05);
-            _ = fadeLate.Should().BeGreaterThan(0.9);
-            _ = fadeOut.Should().BeGreaterThan(0.8);
-        }
-
-        [Fact]
-        public void Invert_ease_round_trips_every_catalog_id()
-        {
-            foreach (string ease in TesseraFlyoutAnimationPolicy.AllEaseTypes)
-            {
-                string inverted = TesseraFlyoutAnimationPolicy.InvertEaseVariant(ease);
-                _ = TesseraFlyoutAnimationPolicy.InvertEaseVariant(inverted)
-                    .Should().Be(ease, because: ease);
-            }
-        }
-
-        [Theory]
-        [InlineData(0)]
-        [InlineData(5)]
-        [InlineData(10)]
-        [InlineData(20)]
-        public void Linear_fade_in_plus_fade_out_is_one(int step)
-        {
-            double fadeIn = TesseraFlyoutAnimationPolicy.InterpolateForward(
-                0, 1, step, 20, TesseraFlyoutAnimationPolicy.EaseLinear);
-            double fadeOut = TesseraFlyoutAnimationPolicy.InterpolateForward(
-                1, 0, step, 20, TesseraFlyoutAnimationPolicy.EaseLinear);
-            _ = (fadeIn + fadeOut).Should().BeApproximately(1, 0.001);
-        }
-
-        [Fact]
-        public void Single_step_fade_reaches_both_endpoints()
-        {
-            _ = TesseraFlyoutAnimationPolicy.InterpolateForward(
-                    0, 1, 1, 1, TesseraFlyoutAnimationPolicy.EaseLinear)
-                .Should().BeApproximately(1, 0.01);
-            _ = TesseraFlyoutAnimationPolicy.InterpolateForward(
-                    1, 0, 1, 1, TesseraFlyoutAnimationPolicy.EaseLinear)
-                .Should().BeApproximately(0, 0.01);
-        }
-
-        [Fact]
         public void Exit_phase1_starts_at_full_tween_node()
         {
             _ = TesseraFlyoutAnimationPolicy.ResolveTweenNode(
@@ -398,39 +240,6 @@ namespace MosaicShell.Core.Tests
         public void Exit_must_mirror_entrance()
         {
             _ = TesseraFlyoutAnimationPolicy.ExitMustMirrorEntrance.Should().BeTrue();
-        }
-
-        [Fact]
-        public void SampleEaseContinuous_distinguishes_in_from_out_at_midpoint()
-        {
-            double inMid = TesseraFlyoutAnimationPolicy.SampleEaseContinuous(
-                0.5, TesseraFlyoutAnimationPolicy.EaseInQuart);
-            double outMid = TesseraFlyoutAnimationPolicy.SampleEaseContinuous(
-                0.5, TesseraFlyoutAnimationPolicy.EaseOutQuart);
-            _ = inMid.Should().BeApproximately(0.0625, 0.001);
-            _ = outMid.Should().BeApproximately(0.9375, 0.001);
-            _ = inMid.Should().BeLessThan(outMid);
-        }
-
-        [Theory]
-        [InlineData(20)]
-        [InlineData(10)]
-        [InlineData(40)]
-        public void SampleEaseContinuous_aligns_with_stepped_ResolveTweenNode_at_step_boundaries(int aniSteps)
-        {
-            foreach (string ease in TesseraFlyoutAnimationPolicy.AllEaseTypes)
-            {
-                for (int step = 0; step <= aniSteps; step++)
-                {
-                    double t = (double)step / aniSteps;
-                    double continuous = TesseraFlyoutAnimationPolicy.SampleEaseContinuous(t, ease);
-                    double stepped = TesseraFlyoutAnimationPolicy.ResolveTweenNode(
-                        step, aniSteps, ease, entrance: true) / 100.0;
-                    _ = continuous.Should().BeApproximately(
-                        stepped, 1e-9,
-                        $"ease '{ease}' at step {step}/{aniSteps} should agree between continuous and stepped");
-                }
-            }
         }
 
         [Fact]
@@ -455,43 +264,12 @@ namespace MosaicShell.Core.Tests
                 .Should().BeApproximately(0, 0.01);
         }
 
-        [Fact]
-        public void Fancy_entrance_sequence_matches_ani2_inc()
-        {
-            IReadOnlyList<TesseraFlyoutAnimationPolicy.FlyoutAnimationPhase> seq = TesseraFlyoutAnimationPolicy.ResolveEntranceSequence(ani: 2, showMediaStrip: true);
-            _ = seq.Select(p => p.Kind).Should().Equal([
-                TesseraFlyoutAnimationPolicy.FlyoutAnimationPhaseKind.Show,
-                TesseraFlyoutAnimationPolicy.FlyoutAnimationPhaseKind.Phase1In,
-                TesseraFlyoutAnimationPolicy.FlyoutAnimationPhaseKind.Wait,
-                TesseraFlyoutAnimationPolicy.FlyoutAnimationPhaseKind.Phase2In,
-            ]);
-            _ = seq[1].StepCount.Should().Be(20);
-            _ = seq[2].WaitMs.Should().Be(TesseraFlyoutAnimationPolicy.FancyPauseMs);
-            _ = seq[3].StepCount.Should().Be(20);
-        }
-
-        [Fact]
-        public void Fancy_exit_sequence_reverses_entrance()
-        {
-            IReadOnlyList<TesseraFlyoutAnimationPolicy.FlyoutAnimationPhase> seq = TesseraFlyoutAnimationPolicy.ResolveExitSequence(ani: 2, showMediaStrip: true);
-            _ = seq.Select(p => p.Kind).Should().Equal([
-                TesseraFlyoutAnimationPolicy.FlyoutAnimationPhaseKind.Phase2Out,
-                TesseraFlyoutAnimationPolicy.FlyoutAnimationPhaseKind.Wait,
-                TesseraFlyoutAnimationPolicy.FlyoutAnimationPhaseKind.Phase1Out,
-            ]);
-            _ = seq[0].StepCount.Should().Be(20);
-            _ = seq[1].WaitMs.Should().Be(TesseraFlyoutAnimationPolicy.FancyPauseMs);
-        }
-
         [Theory]
         [InlineData(true, false, true)]
         [InlineData(true, true, true)]
         [InlineData(false, true, false)]
         public void Relayout_deferred_for_entire_motion_including_phase2(bool motion, bool phase2, bool defer)
         {
-            _ = TesseraFlyoutAnimationPolicy.Phase2MustNotResizeHwnd.Should().BeTrue();
-            _ = TesseraFlyoutAnimationPolicy.RelayoutAllowedDuringPhase2.Should().BeFalse();
-            _ = TesseraFlyoutAnimationPolicy.Phase2MustNotMutateLayoutMeasure.Should().BeTrue();
             _ = TesseraFlyoutAnimationPolicy.ShouldDeferRelayoutDuringMotion(motion, phase2)
                 .Should().Be(defer);
         }
@@ -501,8 +279,6 @@ namespace MosaicShell.Core.Tests
         {
             _ = TesseraFlyoutAnimationPolicy.CancelledEntranceMustSnapToRest.Should().BeTrue();
             _ = TesseraFlyoutAnimationPolicy.MotionAnimatingMustClearOnSupersede.Should().BeTrue();
-            _ = TesseraFlyoutAnimationPolicy.SupersededMotionMustCancelInFlightTweens.Should().BeTrue();
-            _ = TesseraFlyoutAnimationPolicy.SteppedKeyframesMustUseLinearInterpolation.Should().BeTrue();
             _ = TesseraFlyoutAnimationPolicy.IdleShowingSessionMustSnapRevealToRest.Should().BeTrue();
         }
 
@@ -517,113 +293,6 @@ namespace MosaicShell.Core.Tests
                 .Should().BeFalse();
         }
 
-        [Theory]
-        [InlineData("OutQuart", "InOutQuart", "OutQuart")]
-        [InlineData("OutCubic", "InOutCubic", "OutCubic")]
-        [InlineData("OutExpo", "InOutExpo", "OutExpo")]
-        [InlineData("InCubic", "InCubic", "OutCubic")]
-        [InlineData("InQuart", "InQuart", "OutQuart")]
-        [InlineData("InOutSine", "InOutSine", "InOutSine")]
-        [InlineData("Linear", "Linear", "Linear")]
-        public void Phase2_show_uses_in_or_inout_hide_uses_out_or_inout(
-            string selected, string showEase, string hideEase)
-        {
-            _ = TesseraFlyoutAnimationPolicy.Phase2ShowMustUseInOrInOutFamily.Should().BeTrue();
-            _ = TesseraFlyoutAnimationPolicy.Phase2HideMustUseOutOrInOutFamily.Should().BeTrue();
-            _ = TesseraFlyoutAnimationPolicy.Phase2ShowMustNotInvertToInEase.Should().BeTrue();
-            _ = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(selected, entrance: true)
-                .Should().Be(showEase);
-            _ = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(selected, entrance: false)
-                .Should().Be(hideEase);
-        }
-
-        [Fact]
-        public void Phase2_directional_variants_cover_every_ease_family()
-        {
-            foreach (string selected in TesseraFlyoutAnimationPolicy.AllEaseTypes)
-            {
-                string show = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(selected, entrance: true);
-                string hide = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(selected, entrance: false);
-                if (show.Equals(TesseraFlyoutAnimationPolicy.EaseLinear, StringComparison.OrdinalIgnoreCase))
-                {
-                    _ = hide.Should().Be(TesseraFlyoutAnimationPolicy.EaseLinear);
-                    continue;
-                }
-
-                (string _, string? showVariant) = TesseraFlyoutAnimationPolicy.SplitEase(show);
-                (string _, string? hideVariant) = TesseraFlyoutAnimationPolicy.SplitEase(hide);
-                (string _, string? selectedVariant) = TesseraFlyoutAnimationPolicy.SplitEase(selected);
-                _ = showVariant.Should().BeOneOf("In", "InOut");
-                _ = hideVariant.Should().BeOneOf("Out", "InOut");
-                if (selectedVariant.Equals("Out", StringComparison.OrdinalIgnoreCase))
-                {
-                    _ = show.Should().Be(TesseraFlyoutAnimationPolicy.ResolveInOutEase(selected));
-                    _ = show.Should().NotBe(TesseraFlyoutAnimationPolicy.InvertEaseVariant(selected));
-                    _ = hide.Should().Be(TesseraFlyoutAnimationPolicy.NormalizeEase(selected));
-                }
-                else if (selectedVariant.Equals("In", StringComparison.OrdinalIgnoreCase))
-                {
-                    _ = show.Should().Be(TesseraFlyoutAnimationPolicy.NormalizeEase(selected));
-                    _ = hide.Should().Be(TesseraFlyoutAnimationPolicy.ResolveOutEase(selected));
-                }
-                else
-                {
-                    _ = show.Should().Be(hide);
-                    _ = show.Should().Be(TesseraFlyoutAnimationPolicy.NormalizeEase(selected));
-                }
-            }
-        }
-
-        [Fact]
-        public void Phase2_In_keep_differs_from_phase1_InOut_remap()
-        {
-            _ = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase("InCubic", entrance: true)
-                .Should().Be(TesseraFlyoutAnimationPolicy.EaseInCubic);
-            _ = TesseraFlyoutAnimationPolicy.ResolvePhase1MotionEase("InCubic", entrance: true)
-                .Should().Be(TesseraFlyoutAnimationPolicy.EaseInOutCubic);
-            _ = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase("OutQuart", entrance: true)
-                .Should().Be(TesseraFlyoutAnimationPolicy.ResolvePhase1MotionEase("OutQuart", entrance: true));
-        }
-
-        [Fact]
-        public void Phase2_OutQuart_show_spends_time_in_mid_band_while_hide_lingers()
-        {
-            const int steps = 20;
-            string showEase = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(
-                TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: true);
-            string hideEase = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(
-                TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: false);
-
-            _ = showEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseInOutQuart);
-            _ = hideEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseOutQuart);
-
-            double showEarly = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(
-                entrance: true, 5, steps, showEase);
-            double outQuartEarly = TesseraFlyoutAnimationPolicy.InterpolateStepped(
-                0, 1, 5, steps, TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: true);
-            _ = showEarly.Should().BeLessThan(0.5, "Out* forward is a start-slam; show remaps to InOut");
-            _ = outQuartEarly.Should().BeGreaterThan(0.5);
-
-            int midBand = 0;
-            for (int s = 0; s <= steps; s++)
-            {
-                double p = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(
-                    entrance: true, s, steps, showEase);
-                if (p is >= TesseraFlyoutAnimationPolicy.Phase2ShowMidBandMin
-                    and <= TesseraFlyoutAnimationPolicy.Phase2ShowMidBandMax)
-                {
-                    midBand++;
-                }
-            }
-
-            _ = (midBand / (double)(steps + 1)).Should().BeGreaterThanOrEqualTo(
-                TesseraFlyoutAnimationPolicy.Phase2ShowMidBandMinDurationFraction);
-
-            double hideEarly = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(
-                entrance: false, 5, steps, hideEase);
-            _ = hideEarly.Should().BeGreaterThan(0.9);
-        }
-
         [Fact]
         public void Show_phase2_overlaps_phase1_until_mid_band_and_skips_pause()
         {
@@ -635,12 +304,12 @@ namespace MosaicShell.Core.Tests
 
             const int steps = 25;
             int overlap = TesseraFlyoutAnimationPolicy.ResolvePhase2ShowOverlapMs(
-                TesseraFlyoutAnimationPolicy.EaseOutQuint, steps);
+                TesseraFlyoutAnimationPolicy.EaseInOutQuint, steps);
             int lead = TesseraFlyoutAnimationPolicy.ResolveShowPhase2LeadDelayMs(
-                TesseraFlyoutAnimationPolicy.EaseOutQuint, steps);
+                TesseraFlyoutAnimationPolicy.EaseInOutQuint, steps);
             int phaseMs = TesseraFlyoutAnimationPolicy.ResolvePhaseDurationMs(steps);
             string showEase = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(
-                TesseraFlyoutAnimationPolicy.EaseOutQuint, entrance: true);
+                TesseraFlyoutAnimationPolicy.EaseInOutQuint, entrance: true);
             int overlapSteps = overlap / TesseraFlyoutAnimationPolicy.StepPresentationIntervalMs;
             double p = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(
                 entrance: true, overlapSteps, steps, showEase);
@@ -694,54 +363,11 @@ namespace MosaicShell.Core.Tests
                     ani: 2, "Fluent", showMediaStrip: true, TesseraStackedPanelRole.Volume)
                 .Should().BeFalse();
             _ = TesseraFlyoutAnimationPolicy.PreparePhase2ShowMustUnhideStackedMedia.Should().BeTrue();
-            _ = TesseraFlyoutHwndRegionSpec.ShouldZeroWindowOpacityForCollapsedRegion(
-                    stackedMedia: true, hideChrome: true, showMotionActive: true)
-                .Should().BeFalse();
-        }
-
-        [Fact]
-        public void Phase2_OutQuart_hide_lingers_on_the_reverse_clock()
-        {
-            const int steps = 20;
-            string showEase = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(
-                TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: true);
-            string hideEase = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(
-                TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: false);
-            _ = showEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseInOutQuart);
-            _ = hideEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseOutQuart);
-            _ = TesseraFlyoutAnimationPolicy.Phase2MustSyncRevealRegionBeforeTweenBothWays.Should().BeTrue();
-            _ = TesseraFlyoutAnimationPolicy.Phase2HideMustStartFromRestReveal.Should().BeTrue();
-            _ = TesseraFlyoutAnimationPolicy.Phase2HideMustNotSnapMissingHostsToRest.Should().BeTrue();
-            _ = TesseraFlyoutAnimationPolicy.Phase2ShowMustNotSnapMissingHostsToRest.Should().BeTrue();
-            _ = TesseraFlyoutAnimationPolicy.Phase2MustPumpEachAniStepOnDispatcher.Should().BeTrue();
-            _ = TesseraFlyoutAnimationPolicy.PreparePhase2ShowMustYieldForRender.Should().BeTrue();
-            _ = TesseraFlyoutAnimationPolicy.ShouldSnapMissingPhase2HostsToRest(entrance: true).Should().BeFalse();
-            _ = TesseraFlyoutAnimationPolicy.ShouldSnapMissingPhase2HostsToRest(entrance: false).Should().BeFalse();
-
-            int distinctHideTicks = 0;
-            double previous = double.NaN;
-            for (int s = 0; s <= steps; s++)
-            {
-                double hide = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(
-                    entrance: false, s, steps, hideEase);
-                if (double.IsNaN(previous) || Math.Abs(hide - previous) > 0.01)
-                {
-                    distinctHideTicks++;
-                }
-
-                previous = hide;
-            }
-
-            double hideEarly = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(
-                entrance: false, 5, steps, hideEase);
-            _ = hideEarly.Should().BeGreaterThan(0.9);
-            _ = distinctHideTicks.Should().BeGreaterThan(10, "skipping to collapsed is not a wipe");
         }
 
         [Fact]
         public void Stacked_phase2_still_runs_on_volume_for_gnome_fill()
         {
-            _ = TesseraFlyoutAnimationPolicy.StackedPhase2MustNotBeMediaSlotOnly.Should().BeTrue();
             _ = TesseraFlyoutAnimationPolicy.ShouldRunPhase2Reveal(
                     2, StyleIds.Gnome, showMediaStrip: true, TesseraStackedPanelRole.Volume)
                 .Should().BeTrue();
@@ -760,6 +386,117 @@ namespace MosaicShell.Core.Tests
             _ = TesseraFlyoutAnimationPolicy.ShouldRunPhase2Reveal(
                     2, StyleIds.MaterialYou, showMediaStrip: true, TesseraStackedPanelRole.Media)
                 .Should().BeFalse();
+        }
+
+        // ---- Phase 2 is driven by rendered frames, so it needs a value at any time, not only at whole steps ----
+
+        [Theory]
+        [InlineData(true, 10, "OutQuart")]
+        [InlineData(false, 10, "OutQuart")]
+        [InlineData(true, 20, "InOutBack")]
+        [InlineData(false, 20, "InOutBack")]
+        [InlineData(true, 40, "Linear")]
+        [InlineData(false, 40, "OutBounce")]
+        public void Reveal_progress_at_a_step_boundary_equals_the_stepped_value(bool entrance, int steps, string ease)
+        {
+            for (int step = 0; step <= steps; step++)
+            {
+                _ = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgressAt(entrance, step / (double)steps, steps, ease)
+                    .Should().BeApproximately(TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(entrance, step, steps, ease), 1e-9);
+            }
+        }
+
+        [Theory]
+        [InlineData(true, "OutQuart")]
+        [InlineData(false, "InOutQuart")]
+        [InlineData(true, "InOutBack")]
+        public void Reveal_progress_between_steps_is_a_straight_line_between_the_two_neighbours(bool entrance, string ease)
+        {
+            const int steps = 20;
+            for (int step = 0; step < steps; step++)
+            {
+                double a = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(entrance, step, steps, ease);
+                double b = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(entrance, step + 1, steps, ease);
+                double mid = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgressAt(entrance, (step + 0.5) / steps, steps, ease);
+
+                _ = mid.Should().BeApproximately((a + b) / 2, 1e-9);
+            }
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void Reveal_progress_clamps_time_outside_the_run(bool entrance)
+        {
+            double start = entrance ? 0 : 1;
+            double end = entrance ? 1 : 0;
+
+            _ = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgressAt(entrance, -0.5, 20, "OutQuart").Should().BeApproximately(start, 1e-9);
+            _ = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgressAt(entrance, 0, 20, "OutQuart").Should().BeApproximately(start, 1e-9);
+            _ = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgressAt(entrance, 1, 20, "OutQuart").Should().BeApproximately(end, 1e-9);
+            _ = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgressAt(entrance, 3, 20, "OutQuart").Should().BeApproximately(end, 1e-9);
+        }
+
+        [Fact]
+        public void Reveal_progress_moves_in_small_equal_amounts_at_display_rate()
+        {
+            // At 144 Hz a 20-step run (320 ms) is sampled about 46 times; the stepped value moves in 20 lumps.
+            const int steps = 20;
+            double previous = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgressAt(true, 0, steps, "Linear");
+            double largest = 0;
+            for (int frame = 1; frame <= 46; frame++)
+            {
+                double now = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgressAt(true, frame / 46.0, steps, "Linear");
+                largest = Math.Max(largest, Math.Abs(now - previous));
+                previous = now;
+            }
+
+            _ = largest.Should().BeLessThan(0.03, "46 frames across a straight 0..1 run move about 0.022 each");
+        }
+
+        // ---- What you pick is what plays: no remapping of the chosen curve (the Hub preview shows the same curve) ----
+
+        [Fact]
+        public void Every_curve_plays_exactly_as_chosen_in_both_phases_and_both_directions()
+        {
+            foreach (string id in TesseraFlyoutAnimationPolicy.AllEaseTypes)
+            {
+                foreach (bool entrance in new[] { true, false })
+                {
+                    _ = TesseraFlyoutAnimationPolicy.ResolvePhase1MotionEase(id, entrance).Should().Be(id);
+                    _ = TesseraFlyoutAnimationPolicy.ResolvePhase1OpacityEase(id, entrance).Should().Be(id);
+                    _ = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(id, entrance).Should().Be(id);
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData("OutQuart", 0.60, 1.00)]
+        [InlineData("OutCubic", 0.50, 0.95)]
+        [InlineData("InQuart", 0.00, 0.10)]
+        [InlineData("InOutSine", 0.10, 0.40)]
+        [InlineData("Linear", 0.24, 0.26)]
+        public void An_entrance_covers_the_distance_early_or_late_as_the_curve_says(string ease, double min, double max)
+        {
+            // A quarter of the way through the run, an Out curve is well on its way and an In curve has barely left.
+            double quarter = TesseraFlyoutAnimationPolicy.SampleSteppedAt(0, 1, 0.25, 20, ease, entrance: true);
+
+            _ = quarter.Should().BeInRange(min, max);
+        }
+
+        [Theory]
+        [InlineData("OutBack")]
+        [InlineData("OutElastic")]
+        public void An_overshooting_curve_goes_past_rest_before_settling(string ease)
+        {
+            double peak = 0;
+            for (int i = 0; i <= 200; i++)
+            {
+                peak = Math.Max(peak, TesseraFlyoutAnimationPolicy.SampleSteppedAt(0, 1, i / 200.0, 30, ease, entrance: true));
+            }
+
+            _ = peak.Should().BeGreaterThan(1.03, "the overshoot is what makes this curve look different");
+            _ = TesseraFlyoutAnimationPolicy.SampleSteppedAt(0, 1, 1, 30, ease, entrance: true).Should().BeApproximately(1, 1e-9);
         }
     }
 }

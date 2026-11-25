@@ -181,7 +181,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             return new TesseraSharedBackdropHost { Child = content };
         }
 
-        /// <summary>Frosted wash: translucent shell + soft art under solid tint (no OS acrylic).</summary>
+        /// <summary>Frosted wash: translucent shell + soft art under solid tint (no native translucency).</summary>
         public static Control WithArtWash(Control foreground, byte[]? png, double radius, Thickness pad, double? maxWidth = null, double? maxHeight = null)
         {
             Grid root = new();

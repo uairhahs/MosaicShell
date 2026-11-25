@@ -41,21 +41,48 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public void Capture_glint_flag_takes_the_folder_that_follows_it()
+        {
+            HostLaunchOptions.ResetForTests();
+            HostLaunchOptions.Apply([HostLaunchOptions.GlintCaptureFlag, "refs/windows"]);
+            _ = HostLaunchOptions.Mode.Should().Be(HostLaunchMode.GlintCapture);
+            _ = HostLaunchOptions.GlintCaptureDirectory.Should().Be("refs/windows");
+            HostLaunchOptions.ResetForTests();
+        }
+
+        [Fact]
+        public void Capture_glint_flag_without_a_folder_is_ignored()
+        {
+            HostLaunchOptions.ResetForTests();
+            HostLaunchOptions.Apply([HostLaunchOptions.GlintCaptureFlag]);
+            _ = HostLaunchOptions.Mode.Should().Be(HostLaunchMode.FullHub);
+            _ = HostLaunchOptions.GlintCaptureDirectory.Should().BeNull();
+        }
+
+        [Fact]
         public void Tray_only_flag_sets_mode()
         {
             HostLaunchOptions.ResetForTests();
             HostLaunchOptions.Apply(["--tray-only"]);
             _ = HostLaunchOptions.IsTrayOnly.Should().BeTrue();
-            _ = HostLaunchOptions.TesseraOsAcrylicTrial.Should().BeFalse();
+            _ = HostLaunchOptions.TesseraNativeTranslucencyTrial.Should().BeFalse();
         }
 
         [Fact]
-        public void Tessera_os_acrylic_flag_is_opt_in()
+        public void Tessera_native_translucency_flag_is_opt_in()
         {
             HostLaunchOptions.ResetForTests();
-            HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
-            _ = HostLaunchOptions.TesseraOsAcrylicTrial.Should().BeTrue();
+            HostLaunchOptions.Apply([HostLaunchOptions.TesseraNativeTranslucencyTrialFlag]);
+            _ = HostLaunchOptions.TesseraNativeTranslucencyTrial.Should().BeTrue();
             _ = HostLaunchOptions.IsTrayOnly.Should().BeFalse();
+        }
+
+        [Fact]
+        public void The_flag_name_from_before_the_native_translucency_rename_still_works()
+        {
+            HostLaunchOptions.ResetForTests();
+            HostLaunchOptions.Apply(["--tessera-os-acrylic"]);
+            _ = HostLaunchOptions.TesseraNativeTranslucencyTrial.Should().BeTrue();
         }
 
         [Fact]
@@ -64,16 +91,16 @@ namespace MosaicShell.Core.Tests
             HostLaunchOptions.ResetForTests();
             HostLaunchOptions.Apply([HostLaunchOptions.TesseraForceSoftwareRenderFlag]);
             _ = HostLaunchOptions.TesseraForceSoftwareRender.Should().BeTrue();
-            _ = HostLaunchOptions.TesseraOsAcrylicTrial.Should().BeFalse();
+            _ = HostLaunchOptions.TesseraNativeTranslucencyTrial.Should().BeFalse();
         }
 
         [Fact]
         public void Apply_resets_acrylic_trial_so_alpha_rollback_is_omit_the_flag()
         {
             HostLaunchOptions.ResetForTests();
-            HostLaunchOptions.Apply([HostLaunchOptions.TesseraOsAcrylicTrialFlag]);
+            HostLaunchOptions.Apply([HostLaunchOptions.TesseraNativeTranslucencyTrialFlag]);
             HostLaunchOptions.Apply(["--tray-only"]);
-            _ = HostLaunchOptions.TesseraOsAcrylicTrial.Should().BeFalse();
+            _ = HostLaunchOptions.TesseraNativeTranslucencyTrial.Should().BeFalse();
             _ = HostLaunchOptions.IsTrayOnly.Should().BeTrue();
         }
     }
@@ -138,7 +165,6 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Session_snapshot_round_trips_through_message_frame()
         {
-            _ = TesseraFlyoutDismissCoordinator.IpcMustEchoSessionSnapshot.Should().BeTrue();
             TesseraFlyoutSessionState session = new();
             _ = session.Begin(TesseraFlyoutSessionMode.Stacked, "vol", "Fluent");
             TesseraFlyoutSessionSnapshot snap = session.Snapshot(effectivelyShowing: false);

@@ -3,6 +3,7 @@ using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
 using MosaicShell.Core.Styles;
+using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Core.Modules.Tessera
 {
@@ -38,7 +39,7 @@ namespace MosaicShell.Core.Modules.Tessera
 
         public FlyoutRequest BuildPreview(HostServices services, TesseraSettings? settings = null)
         {
-            return Build(services, settings ?? LoadSettings(), "vol");
+            return Build(services, settings ?? LoadSettings(), FlyoutKinds.Volume);
         }
 
         public Dictionary<string, string> BuildPayload(
@@ -77,7 +78,7 @@ namespace MosaicShell.Core.Modules.Tessera
             // flyout also shows media. Reading false here skips the media card's own phase-2
             // reveal entirely (FlyoutMotionSession.Filter finds nothing phase-2-eligible) while
             // phase 1 still runs, which looks like a partial, broken entrance/exit.
-            p["showMediaStrip"] = kind.Equals("media", StringComparison.OrdinalIgnoreCase)
+            p["showMediaStrip"] = FlyoutKinds.Is(kind, FlyoutKinds.Media)
                                   || (!TesseraStatusFlyoutPolicy.IsStatusKind(kind)
                                       && settings.ShowMediaStripOnVolume
                                       && TesseraFlyoutTweenTargetCatalog.StyleRequestsVolumeMediaChrome(settings.Style))
@@ -90,7 +91,7 @@ namespace MosaicShell.Core.Modules.Tessera
             p["bakedFrost"] = settings.UseBackdropBlur ? "1" : "0";
             p["accent"] = TesseraAccentColor.NormalizeOrEmpty(settings.AccentColor);
 
-            if (kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
+            if (FlyoutKinds.Is(kind, FlyoutKinds.Locks)
                 && !p.ContainsKey("on")
                 && lastLock is not null)
             {
@@ -98,7 +99,7 @@ namespace MosaicShell.Core.Modules.Tessera
                 p["on"] = lastLock.IsOn ? "1" : "0";
             }
 
-            if (kind.Equals("flight", StringComparison.OrdinalIgnoreCase) && !p.ContainsKey("on"))
+            if (FlyoutKinds.Is(kind, FlyoutKinds.Flight) && !p.ContainsKey("on"))
             {
                 p["on"] = services.Airplane.IsEnabled ? "1" : "0";
             }
@@ -116,7 +117,7 @@ namespace MosaicShell.Core.Modules.Tessera
                 ? []
                 : new Dictionary<string, string>(existing);
 
-            if (kind.Equals("locks", StringComparison.OrdinalIgnoreCase))
+            if (FlyoutKinds.Is(kind, FlyoutKinds.Locks))
             {
                 string lockName = p.GetValueOrDefault("lock") ?? LockKeyKind.CapsLock.ToString();
                 if (!Enum.TryParse<LockKeyKind>(lockName, out LockKeyKind lk))
@@ -133,7 +134,7 @@ namespace MosaicShell.Core.Modules.Tessera
                 p["lock"] = lk.ToString();
                 p["on"] = on ? "1" : "0";
             }
-            else if (kind.Equals("flight", StringComparison.OrdinalIgnoreCase))
+            else if (FlyoutKinds.Is(kind, FlyoutKinds.Flight))
             {
                 p["on"] = services.Airplane.IsEnabled ? "1" : "0";
             }
@@ -147,7 +148,7 @@ namespace MosaicShell.Core.Modules.Tessera
             TesseraSettings settings,
             bool? showMediaStripOverride = null)
         {
-            Dictionary<string, string> p = BuildPayload(services, settings, "vol");
+            Dictionary<string, string> p = BuildPayload(services, settings, FlyoutKinds.Volume);
             if (showMediaStripOverride is { } on)
             {
                 p["showMediaStrip"] = on ? "1" : "0";

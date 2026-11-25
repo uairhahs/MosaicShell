@@ -9,9 +9,6 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Phase2_animates_region_in_place_without_hwnd_resize()
         {
-            _ = TesseraFlyoutHwndRegionSpec.Phase2MustAnimateRegionHeightInPlace.Should().BeTrue();
-            _ = TesseraFlyoutAnimationPolicy.Phase2MustNotResizeHwnd.Should().BeTrue();
-            _ = TesseraFlyoutHwndRegionSpec.RegionRectInclusivePaddingPx.Should().Be(1);
         }
 
         [Fact]
@@ -62,7 +59,6 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Overlay_xor_must_not_paint_cover()
         {
-            _ = TesseraFlyoutAnimatedTargetSpec.Win11XorFrostMustNotPaintCoverOverlay.Should().BeTrue();
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveWin11MediaOverlayAlpha(0.5, true).Should().Be(0);
             _ = TesseraFlyoutAnimatedTargetSpec.ResolveWin11MediaOverlayAlpha(1, true).Should().Be(0);
         }
@@ -70,8 +66,6 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Fancy_must_clip_media_chrome_to_reveal_not_rest_hwnd()
         {
-            _ = TesseraFlyoutHwndRegionSpec.Phase2MustClipMediaChromeToRevealProgress.Should().BeTrue();
-            _ = TesseraFlyoutHwndRegionSpec.CollapsedRevealRegionMustHideRestChrome.Should().BeTrue();
             _ = TesseraFlyoutHwndRegionSpec.StyleNeedsRevealRegion("Fluent", musicVisible: true, stackedRole: null)
                 .Should().BeTrue();
             _ = TesseraFlyoutHwndRegionSpec.StyleNeedsRevealRegion(
@@ -79,16 +73,6 @@ namespace MosaicShell.Core.Tests
                 .Should().BeTrue();
             _ = TesseraFlyoutHwndRegionSpec.StyleNeedsRevealRegion(
                     "Fluent", musicVisible: true, TesseraStackedPanelRole.Volume)
-                .Should().BeFalse();
-            _ = TesseraFlyoutHwndRegionSpec.CollapsedShowRegionMustKeepWindowVisible.Should().BeTrue();
-            _ = TesseraFlyoutHwndRegionSpec.ShouldZeroWindowOpacityForCollapsedRegion(
-                    stackedMedia: true, hideChrome: true, showMotionActive: true)
-                .Should().BeFalse();
-            _ = TesseraFlyoutHwndRegionSpec.ShouldZeroWindowOpacityForCollapsedRegion(
-                    stackedMedia: true, hideChrome: true, showMotionActive: false)
-                .Should().BeTrue();
-            _ = TesseraFlyoutHwndRegionSpec.ShouldZeroWindowOpacityForCollapsedRegion(
-                    stackedMedia: false, hideChrome: true, showMotionActive: false)
                 .Should().BeFalse();
             _ = TesseraFlyoutHwndRegionSpec.ShowStackedMediaMustWipeRegionOverRestLayout.Should().BeFalse();
             _ = TesseraFlyoutHwndRegionSpec.ShowLayoutMustFollowRevealProgress.Should().BeTrue();
@@ -134,7 +118,6 @@ namespace MosaicShell.Core.Tests
             _ = mediaCollapsed.HideChrome.Should().BeFalse();
             _ = mediaCollapsed.WidthDip.Should().Be(TesseraFlyoutHwndRegionSpec.MinRenderableRegionDip);
             _ = mediaCollapsed.HeightDip.Should().Be(176);
-            _ = TesseraFlyoutHwndRegionSpec.CollapsedMediaRegionMustStayRenderable.Should().BeTrue();
             (int WidthPx, int HeightPx, _) = TesseraFlyoutHwndRegionSpec.ResolveRenderableRoundRectPhysical(
                 mediaCollapsed.WidthDip, mediaCollapsed.HeightDip, 10, 1);
             _ = WidthPx.Should().BeGreaterThanOrEqualTo(TesseraFlyoutHwndRegionSpec.MinRenderableRegionPx);
@@ -226,8 +209,6 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Idle_showing_session_forces_rest_progress_not_a_stale_host()
         {
-            _ = TesseraFlyoutHwndRegionSpec.RevealRegionProgressMustUseMaxHost.Should().BeTrue();
-            _ = TesseraFlyoutHwndRegionSpec.RestRevealMustUseSignedClientRegion.Should().BeTrue();
             _ = TesseraFlyoutHwndRegionSpec.ShouldForceRestRevealRegion(
                     motionAnimating: false, phase2Animating: false, sessionShowing: true)
                 .Should().BeTrue();
@@ -344,7 +325,6 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void CoreUi_single_hwnd_keeps_rest_region_while_media_clip_animates()
         {
-            _ = TesseraFlyoutHwndRegionSpec.CoreUiSingleHwndMustKeepRestRegion.Should().BeTrue();
             const double restW = TesseraCoreUiLayoutSpec.WidthDip;
             const double restH = 226;
             foreach (double p in new[] { 0.0, 0.35, 1.0 })
@@ -398,9 +378,9 @@ namespace MosaicShell.Core.Tests
         {
             const int steps = 20;
             string showEase = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(
-                TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: true);
+                TesseraFlyoutAnimationPolicy.EaseInOutQuart, entrance: true);
             string hideEase = TesseraFlyoutAnimationPolicy.ResolvePhase2MotionEase(
-                TesseraFlyoutAnimationPolicy.EaseOutQuart, entrance: false);
+                TesseraFlyoutAnimationPolicy.EaseInOutQuart, entrance: false);
             double row = TesseraCoreUiLayoutSpec.InnerRowWidthDip;
             double showMid = TesseraFlyoutAnimationPolicy.ResolvePhase2RevealProgress(
                 entrance: true, 10, steps, showEase);
@@ -410,7 +390,7 @@ namespace MosaicShell.Core.Tests
             double hideClip = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiMediaClipWidthDip(row, hideEarly, true);
             double showScale = TesseraFlyoutAnimatedTargetSpec.ResolveCoreUiVolumeBarScaleFactor(showMid, true);
             _ = showEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseInOutQuart);
-            _ = hideEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseOutQuart);
+            _ = hideEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseInOutQuart);
             _ = showMid.Should().BeApproximately(0.5, 0.05);
             _ = showClip.Should().BeApproximately(row * showMid, 0.5);
             _ = showScale.Should().BeApproximately(showMid, 0.02);

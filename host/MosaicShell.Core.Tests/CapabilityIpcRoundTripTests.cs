@@ -58,6 +58,104 @@ namespace MosaicShell.Core.Tests
             _ = hiddenModuleId.Should().Be("Tessera");
         }
 
+        [Fact]
+        public async Task A_restarted_worker_can_reconnect_after_the_previous_one_went_away()
+        {
+            string pipeName = "MosaicShell.Test.Flyout." + Guid.NewGuid().ToString("N");
+            TaskCompletionSource<string> hidden = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            using CapabilityIpcFlyoutServer server = new(new RecordingPresenter(hidden: hidden), action => action(), pipeName);
+            server.Start();
+            IpcFlyoutPresenter first = new();
+            await first.ConnectAsync(pipeName: pipeName).WaitAsync(TimeSpan.FromSeconds(5));
+            first.Dispose();
+
+            using IpcFlyoutPresenter second = new();
+            await second.ConnectWithRetryAsync(TimeSpan.FromSeconds(8), pipeName: pipeName, attemptTimeoutMs: 500, retryDelayMs: 50).WaitAsync(TimeSpan.FromSeconds(12));
+            second.Hide("Tessera");
+
+            _ = (await hidden.Task.WaitAsync(TimeSpan.FromSeconds(5))).Should().Be("Tessera");
+        }
+
+        [Fact]
+        public async Task A_worker_that_connects_while_the_previous_one_is_leaving_is_not_dropped()
+        {
+            // On Unix a pipe is a socket whose listener the server instances share: a connect made while the previous
+            // client is still being served waits in that listener's queue. Disposing the old instance before the next
+            // one exists closed the listener and dropped the waiting worker, whose first message then went nowhere.
+            string pipeName = "MosaicShell.Test.Flyout." + Guid.NewGuid().ToString("N");
+            TaskCompletionSource<string> hidden = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            using CapabilityIpcFlyoutServer server = new(new RecordingPresenter(hidden: hidden), action => action(), pipeName);
+            server.Start();
+            IpcFlyoutPresenter first = new();
+            await first.ConnectAsync(pipeName: pipeName).WaitAsync(TimeSpan.FromSeconds(5));
+
+            using IpcFlyoutPresenter second = new();
+            Task connecting = second.ConnectWithRetryAsync(TimeSpan.FromSeconds(8), pipeName: pipeName, attemptTimeoutMs: 500, retryDelayMs: 50);
+            await Task.Delay(200);
+            first.Dispose();
+            await connecting.WaitAsync(TimeSpan.FromSeconds(12));
+            second.Hide("Tessera");
+
+            _ = (await hidden.Task.WaitAsync(TimeSpan.FromSeconds(5))).Should().Be("Tessera");
+        }
+
+        [Fact]
+        public async Task A_worker_reconnects_by_itself_when_the_host_restarts()
+        {
+            string pipeName = "MosaicShell.Test.Flyout." + Guid.NewGuid().ToString("N");
+            TaskCompletionSource<string> hiddenOnFirst = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            TaskCompletionSource<string> hiddenOnSecond = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            CapabilityIpcFlyoutServer firstHost = new(new RecordingPresenter(hidden: hiddenOnFirst), action => action(), pipeName);
+            firstHost.Start();
+            using IpcFlyoutPresenter worker = new();
+            using CancellationTokenSource stop = new();
+            Task keepConnected = worker.KeepConnectedAsync(stop.Token, pipeName, attemptTimeoutMs: 300, retryDelayMs: 50);
+            await WaitForAsync(() => worker.IsConnected, TimeSpan.FromSeconds(5));
+            worker.Hide("Tessera");
+            _ = await hiddenOnFirst.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+            firstHost.Dispose();
+            await WaitForAsync(() => !worker.IsConnected, TimeSpan.FromSeconds(5));
+            using CapabilityIpcFlyoutServer secondHost = new(new RecordingPresenter(hidden: hiddenOnSecond), action => action(), pipeName);
+            secondHost.Start();
+            await WaitForAsync(() => worker.IsConnected, TimeSpan.FromSeconds(10));
+            worker.Hide("Tessera");
+
+            _ = (await hiddenOnSecond.Task.WaitAsync(TimeSpan.FromSeconds(5))).Should().Be("Tessera");
+            stop.Cancel();
+            await keepConnected.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+
+        [Fact]
+        public async Task Keeping_connected_stops_quietly_when_cancelled_even_if_no_host_ever_appears()
+        {
+            using IpcFlyoutPresenter worker = new();
+            using CancellationTokenSource stop = new();
+            Task keepConnected = worker.KeepConnectedAsync(
+                stop.Token, "MosaicShell.Test.Flyout." + Guid.NewGuid().ToString("N"), attemptTimeoutMs: 100, retryDelayMs: 20);
+            await Task.Delay(300);
+
+            stop.Cancel();
+
+            await keepConnected.WaitAsync(TimeSpan.FromSeconds(5));
+            _ = worker.IsConnected.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task An_idle_connected_client_does_not_make_the_flyout_server_spin()
+        {
+            string pipeName = "MosaicShell.Test.Flyout." + Guid.NewGuid().ToString("N");
+            using CapabilityIpcFlyoutServer server = new(new RecordingPresenter(), action => action(), pipeName);
+            server.Start();
+            using IpcFlyoutPresenter client = new();
+            await client.ConnectAsync(pipeName: pipeName).WaitAsync(TimeSpan.FromSeconds(5));
+            await Task.Delay(200);
+
+            double share = await IdleCpu.LowestShareAsync();
+
+            _ = share.Should().BeLessThan(0.5, "the accept loop must wait for the connection to end, not retry in a tight loop");
+        }
+
         private static async Task WaitForAsync(Func<bool> condition, TimeSpan timeout)
         {
             DateTime deadline = DateTime.UtcNow + timeout;

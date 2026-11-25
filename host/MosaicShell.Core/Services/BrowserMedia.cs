@@ -64,4 +64,13 @@ namespace MosaicShell.Core.Services
 
         Task ToggleRepeatAsync();
     }
+
+    /// <summary>One browser tab's player, with a key that stays the same for that tab.</summary>
+    public sealed record BrowserTabPlayer(string Key, BrowserPlayerSnapshot Snapshot);
+
+    /// <summary>A browser source that can list every tab it hears from, not only the one it considers active.</summary>
+    public interface IBrowserPlayerList
+    {
+        IReadOnlyList<BrowserTabPlayer> Players { get; }
+    }
 }

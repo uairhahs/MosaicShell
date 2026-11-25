@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Avalonia.Rendering.SceneGraph;
 using Avalonia.Skia;
 using Avalonia.VisualTree;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules.Tessera;
 using SkiaSharp;
 
@@ -21,7 +22,7 @@ namespace MosaicShell.Host.Tiles.Tessera
 
         /// <summary>
         /// Opt-in GDI screen capture for glass. Off by default (Avalonia docs prefer OS transparency).
-        /// Set true only when OS acrylic is unavailable and BitBlt glass is explicitly desired.
+        /// Set true only when native translucency is unavailable and BitBlt glass is explicitly desired.
         /// </summary>
         public static bool AllowGdiScreenCapture { get; set; }
 
@@ -32,7 +33,7 @@ namespace MosaicShell.Host.Tiles.Tessera
         public static bool EmbeddedPreviewBuild { get; set; }
 
         /// <summary>OS AcrylicBlur trial: skip Skia frost slab; HWND blur + light edge only.</summary>
-        public static bool UseOsAcrylicChrome { get; set; }
+        public static bool UseNativeTranslucencyChrome { get; set; }
 
         /// <summary>Live flyout: skip inner TesseraChrome.Glass on Meter/Amber (see Core policy).</summary>
         public static bool SuppressInnerSkiaGlass { get; set; }
@@ -419,11 +420,11 @@ namespace MosaicShell.Host.Tiles.Tessera
             SKRect rect = SKRect.Create(0, 0, w, h);
             SKRoundRect round = new(rect, (float)cornerRadius, (float)cornerRadius);
 
-            bool osAcrylic = TesseraGlass.UseOsAcrylicChrome
+            bool nativeTranslucency = TesseraGlass.UseNativeTranslucencyChrome
                 && !TesseraGlass.PreviewMode
                 && !TesseraGlass.IsEmbeddedPreviewContext(this);
 
-            if (!osAcrylic)
+            if (!nativeTranslucency)
             {
                 // Always paint translucent frost chrome. Do NOT GDI/BitBlt or shared-capture into
                 // this layer, that self-captures the flyout as opaque black (Soft frost → black boxes).
@@ -435,7 +436,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             }
 
             bool drewBackdrop = false;
-            bool maySample = !osAcrylic
+            bool maySample = !nativeTranslucency
                 && TesseraGlass.UseBackdropBlur
                 && !TesseraGlass.PreviewMode
                 && !TesseraGlass.IsEmbeddedPreviewContext(this)
@@ -457,8 +458,13 @@ namespace MosaicShell.Host.Tiles.Tessera
                     lc, targetCanvas, sourceSurface, rect, round, blurRadius);
             }
 
-            if (osAcrylic)
+            if (nativeTranslucency)
             {
+                if (NativeTranslucencyAcrylicSpec.AppPaintsAcrylicLayers(NativeTranslucencyPlatform.Backend))
+                {
+                    TesseraGlassDrawOperation.DrawAcrylicLayers(lc, round, w, h);
+                }
+
                 TesseraGlassDrawOperation.DrawGlassChrome(lc, round);
             }
             else
@@ -618,8 +624,9 @@ namespace MosaicShell.Host.Tiles.Tessera
             int h,
             bool lighterFrost = false)
         {
-            // Recipe from 4fcc41a (pre-consolidation), dark slab + highlight so Soft frost reads.
-            byte baseAlpha = lighterFrost ? (byte)68 : (byte)96;
+            // Recipe from 4fcc41a (pre-consolidation), dark slab + highlight so Soft frost reads;
+            // Solid makes the slab dense.
+            byte baseAlpha = TesseraFlyoutMaterialFactory.GlassBaseAlpha(TesseraPalette.Material, lighterFrost);
             using SKPaint basePaint = new()
             {
                 Color = new SKColor(17, 17, 27, baseAlpha),
@@ -681,6 +688,52 @@ namespace MosaicShell.Host.Tiles.Tessera
                 BlendMode = SKBlendMode.SoftLight
             };
             canvas.DrawRoundRect(round, tintPaint);
+        }
+
+        /// <summary>
+        /// Tint, highlight and grain over a blur-only backdrop (KWin), so it reads as acrylic as it does on Windows.
+        /// Values from <see cref="NativeTranslucencyAcrylicSpec"/>.
+        /// </summary>
+        internal static void DrawAcrylicLayers(SKCanvas canvas, SKRoundRect round, int w, int h)
+        {
+            using SKPaint tint = new()
+            {
+                Color = new SKColor(
+                    NativeTranslucencyAcrylicSpec.TintR,
+                    NativeTranslucencyAcrylicSpec.TintG,
+                    NativeTranslucencyAcrylicSpec.TintB,
+                    NativeTranslucencyAcrylicSpec.TintAlpha),
+                IsAntialias = true
+            };
+            canvas.DrawRoundRect(round, tint);
+
+            using SKPaint highlight = new()
+            {
+                Shader = SKShader.CreateLinearGradient(
+                    new SKPoint(0, 0),
+                    new SKPoint(0, h * NativeTranslucencyAcrylicSpec.HighlightExtent),
+                    [
+                        new SKColor(255, 255, 255, NativeTranslucencyAcrylicSpec.HighlightTopAlpha),
+                        new SKColor(255, 255, 255, NativeTranslucencyAcrylicSpec.HighlightBottomAlpha)
+                    ],
+                    [0f, 1f],
+                    SKShaderTileMode.Clamp),
+                IsAntialias = true,
+                BlendMode = SKBlendMode.Plus
+            };
+            canvas.DrawRoundRect(round, highlight);
+
+            using SKPaint grain = new()
+            {
+                Shader = SKShader.CreatePerlinNoiseFractalNoise(0.85f, 0.6f, 2, 0),
+                Color = new SKColor(255, 255, 255, NativeTranslucencyAcrylicSpec.NoiseAlpha),
+                IsAntialias = true,
+                BlendMode = SKBlendMode.Overlay
+            };
+            _ = canvas.Save();
+            canvas.ClipRoundRect(round, antialias: true);
+            canvas.DrawRect(0, 0, w, h, grain);
+            canvas.Restore();
         }
 
         internal static void DrawGlassChrome(SKCanvas canvas, SKRoundRect round)

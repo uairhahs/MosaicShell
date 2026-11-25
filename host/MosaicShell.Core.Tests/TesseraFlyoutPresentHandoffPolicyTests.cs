@@ -9,18 +9,13 @@ namespace MosaicShell.Core.Tests
         public void Present_handoff_contracts_are_armed()
         {
             _ = TesseraFlyoutPresentHandoffPolicy.PresentMustInvalidatePendingQueuesOnSessionChange.Should().BeTrue();
-            _ = TesseraFlyoutPresentHandoffPolicy.PresentMustStopOutsideClickBeforeRearm.Should().BeTrue();
             _ = TesseraFlyoutPresentHandoffPolicy.SoftRefreshMustScheduleDeferredLastValue.Should().BeTrue();
-            _ = TesseraFlyoutOutsideClickPolicy.PresentMustStopPriorWatcherBeforeRearm.Should().BeTrue();
             _ = TesseraFlyoutLiveSyncPolicy.SoftRefreshMustScheduleDeferredLastValue.Should().BeTrue();
             _ = TesseraFlyoutPresentHandoffPolicy.SoftRefreshMustHonorSessionGeneration.Should().BeTrue();
-            _ = TesseraFlyoutPresentHandoffPolicy.HideAllMustRunHideSynchronouslyOnUiThread.Should().BeTrue();
             _ = TesseraFlyoutPresentHandoffPolicy.ShouldPostHideToUiThread(alreadyOnUiThread: true)
                 .Should().BeFalse();
             _ = TesseraFlyoutPresentHandoffPolicy.ShouldPostHideToUiThread(alreadyOnUiThread: false)
                 .Should().BeTrue();
-            _ = TesseraFlyoutOutsideClickPolicy.PatchMustRefreshBoundsWithoutRearm.Should().BeTrue();
-            _ = TesseraFlyoutLiveSyncPolicy.PatchImpliesOutsideClickRearm.Should().BeFalse();
         }
 
         [Theory]
@@ -51,8 +46,8 @@ namespace MosaicShell.Core.Tests
         {
             Dictionary<string, string> stripOn = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
             _ = TesseraFlyoutMaterialFactory
-                .OsAcrylicEligibleFromPayload(stripOn, "ModernFlyouts", kind: "locks")
-                .Should().Be(TesseraOsAcrylicTrialPolicy.IsEligibleFromPayload(stripOn, "ModernFlyouts"));
+                .NativeTranslucencyEligibleFromPayload(stripOn, "ModernFlyouts", kind: "locks")
+                .Should().Be(TesseraNativeTranslucencyPolicy.IsEligibleFromPayload(stripOn, "ModernFlyouts"));
         }
     }
 }

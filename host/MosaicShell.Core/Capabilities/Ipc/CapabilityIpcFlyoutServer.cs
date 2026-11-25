@@ -46,30 +46,82 @@ namespace MosaicShell.Core.Capabilities.Ipc
 
         private async Task AcceptLoopAsync()
         {
+            NamedPipeServerStream? next = null;
             while (!_cts.IsCancellationRequested)
             {
                 try
                 {
-                    NamedPipeServerStream pipe = new(
-                        _pipeName,
-                        PipeDirection.InOut,
-                        1,
-                        PipeTransmissionMode.Byte,
-                        PipeOptions.Asynchronous);
+                    NamedPipeServerStream pipe = next ?? CreatePipe();
+                    next = null;
 
-                    await pipe.WaitForConnectionAsync(_cts.Token).ConfigureAwait(false);
-                    lock (_gate)
+                    try
                     {
-                        _client?.Dispose();
-                        _client = new ServerConnection(pipe, HandleClientMessage, _runOnUiThread);
+                        await pipe.WaitForConnectionAsync(_cts.Token).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        // A client may have connected as the server was disposed; closing the pipe is what tells it.
+                        pipe.Dispose();
+                        throw;
                     }
 
-                    _client.StartReadLoop();
+                    ServerConnection connection = new(pipe, HandleClientMessage, _runOnUiThread);
+                    lock (_gate)
+                    {
+                        if (_disposed)
+                        {
+                            connection.Dispose();
+                            break;
+                        }
+
+                        _client?.Dispose();
+                        _client = connection;
+                    }
+
+                    connection.StartReadLoop();
+
+                    // One client at a time: the next instance opens once this client is gone. Waiting here is what lets the
+                    // next Worker connect after this one exits.
+                    await connection.Completion.WaitAsync(_cts.Token).ConfigureAwait(false);
+                    lock (_gate)
+                    {
+                        _client = ReferenceEquals(_client, connection) ? null : _client;
+                    }
+
+                    // Open the next instance before closing this one. On Unix the instances share one listening socket, and
+                    // a Worker that connected while this client was leaving waits in its queue; closing the last instance
+                    // first would close the listener and drop that Worker.
+                    try
+                    {
+                        next = CreatePipe();
+                    }
+                    finally
+                    {
+                        connection.Dispose();
+                    }
                 }
                 catch (OperationCanceledException) { break; }
-                catch { /* retry */ }
+                catch
+                {
+                    // Pausing keeps a persistent failure (no pipe can be created) from becoming a busy loop.
+                    try { await Task.Delay(RetryDelayMs, _cts.Token).ConfigureAwait(false); }
+                    catch (OperationCanceledException) { break; }
+                }
             }
+
+            next?.Dispose();
         }
+
+        /// <summary>
+        /// Two instances, so the next can open while the last client's is still closing; only one client is served at a
+        /// time, since the next instance is opened only after that client has gone.
+        /// </summary>
+        private NamedPipeServerStream CreatePipe()
+        {
+            return new NamedPipeServerStream(_pipeName, PipeDirection.InOut, 2, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+        }
+
+        private const int RetryDelayMs = 100;
 
         private void HandleClientMessage(CapabilityIpcMessage message)
         {
@@ -196,6 +248,9 @@ namespace MosaicShell.Core.Capabilities.Ipc
             {
                 _readLoop = Task.Run(ReadLoopAsync);
             }
+
+            /// <summary>Completes when the peer has disconnected or the connection was disposed.</summary>
+            public Task Completion => _readLoop ?? Task.CompletedTask;
 
             public void TrySend(CapabilityIpcMessage message)
             {

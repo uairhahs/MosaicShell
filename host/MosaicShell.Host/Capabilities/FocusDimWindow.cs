@@ -12,36 +12,75 @@ using MosaicShell.Core.Services;
 namespace MosaicShell.Host.Capabilities
 {
     /// <summary>
-    /// Full-screen dim behind Tessera flyouts. Hit-testing is off in Avalonia;
-    /// Win32 WS_EX_TRANSPARENT is kept so mouse still reaches windows underneath
-    /// (Avalonia IsHitTestVisible alone does not make the HWND click-through).
-    /// Uses constant LWA_ALPHA (not Transparent composition) so RedirectionSurface
-    /// builds stay a subtle wash instead of an opaque black fill via FallbackBrush.
+    /// Full-screen layer behind Tessera flyouts: the focus dim, and the outside-click hitbox on every platform (a press on
+    /// it dismisses the flyout and is swallowed, popup-menu style). On Windows it uses constant LWA_ALPHA (not Transparent
+    /// composition) so RedirectionSurface builds stay a subtle wash instead of an opaque black fill via FallbackBrush;
+    /// with the dim off it is one step above invisible, so it still takes the click.
     /// </summary>
     internal sealed class FocusDimWindow : Window
     {
         private int _monitorIndex;
+        private readonly FocusDimRoute _route;
+        private readonly bool _dimEnabled;
+        private readonly bool _onFlyoutScreen;
+        private readonly double _fixedScaling = 1.0;
 
-        public FocusDimWindow(int monitorIndexOneBased)
+        /// <summary>A press on the layer where it is the outside-click hitbox, at its screen pixel.</summary>
+        public event EventHandler<PixelPoint>? OutsideClicked;
+
+        /// <summary>
+        /// A bare outside-click hitbox over a screen other than the flyout's (see
+        /// <see cref="TesseraFocusDimPolicy.LayerCoversEveryScreen"/>). It is never dimmed and stays on that screen.
+        /// </summary>
+        public FocusDimWindow(Screen otherScreen, FocusDimRoute route)
+            : this(monitorIndexOneBased: 0, route, dimEnabled: false, onFlyoutScreen: false)
+        {
+            FixedBounds = otherScreen.Bounds;
+            _fixedScaling = otherScreen.Scaling > 0.1 ? otherScreen.Scaling : 1.0;
+        }
+
+        public FocusDimWindow(int monitorIndexOneBased, FocusDimRoute route, bool dimEnabled = true)
+            : this(monitorIndexOneBased, route, dimEnabled, onFlyoutScreen: true)
+        {
+        }
+
+        private FocusDimWindow(int monitorIndexOneBased, FocusDimRoute route, bool dimEnabled, bool onFlyoutScreen)
         {
             _monitorIndex = monitorIndexOneBased;
+            _route = route;
+            _dimEnabled = dimEnabled;
+            _onFlyoutScreen = onFlyoutScreen;
             Title = "MosaicShell - Focus dim";
             WindowDecorations = WindowDecorations.None;
             CanResize = false;
             Topmost = true;
             ShowInTaskbar = false;
+            X11WindowState.ReassertOnShow(this);
+            X11WindowState.DeclareOverlay(this);
             ShowActivated = false;
             Focusable = false;
-            IsHitTestVisible = false;
-            // Opaque HWND + layered constant alpha (see ApplySubtleDim). Avoid Transparent
-            // composition: with RedirectionSurface, FallbackBrush was painting a near-black fill.
-            TransparencyLevelHint = [WindowTransparencyLevel.None];
-            Background = new SolidColorBrush(Color.FromRgb(
+            IsHitTestVisible = TesseraFocusDimPolicy.LayerIsOutsideClickHitbox(route);
+            // Windows: opaque HWND + layered constant alpha (see ApplySubtleDim). Avoid Transparent
+            // composition there: with RedirectionSurface, FallbackBrush was painting a near-black fill.
+            // X11: a Transparent (ARGB) window whose background brush carries the dim alpha.
+            TransparencyLevelHint = TesseraFocusDimPolicy.PaintsAlphaInWindow(route)
+                ? [WindowTransparencyLevel.Transparent]
+                : [WindowTransparencyLevel.None];
+            Background = new SolidColorBrush(Color.FromArgb(
+                TesseraFocusDimPolicy.ResolveLayerAlpha(route, dimEnabled, onFlyoutScreen),
                 TesseraFocusDimPolicy.CrustR,
                 TesseraFocusDimPolicy.CrustG,
                 TesseraFocusDimPolicy.CrustB));
             Opacity = 0;
             Content = null;
+            PointerPressed += (_, e) =>
+            {
+                e.Handled = true;
+                PixelPoint fromWindow = this.PointToScreen(e.GetPosition(this));
+                (int X, int Y)? fromServer = TesseraFocusDimPolicy.ClickPointFromServer(_route) ? X11WindowLayer.PointerOnRoot() : null;
+                (int x, int y) = TesseraFocusDimPolicy.ResolveClickPoint(_route, (fromWindow.X, fromWindow.Y), fromServer);
+                OutsideClicked?.Invoke(this, new PixelPoint(x, y));
+            };
             Opened += (_, _) =>
             {
                 PlaceOnMonitor(_monitorIndex);
@@ -49,11 +88,31 @@ namespace MosaicShell.Host.Capabilities
             };
         }
 
+        /// <summary>The screen a bare hitbox covers; null for the layer that follows the flyout's monitor.</summary>
+        public PixelRect? FixedBounds { get; }
+
+        /// <summary>The screens other than the one this layer's monitor index resolves to.</summary>
+        public List<Screen> OtherScreens()
+        {
+            List<Screen> screens = Screens?.All?.ToList() ?? [];
+            Screen? target = ResolveScreen(screens, _monitorIndex) ?? Screens?.Primary;
+            return target is null ? [] : [.. screens.Where(s => s.Bounds != target.Bounds)];
+        }
+
         public void PlaceOnMonitor(int monitorIndexOneBased)
         {
             _monitorIndex = monitorIndexOneBased;
             try
             {
+                if (FixedBounds is PixelRect fixedBounds)
+                {
+                    Position = new PixelPoint(fixedBounds.X, fixedBounds.Y);
+                    Width = Math.Max(1, fixedBounds.Width / _fixedScaling);
+                    Height = Math.Max(1, fixedBounds.Height / _fixedScaling);
+                    ApplyDimChrome();
+                    return;
+                }
+
                 List<Screen> screens = Screens?.All?.ToList() ?? [];
                 Screen? screen = ResolveScreen(screens, _monitorIndex) ?? Screens?.Primary;
                 if (screen is null)
@@ -85,12 +144,19 @@ namespace MosaicShell.Host.Capabilities
         public void PrepareBeforeShow()
         {
             PlaceOnMonitor(_monitorIndex);
-            if (TesseraFocusDimPolicy.UseConstantLayeredAlpha)
+            if (_route == FocusDimRoute.X11ArgbInputShape)
             {
-                _ = Win32WindowChrome.ApplySubtleDim(this, TesseraFocusDimPolicy.ResolveLayeredAlpha());
+                // The XID exists from construction too, so the dim is click-through from its first frame.
+                _ = X11FocusDim.Apply(this, clickThrough: !TesseraFocusDimPolicy.LayerIsOutsideClickHitbox(_route));
+                return;
             }
 
-            Win32WindowChrome.ApplyClickThroughNow(this);
+            if (TesseraFocusDimPolicy.UseConstantLayeredAlpha)
+            {
+                _ = Win32WindowChrome.ApplySubtleDim(this, TesseraFocusDimPolicy.ResolveLayeredAlpha(_dimEnabled, _onFlyoutScreen));
+            }
+
+            Win32WindowChrome.ApplyOverlayStylesNow(this, clickThrough: !TesseraFocusDimPolicy.LayerIsOutsideClickHitbox(_route));
         }
 
         public void FadeIn()
@@ -101,12 +167,18 @@ namespace MosaicShell.Host.Capabilities
 
         private void ApplyDimChrome()
         {
-            if (TesseraFocusDimPolicy.UseConstantLayeredAlpha)
+            if (_route == FocusDimRoute.X11ArgbInputShape)
             {
-                _ = Win32WindowChrome.ApplySubtleDim(this, TesseraFocusDimPolicy.ResolveLayeredAlpha());
+                _ = X11FocusDim.Apply(this, clickThrough: !TesseraFocusDimPolicy.LayerIsOutsideClickHitbox(_route));
+                return;
             }
 
-            Win32WindowChrome.ApplyClickThrough(this);
+            if (TesseraFocusDimPolicy.UseConstantLayeredAlpha)
+            {
+                _ = Win32WindowChrome.ApplySubtleDim(this, TesseraFocusDimPolicy.ResolveLayeredAlpha(_dimEnabled, _onFlyoutScreen));
+            }
+
+            Win32WindowChrome.ApplyOverlayStyles(this, clickThrough: !TesseraFocusDimPolicy.LayerIsOutsideClickHitbox(_route));
         }
 
         public void InstantClose()
@@ -157,8 +229,18 @@ namespace MosaicShell.Host.Capabilities
         private const uint SwpNoSize = 0x0001;
         private const uint SwpNoActivate = 0x0010;
 
-        /// <summary>Same styles as <see cref="ApplyClickThrough"/>, applied at once (before Show).</summary>
+        /// <summary>Overlay styles plus click-through, applied at once (before Show); for the glint window.</summary>
         public static void ApplyClickThroughNow(Window window)
+        {
+            ApplyOverlayStylesNow(window, clickThrough: true);
+        }
+
+        /// <summary>
+        /// An overlay window's styles, applied at once: layered, never activated, no taskbar entry; click-through
+        /// (WS_EX_TRANSPARENT) only when <paramref name="clickThrough"/>, so a layer that is the outside-click hitbox
+        /// takes the click.
+        /// </summary>
+        public static void ApplyOverlayStylesNow(Window window, bool clickThrough)
         {
             try
             {
@@ -169,7 +251,8 @@ namespace MosaicShell.Host.Capabilities
                 }
 
                 nint current = GetWindowLongPtr(handle, GwlExStyle);
-                nint next = current | WsExLayered | WsExTransparent | WsExNoActivate | WsExToolWindow;
+                nint next = current | WsExLayered | WsExNoActivate | WsExToolWindow;
+                next = clickThrough ? next | WsExTransparent : next & ~WsExTransparent;
                 if (next != current)
                 {
                     _ = SetWindowLongPtr(handle, GwlExStyle, next);
@@ -177,34 +260,14 @@ namespace MosaicShell.Host.Capabilities
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[Win32 click-through] {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[Win32 overlay styles] {ex.Message}");
             }
         }
 
-        public static void ApplyClickThrough(Window window)
+        /// <summary><see cref="ApplyOverlayStylesNow"/>, posted until the window has loaded.</summary>
+        public static void ApplyOverlayStyles(Window window, bool clickThrough)
         {
-            Dispatcher.UIThread.Post(() =>
-            {
-                try
-                {
-                    nint handle = window.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
-                    if (handle == IntPtr.Zero)
-                    {
-                        return;
-                    }
-
-                    nint current = GetWindowLongPtr(handle, GwlExStyle);
-                    nint next = current | WsExLayered | WsExTransparent | WsExNoActivate | WsExToolWindow;
-                    if (next != current)
-                    {
-                        _ = SetWindowLongPtr(handle, GwlExStyle, next);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[Win32 click-through] {ex.Message}");
-                }
-            }, DispatcherPriority.Loaded);
+            Dispatcher.UIThread.Post(() => ApplyOverlayStylesNow(window, clickThrough), DispatcherPriority.Loaded);
         }
 
         public static void SetZOrder(Window window, IntPtr insertAfter)
@@ -600,7 +663,7 @@ namespace MosaicShell.Host.Capabilities
         private static extern bool IsWindowVisible(IntPtr hWnd);
 
         /// <summary>
-        /// Clip stacked OS acrylic flyouts to pill/card geometry. HWND backdrop is rectangular;
+        /// Clip stacked native translucency flyouts to pill/card geometry. HWND backdrop is rectangular;
         /// without a region, acrylic leaks outside inner rounded content.
         /// When <paramref name="applySynchronously"/> is true (status CapsLock), do not Post at
         /// Loaded: that races SoftFrost Opacity reveal and flashes a black rectangle.

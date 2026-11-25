@@ -52,6 +52,43 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public void Every_reporting_tab_is_listed_as_its_own_player()
+        {
+            (BrowserMediaSource source, BrowserSessionHub hub, _, int id, _) = Build();
+            Send(hub, id, Session("Humid", tab: 7));
+            Send(hub, id, Session("A video", tab: 9, origin: "https://www.youtube.com"));
+
+            IReadOnlyList<BrowserTabPlayer> players = source.Players;
+
+            _ = players.Select(p => (p.Key, p.Snapshot.Title, p.Snapshot.Name)).Should().BeEquivalentTo(
+            [
+                ($"c{id}_t7", "Humid", "YouTube Music"),
+                ($"c{id}_t9", "A video", "YouTube"),
+            ]);
+        }
+
+        [Fact]
+        public void A_tab_with_nothing_to_show_or_a_browser_gone_silent_is_not_listed()
+        {
+            (BrowserMediaSource source, BrowserSessionHub hub, _, int id, _) = Build();
+            Send(hub, id, Session("", tab: 3, state: "none"));
+            Send(hub, id, Session("Humid", tab: 7));
+            _ = source.Players.Select(p => p.Key).Should().Equal($"c{id}_t7");
+
+            _clock.Advance(BrowserSessionSelector.StalenessTimeout + TimeSpan.FromSeconds(1));
+
+            _ = source.Players.Should().BeEmpty();
+        }
+
+        [Theory]
+        [InlineData(1, 7, "c1_t7")]
+        [InlineData(12, -5, "c12_tm5")]
+        public void A_player_key_is_a_valid_bus_name_element(int connectionId, int tabId, string expected)
+        {
+            _ = BrowserMediaSource.PlayerKey(connectionId, tabId).Should().Be(expected);
+        }
+
+        [Fact]
         public void Nothing_is_playing_until_a_tab_reports()
         {
             (BrowserMediaSource source, _, _, _, _) = Build();

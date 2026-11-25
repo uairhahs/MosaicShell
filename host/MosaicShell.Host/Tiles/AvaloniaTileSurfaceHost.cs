@@ -4,11 +4,13 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform;
+using Avalonia.Threading;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Host.Capabilities;
+using MosaicShell.Host.Theming;
 using MosaicShell.Host.Tiles.Surfaces;
 
 namespace MosaicShell.Host.Tiles
@@ -177,15 +179,14 @@ namespace MosaicShell.Host.Tiles
         public string ModuleId { get; }
         public bool IsDesktopWidget { get; }
         private readonly IHostUiBridge _hostUi;
-        private bool _stuckToDesktop;
+        private TileZLayer _layer;
 
         public TileOverlayWindow(ModuleInfo info, Control surface, IHostUiBridge hostUi)
         {
             ModuleId = info.Id;
             _hostUi = hostUi;
             IsDesktopWidget = info.Kind == ModuleKind.Widget;
-            _stuckToDesktop = IsDesktopWidget
-                || info.Id.Equals("Pulse", StringComparison.OrdinalIgnoreCase);
+            _layer = TileZLayerPolicy.InitialLayer(info.Kind, info.Id);
 
             Title = $"MosaicShell: {info.DisplayName}";
             ApplyDefaultSize(info);
@@ -193,18 +194,28 @@ namespace MosaicShell.Host.Tiles
             MinHeight = 100;
             CanResize = true;
             WindowDecorations = WindowDecorations.None;
-            Topmost = !IsDesktopWidget && !_stuckToDesktop;
+            Topmost = TileZLayerPolicy.IsTopmost(_layer);
             ShowInTaskbar = false;
+            X11WindowState.ReassertOnShow(this);
+            PropertyChanged += (_, e) =>
+            {
+                // The window manager clears BELOW when the window is hidden, as it does ABOVE; ask again once mapped.
+                if (!OperatingSystem.IsWindows()
+                    && e.Property == IsVisibleProperty && e.NewValue is true && TileZLayerPolicy.IsBelow(_layer))
+                {
+                    Dispatcher.UIThread.Post(() => ApplyLayer(_layer), DispatcherPriority.Background);
+                }
+            };
             TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
             Background = Brushes.Transparent;
             // docs: OS may suppress transparency (battery saver / RDP)
-            TransparencyBackgroundFallback = new SolidColorBrush(Color.Parse("#1e1e2e"));
+            TransparencyBackgroundFallback = ThemeTokens.Brush(ThemeTokens.CardFill);
 
             Border shell = new()
             {
-                Background = new SolidColorBrush(Color.Parse("#E61e1e2e")),
-                CornerRadius = new CornerRadius(12),
-                BorderBrush = new SolidColorBrush(Color.Parse("#45475a")),
+                Background = ThemeTokens.Brush(ThemeTokens.CardFill, 0.9),
+                CornerRadius = ThemeTokens.OverlayRadius(),
+                BorderBrush = ThemeTokens.Brush(ThemeTokens.ControlStroke),
                 BorderThickness = new Thickness(1),
                 ClipToBounds = true,
                 // Content is the frame - no title strip.
@@ -251,25 +262,48 @@ namespace MosaicShell.Host.Tiles
 
         public void SendToDesktop()
         {
-            _stuckToDesktop = true;
-            Topmost = false;
-            // Avalonia Topmost cannot place HWND below other windows; SetWindowPos required.
-            Win32WindowChrome.SetZOrder(this, Win32WindowChrome.HwndBottom);
+            ApplyLayer(TileZLayer.Desktop);
         }
 
         public void BringToFront()
         {
-            _stuckToDesktop = false;
-            Topmost = true;
-            Win32WindowChrome.SetZOrder(this, Win32WindowChrome.HwndTopmost);
+            ApplyLayer(TileZLayer.AlwaysOnTop);
             Activate();
         }
 
         public void SetNormalZ()
         {
-            _stuckToDesktop = false;
-            Topmost = false;
-            Win32WindowChrome.SetZOrder(this, Win32WindowChrome.HwndNoTopmost);
+            ApplyLayer(TileZLayer.Normal);
+        }
+
+        /// <summary>Puts the window on <paramref name="layer"/> (see <see cref="TileZLayerPolicy"/>).</summary>
+        private void ApplyLayer(TileZLayer layer)
+        {
+            _layer = layer;
+            bool topmost = TileZLayerPolicy.IsTopmost(layer);
+            bool below = TileZLayerPolicy.IsBelow(layer);
+            if (OperatingSystem.IsWindows())
+            {
+                Topmost = topmost;
+                // Avalonia Topmost cannot place HWND below other windows; SetWindowPos required.
+                Win32WindowChrome.SetZOrder(this, below
+                    ? Win32WindowChrome.HwndBottom
+                    : topmost ? Win32WindowChrome.HwndTopmost : Win32WindowChrome.HwndNoTopmost);
+                return;
+            }
+
+            // A window cannot be both above and below: drop BELOW before Topmost asks for ABOVE, add it after.
+            bool canPlaceBelow = TileZLayerPolicy.CanPlaceBelow(isWindows: false, X11WindowLayer.HasDisplay());
+            if (canPlaceBelow && !below && IsVisible)
+            {
+                _ = X11WindowLayer.SetBelow(this, below: false);
+            }
+
+            Topmost = topmost;
+            if (canPlaceBelow && below && IsVisible)
+            {
+                _ = X11WindowLayer.SetBelow(this, below: true);
+            }
         }
 
         public void AlignTo(AlignPreset preset)
@@ -318,9 +352,19 @@ namespace MosaicShell.Host.Tiles
         protected override void OnOpened(EventArgs e)
         {
             base.OnOpened(e);
-            if (_stuckToDesktop)
+            if (!TileZLayerPolicy.IsBelow(_layer))
             {
-                SendToDesktop();
+                return;
+            }
+
+            if (OperatingSystem.IsWindows())
+            {
+                ApplyLayer(_layer);
+            }
+            else
+            {
+                // After the map has reached the window manager: EWMH applies a state message to a mapped window only.
+                Dispatcher.UIThread.Post(() => ApplyLayer(_layer), DispatcherPriority.Background);
             }
         }
 

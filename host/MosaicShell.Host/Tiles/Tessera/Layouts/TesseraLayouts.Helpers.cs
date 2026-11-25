@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Material.Icons;
 using Material.Icons.Avalonia;
 using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {
@@ -37,8 +38,8 @@ namespace MosaicShell.Host.Tiles.Tessera
                 }
             };
 
-            // OS acrylic: HWND is the material; nested Skia Glass left a square black plate on first paint.
-            return TesseraStatusFlyoutPolicy.PreferOsAcrylicEdgeOnlyChrome && TesseraGlass.UseOsAcrylicChrome
+            // Native translucency: HWND is the material; nested Skia Glass left a square black plate on first paint.
+            return TesseraStatusFlyoutPolicy.PreferNativeTranslucencyEdgeOnlyChrome && TesseraGlass.UseNativeTranslucencyChrome
                 ? new Border
                 {
                     Background = Brushes.Transparent,
@@ -197,8 +198,7 @@ namespace MosaicShell.Host.Tiles.Tessera
 
         private static bool IsStatus(TesseraFlyoutViewModel vm)
         {
-            return vm.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
-            || vm.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase);
+            return MediaFlyoutRouter.IsStatusKind(vm.Kind);
         }
 
         private static string FormatTime(double seconds)

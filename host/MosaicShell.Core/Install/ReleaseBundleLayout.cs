@@ -5,7 +5,10 @@ namespace MosaicShell.Core.Install
     /// </summary>
     public static class ReleaseBundleLayout
     {
-        /// <summary>True when <paramref name="root"/> contains Host exe, Mosaicist exe, and a Tiles folder.</summary>
+        /// <summary>
+        /// True when <paramref name="root"/> contains the Host and Mosaicist executables, under their Windows or Linux
+        /// names, and a Tiles folder.
+        /// </summary>
         public static bool IsBundleRoot(string root)
         {
             if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root))
@@ -13,10 +16,17 @@ namespace MosaicShell.Core.Install
                 return false;
             }
 
-            string hostExe = Path.Combine(root, HostInstallLayoutSpec.HostFolder, HostInstallLayoutSpec.HostExeName);
-            string mosaicistExe = Path.Combine(root, HostInstallLayoutSpec.MosaicistFolder, HostInstallLayoutSpec.MosaicistExeName);
+            string host = Path.Combine(root, HostInstallLayoutSpec.HostFolder);
+            string mosaicist = Path.Combine(root, HostInstallLayoutSpec.MosaicistFolder);
             string tiles = Path.Combine(root, HostInstallLayoutSpec.TilesFolder);
-            return File.Exists(hostExe) && File.Exists(mosaicistExe) && Directory.Exists(tiles);
+            return AnyExists(host, HostInstallLayoutSpec.HostExeName, HostInstallLayoutSpec.HostLinuxExeName)
+                && AnyExists(mosaicist, HostInstallLayoutSpec.MosaicistExeName, HostInstallLayoutSpec.MosaicistLinuxExeName)
+                && Directory.Exists(tiles);
+        }
+
+        private static bool AnyExists(string folder, string windowsName, string linuxName)
+        {
+            return File.Exists(Path.Combine(folder, windowsName)) || File.Exists(Path.Combine(folder, linuxName));
         }
 
         /// <summary>

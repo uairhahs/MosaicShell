@@ -25,6 +25,18 @@ namespace MosaicShell.Core.Capabilities.Platform
 
         /// <summary>Reuse the HWND but rebuild its content and present again.</summary>
         RebuildInPlace = 6,
+
+        /// <summary>
+        /// Same kind and style but a different structure (media strip, scale, material): a patch would leave the
+        /// content out of step with the request, so rebuild (F02). Produced by <see cref="FlyoutResolver"/> only.
+        /// </summary>
+        RebuildStructure = 7,
+
+        /// <summary>
+        /// A request arrived during an exit: cancel the exit and fade back in from the current opacity (F04).
+        /// Produced by <see cref="FlyoutResolver"/> only.
+        /// </summary>
+        ReviveDuringExit = 8,
     }
 
     /// <summary>Everything the ingress decision depends on, sampled once under the presenter lock.</summary>
@@ -80,6 +92,17 @@ namespace MosaicShell.Core.Capabilities.Platform
                 : TesseraStatusFlyoutPolicy.MustRecreateHwndAfterMediaShellKind(state.OpenKind, state.RequestKind) ? FlyoutIngressDecision.RecreateHwnd
                 : sameSurface && !state.OpenWindowVisible ? FlyoutIngressDecision.ReviveHidden
                 : FlyoutIngressDecision.RebuildInPlace;
+        }
+
+        /// <summary>
+        /// Whether <paramref name="decision"/> presents the flyout session: shows it from hidden or rebuilds it, so the
+        /// session chrome (the focus dim layer, which is also the outside-click hitbox, and stacking) must be set up again. Transient dismiss tears
+        /// that chrome down with the hide, a revived hidden window included. Only a patch of a session that is already
+        /// showing keeps what it has.
+        /// </summary>
+        public static bool PresentsSession(FlyoutIngressDecision decision)
+        {
+            return decision is not (FlyoutIngressDecision.PatchActiveSession or FlyoutIngressDecision.PatchVisibleCoalesced);
         }
 
         /// <summary>A patch may fail at the binding level; the presenter then falls back to this.</summary>

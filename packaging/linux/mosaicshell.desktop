@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=MosaicShell
+GenericName=Desktop shell extensions
+Comment=Flyouts, tiles and media controls for your desktop
+Exec=MosaicShell.Host
+Icon=mosaicshell
+Terminal=false
+Categories=Utility;
+StartupWMClass=MosaicShell.Host

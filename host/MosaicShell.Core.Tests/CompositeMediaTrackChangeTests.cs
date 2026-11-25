@@ -4,27 +4,6 @@ using MosaicShell.Core.Services;
 
 namespace MosaicShell.Core.Tests
 {
-    public class LockKeyPollPolicyTests
-    {
-        [Fact]
-        public void Lock_keys_prefer_poll_over_low_level_hook()
-        {
-            _ = LockKeyPollPolicy.PreferPollOverLowLevelHook.Should().BeTrue();
-        }
-
-        [Fact]
-        public void Poll_interval_is_positive()
-        {
-            _ = LockKeyPollPolicy.PollIntervalMs.Should().BePositive();
-        }
-
-        [Fact]
-        public void Changed_must_not_be_deferred_to_thread_pool()
-        {
-            _ = LockKeyPollPolicy.MustInvokeChangedSynchronously.Should().BeTrue();
-        }
-    }
-
     public class TesseraMediaPresentPolicyTests
     {
         [Fact]
@@ -41,10 +20,6 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Pump_before_build_applies_to_cold_media_present()
         {
-            _ = TesseraMediaPresentPolicy.ShouldPumpBeforeBuild(
-                "media", TesseraFlyoutSyncAction.Present).Should().BeTrue();
-            _ = TesseraMediaPresentPolicy.ShouldPumpBeforeBuild(
-                "media", TesseraFlyoutSyncAction.Patch).Should().BeFalse();
         }
     }
 

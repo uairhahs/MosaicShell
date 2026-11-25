@@ -5,9 +5,11 @@ namespace MosaicShell.Core.Capabilities.Platform
     /// Other processes use <see cref="Ipc.RemoteCapabilityHost"/> for Hub arm/disarm and
     /// <see cref="Ipc.IpcFlyoutPresenter"/> for flyout UI on Host.
     /// </summary>
-    public sealed class CapabilityDaemonCoordinator : IDisposable
+    public sealed class CapabilityDaemonCoordinator(string mutexName = CapabilityDaemonCoordinator.MutexName) : IDisposable
     {
-        private const string MutexName = @"Global\MosaicShell.CapabilityDaemon.v1";
+        /// <summary>The system-wide lock Host and Worker agree on; tests pass a name of their own.</summary>
+        public const string MutexName = @"Global\MosaicShell.CapabilityDaemon.v1";
+        private readonly string _mutexName = mutexName;
         private Mutex? _mutex;
 
         public bool OwnsDaemon { get; private set; }
@@ -22,7 +24,7 @@ namespace MosaicShell.Core.Capabilities.Platform
 
             try
             {
-                _mutex = new Mutex(initiallyOwned: true, MutexName, out bool createdNew);
+                _mutex = new Mutex(initiallyOwned: true, _mutexName, out bool createdNew);
                 if (!createdNew && !_mutex.WaitOne(0))
                 {
                     _mutex.Dispose();

@@ -15,8 +15,66 @@ defaults:
     shell: pwsh
 
 jobs:
+  # One tag for every job of the run, so a run that crosses midnight cannot give the Linux and Windows assets
+  # different dates.
+  version:
+    name: Resolve date-build version
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.tag.outputs.name }}
+
+    steps:
+      - name: Resolve date-build version
+        id: tag
+        shell: bash
+        run: |
+          # Date-build (not semver): yyyy.M.d-b{run_number}
+          name="$(date -u +%Y.%-m.%-d)-b${{ github.run_number }}"
+          echo "name=${name}" >>"$GITHUB_OUTPUT"
+          echo "Release tag: ${name}"
+
+  # The Linux tarball (packaging/linux/mosaicist.sh installs it), tested end to end before it is handed on.
+  linux:
+    name: Build Linux tarball
+    needs: version
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install dbus-daemon
+        run: command -v dbus-daemon || (sudo apt-get update && sudo apt-get install -y --no-install-recommends dbus-daemon)
+
+      - name: Test (Core)
+        working-directory: host
+        run: dotnet test MosaicShell.Core.Tests --configuration Release --nologo
+
+      - name: Build tarball
+        run: packaging/linux/build-tarball.sh "${{ needs.version.outputs.name }}" dist
+
+      - name: Install, update and uninstall
+        run: packaging/linux/test-install.sh "dist/MosaicShell-${{ needs.version.outputs.name }}-linux-x86_64.tar.gz"
+
+      - name: Upload tarball
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: linux-tarball
+          path: dist/MosaicShell-*-linux-x86_64.tar.gz
+          if-no-files-found: error
+
   build-and-release:
     name: Build Setup.exe and publish release
+    needs: [version, linux]
     if: github.ref == 'refs/heads/main'
     runs-on: windows-latest
 
@@ -31,11 +89,17 @@ jobs:
 
       - name: Resolve date-build version
         id: tag
+        env:
+          RELEASE_TAG: ${{ needs.version.outputs.name }}
         run: |
-          # Date-build (not semver): yyyy.M.d-b{run_number}
-          $name = (Get-Date -AsUTC).ToString("yyyy.M.d") + "-b${{ github.run_number }}"
-          "name=$name" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-          Write-Host "Release tag: $name"
+          "name=$env:RELEASE_TAG" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Release tag: $env:RELEASE_TAG"
+
+      - name: Download Linux tarball
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: linux-tarball
+          path: linux
 
       - name: Test (Core)
         working-directory: host
@@ -200,9 +264,13 @@ jobs:
           $zip = "${{ steps.zip.outputs.path }}"
           $alias = Join-Path $env:GITHUB_WORKSPACE "MosaicShell-Setup.exe"
           Copy-Item -Force $setup $alias
+          $linux = Get-ChildItem (Join-Path $env:GITHUB_WORKSPACE "linux") -Filter "MosaicShell-*-linux-x86_64.tar.gz" |
+            Select-Object -First 1
+          if (-not $linux) { throw "Linux tarball missing" }
 
           $sums = Join-Path $env:GITHUB_WORKSPACE "SHA256SUMS.txt"
-          $lines = foreach ($f in @($setup, $alias, $zip)) {
+          # packaging/linux/mosaicist.sh reads the tarball's line from this file too.
+          $lines = foreach ($f in @($setup, $alias, $zip, $linux.FullName)) {
             $h = (Get-FileHash $f -Algorithm SHA256).Hash.ToLowerInvariant()
             "$h  $(Split-Path -Leaf $f)"
           }
@@ -210,6 +278,7 @@ jobs:
           Set-Content -Path $sums -Value $lines -Encoding ascii
           "path=$sums" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           "alias=$alias" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "linux=$($linux.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           Get-Content $sums | Write-Host
 
       - name: Create GitHub release
@@ -222,6 +291,7 @@ jobs:
           $zip = "${{ steps.zip.outputs.path }}"
           $alias = "${{ steps.sums.outputs.alias }}"
           $sums = "${{ steps.sums.outputs.path }}"
+          $linux = "${{ steps.sums.outputs.linux }}"
 
           $signNote = if ($env:SIGNING_ENABLED -eq 'true') {
             "- Release binaries are Authenticode-signed via Azure Trusted Signing."
@@ -229,7 +299,7 @@ jobs:
             "- Builds are currently **unsigned** (SmartScreen may warn). Signing is deferred; see [.github/docs/release-signing.md](https://github.com/uairhahs/MosaicShell/blob/main/.github/docs/release-signing.md) when ready."
           }
 
-          gh release create $name $setup $alias $zip $sums `
+          gh release create $name $setup $alias $zip $linux $sums `
             --title "MosaicShell $name" `
             --latest `
             --generate-notes `
@@ -246,6 +316,11 @@ jobs:
           - Installs Tessera and Mixdeck module stubs by default.
           - Optional: **MosaicShell-Portable-$name.zip** for a folder-based layout.
           $signNote
+
+          ## Install on Linux (x86_64)
+          ``curl -fsSL https://raw.githubusercontent.com/uairhahs/MosaicShell/main/packaging/linux/mosaicist.sh | bash``
+
+          Per-user, no root: installs into ``~/.local`` with its own .NET runtime, adds a menu entry, and checks the download against **SHA256SUMS.txt**. Run it again to update; ``--uninstall`` removes it and keeps your settings. The tray, flyouts and media keys are built for KDE Plasma; other desktops are not checked yet.
 
           ## Verify
           **SHA256SUMS.txt** lists the SHA-256 of every asset. Host checks it automatically on update.

@@ -17,6 +17,16 @@ namespace MosaicShell.Core.Install
             "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
         ];
 
+        /// <summary>
+        /// Windows' invalid file-name characters, fixed rather than read from <see cref="Path.GetInvalidFileNameChars"/>:
+        /// on Linux that returns only '/' and NUL, so an id valid there could still fail to install on Windows.
+        /// </summary>
+        private static readonly char[] InvalidFileNameChars =
+        [
+            .. Enumerable.Range(0, 32).Select(c => (char)c),
+            '"', '<', '>', '|', ':', '*', '?', '\\', '/',
+        ];
+
         public static bool IsValidModuleId(string? moduleId)
         {
             if (string.IsNullOrWhiteSpace(moduleId) || moduleId.Length > MaxModuleIdLength)
@@ -35,7 +45,7 @@ namespace MosaicShell.Core.Install
                 return false;
             }
 
-            if (moduleId.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+            if (moduleId.IndexOfAny(InvalidFileNameChars) >= 0)
             {
                 return false;
             }

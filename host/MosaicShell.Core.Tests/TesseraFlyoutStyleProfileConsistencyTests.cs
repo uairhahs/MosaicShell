@@ -119,7 +119,7 @@ namespace MosaicShell.Core.Tests
                 return;
             }
 
-            _ = TesseraFlyoutTweenTargetCatalog.TryResolveMediaRestSizeDip(styleId, out double w, out double h)
+            _ = TweenCatalogTestSupport.TryResolveMediaRestSizeDip(styleId, out double w, out double h)
                 .Should().BeTrue($"{styleId} animates a media meter");
             _ = (w > 1 || h > 1).Should().BeTrue();
         }
@@ -137,13 +137,13 @@ namespace MosaicShell.Core.Tests
                 .Should().Be(TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).LayoutKind);
         }
 
-        /// <summary>Same drift risk as above, for H3 multi-window OS-acrylic eligibility.</summary>
+        /// <summary>Same drift risk as above, for H3 multi-window native-translucency eligibility.</summary>
         [Theory]
         [MemberData(nameof(TesseraStyleIds))]
-        public void Stacked_os_acrylic_support_matches_profile(string styleId)
+        public void Stacked_native_translucency_support_matches_profile(string styleId)
         {
-            _ = TesseraStackedPlacementPolicy.SupportsStackedOsAcrylic(styleId)
-                .Should().Be(TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).SupportsStackedOsAcrylic);
+            _ = TesseraStackedPlacementPolicy.SupportsStackedNativeTranslucency(styleId)
+                .Should().Be(TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).SupportsStackedNativeTranslucency);
         }
 
         /// <summary>
@@ -192,7 +192,7 @@ namespace MosaicShell.Core.Tests
         }
 
         /// <summary>
-        /// Batch 6. <c>TesseraOsAcrylicStackedPolicy.ResolvePanelCornerRadiusDip</c>'s (style,
+        /// Batch 6. <c>TesseraNativeTranslucencyStackedPolicy.ResolvePanelCornerRadiusDip</c>'s (style,
         /// role) design-radius switch used to be the sole owner of Meter's spine/pill split and
         /// Gnome's pill radius; the profile now carries both per-role values.
         /// </summary>
@@ -201,9 +201,9 @@ namespace MosaicShell.Core.Tests
         public void Panel_corner_radius_matches_profile(string styleId)
         {
             TesseraFlyoutStyleProfile profile = TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId);
-            _ = TesseraOsAcrylicStackedPolicy.ResolvePanelCornerRadiusDip(styleId, TesseraStackedPanelRole.Volume, 1000, 1000)
+            _ = TesseraNativeTranslucencyStackedPolicy.ResolvePanelCornerRadiusDip(styleId, TesseraStackedPanelRole.Volume, 1000, 1000)
                 .Should().Be(profile.VolumeCornerRadiusDip);
-            _ = TesseraOsAcrylicStackedPolicy.ResolvePanelCornerRadiusDip(styleId, TesseraStackedPanelRole.Media, 1000, 1000)
+            _ = TesseraNativeTranslucencyStackedPolicy.ResolvePanelCornerRadiusDip(styleId, TesseraStackedPanelRole.Media, 1000, 1000)
                 .Should().Be(profile.MediaCornerRadiusDip);
         }
 

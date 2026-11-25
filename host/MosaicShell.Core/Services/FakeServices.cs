@@ -265,4 +265,30 @@ namespace MosaicShell.Core.Services
             };
         }
     }
+
+    /// <summary>Test double - raise Triggered manually.</summary>
+    public sealed class FakeShellFlyoutTriggerSource : IShellFlyoutTriggerSource
+    {
+        public bool IsActive { get; private set; }
+        public event EventHandler<ShellFlyoutKind>? Triggered;
+        public void Start()
+        {
+            IsActive = true;
+        }
+
+        public void Stop()
+        {
+            IsActive = false;
+        }
+
+        public void Dispose()
+        {
+            Stop();
+        }
+
+        public void Raise(ShellFlyoutKind kind)
+        {
+            Triggered?.Invoke(this, kind);
+        }
+    }
 }

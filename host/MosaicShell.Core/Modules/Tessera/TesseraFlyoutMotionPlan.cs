@@ -89,20 +89,33 @@ namespace MosaicShell.Core.Modules.Tessera
                 TesseraFlyoutAnimationPolicy.StackedHideMustFinishPhase2BeforeAnySlotPhase1);
         }
 
-        public static IReadOnlyList<TesseraFlyoutMotionStepKind> MotionKinds(TesseraFlyoutMotionPlan plan)
+        /// <summary>
+        /// How long this plan runs as the Host plays it: phase 1 is the stepped slide (the fade without animation), phase 2
+        /// the stepped reveal, and each wait its own length. An outside click's glint ends with it.
+        /// </summary>
+        /// <param name="ani">The animation mode the flyout runs (0: fade only).</param>
+        /// <param name="aniSteps">Steps per phase; each step is one presentation interval.</param>
+        /// <param name="phase2Animates">
+        /// False when the flyout has nothing for phase 2 to reveal (a media strip asked for with no media playing): the Host
+        /// then skips the reveal but still waits before phase 1.
+        /// </param>
+        public int PlannedDurationMs(int ani, int aniSteps, bool phase2Animates = true)
         {
-            List<TesseraFlyoutMotionStepKind> kinds = [];
-            foreach (TesseraFlyoutMotionStep step in plan.Steps)
+            int total = 0;
+            foreach (TesseraFlyoutMotionStep step in Steps)
             {
-                if (step.Kind is TesseraFlyoutMotionStepKind.Begin or TesseraFlyoutMotionStepKind.Complete)
+                total += step.Kind switch
                 {
-                    continue;
-                }
-
-                kinds.Add(step.Kind);
+                    TesseraFlyoutMotionStepKind.Phase1 => ani <= 0
+                        ? TesseraFlyoutAnimationPolicy.ResolveDurationMs(0, aniSteps)
+                        : TesseraFlyoutAnimationPolicy.ResolvePhaseDurationMs(aniSteps),
+                    TesseraFlyoutMotionStepKind.Phase2 => phase2Animates ? TesseraFlyoutAnimationPolicy.ResolvePhaseDurationMs(aniSteps) : 0,
+                    TesseraFlyoutMotionStepKind.Wait => step.WaitMs,
+                    _ => 0,
+                };
             }
 
-            return kinds;
+            return total;
         }
 
         public static bool SlotParticipates(

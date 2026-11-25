@@ -5,7 +5,7 @@ using MosaicShell.Core.Styles;
 namespace MosaicShell.Core.Tests
 {
     /// <summary>
-    /// Desktop report 2026-10-04 (flyout scale 125%, OS acrylic on): Windows 11 and Modern Flyouts lost
+    /// Desktop report 2026-10-04 (flyout scale 125%, native translucency on): Windows 11 and Modern Flyouts lost
     /// the transport row at the bottom, Square showed translucent acrylic outside its rounded corners,
     /// and CoreUI's corners showed a faint outline. The region trace explained all of it: the HWND
     /// region mixed measured widths (already scaled by the flyout scale) with unscaled style heights

@@ -25,11 +25,11 @@ Media reveal is fade/clip only across every style; none of them run an independe
 
 Core contracts: `TesseraFlyoutAnimationPolicy`, `TesseraFlyoutTweenEngine`, `TesseraFlyoutRevealSpec`, `TesseraFlyoutHwndRegionSpec`, `TesseraFlyoutTweenTargetCatalog` (single source of truth for which styles/targets phase 2 addresses).
 
-Single-HWND Win11 Fancy applies a Win32 region whose height follows StrokeB (`ResolveWin11BorderHeightDip`) so the Transparent HWND hit-band matches the visible card. The client size stays rest-tall (`Phase2MustNotResizeHwnd`). Stacked OS acrylic (split HWNDs) is unchanged.
+Single-HWND Win11 Fancy applies a Win32 region whose height follows StrokeB (`ResolveWin11BorderHeightDip`) so the Transparent HWND hit-band matches the visible card. The client size stays rest-tall (`Phase2MustNotResizeHwnd`). Stacked native translucency (split HWNDs) is unchanged.
 
-## Stacked OS acrylic (Fancy) known delta
+## Stacked native translucency (Fancy) known delta
 
-When Hub **Stacked OS acrylic** is enabled, Tessera uses **split HWNDs** (volume + media slots). This path intentionally differs from YourFlyouts single-surface Fancy:
+When Hub **Stacked native translucency** is enabled, Tessera uses **split HWNDs** (volume + media slots). This path intentionally differs from YourFlyouts single-surface Fancy:
 
 | Aspect               | YourFlyouts (single skin)                              | MosaicShell stacked acrylic                                                                            |
 | -------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
