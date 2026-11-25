@@ -19,8 +19,8 @@ namespace MosaicShell.Host.Diagnostics
     /// <item><c>rendered-p0.30.png</c>: the glint's own pixels, rendered off-screen. These should match across OSes;
     /// a difference is in the drawing.</item>
     /// <item><c>screen-dark-p0.30.png</c>: what the screen shows in the glint window's rectangle, which holds only our
-    /// backdrop and glint windows. Differences are the compositor's blending. Windows only for now: the Host is an
-    /// XWayland client on KDE, and an X11 grab returns the X server's buffers, not KWin's composited output.</item>
+    /// backdrop and glint windows. Differences are the compositor's blending. Written on Windows only: the Host is an
+    /// XWayland client on Linux, and an X11 grab returns the X server's buffers, not the compositor's output.</item>
     /// </list>
     /// </summary>
     internal static class GlintReferenceCapture

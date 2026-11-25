@@ -4,7 +4,7 @@ namespace MosaicShell.Core.Services.Kde
     public sealed record KdeDisplay(string DbusName, bool IsInternal, int Brightness, int MaxBrightness);
 
     /// <summary>
-    /// Screen brightness through PowerDevil, following the brightness keys (user decision, 2026-11-22): the value is
+    /// Screen brightness through PowerDevil, following the brightness keys: the value is
     /// the built-in panel's (else the first display's), and a change moves every display by the same step with
     /// AdjustBrightnessRatio, as the keys do, so the flyout and the keys never disagree. Kept pure so it is tested on
     /// every OS.

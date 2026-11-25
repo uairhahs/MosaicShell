@@ -5,7 +5,7 @@ using MosaicShell.Core.Services;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {
-    /// <summary>YourFlyouts Fluent palette - accent from settings or SysAccent; shell alpha from soft-frost material.</summary>
+    /// <summary>YourFlyouts Fluent palette: accent from settings or the system accent; shell alpha from soft-frost material.</summary>
     public static class TesseraPalette
     {
         public static Color Crust { get; } = Color.FromRgb(0x11, 0x11, 0x1b);
@@ -37,7 +37,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             RefreshAccentFromSystem();
         }
 
-        /// <summary>Apply configured accent or fall back to Windows system accent.</summary>
+        /// <summary>Apply the configured accent, or the system accent (<see cref="SystemAccent"/>) when none is set.</summary>
         public static void ApplyAccentFromSettings(string? accentColor)
         {
             if (TesseraAccentColor.TryParse(accentColor, out byte r, out byte g, out byte b))

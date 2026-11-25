@@ -22,8 +22,8 @@ namespace MosaicShell.Core.Modules.Tessera
             H2Win11EvalSignedOff && H3StackedVolumeMediaSignedOff;
 
         /// <summary>
-        /// KDE Plasma (KWin blur behind the card's rounded region). On since 2026-11-22 at the user's request, so the
-        /// Hub offers it there and the saved choice is authoritative; the visual comparison with Windows is ongoing.
+        /// KDE Plasma (KWin blur behind the card's rounded region). On, so the Hub offers it there and the saved choice
+        /// is authoritative while its look is compared with Windows.
         /// Turn off to fall back to the launch flag only, as Windows worked before H2.
         /// </summary>
         public static bool KdeEvalSignedOff => true;

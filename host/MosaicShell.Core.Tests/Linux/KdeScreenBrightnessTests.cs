@@ -8,7 +8,7 @@ namespace MosaicShell.Core.Tests.Linux
 {
     /// <summary>
     /// <see cref="KdeScreenBrightness"/> on a real dbus-daemon against a stand-in PowerDevil with an external monitor
-    /// listed first and the built-in panel second, as on the user's machine (2026-11-22).
+    /// listed first and the built-in panel second, as PowerDevil lists a laptop with an external monitor.
     /// </summary>
     public sealed class KdeScreenBrightnessTests : IAsyncLifetime
     {
