@@ -3,6 +3,7 @@ using MosaicShell.Core.Services;
 using MosaicShell.Core.Services.Kde;
 using MosaicShell.Core.Services.Linux;
 using Tmds.DBus.Protocol;
+using static MosaicShell.Core.Tests.TestWaits;
 
 namespace MosaicShell.Core.Tests.Linux
 {
@@ -13,8 +14,6 @@ namespace MosaicShell.Core.Tests.Linux
     /// </summary>
     public sealed class KGlobalAccelShellFlyoutTriggersTests : IAsyncLifetime
     {
-        private static readonly TimeSpan Patience = TimeSpan.FromSeconds(5);
-
         private PrivateDBus? _dbus;
         private FakeKGlobalAccel? _kglobalaccel;
         private KGlobalAccelShellFlyoutTriggers? _triggers;
@@ -47,22 +46,6 @@ namespace MosaicShell.Core.Tests.Linux
             {
                 return [.. _seen];
             }
-        }
-
-        private static async Task<bool> EventuallyAsync(Func<bool> condition)
-        {
-            DateTime until = DateTime.UtcNow + Patience;
-            while (DateTime.UtcNow < until)
-            {
-                if (condition())
-                {
-                    return true;
-                }
-
-                await Task.Delay(20);
-            }
-
-            return condition();
         }
 
         private async Task StartAndWaitAsync()

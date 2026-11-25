@@ -5,6 +5,7 @@ using MosaicShell.Core.Services;
 using MosaicShell.Core.Services.Kde;
 using MosaicShell.Core.Services.Linux;
 using MosaicShell.Core.Services.Wayland;
+using static MosaicShell.Core.Tests.TestWaits;
 
 namespace MosaicShell.Core.Tests.Linux
 {
@@ -14,8 +15,6 @@ namespace MosaicShell.Core.Tests.Linux
     /// </summary>
     public sealed class WaylandIdleServiceTests : IDisposable
     {
-        private static readonly TimeSpan Patience = TimeSpan.FromSeconds(5);
-
         private readonly string _dir = Path.Combine(Path.GetTempPath(), "mosaic-idle-" + Guid.NewGuid().ToString("N"));
 
         public WaylandIdleServiceTests()
@@ -26,22 +25,6 @@ namespace MosaicShell.Core.Tests.Linux
         public void Dispose()
         {
             Directory.Delete(_dir, recursive: true);
-        }
-
-        private static async Task<bool> EventuallyAsync(Func<bool> condition)
-        {
-            DateTime until = DateTime.UtcNow + Patience;
-            while (DateTime.UtcNow < until)
-            {
-                if (condition())
-                {
-                    return true;
-                }
-
-                await Task.Delay(20);
-            }
-
-            return condition();
         }
 
         [Fact]

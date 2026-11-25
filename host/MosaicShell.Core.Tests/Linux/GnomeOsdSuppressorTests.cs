@@ -3,6 +3,7 @@ using MosaicShell.Core.Services.Gnome;
 using MosaicShell.Core.Services.Kde;
 using MosaicShell.Core.Services.Linux;
 using Tmds.DBus.Protocol;
+using static MosaicShell.Core.Tests.TestWaits;
 
 namespace MosaicShell.Core.Tests.Linux
 {
@@ -13,8 +14,6 @@ namespace MosaicShell.Core.Tests.Linux
     /// </summary>
     public sealed class GnomeOsdSuppressorTests : IAsyncLifetime
     {
-        private static readonly TimeSpan Patience = TimeSpan.FromSeconds(5);
-
         private PrivateDBus? _dbus;
         private DBusConnection? _observer;
         private FakeGnomeSettings? _settings;
@@ -47,22 +46,6 @@ namespace MosaicShell.Core.Tests.Linux
             }
 
             return Task.CompletedTask;
-        }
-
-        private static async Task<bool> EventuallyAsync(Func<Task<bool>> condition)
-        {
-            DateTime until = DateTime.UtcNow + Patience;
-            while (DateTime.UtcNow < until)
-            {
-                if (await condition())
-                {
-                    return true;
-                }
-
-                await Task.Delay(20);
-            }
-
-            return await condition();
         }
 
         private async Task<bool> GuardOwnedAsync()

@@ -3,30 +3,13 @@ using FluentAssertions;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Services.Linux;
 using MosaicShell.Core.Services.Rfkill;
+using static MosaicShell.Core.Tests.TestWaits;
 
 namespace MosaicShell.Core.Tests.Linux
 {
     /// <summary><see cref="RfkillAirplaneModeService"/> against a stand-in <c>/dev/rfkill</c>, and once against the real one.</summary>
     public sealed class RfkillAirplaneModeServiceTests
     {
-        private static readonly TimeSpan Patience = TimeSpan.FromSeconds(5);
-
-        private static async Task<bool> EventuallyAsync(Func<bool> condition)
-        {
-            DateTime until = DateTime.UtcNow + Patience;
-            while (DateTime.UtcNow < until)
-            {
-                if (condition())
-                {
-                    return true;
-                }
-
-                await Task.Delay(20);
-            }
-
-            return condition();
-        }
-
         private static RfkillEvent Radio(uint idx, byte op, bool blocked)
         {
             return new RfkillEvent(idx, 1, op, SoftBlocked: blocked, HardBlocked: false);

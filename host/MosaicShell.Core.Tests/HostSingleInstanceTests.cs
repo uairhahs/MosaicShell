@@ -1,6 +1,7 @@
 using FluentAssertions;
 using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.HostPlatform;
+using static MosaicShell.Core.Tests.TestWaits;
 
 namespace MosaicShell.Core.Tests
 {
@@ -10,28 +11,11 @@ namespace MosaicShell.Core.Tests
     /// </summary>
     public sealed class HostSingleInstanceTests : IDisposable
     {
-        private static readonly TimeSpan Patience = TimeSpan.FromSeconds(5);
         private readonly string _root = Directory.CreateTempSubdirectory("ms-instance-").FullName;
 
         public void Dispose()
         {
             try { Directory.Delete(_root, recursive: true); } catch { /* a held lock on Windows; the OS cleans temp */ }
-        }
-
-        private static async Task<bool> EventuallyAsync(Func<bool> condition)
-        {
-            DateTime until = DateTime.UtcNow + Patience;
-            while (DateTime.UtcNow < until)
-            {
-                if (condition())
-                {
-                    return true;
-                }
-
-                await Task.Delay(20);
-            }
-
-            return condition();
         }
 
         [Fact]

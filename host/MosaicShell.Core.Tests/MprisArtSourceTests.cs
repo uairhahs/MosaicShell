@@ -3,6 +3,7 @@ using System.Net;
 using FluentAssertions;
 using MosaicShell.Core.Services.BrowserBridge;
 using MosaicShell.Core.Services.Mpris;
+using static MosaicShell.Core.Tests.TestWaits;
 
 namespace MosaicShell.Core.Tests
 {
@@ -13,7 +14,6 @@ namespace MosaicShell.Core.Tests
     /// </summary>
     public sealed class MprisArtSourceTests : IDisposable
     {
-        private static readonly TimeSpan Patience = TimeSpan.FromSeconds(5);
         private static readonly byte[] Png = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0, 1, 2, 3, 4];
         private static readonly byte[] Jpeg = [0xFF, 0xD8, 0xFF, 0xE0, 0, 0x10, 0x4A, 0x46, 0x49, 0x46, 0, 1, 9, 9];
 

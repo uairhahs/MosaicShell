@@ -3,6 +3,7 @@ using MosaicShell.Core.Services;
 using MosaicShell.Core.Services.Kde;
 using MosaicShell.Core.Services.Linux;
 using Tmds.DBus.Protocol;
+using static MosaicShell.Core.Tests.TestWaits;
 
 namespace MosaicShell.Core.Tests.Linux
 {
@@ -14,8 +15,6 @@ namespace MosaicShell.Core.Tests.Linux
     public sealed class KGlobalAccelHotkeyServiceTests : IAsyncLifetime
     {
         private const int CtrlAltM = 0x0C00004D;
-        private static readonly TimeSpan Patience = TimeSpan.FromSeconds(5);
-
         private PrivateDBus? _dbus;
         private FakeKGlobalAccelRegistry? _kglobalaccel;
         private KGlobalAccelHotkeyService? _hotkeys;
@@ -38,22 +37,6 @@ namespace MosaicShell.Core.Tests.Linux
             _kglobalaccel?.Dispose();
             _dbus?.Dispose();
             return Task.CompletedTask;
-        }
-
-        private static async Task<bool> EventuallyAsync(Func<bool> condition)
-        {
-            DateTime until = DateTime.UtcNow + Patience;
-            while (DateTime.UtcNow < until)
-            {
-                if (condition())
-                {
-                    return true;
-                }
-
-                await Task.Delay(20);
-            }
-
-            return condition();
         }
 
         [LinuxBusFact]

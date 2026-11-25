@@ -2,6 +2,7 @@ using FluentAssertions;
 using MosaicShell.Core.Services.Gnome;
 using MosaicShell.Core.Services.Linux;
 using Tmds.DBus.Protocol;
+using static MosaicShell.Core.Tests.TestWaits;
 
 namespace MosaicShell.Core.Tests.Linux
 {
@@ -13,8 +14,6 @@ namespace MosaicShell.Core.Tests.Linux
     /// </summary>
     public sealed class MutterIdleServiceTests : IAsyncLifetime
     {
-        private static readonly TimeSpan Patience = TimeSpan.FromSeconds(5);
-
         private PrivateDBus? _dbus;
         private FakeMutterIdle? _mutter;
         private MutterIdleService? _idle;
@@ -39,22 +38,6 @@ namespace MosaicShell.Core.Tests.Linux
             _mutter?.Dispose();
             _dbus?.Dispose();
             return Task.CompletedTask;
-        }
-
-        private static async Task<bool> EventuallyAsync(Func<bool> condition)
-        {
-            DateTime until = DateTime.UtcNow + Patience;
-            while (DateTime.UtcNow < until)
-            {
-                if (condition())
-                {
-                    return true;
-                }
-
-                await Task.Delay(20);
-            }
-
-            return condition();
         }
 
         private async Task StartAndWaitAsync()

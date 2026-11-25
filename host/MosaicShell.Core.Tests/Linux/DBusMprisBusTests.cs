@@ -2,6 +2,7 @@ using FluentAssertions;
 using MosaicShell.Core.Services.Linux;
 using MosaicShell.Core.Services.Mpris;
 using Tmds.DBus.Protocol;
+using static MosaicShell.Core.Tests.TestWaits;
 
 namespace MosaicShell.Core.Tests.Linux
 {
@@ -11,8 +12,6 @@ namespace MosaicShell.Core.Tests.Linux
     /// </summary>
     public sealed class DBusMprisBusTests : IAsyncLifetime
     {
-        private static readonly TimeSpan Patience = TimeSpan.FromSeconds(5);
-
         private PrivateDBus? _dbus;
         private FakeMprisPlayer? _player;
         private DBusMprisBus? _bus;
@@ -41,22 +40,6 @@ namespace MosaicShell.Core.Tests.Linux
             }
 
             _dbus?.Dispose();
-        }
-
-        private static async Task<bool> EventuallyAsync(Func<bool> condition)
-        {
-            DateTime until = DateTime.UtcNow + Patience;
-            while (DateTime.UtcNow < until)
-            {
-                if (condition())
-                {
-                    return true;
-                }
-
-                await Task.Delay(20);
-            }
-
-            return condition();
         }
 
         [LinuxBusFact]

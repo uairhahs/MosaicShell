@@ -4,6 +4,7 @@ using MosaicShell.Core.Services;
 using MosaicShell.Core.Services.Kde;
 using MosaicShell.Core.Services.Linux;
 using Tmds.DBus.Protocol;
+using static MosaicShell.Core.Tests.TestWaits;
 
 namespace MosaicShell.Core.Tests.Linux
 {
@@ -14,8 +15,6 @@ namespace MosaicShell.Core.Tests.Linux
     /// </summary>
     public sealed class PlasmaAirplaneModeServiceTests : IAsyncLifetime
     {
-        private static readonly TimeSpan Patience = TimeSpan.FromSeconds(5);
-
         private PrivateDBus? _dbus;
         private FakePlasmaNm? _plasma;
         private FakeRadios? _radios;
@@ -51,22 +50,6 @@ namespace MosaicShell.Core.Tests.Linux
             }
 
             return Task.CompletedTask;
-        }
-
-        private static async Task<bool> EventuallyAsync(Func<bool> condition)
-        {
-            DateTime until = DateTime.UtcNow + Patience;
-            while (DateTime.UtcNow < until)
-            {
-                if (condition())
-                {
-                    return true;
-                }
-
-                await Task.Delay(20);
-            }
-
-            return condition();
         }
 
         private void WriteState(bool on)

@@ -2,30 +2,13 @@ using System.Threading.Channels;
 using FluentAssertions;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Services.Linux;
+using static MosaicShell.Core.Tests.TestWaits;
 
 namespace MosaicShell.Core.Tests.Linux
 {
     /// <summary><see cref="ParecAudioLevelService"/> against a stand-in recorder that yields chunks of float32 samples.</summary>
     public sealed class ParecAudioLevelServiceTests
     {
-        private static readonly TimeSpan Patience = TimeSpan.FromSeconds(5);
-
-        private static async Task<bool> EventuallyAsync(Func<bool> condition)
-        {
-            DateTime until = DateTime.UtcNow + Patience;
-            while (DateTime.UtcNow < until)
-            {
-                if (condition())
-                {
-                    return true;
-                }
-
-                await Task.Delay(20);
-            }
-
-            return condition();
-        }
-
         private static byte[] Samples(float value, int count)
         {
             byte[] bytes = new byte[count * 4];

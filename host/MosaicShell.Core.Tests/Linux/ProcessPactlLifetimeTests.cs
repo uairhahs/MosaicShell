@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.Versioning;
 using FluentAssertions;
 using MosaicShell.Core.Services.Linux;
+using static MosaicShell.Core.Tests.TestWaits;
 
 namespace MosaicShell.Core.Tests.Linux
 {
@@ -11,7 +12,6 @@ namespace MosaicShell.Core.Tests.Linux
     /// </summary>
     public sealed class ProcessPactlLifetimeTests : IDisposable
     {
-        private static readonly TimeSpan Patience = TimeSpan.FromSeconds(5);
         private readonly string _dir = Directory.CreateTempSubdirectory("pactl-lifetime-").FullName;
 
         public void Dispose()

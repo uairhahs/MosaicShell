@@ -2,6 +2,7 @@ using FluentAssertions;
 using MosaicShell.Core.Services.Kde;
 using MosaicShell.Core.Services.Linux;
 using Tmds.DBus.Protocol;
+using static MosaicShell.Core.Tests.TestWaits;
 
 namespace MosaicShell.Core.Tests.Linux
 {
@@ -11,8 +12,6 @@ namespace MosaicShell.Core.Tests.Linux
     /// </summary>
     public sealed class KdeScreenBrightnessTests : IAsyncLifetime
     {
-        private static readonly TimeSpan Patience = TimeSpan.FromSeconds(5);
-
         private PrivateDBus? _dbus;
         private FakePowerDevil? _powerDevil;
         private KdeScreenBrightness? _brightness;
@@ -49,22 +48,6 @@ namespace MosaicShell.Core.Tests.Linux
         }
 
         private int Changes => Volatile.Read(ref _changes);
-
-        private static async Task<bool> EventuallyAsync(Func<bool> condition)
-        {
-            DateTime until = DateTime.UtcNow + Patience;
-            while (DateTime.UtcNow < until)
-            {
-                if (condition())
-                {
-                    return true;
-                }
-
-                await Task.Delay(10);
-            }
-
-            return condition();
-        }
 
         [LinuxBusFact]
         public async Task Reads_the_built_in_panel_even_when_it_is_listed_second()

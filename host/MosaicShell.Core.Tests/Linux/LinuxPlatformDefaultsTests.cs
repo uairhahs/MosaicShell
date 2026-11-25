@@ -1,6 +1,7 @@
 using FluentAssertions;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Services.Linux;
+using static MosaicShell.Core.Tests.TestWaits;
 
 namespace MosaicShell.Core.Tests.Linux
 {
@@ -11,24 +12,6 @@ namespace MosaicShell.Core.Tests.Linux
     /// </summary>
     public sealed class LinuxPlatformDefaultsTests
     {
-        private static readonly TimeSpan Patience = TimeSpan.FromSeconds(5);
-
-        private static async Task<bool> EventuallyAsync(Func<bool> condition)
-        {
-            DateTime until = DateTime.UtcNow + Patience;
-            while (DateTime.UtcNow < until)
-            {
-                if (condition())
-                {
-                    return true;
-                }
-
-                await Task.Delay(20);
-            }
-
-            return condition();
-        }
-
         [LinuxBusFact]
         public async Task The_media_stack_presents_a_player_on_the_bus_and_drives_it()
         {

@@ -2,30 +2,13 @@ using System.Threading.Channels;
 using FluentAssertions;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Services.Linux;
+using static MosaicShell.Core.Tests.TestWaits;
 
 namespace MosaicShell.Core.Tests.Linux
 {
     /// <summary><see cref="PulseAppAudioService"/> against a stand-in pactl that serves sink-inputs and records writes.</summary>
     public sealed class PulseAppAudioServiceTests
     {
-        private static readonly TimeSpan Patience = TimeSpan.FromSeconds(5);
-
-        private static async Task<bool> EventuallyAsync(Func<bool> condition)
-        {
-            DateTime until = DateTime.UtcNow + Patience;
-            while (DateTime.UtcNow < until)
-            {
-                if (condition())
-                {
-                    return true;
-                }
-
-                await Task.Delay(20);
-            }
-
-            return condition();
-        }
-
         [Fact]
         public async Task Nothing_runs_until_the_sessions_are_asked_for()
         {

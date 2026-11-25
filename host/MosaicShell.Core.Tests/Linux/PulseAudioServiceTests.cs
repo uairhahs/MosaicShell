@@ -2,6 +2,7 @@ using System.Threading.Channels;
 using FluentAssertions;
 using MosaicShell.Core.Services.Linux;
 using MosaicShell.Core.Services.Pulse;
+using static MosaicShell.Core.Tests.TestWaits;
 
 namespace MosaicShell.Core.Tests.Linux
 {
@@ -12,7 +13,6 @@ namespace MosaicShell.Core.Tests.Linux
     /// </summary>
     public sealed class PulseAudioServiceTests : IDisposable
     {
-        private static readonly TimeSpan Patience = TimeSpan.FromSeconds(5);
         private readonly FakePactl _pactl = new();
         private PulseAudioService? _service;
         private int _changes;
@@ -27,22 +27,6 @@ namespace MosaicShell.Core.Tests.Linux
             _service = new PulseAudioService(_pactl, resubscribeDelay: TimeSpan.FromMilliseconds(20));
             _service.Changed += (_, _) => Interlocked.Increment(ref _changes);
             return _service;
-        }
-
-        private static async Task<bool> EventuallyAsync(Func<bool> condition)
-        {
-            DateTime until = DateTime.UtcNow + Patience;
-            while (DateTime.UtcNow < until)
-            {
-                if (condition())
-                {
-                    return true;
-                }
-
-                await Task.Delay(10);
-            }
-
-            return condition();
         }
 
         private int Changes => Volatile.Read(ref _changes);
