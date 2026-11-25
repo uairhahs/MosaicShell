@@ -116,6 +116,26 @@ namespace MosaicShell.Core.Modules.Tessera
             return nowMs >= FirstFrameWaitMs ? ProgressAt(nowMs - FirstFrameWaitMs) : 0;
         }
 
+        /// <summary>The shortest the glint plays, so one that appears late beside a short exit still reads as a glint.</summary>
+        public const double MinimumSpanMs = 160;
+
+        /// <summary>
+        /// Progress toward <paramref name="endMs"/>, the moment the flyout's exit ends (all times from Show), so the glint
+        /// and the flyout disappear together. Counted from the first frame on screen as <see cref="ProgressSinceFirstFrame"/>
+        /// does, over whatever is left, and never over less than <see cref="MinimumSpanMs"/>.
+        /// </summary>
+        public static double ProgressToward(double? firstFrameMs, double nowMs, double endMs)
+        {
+            double start = firstFrameMs ?? FirstFrameWaitMs;
+            if (nowMs < start)
+            {
+                return 0;
+            }
+
+            double span = Math.Max(endMs - start, MinimumSpanMs);
+            return Math.Clamp((nowMs - start) / span, 0, 1);
+        }
+
         /// <summary>How long the glint waits for its first frame before it counts from Show anyway.</summary>
         public const double FirstFrameWaitMs = 250;
 

@@ -51,6 +51,39 @@ namespace MosaicShell.Core.Tests
                 .Should().BeApproximately(expected, 1e-9);
         }
 
+        [Theory]
+        [InlineData(100.0, 100.0, 740.0, 0.0)]
+        [InlineData(100.0, 420.0, 740.0, 0.5)]
+        [InlineData(100.0, 740.0, 740.0, 1.0)]
+        [InlineData(100.0, 2000.0, 740.0, 1.0)]
+        public void Toward_an_end_the_ripple_finishes_exactly_when_the_flyout_does(
+            double firstFrameMs, double nowMs, double endMs, double expected)
+        {
+            // An outside click starts the flyout's exit and the ripple together; the ripple ran a fixed 520 ms while a
+            // Fluent exit with the media strip took 750, so the ripple was gone while the flyout was still leaving.
+            _ = TesseraOutsideClickRippleSpec.ProgressToward(firstFrameMs, nowMs, endMs).Should().BeApproximately(expected, 1e-9);
+        }
+
+        [Fact]
+        public void Toward_an_end_without_a_frame_it_counts_from_the_frame_wait()
+        {
+            double start = TesseraOutsideClickRippleSpec.FirstFrameWaitMs;
+
+            _ = TesseraOutsideClickRippleSpec.ProgressToward(null, start - 1, 740).Should().Be(0);
+            _ = TesseraOutsideClickRippleSpec.ProgressToward(null, (start + 740) / 2, 740).Should().BeApproximately(0.5, 1e-9);
+        }
+
+        [Fact]
+        public void A_ripple_that_appears_late_still_plays_long_enough_to_read()
+        {
+            // A short exit (the 250 ms fade) and a cold window's late first frame could leave a few milliseconds.
+            double first = 230;
+            double span = TesseraOutsideClickRippleSpec.MinimumSpanMs;
+
+            _ = TesseraOutsideClickRippleSpec.ProgressToward(first, first + (span / 2), 250).Should().BeApproximately(0.5, 1e-9);
+            _ = TesseraOutsideClickRippleSpec.MinimumSpanMs.Should().BeInRange(120, 250);
+        }
+
         [Fact]
         public void The_ripple_is_brief()
         {

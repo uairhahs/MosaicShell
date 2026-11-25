@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules.Tessera;
@@ -944,7 +945,9 @@ namespace MosaicShell.Host.Capabilities
                     }
                 }
 
-                OutsideClickRippleWindow? cold = OutsideClickRippleWindow.Play(at, X11FocusDim.ResolveRoute(), screens);
+                double? exitMs = PlannedTesseraExitMs();
+                OutsideClickRippleWindow? cold = OutsideClickRippleWindow.Play(at, X11FocusDim.ResolveRoute(), screens, exitMs);
+                Log($"ripple toward exit={exitMs?.ToString("0") ?? "none"}ms");
                 if (cold is not null)
                 {
                     LogRippleFirstFrame(cold, "cold");
@@ -954,6 +957,33 @@ namespace MosaicShell.Host.Capabilities
             {
                 Log($"ripple failed: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// How long the Tessera flyout being dismissed takes to leave, from the same plan its exit runs, so the glint ends
+        /// with it; null when no Tessera flyout is up.
+        /// </summary>
+        private double? PlannedTesseraExitMs()
+        {
+            List<FlyoutWindow> showing;
+            lock (_gate)
+            {
+                IEnumerable<string> keys = _stackedSession is not null ? _stackedSession.SlotKeys : [ModuleIds.Tessera];
+                showing = [.. keys.Select(k => _windows.TryGetValue(k, out FlyoutWindow? w) ? w : null).OfType<FlyoutWindow>()];
+            }
+
+            if (showing.Count == 0)
+            {
+                return null;
+            }
+
+            FlyoutRequest request = showing[0].FlyoutRequest;
+            bool showMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(request.Payload);
+            bool stacked = showing.Any(static w => w.StackedRole is not null);
+            // Phase 2 reveals the media strip's parts; with none in the flyout the Host skips it.
+            bool phase2Animates = showing.Any(static w => w.GetVisualDescendants().OfType<TesseraRevealHost>().Any());
+            return TesseraFlyoutMotionPlan.ResolveHide(request.Ani, request.StyleId, showMedia, stacked)
+                .PlannedDurationMs(request.Ani, request.AniSteps, phase2Animates);
         }
 
         /// <summary>Logs how long after the play the glint's first frame came, and the window's transparency.</summary>

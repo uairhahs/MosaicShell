@@ -110,8 +110,12 @@ namespace MosaicShell.Host.Capabilities
         /// <summary>Show to first rendered frame of the last play, in ms; null until that frame (for the log).</summary>
         public double? FirstFrameLatencyMs { get; private set; }
 
-        /// <summary>Plays one ripple centered on <paramref name="click"/> (screen pixels), where the route allows it.</summary>
-        public static OutsideClickRippleWindow? Play(PixelPoint click, FocusDimRoute route, Screens? screens)
+        /// <summary>
+        /// Plays one ripple centered on <paramref name="click"/> (screen pixels), where the route allows it. With
+        /// <paramref name="endMs"/> (the flyout's exit length, from now) it finishes when the flyout does; without, it runs
+        /// its own <see cref="TesseraOutsideClickRippleSpec.DurationMs"/>.
+        /// </summary>
+        public static OutsideClickRippleWindow? Play(PixelPoint click, FocusDimRoute route, Screens? screens, double? endMs = null)
         {
             if (!TesseraOutsideClickRippleSpec.ShouldPlay(route))
             {
@@ -120,6 +124,7 @@ namespace MosaicShell.Host.Capabilities
 
             OutsideClickRippleWindow ripple = new(click, ScalingAt(click, screens), route);
             ripple.ApplyClickThrough();
+            ripple._endMs = endMs;
             ripple.Show();
             ripple.Start(closeWhenDone: true);
             return ripple;
@@ -154,6 +159,7 @@ namespace MosaicShell.Host.Capabilities
 
         private bool _closeWhenDone;
         private double? _firstFrameMs;
+        private double? _endMs;
 
         private void Start(bool closeWhenDone)
         {
@@ -173,7 +179,9 @@ namespace MosaicShell.Host.Capabilities
         private void OnFrame()
         {
             double now = _clock.Elapsed.TotalMilliseconds;
-            double progress = TesseraOutsideClickRippleSpec.ProgressSinceFirstFrame(_firstFrameMs, now);
+            double progress = _endMs is double end
+                ? TesseraOutsideClickRippleSpec.ProgressToward(_firstFrameMs, now, end)
+                : TesseraOutsideClickRippleSpec.ProgressSinceFirstFrame(_firstFrameMs, now);
             ApplyFrame(progress);
             if (progress >= 1)
             {
