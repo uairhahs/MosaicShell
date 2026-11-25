@@ -20,6 +20,8 @@ namespace MosaicShell.Host.Capabilities
         private readonly Ellipse _ring;
         private readonly GradientStop[] _ringStops;
         private readonly Ellipse _glow;
+        private readonly Rectangle _aurora;
+        private readonly Panel _auroraLayer;
         private readonly Stopwatch _clock = new();
         private readonly DispatcherTimer _frames;
 
@@ -75,8 +77,21 @@ namespace MosaicShell.Host.Capabilities
                 IsHitTestVisible = false,
             };
 
+            // The aurora: the ring's own brush over the whole stage (so its colours line up with the ring's), clipped to
+            // a wavy band outside the ring each frame and blurred as a layer, so the clip's edge dissolves.
+            _aurora = new Rectangle { Width = _side, Height = _side, Fill = sheen, IsHitTestVisible = false };
+            _auroraLayer = new Panel
+            {
+                Width = _side,
+                Height = _side,
+                Effect = new BlurEffect { Radius = TesseraOutsideClickRippleSpec.AuroraBlurDip },
+                IsHitTestVisible = false,
+            };
+            _auroraLayer.Children.Add(_aurora);
+
             Canvas stage = new() { Width = _side, Height = _side, IsHitTestVisible = false };
             stage.Children.Add(_glow);
+            stage.Children.Add(_auroraLayer);
             stage.Children.Add(_ring);
             Content = stage;
             ApplyFrame(0);
@@ -188,6 +203,8 @@ namespace MosaicShell.Host.Capabilities
             Canvas.SetTop(_ring, center - radius);
             _ring.StrokeThickness = TesseraOutsideClickRippleSpec.StrokeAt(progress);
             _ring.Opacity = TesseraOutsideClickRippleSpec.OpacityAt(progress);
+            _aurora.Clip = AuroraBand(center, radius, progress);
+            _auroraLayer.Opacity = _ring.Opacity * TesseraOutsideClickRippleSpec.AuroraShare;
             for (int i = 0; i < _ringStops.Length; i++)
             {
                 // A conic gradient starts at the top and runs clockwise; the spec measures clockwise from the right.
@@ -195,6 +212,37 @@ namespace MosaicShell.Host.Capabilities
                 (byte r, byte g, byte b) = TesseraOutsideClickRippleSpec.RingColorAt(angle, progress);
                 _ringStops[i].Color = Color.FromRgb(r, g, b);
             }
+        }
+
+        /// <summary>The band from the ring out to the aurora's wavy edge (even-odd: outer outline minus the ring's disc).</summary>
+        private static StreamGeometry AuroraBand(double center, double radius, double progress)
+        {
+            int n = TesseraOutsideClickRippleSpec.AuroraSamples;
+            StreamGeometry band = new();
+            using StreamGeometryContext ctx = band.Open();
+            ctx.SetFillRule(FillRule.EvenOdd);
+            for (int edge = 0; edge < 2; edge++)
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    double angle = 360.0 * i / n;
+                    double r = edge == 0 ? radius + TesseraOutsideClickRippleSpec.AuroraReachAt(angle, progress) : radius;
+                    double t = angle * Math.PI / 180;
+                    Point point = new(center + (r * Math.Cos(t)), center + (r * Math.Sin(t)));
+                    if (i == 0)
+                    {
+                        ctx.BeginFigure(point, isFilled: true);
+                    }
+                    else
+                    {
+                        ctx.LineTo(point);
+                    }
+                }
+
+                ctx.EndFigure(isClosed: true);
+            }
+
+            return band;
         }
 
         private void ApplyClickThrough()

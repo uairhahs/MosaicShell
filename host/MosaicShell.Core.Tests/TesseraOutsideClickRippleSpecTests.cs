@@ -249,5 +249,58 @@ namespace MosaicShell.Core.Tests
             _ = (x + (sizePx / 2)).Should().Be(clickX);
             _ = (y + (sizePx / 2)).Should().Be(clickY);
         }
+
+        [Fact]
+        public void The_aurora_edge_waves_round_the_ring_instead_of_tracing_a_circle()
+        {
+            // Borealis, not a circle: the curtain's outer reach must differ clearly from one side of the ring to another.
+            double[] reach = [.. Enumerable.Range(0, 360).Select(a => TesseraOutsideClickRippleSpec.AuroraReachAt(a, 0))];
+            _ = (reach.Max() - reach.Min()).Should().BeGreaterThan(TesseraOutsideClickRippleSpec.AuroraReachDip / 2);
+        }
+
+        [Theory]
+        [InlineData(0.0)]
+        [InlineData(0.5)]
+        [InlineData(1.0)]
+        public void The_aurora_stays_outside_the_ring_and_within_its_reach(double progress)
+        {
+            for (int a = 0; a < 360; a++)
+            {
+                _ = TesseraOutsideClickRippleSpec.AuroraReachAt(a, progress)
+                    .Should().BeInRange(0, TesseraOutsideClickRippleSpec.AuroraReachDip);
+            }
+        }
+
+        [Fact]
+        public void The_aurora_edge_closes_on_itself_with_no_seam()
+        {
+            _ = TesseraOutsideClickRippleSpec.AuroraReachAt(360, 0.3)
+                .Should().BeApproximately(TesseraOutsideClickRippleSpec.AuroraReachAt(0, 0.3), 1e-9);
+        }
+
+        [Fact]
+        public void The_aurora_drifts_as_the_glint_plays()
+        {
+            // A frozen outline would read as a fixed blob; the curtain sways as it closes.
+            double moved = Enumerable.Range(0, 360)
+                .Max(a => Math.Abs(TesseraOutsideClickRippleSpec.AuroraReachAt(a, 0.5) - TesseraOutsideClickRippleSpec.AuroraReachAt(a, 0)));
+            _ = moved.Should().BeGreaterThan(1);
+        }
+
+        [Fact]
+        public void The_aurora_is_softer_and_fainter_than_the_ring()
+        {
+            _ = TesseraOutsideClickRippleSpec.AuroraBlurDip.Should().BeGreaterThan(TesseraOutsideClickRippleSpec.BlurRadiusDip);
+            _ = TesseraOutsideClickRippleSpec.AuroraShare.Should().BeInRange(0.1, 0.9);
+        }
+
+        [Fact]
+        public void The_window_holds_the_widest_aurora_and_its_blur()
+        {
+            double reach = (TesseraOutsideClickRippleSpec.StartDiameterDip / 2)
+                + TesseraOutsideClickRippleSpec.AuroraReachDip
+                + (2 * TesseraOutsideClickRippleSpec.AuroraBlurDip);
+            _ = (TesseraOutsideClickRippleSpec.WindowSizeDip / 2).Should().BeGreaterThanOrEqualTo(reach);
+        }
     }
 }

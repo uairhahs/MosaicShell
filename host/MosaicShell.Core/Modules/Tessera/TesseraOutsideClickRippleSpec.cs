@@ -31,8 +31,20 @@ namespace MosaicShell.Core.Modules.Tessera
         /// <summary>Overall opacity at the click; it falls to 0 by the end.</summary>
         public const double PeakOpacity = 0.9;
 
-        /// <summary>Square window side: the widest ring, its stroke and its blur, with a little to spare.</summary>
-        public const double WindowSizeDip = StartDiameterDip + StrokeStartDip + (4 * BlurRadiusDip) + 4;
+        /// <summary>Aurora curtain round the ring: how far its wavy outer edge reaches past the ring at most.</summary>
+        public const double AuroraReachDip = 8;
+
+        /// <summary>Blur on the curtain, heavier than the ring's, so the outer edge dissolves like a borealis.</summary>
+        public const double AuroraBlurDip = 5;
+
+        /// <summary>The curtain's opacity as a share of the ring's.</summary>
+        public const double AuroraShare = 0.5;
+
+        /// <summary>Points round the curtain's outer edge.</summary>
+        public const int AuroraSamples = 96;
+
+        /// <summary>Square window side: the widest aurora and its blur (which also holds the ring), with a little to spare.</summary>
+        public const double WindowSizeDip = StartDiameterDip + (2 * AuroraReachDip) + (4 * AuroraBlurDip) + 4;
 
         /// <summary>Where the glint starts (degrees clockwise from the right, screen y down): upper left, the sun.</summary>
         public const double GlintStartDeg = 225;
@@ -123,6 +135,20 @@ namespace MosaicShell.Core.Modules.Tessera
         public static double GlowOpacityAt(double progress)
         {
             return OpacityAt(progress) * GlowShare;
+        }
+
+        /// <summary>
+        /// How far the aurora reaches past the ring at <paramref name="angleDeg"/>: three waves of different counts round
+        /// the ring, each drifting its own way as the glint plays, shrinking with the ring.
+        /// </summary>
+        public static double AuroraReachAt(double angleDeg, double progress)
+        {
+            double t = angleDeg * Math.PI / 180;
+            double p = Math.Clamp(progress, 0, 1);
+            double wave = (0.5 * Math.Sin((3 * t) + (2 * Math.PI * 0.6 * p) + 0.4))
+                + (0.3 * Math.Sin((5 * t) - (2 * Math.PI * 0.9 * p) + 1.7))
+                + (0.2 * Math.Sin((8 * t) + (2 * Math.PI * 1.3 * p) + 3.1));
+            return AuroraReachDip * (DiameterAt(p) / StartDiameterDip) * (0.5 + (0.5 * wave));
         }
 
         public static double StrokeAt(double progress)
