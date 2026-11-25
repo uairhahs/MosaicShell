@@ -13,6 +13,14 @@ namespace MosaicShell.Core.Tests
     {
         private static readonly MediaSessionInfo Playing = new("Humid", "Moody Good", "music.youtube.com-5929F88E_vezhnr0wkvrcy!App", true);
 
+        [Theory]
+        [InlineData(true, "MosaicShell.BrowserRelay.exe")]
+        [InlineData(false, "MosaicShell.BrowserRelay")]
+        public void The_relay_the_browser_starts_is_the_apphost_built_for_this_OS(bool isWindows, string expected)
+        {
+            _ = BrowserSourceStack.RelayFileNameFor(isWindows).Should().Be(expected);
+        }
+
         [Fact]
         public void The_fallback_reads_when_the_extension_has_no_player()
         {

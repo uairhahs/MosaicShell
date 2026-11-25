@@ -629,54 +629,6 @@ namespace MosaicShell.Core.Services
         private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
     }
 
-    public sealed class NullNativeOsdSuppressor : INativeOsdSuppressor
-    {
-        public bool IsActive { get; private set; }
-        public void Start()
-        {
-            IsActive = true;
-        }
-
-        public void Stop()
-        {
-            IsActive = false;
-        }
-
-        public void SuppressOnce() { }
-        public void SuppressBurst(int durationMs = 1500) { }
-        public void Dispose()
-        {
-            Stop();
-        }
-    }
-
-    public sealed class NullLegacyMediaKeyHook : ILegacyMediaKeyHook
-    {
-        public bool IsActive => false;
-        public event EventHandler<LegacyVolumeKey>? Pressed { add { } remove { } }
-        public void Start() { }
-        public void Stop() { }
-        public void Dispose() { }
-    }
-
-    public sealed class NullBrightnessChangeSource : IBrightnessChangeSource
-    {
-        public event EventHandler? Changed { add { } remove { } }
-        public void Start() { }
-        public void Stop() { }
-        public void Dispose() { }
-    }
-
-    public sealed class NullIdleService : IIdleService
-    {
-        public TimeSpan IdleTime => TimeSpan.Zero;
-        public TimeSpan Threshold { get; set; } = TimeSpan.FromMinutes(5);
-        public event EventHandler? IdleThresholdReached { add { } remove { } }
-        public void Start() { }
-        public void Stop() { }
-        public void Dispose() { }
-    }
-
     /// <summary>Win32 probe: foreground HWND covers its monitor work area (approx fullscreen).</summary>
     public sealed class WindowsFullscreenProbe : IFullscreenProbe
     {
@@ -744,10 +696,5 @@ namespace MosaicShell.Core.Services
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
-    }
-
-    public sealed class NullFullscreenProbe : IFullscreenProbe
-    {
-        public bool IsForegroundFullscreen => false;
     }
 }

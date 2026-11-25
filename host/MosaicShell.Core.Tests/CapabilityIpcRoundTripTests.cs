@@ -73,7 +73,30 @@ namespace MosaicShell.Core.Tests
             await second.ConnectWithRetryAsync(TimeSpan.FromSeconds(8), pipeName: pipeName, attemptTimeoutMs: 500, retryDelayMs: 50).WaitAsync(TimeSpan.FromSeconds(12));
             second.Hide("Tessera");
 
-            (await hidden.Task.WaitAsync(TimeSpan.FromSeconds(5))).Should().Be("Tessera");
+            _ = (await hidden.Task.WaitAsync(TimeSpan.FromSeconds(5))).Should().Be("Tessera");
+        }
+
+        [Fact]
+        public async Task A_worker_that_connects_while_the_previous_one_is_leaving_is_not_dropped()
+        {
+            // On Unix a pipe is a socket whose listener the server instances share: a connect made while the previous
+            // client is still being served waits in that listener's queue. Disposing the old instance before the next
+            // one exists closed the listener and dropped the waiting worker, whose first message then went nowhere.
+            string pipeName = "MosaicShell.Test.Flyout." + Guid.NewGuid().ToString("N");
+            TaskCompletionSource<string> hidden = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            using CapabilityIpcFlyoutServer server = new(new RecordingPresenter(hidden: hidden), action => action(), pipeName);
+            server.Start();
+            IpcFlyoutPresenter first = new();
+            await first.ConnectAsync(pipeName: pipeName).WaitAsync(TimeSpan.FromSeconds(5));
+
+            using IpcFlyoutPresenter second = new();
+            Task connecting = second.ConnectWithRetryAsync(TimeSpan.FromSeconds(8), pipeName: pipeName, attemptTimeoutMs: 500, retryDelayMs: 50);
+            await Task.Delay(200);
+            first.Dispose();
+            await connecting.WaitAsync(TimeSpan.FromSeconds(12));
+            second.Hide("Tessera");
+
+            _ = (await hidden.Task.WaitAsync(TimeSpan.FromSeconds(5))).Should().Be("Tessera");
         }
 
         [Fact]
@@ -98,7 +121,7 @@ namespace MosaicShell.Core.Tests
             await WaitForAsync(() => worker.IsConnected, TimeSpan.FromSeconds(10));
             worker.Hide("Tessera");
 
-            (await hiddenOnSecond.Task.WaitAsync(TimeSpan.FromSeconds(5))).Should().Be("Tessera");
+            _ = (await hiddenOnSecond.Task.WaitAsync(TimeSpan.FromSeconds(5))).Should().Be("Tessera");
             stop.Cancel();
             await keepConnected.WaitAsync(TimeSpan.FromSeconds(5));
         }
@@ -115,7 +138,7 @@ namespace MosaicShell.Core.Tests
             stop.Cancel();
 
             await keepConnected.WaitAsync(TimeSpan.FromSeconds(5));
-            worker.IsConnected.Should().BeFalse();
+            _ = worker.IsConnected.Should().BeFalse();
         }
 
         [Fact]
@@ -130,7 +153,7 @@ namespace MosaicShell.Core.Tests
 
             double share = await IdleCpu.LowestShareAsync();
 
-            share.Should().BeLessThan(0.5, "the accept loop must wait for the connection to end, not retry in a tight loop");
+            _ = share.Should().BeLessThan(0.5, "the accept loop must wait for the connection to end, not retry in a tight loop");
         }
 
         private static async Task WaitForAsync(Func<bool> condition, TimeSpan timeout)

@@ -6,13 +6,29 @@ namespace MosaicShell.Core.Tests
     public class TesseraFlyoutMaterialTests
     {
         [Fact]
-        public void Soft_frost_never_requests_os_acrylic_or_blur()
+        public void Soft_frost_never_requests_native_translucency_or_blur()
         {
             TesseraFlyoutMaterial m = TesseraFlyoutMaterialFactory.Create(useAcrylic: true);
             _ = m.UseSoftFrost.Should().BeTrue();
             _ = m.TransparencyHints.Should().Equal("Transparent");
             _ = m.TransparencyHints.Should().NotContain("AcrylicBlur");
             _ = m.TransparencyHints.Should().NotContain("Blur");
+        }
+
+        [Fact]
+        public void Solid_paints_a_dense_base_and_frost_a_see_through_one()
+        {
+            // The shell tint is blended SoftLight, which adds no opacity, so the base slab alone decides how much of
+            // the desktop shows. Solid and Frosted used the same base and looked alike (2026-11-22).
+            TesseraFlyoutMaterial solid = TesseraFlyoutMaterialFactory.Create(useAcrylic: false);
+            TesseraFlyoutMaterial frost = TesseraFlyoutMaterialFactory.Create(useAcrylic: true);
+
+            _ = TesseraFlyoutMaterialFactory.GlassBaseAlpha(solid, lighterFrost: true)
+                .Should().Be(TesseraFlyoutMaterialFactory.SolidShellAlpha);
+            _ = TesseraFlyoutMaterialFactory.GlassBaseAlpha(solid, lighterFrost: false)
+                .Should().Be(TesseraFlyoutMaterialFactory.SolidShellAlpha);
+            _ = TesseraFlyoutMaterialFactory.GlassBaseAlpha(frost, lighterFrost: true).Should().Be(68);
+            _ = TesseraFlyoutMaterialFactory.GlassBaseAlpha(frost, lighterFrost: false).Should().Be(96);
         }
 
         [Fact]
@@ -67,7 +83,7 @@ namespace MosaicShell.Core.Tests
         /// <summary>
         /// Every style whose chrome leaves real unpainted window area with no local background to
         /// fall back on - MaterialYou's inter-pill gaps, PlainText's slant-clipped card sliver -
-        /// must never touch OS Acrylic or the Skia soft-frost glass, regardless of settings.
+        /// must never touch Native Translucency or the Skia soft-frost glass, regardless of settings.
         /// Confirmed as a real, reproducible defect for MaterialYou (2026-09-07): AcrylicBlur
         /// reported success identically on two monitors while only one actually composited it,
         /// leaving raw desktop passthrough in the unpainted gap on the other. The window itself
@@ -79,8 +95,8 @@ namespace MosaicShell.Core.Tests
         /// (a <c>StackPanel</c> with real <c>Spacing</c> between the volume and media pills when
         /// H3 stacked multi-window isn't engaged), but unlike MaterialYou/PlainText they also
         /// have a legitimate, tested, working stacked-window acrylic mode
-        /// (<c>SupportsStackedOsAcrylic: true</c>, each HWND is one pill with no internal gap) -
-        /// see <c>TesseraOsAcrylicStackedPolicyTests.Stacked_volume_media_requests_acrylic_blur_on_each_hwnd</c>.
+        /// (<c>SupportsStackedNativeTranslucency: true</c>, each HWND is one pill with no internal gap) -
+        /// see <c>TesseraNativeTranslucencyStackedPolicyTests.Stacked_volume_media_requests_acrylic_blur_on_each_hwnd</c>.
         /// Setting <c>RequiresMatteChrome</c> on them blocks that legitimate mode too, since the
         /// field is a blanket per-style switch with no notion of which render path is actually in
         /// play; confirmed as a regression, not applied. Their gap needs a narrower fix scoped to
@@ -120,14 +136,14 @@ namespace MosaicShell.Core.Tests
 
         [Theory]
         [MemberData(nameof(MatteChromeOnlyStyles))]
-        public void Matte_chrome_style_never_reports_os_acrylic_eligible(string styleId)
+        public void Matte_chrome_style_never_reports_native_translucency_eligible(string styleId)
         {
             // Deterministic overload: bypasses HostLaunchOptions/settings-file reads so this
             // isolates the per-style exclusion from environment-dependent trial state.
-            _ = TesseraOsAcrylicTrialPolicy.IsEligible(
+            _ = TesseraNativeTranslucencyPolicy.IsEligible(
                     payload: null,
                     trialRequested: true,
-                    osSupportsWinUiAcrylic: true,
+                    platformSupported: true,
                     styleId: styleId)
                 .Should().BeFalse();
         }

@@ -17,7 +17,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void The_production_lock_is_system_wide_so_host_and_worker_see_each_other()
         {
-            CapabilityDaemonCoordinator.MutexName.Should().StartWith(@"Global\");
+            _ = CapabilityDaemonCoordinator.MutexName.Should().StartWith(@"Global\");
         }
 
         [Fact]
@@ -25,9 +25,9 @@ namespace MosaicShell.Core.Tests
         {
             using CapabilityDaemonCoordinator coordinator = new(NewMutexName());
 
-            coordinator.TryAcquireOwner().Should().BeTrue();
+            _ = coordinator.TryAcquireOwner().Should().BeTrue();
 
-            coordinator.OwnsDaemon.Should().BeTrue();
+            _ = coordinator.OwnsDaemon.Should().BeTrue();
         }
 
         [Fact]
@@ -36,7 +36,7 @@ namespace MosaicShell.Core.Tests
             using CapabilityDaemonCoordinator coordinator = new(NewMutexName());
             _ = coordinator.TryAcquireOwner();
 
-            coordinator.TryAcquireOwner().Should().BeTrue();
+            _ = coordinator.TryAcquireOwner().Should().BeTrue();
         }
 
         [Fact]
@@ -55,7 +55,7 @@ namespace MosaicShell.Core.Tests
                 secondOwns = secondOwns.Value && second.OwnsDaemon;
             });
 
-            secondOwns.Should().BeFalse();
+            _ = secondOwns.Should().BeFalse();
         }
 
         [Fact]
@@ -66,14 +66,14 @@ namespace MosaicShell.Core.Tests
             _ = first.TryAcquireOwner();
             first.Dispose();
 
-            first.OwnsDaemon.Should().BeFalse();
+            _ = first.OwnsDaemon.Should().BeFalse();
             bool takenOver = await Task.Run(() =>
             {
                 using CapabilityDaemonCoordinator second = new(name);
                 return second.TryAcquireOwner();
             });
 
-            takenOver.Should().BeTrue();
+            _ = takenOver.Should().BeTrue();
         }
 
         [Fact]
@@ -81,8 +81,8 @@ namespace MosaicShell.Core.Tests
         {
             CapabilityDaemonCoordinator coordinator = new(NewMutexName());
 
-            coordinator.Invoking(c => c.Dispose()).Should().NotThrow();
-            coordinator.OwnsDaemon.Should().BeFalse();
+            _ = coordinator.Invoking(c => c.Dispose()).Should().NotThrow();
+            _ = coordinator.OwnsDaemon.Should().BeFalse();
         }
 
         [Fact]
@@ -90,8 +90,8 @@ namespace MosaicShell.Core.Tests
         {
             using CapabilityDaemonCoordinator coordinator = new(@"Local\MosaicShell\Test\Bad");
 
-            coordinator.TryAcquireOwner().Should().BeFalse();
-            coordinator.OwnsDaemon.Should().BeFalse();
+            _ = coordinator.TryAcquireOwner().Should().BeFalse();
+            _ = coordinator.OwnsDaemon.Should().BeFalse();
         }
     }
 }

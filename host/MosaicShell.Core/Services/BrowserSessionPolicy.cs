@@ -3,7 +3,8 @@ namespace MosaicShell.Core.Services
     /// <summary>Whether a Windows media session belongs to a web browser or an installed web app, judged by its app id.</summary>
     public static class BrowserSessionPolicy
     {
-        private static readonly string[] BrowserMarkers = ["youtube", "chrome", "msedge", "firefox", "brave"];
+        /// <summary>Windows app ids, and the Linux desktop entries MPRIS players name ("microsoft-edge", "chromium-browser").</summary>
+        private static readonly string[] BrowserMarkers = ["youtube", "chrome", "msedge", "microsoft-edge", "chromium", "firefox", "brave", "vivaldi"];
 
         /// <summary>
         /// The site an installed web app plays, from its Windows app id ("music.youtube.com-5929F88E_…!App"
@@ -26,10 +27,14 @@ namespace MosaicShell.Core.Services
                 : null;
         }
 
+        /// <summary>Whole ids too short to match by substring: Edge's own MPRIS player has no desktop entry and is "edge".</summary>
+        private static readonly string[] BrowserIds = ["edge"];
+
         public static bool LooksLikeBrowserSession(string? appId)
         {
             return !string.IsNullOrEmpty(appId)
-                && BrowserMarkers.Any(marker => appId.Contains(marker, StringComparison.OrdinalIgnoreCase));
+                && (BrowserMarkers.Any(marker => appId.Contains(marker, StringComparison.OrdinalIgnoreCase))
+                    || BrowserIds.Any(id => appId.Equals(id, StringComparison.OrdinalIgnoreCase)));
         }
     }
 }

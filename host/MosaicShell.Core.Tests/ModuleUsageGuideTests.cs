@@ -40,7 +40,7 @@ namespace MosaicShell.Core.Tests
         [InlineData("Tessera", "System flyouts")]
         public void Each_built_in_capability_has_its_own_summary_whatever_the_casing(string moduleId, string expectedFragment)
         {
-            ModuleUsageGuide.Summary(moduleId).Should().Contain(expectedFragment);
+            _ = ModuleUsageGuide.Summary(moduleId).Should().Contain(expectedFragment);
         }
 
         [Fact]
@@ -48,7 +48,7 @@ namespace MosaicShell.Core.Tests
         {
             InstallManifest("Acme", new ModuleManifest { Id = "Acme", Description = "Catalog blurb", UsageSummary = "Does the thing." });
 
-            ModuleUsageGuide.Summary("Acme").Should().Be("Does the thing.");
+            _ = ModuleUsageGuide.Summary("Acme").Should().Be("Does the thing.");
         }
 
         [Fact]
@@ -56,21 +56,21 @@ namespace MosaicShell.Core.Tests
         {
             InstallManifest("Acme", new ModuleManifest { Id = "Acme", Description = "Catalog blurb" });
 
-            ModuleUsageGuide.Summary("Acme").Should().Be("Catalog blurb");
+            _ = ModuleUsageGuide.Summary("Acme").Should().Be("Catalog blurb");
         }
 
         [Fact]
         public void An_unknown_module_has_an_empty_summary_and_trigger()
         {
-            ModuleUsageGuide.Summary("Nope").Should().BeEmpty();
-            ModuleUsageGuide.HowToTrigger("Nope").Should().BeEmpty();
+            _ = ModuleUsageGuide.Summary("Nope").Should().BeEmpty();
+            _ = ModuleUsageGuide.HowToTrigger("Nope").Should().BeEmpty();
         }
 
         [Fact]
         public void A_widget_built_in_is_described_but_has_no_trigger()
         {
-            ModuleUsageGuide.Summary("Pulse").Should().Be("Audio visualizer.");
-            ModuleUsageGuide.HowToTrigger("Pulse").Should().BeEmpty("a widget is not armed from Tiles");
+            _ = ModuleUsageGuide.Summary("Pulse").Should().Be("Audio visualizer.");
+            _ = ModuleUsageGuide.HowToTrigger("Pulse").Should().BeEmpty("a widget is not armed from Tiles");
         }
 
         [Fact]
@@ -78,7 +78,7 @@ namespace MosaicShell.Core.Tests
         {
             ModuleSettingsStore.Save("Inlay", new InlaySettings { HotkeyGesture = "Ctrl+Alt+J" });
 
-            ModuleUsageGuide.HowToTrigger("Inlay").Should().Be("Arm from Tiles, then press Ctrl+Alt+J.");
+            _ = ModuleUsageGuide.HowToTrigger("Inlay").Should().Be("Arm from Tiles, then press Ctrl+Alt+J.");
         }
 
         [Fact]
@@ -86,7 +86,7 @@ namespace MosaicShell.Core.Tests
         {
             ModuleSettingsStore.Save("Chord", new ChordSettings { HotkeyGesture = "Win+S" });
 
-            ModuleUsageGuide.CurrentHotkey("Chord").Should().Be("Ctrl+Alt+K");
+            _ = ModuleUsageGuide.CurrentHotkey("Chord").Should().Be("Ctrl+Alt+K");
         }
 
         [Fact]
@@ -94,7 +94,7 @@ namespace MosaicShell.Core.Tests
         {
             ModuleSettingsStore.Save("Mixdeck", new MixdeckSettings { HotkeyGesture = "not a gesture" });
 
-            ModuleUsageGuide.CurrentHotkey("Mixdeck").Should().Be("Ctrl+Alt+M");
+            _ = ModuleUsageGuide.CurrentHotkey("Mixdeck").Should().Be("Ctrl+Alt+M");
         }
 
         [Fact]
@@ -102,8 +102,8 @@ namespace MosaicShell.Core.Tests
         {
             ModuleSettingsStore.Save("Substrate", new SubstrateSettings { HotkeyGesture = "" });
 
-            ModuleUsageGuide.CurrentHotkey("Substrate").Should().BeEmpty();
-            ModuleUsageGuide.HowToTrigger("Substrate").Should().Be("Arm from Tiles, then use the configured hotkey.");
+            _ = ModuleUsageGuide.CurrentHotkey("Substrate").Should().BeEmpty();
+            _ = ModuleUsageGuide.HowToTrigger("Substrate").Should().Be("Arm from Tiles, then use the configured hotkey.");
         }
 
         [Theory]
@@ -113,7 +113,7 @@ namespace MosaicShell.Core.Tests
         [InlineData("Nope")]
         public void Modules_without_a_hotkey_have_no_current_hotkey(string moduleId)
         {
-            ModuleUsageGuide.CurrentHotkey(moduleId).Should().BeEmpty();
+            _ = ModuleUsageGuide.CurrentHotkey(moduleId).Should().BeEmpty();
         }
 
         [Theory]
@@ -125,15 +125,15 @@ namespace MosaicShell.Core.Tests
         {
             ModuleSettingsStore.Save("Slate", new SlateSettings { IdleSeconds = configured });
 
-            ModuleUsageGuide.HowToTrigger("Slate").Should().Be($"Arm from Tiles, then leave the PC idle for {shown} seconds.");
-            ModuleUsageGuide.ArmedStatus("Slate").Should().Be($"Armed - idle {shown}s");
+            _ = ModuleUsageGuide.HowToTrigger("Slate").Should().Be($"Arm from Tiles, then leave the PC idle for {shown} seconds.");
+            _ = ModuleUsageGuide.ArmedStatus("Slate").Should().Be($"Armed - idle {shown}s");
         }
 
         [Fact]
         public void Tessera_is_triggered_by_system_events_not_a_hotkey()
         {
-            ModuleUsageGuide.HowToTrigger("Tessera").Should().Contain("volume").And.Contain("Try now");
-            ModuleUsageGuide.ArmedStatus("tessera").Should().Be("Armed - volume / media");
+            _ = ModuleUsageGuide.HowToTrigger("Tessera").Should().Contain("volume").And.Contain("Try now");
+            _ = ModuleUsageGuide.ArmedStatus("tessera").Should().Be("Armed - volume / media");
         }
 
         [Fact]
@@ -141,7 +141,7 @@ namespace MosaicShell.Core.Tests
         {
             ModuleSettingsStore.Save("Inlay", new InlaySettings { HotkeyGesture = "Ctrl+Alt+J" });
 
-            ModuleUsageGuide.ArmedStatus("Inlay").Should().Be("Armed - Ctrl+Alt+J");
+            _ = ModuleUsageGuide.ArmedStatus("Inlay").Should().Be("Armed - Ctrl+Alt+J");
         }
 
         [Fact]
@@ -149,8 +149,8 @@ namespace MosaicShell.Core.Tests
         {
             InstallManifest("Acme", new ModuleManifest { Id = "Acme", Kind = "Capability" });
 
-            ModuleUsageGuide.HowToTrigger("Acme").Should().Be("Arm from Tiles, then use the module's configured trigger.");
-            ModuleUsageGuide.ArmedStatus("Acme").Should().Be("Armed");
+            _ = ModuleUsageGuide.HowToTrigger("Acme").Should().Be("Arm from Tiles, then use the module's configured trigger.");
+            _ = ModuleUsageGuide.ArmedStatus("Acme").Should().Be("Armed");
         }
 
         [Fact]
@@ -158,7 +158,7 @@ namespace MosaicShell.Core.Tests
         {
             InstallManifest("Acme", new ModuleManifest { Id = "Acme", HowToTrigger = "Double-tap the logo." });
 
-            ModuleUsageGuide.HowToTrigger("Acme").Should().Be("Double-tap the logo.");
+            _ = ModuleUsageGuide.HowToTrigger("Acme").Should().Be("Double-tap the logo.");
         }
     }
 }

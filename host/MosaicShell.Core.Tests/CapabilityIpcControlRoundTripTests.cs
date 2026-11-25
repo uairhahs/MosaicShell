@@ -19,7 +19,7 @@ namespace MosaicShell.Core.Tests
         private static RemoteCapabilityHost Connect(string pipeName)
         {
             RemoteCapabilityHost client = new();
-            client.TryConnect(pipeName: pipeName).Should().BeTrue("the server is listening on the test pipe");
+            _ = client.TryConnect(pipeName: pipeName).Should().BeTrue("the server is listening on the test pipe");
             return client;
         }
 
@@ -28,8 +28,8 @@ namespace MosaicShell.Core.Tests
         {
             using RemoteCapabilityHost client = new();
 
-            client.TryConnect(pipeName: NewPipeName()).Should().BeFalse();
-            client.IsConnected.Should().BeFalse();
+            _ = client.TryConnect(pipeName: NewPipeName()).Should().BeFalse();
+            _ = client.IsConnected.Should().BeFalse();
         }
 
         [Fact]
@@ -39,7 +39,7 @@ namespace MosaicShell.Core.Tests
 
             Action act = () => client.IsArmed("Tessera");
 
-            act.Should().Throw<InvalidOperationException>();
+            _ = act.Should().Throw<InvalidOperationException>();
         }
 
         [Fact]
@@ -48,8 +48,8 @@ namespace MosaicShell.Core.Tests
             RemoteCapabilityHost client = new();
             client.Dispose();
 
-            client.Invoking(c => c.TryConnect()).Should().Throw<ObjectDisposedException>();
-            client.Invoking(c => c.IsArmed("Tessera")).Should().Throw<ObjectDisposedException>();
+            _ = client.Invoking(c => c.TryConnect()).Should().Throw<ObjectDisposedException>();
+            _ = client.Invoking(c => c.IsArmed("Tessera")).Should().Throw<ObjectDisposedException>();
         }
 
         [Fact]
@@ -61,12 +61,12 @@ namespace MosaicShell.Core.Tests
             server.Start();
             using RemoteCapabilityHost client = Connect(pipe);
 
-            (await client.ArmAsync("Tessera", persist: false)).Should().BeTrue();
-            (await client.ArmAsync("Refused")).Should().BeFalse("the daemon's answer is what comes back");
-            (await client.DisarmAsync("Tessera", persist: true)).Should().BeTrue();
-            (await client.ReArmAsync("Tessera")).Should().BeTrue();
+            _ = (await client.ArmAsync("Tessera", persist: false)).Should().BeTrue();
+            _ = (await client.ArmAsync("Refused")).Should().BeFalse("the daemon's answer is what comes back");
+            _ = (await client.DisarmAsync("Tessera", persist: true)).Should().BeTrue();
+            _ = (await client.ReArmAsync("Tessera")).Should().BeTrue();
 
-            daemon.Calls.Should().Equal(
+            _ = daemon.Calls.Should().Equal(
                 "Arm Tessera persist=False",
                 "Arm Refused persist=True",
                 "Disarm Tessera persist=True",
@@ -82,13 +82,13 @@ namespace MosaicShell.Core.Tests
             server.Start();
             using RemoteCapabilityHost client = Connect(pipe);
 
-            client.IsArmed("Tessera").Should().BeTrue();
-            client.IsArmed("Chord").Should().BeFalse();
-            client.ArmedModuleIds.Should().BeEquivalentTo("Tessera", "Inlay");
-            client.GetHotkeyError("Inlay").Should().Be("Ctrl+Alt+M is taken");
+            _ = client.IsArmed("Tessera").Should().BeTrue();
+            _ = client.IsArmed("Chord").Should().BeFalse();
+            _ = client.ArmedModuleIds.Should().BeEquivalentTo("Tessera", "Inlay");
+            _ = client.GetHotkeyError("Inlay").Should().Be("Ctrl+Alt+M is taken");
 
             daemon.HotkeyError = null;
-            client.GetHotkeyError("Inlay").Should().BeNull();
+            _ = client.GetHotkeyError("Inlay").Should().BeNull();
         }
 
         [Fact]
@@ -105,7 +105,7 @@ namespace MosaicShell.Core.Tests
             await client.DisarmAllAsync(persist: false);
             client.Persist();
 
-            daemon.Calls.Should().Equal("Restore", "DisarmAll persist=True", "DisarmAll persist=False", "Persist");
+            _ = daemon.Calls.Should().Equal("Restore", "DisarmAll persist=True", "DisarmAll persist=False", "Persist");
         }
 
         [Fact]
@@ -117,8 +117,8 @@ namespace MosaicShell.Core.Tests
             server.Start();
             using RemoteCapabilityHost client = Connect(pipe);
 
-            (await client.ArmAsync("Tessera")).Should().BeFalse("the error reply carries a message, not a true");
-            client.IsArmed("Tessera").Should().BeFalse("the connection survives the failed request");
+            _ = (await client.ArmAsync("Tessera")).Should().BeFalse("the error reply carries a message, not a true");
+            _ = client.IsArmed("Tessera").Should().BeFalse("the connection survives the failed request");
         }
 
         [Fact]
@@ -133,7 +133,7 @@ namespace MosaicShell.Core.Tests
             bool[] results = new bool[40];
             _ = Parallel.For(0, results.Length, i => results[i] = client.IsArmed(i % 2 == 0 ? "Tessera" : "Other"));
 
-            results.Select((value, i) => value == (i % 2 == 0)).Should().OnlyContain(ok => ok);
+            _ = results.Select((value, i) => value == (i % 2 == 0)).Should().OnlyContain(ok => ok);
         }
 
         [Fact]
@@ -144,7 +144,7 @@ namespace MosaicShell.Core.Tests
             using CapabilityIpcControlServer server = new(daemon, pipe);
             server.Start();
             RemoteCapabilityHost first = Connect(pipe);
-            first.IsArmed("Tessera").Should().BeTrue();
+            _ = first.IsArmed("Tessera").Should().BeTrue();
             first.Dispose();
 
             // The server notices the peer is gone on its own thread; give the next instance a moment to open.
@@ -152,10 +152,10 @@ namespace MosaicShell.Core.Tests
             bool reconnected = SpinWait.SpinUntil(
                 () => (second = new RemoteCapabilityHost()).TryConnect(pipeName: pipe), TimeSpan.FromSeconds(10));
 
-            reconnected.Should().BeTrue("a Worker that outlives its Host must accept the next Host");
+            _ = reconnected.Should().BeTrue("a Worker that outlives its Host must accept the next Host");
             using (second)
             {
-                second!.IsArmed("Tessera").Should().BeTrue();
+                _ = second!.IsArmed("Tessera").Should().BeTrue();
             }
         }
 
@@ -170,7 +170,7 @@ namespace MosaicShell.Core.Tests
 
             double share = await IdleCpu.LowestShareAsync();
 
-            share.Should().BeLessThan(0.5, "the accept loop must wait for the connection to end, not retry in a tight loop");
+            _ = share.Should().BeLessThan(0.5, "the accept loop must wait for the connection to end, not retry in a tight loop");
         }
 
         [Fact]
@@ -184,8 +184,8 @@ namespace MosaicShell.Core.Tests
 
             server.Dispose();
 
-            SpinWait.SpinUntil(() => !client.IsConnected, TimeSpan.FromSeconds(15)).Should().BeTrue();
-            client.Invoking(c => c.IsArmed("Tessera")).Should().Throw<InvalidOperationException>();
+            _ = SpinWait.SpinUntil(() => !client.IsConnected, TimeSpan.FromSeconds(15)).Should().BeTrue();
+            _ = client.Invoking(c => c.IsArmed("Tessera")).Should().Throw<InvalidOperationException>();
         }
 
         [Fact]
@@ -193,12 +193,12 @@ namespace MosaicShell.Core.Tests
         {
             CapabilityIpcControlServer server = new(new FakeCapabilityHost(), NewPipeName());
             server.Start();
-            server.Invoking(s => s.Start()).Should().NotThrow();
+            _ = server.Invoking(s => s.Start()).Should().NotThrow();
 
             server.Dispose();
             server.Dispose();
 
-            server.Invoking(s => s.Start()).Should().Throw<ObjectDisposedException>();
+            _ = server.Invoking(s => s.Start()).Should().Throw<ObjectDisposedException>();
         }
 
         private sealed class FakeCapabilityHost : ICapabilityHost

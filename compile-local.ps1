@@ -1,15 +1,15 @@
 # Build + run Host from repo root.
 #
-# Tessera OS acrylic is controlled by persisted hub settings (UseOsAcrylic in Tessera.json).
-# After Win11 sign-off, --tessera-os-acrylic is ignored; this script reads/writes the hub file.
+# Tessera Native Translucency is controlled by persisted hub settings (UseNativeTranslucency in Tessera.json).
+# After Win11 sign-off, --tessera-native-translucency is ignored; this script reads/writes the hub file.
 #
 # Usage:
 #   .\compile-local.ps1
 #   .\compile-local.ps1 -BuildOnly
 #   .\compile-local.ps1 -Configuration Release
 #   .\compile-local.ps1 -NoKill
-#   .\compile-local.ps1 -TesseraOsAcrylic On     # write UseOsAcrylic=true, then run
-#   .\compile-local.ps1 -TesseraOsAcrylic Off    # write UseOsAcrylic=false, then run
+#   .\compile-local.ps1 -TesseraNativeTranslucency On     # write UseNativeTranslucency=true, then run
+#   .\compile-local.ps1 -TesseraNativeTranslucency Off    # write UseNativeTranslucency=false, then run
 #   .\compile-local.ps1 -ForceSoftwareRender     # H2 frost fallback eval row
 
 [CmdletBinding()]
@@ -20,11 +20,11 @@ param(
     [switch] $BuildOnly,
     [switch] $NoKill,
 
-    # Optional: write Tessera UseOsAcrylic to hub settings before launch (On/Off).
+    # Optional: write Tessera UseNativeTranslucency to hub settings before launch (On/Off).
     [ValidateSet("On", "Off")]
-    [string] $TesseraOsAcrylic,
+    [string] $TesseraNativeTranslucency,
 
-    # H2 eval: force Software-only rendering (OsAcrylic ineligible; frost fallback).
+    # H2 eval: force Software-only rendering (Native Translucency ineligible; frost fallback).
     [switch] $ForceSoftwareRender
 )
 
@@ -36,12 +36,14 @@ $hostProj = Join-Path $repoRoot "host\MosaicShell.Host\MosaicShell.Host.csproj"
 $tfm = "net10.0-windows10.0.19041.0"
 $tesseraSettingsPath = Join-Path $env:LOCALAPPDATA "MosaicShell\Config\modules\Tessera.json"
 
-function Get-TesseraOsAcrylicEnabled {
+function Get-TesseraNativeTranslucencyEnabled {
     if (-not (Test-Path $tesseraSettingsPath)) {
         return $false
     }
     try {
         $json = Get-Content -LiteralPath $tesseraSettingsPath -Raw | ConvertFrom-Json
+        # Files saved before the rename carry only UseOsAcrylic.
+        if ($null -ne $json.UseNativeTranslucency) { return [bool]$json.UseNativeTranslucency }
         return [bool]$json.UseOsAcrylic
     }
     catch {
@@ -49,7 +51,7 @@ function Get-TesseraOsAcrylicEnabled {
     }
 }
 
-function Set-TesseraOsAcrylicEnabled([bool] $enabled) {
+function Set-TesseraNativeTranslucencyEnabled([bool] $enabled) {
     $dir = Split-Path -Parent $tesseraSettingsPath
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
 
@@ -80,7 +82,9 @@ function Set-TesseraOsAcrylicEnabled([bool] $enabled) {
         }
     }
 
-    $settings | Add-Member -NotePropertyName UseOsAcrylic -NotePropertyValue $enabled -Force
+    $settings | Add-Member -NotePropertyName UseNativeTranslucency -NotePropertyValue $enabled -Force
+    # Drop the pre-rename key so the file cannot hold two values that disagree.
+    $settings.PSObject.Properties.Remove("UseOsAcrylic")
     ($settings | ConvertTo-Json -Depth 10) | Set-Content -LiteralPath $tesseraSettingsPath -Encoding utf8
 }
 
@@ -89,13 +93,13 @@ if (-not (Test-Path $hostProj)) {
     exit 1
 }
 
-if ($PSBoundParameters.ContainsKey("TesseraOsAcrylic")) {
-    $writeOn = $TesseraOsAcrylic -eq "On"
-    Set-TesseraOsAcrylicEnabled -enabled $writeOn
-    Write-Host "Tessera hub: UseOsAcrylic=$writeOn (written to Tessera.json)" -ForegroundColor DarkGray
+if ($PSBoundParameters.ContainsKey("TesseraNativeTranslucency")) {
+    $writeOn = $TesseraNativeTranslucency -eq "On"
+    Set-TesseraNativeTranslucencyEnabled -enabled $writeOn
+    Write-Host "Tessera hub: UseNativeTranslucency=$writeOn (written to Tessera.json)" -ForegroundColor DarkGray
 }
 
-$osAcrylicOn = Get-TesseraOsAcrylicEnabled
+$nativeTranslucencyOn = Get-TesseraNativeTranslucencyEnabled
 
 Push-Location $repoRoot
 try {
@@ -119,11 +123,11 @@ try {
     if ($BuildOnly) { exit 0 }
 
     Write-Host "Starting Host…" -ForegroundColor Cyan
-    if ($osAcrylicOn) {
-        Write-Host "  Tessera OS acrylic: ON (hub UseOsAcrylic)" -ForegroundColor DarkGray
+    if ($nativeTranslucencyOn) {
+        Write-Host "  Tessera Native Translucency: ON (hub UseNativeTranslucency)" -ForegroundColor DarkGray
     }
     else {
-        Write-Host "  Tessera OS acrylic: OFF (Skia frost; hub or -TesseraOsAcrylic On)" -ForegroundColor DarkGray
+        Write-Host "  Tessera Native Translucency: OFF (Skia frost; hub or -TesseraNativeTranslucency On)" -ForegroundColor DarkGray
     }
     if ($ForceSoftwareRender) {
         Write-Host "  eval: --tessera-software-render (H2 Software fallback row)" -ForegroundColor DarkGray

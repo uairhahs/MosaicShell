@@ -1,8 +1,8 @@
 using Avalonia.Headless.XUnit;
 using FluentAssertions;
 using MosaicShell.Core.Modules;
-using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Settings;
 using MosaicShell.Host.ViewModels;
 
@@ -34,9 +34,9 @@ namespace MosaicShell.Host.Tests
         {
             MainViewModel vm = OpenTesseraSettings();
 
-            vm.TesseraMotionPresetName.Should().Be("Classic");
-            vm.TesseraMotionIsCustom.Should().BeFalse();
-            vm.TesseraMotionPresetItems.Where(p => p.IsSelected).Select(p => p.Id).Should().Equal("classic");
+            _ = vm.TesseraMotionPresetName.Should().Be("Classic");
+            _ = vm.TesseraMotionIsCustom.Should().BeFalse();
+            _ = vm.TesseraMotionPresetItems.Where(p => p.IsSelected).Select(p => p.Id).Should().Equal("classic");
         }
 
         [AvaloniaFact]
@@ -50,14 +50,14 @@ namespace MosaicShell.Host.Tests
                 s.AnimationDisplacement = 50;
             });
 
-            vm.TesseraMotionIsCustom.Should().BeTrue();
-            vm.TesseraMotionPresetName.Should().Be("Custom");
-            vm.TesseraMotionPresetItems.Should().OnlyContain(p => !p.IsSelected);
-            vm.TesseraMotionDurationMs.Should().Be(480);
-            vm.TesseraMotionDurationLabel.Should().Be("480 ms");
-            vm.TesseraMotionDistanceLabel.Should().Be("50 px");
-            vm.SelectedTesseraMotionCurve!.IsCustomPlaceholder.Should().BeTrue("InOutBack is not one of the named feels");
-            vm.SelectedTesseraMotionCurve.Id.Should().Be("InOutBack");
+            _ = vm.TesseraMotionIsCustom.Should().BeTrue();
+            _ = vm.TesseraMotionPresetName.Should().Be("Custom");
+            _ = vm.TesseraMotionPresetItems.Should().OnlyContain(p => !p.IsSelected);
+            _ = vm.TesseraMotionDurationMs.Should().Be(480);
+            _ = vm.TesseraMotionDurationLabel.Should().Be("480 ms");
+            _ = vm.TesseraMotionDistanceLabel.Should().Be("50 px");
+            _ = vm.SelectedTesseraMotionCurve!.IsCustomPlaceholder.Should().BeTrue("InOutBack is not one of the named feels");
+            _ = vm.SelectedTesseraMotionCurve.Id.Should().Be("InOutBack");
         }
 
         [AvaloniaFact]
@@ -68,12 +68,12 @@ namespace MosaicShell.Host.Tests
 
             vm.SelectTesseraMotionPresetCommand.Execute(bounce);
 
-            vm.TesseraAni.Should().Be(bounce.Ani);
-            vm.TesseraAniSteps.Should().Be(bounce.AniSteps);
-            vm.TesseraAniEase.Should().Be(bounce.AniEase);
-            vm.TesseraAnimationDisplacement.Should().Be(bounce.DisplacementPx);
-            vm.TesseraMotionPresetItems.Where(p => p.IsSelected).Select(p => p.Id).Should().Equal("bounce");
-            vm.TesseraMotionSummary.Should().Be(bounce.Description);
+            _ = vm.TesseraAni.Should().Be(bounce.Ani);
+            _ = vm.TesseraAniSteps.Should().Be(bounce.AniSteps);
+            _ = vm.TesseraAniEase.Should().Be(bounce.AniEase);
+            _ = vm.TesseraAnimationDisplacement.Should().Be(bounce.DisplacementPx);
+            _ = vm.TesseraMotionPresetItems.Where(p => p.IsSelected).Select(p => p.Id).Should().Equal("bounce");
+            _ = vm.TesseraMotionSummary.Should().Be(bounce.Description);
         }
 
         [AvaloniaFact]
@@ -83,9 +83,9 @@ namespace MosaicShell.Host.Tests
 
             vm.SelectTesseraMotionPresetCommand.Execute(Preset(vm, "drift"));
 
-            vm.TesseraAniDir.Should().Be("Top");
-            vm.TesseraMotionFromTop.Should().BeTrue();
-            vm.TesseraMotionPresetItems.Should().OnlyContain(p => p.AniDir == "Top", "the previews slide from the chosen side");
+            _ = vm.TesseraAniDir.Should().Be("Top");
+            _ = vm.TesseraMotionFromTop.Should().BeTrue();
+            _ = vm.TesseraMotionPresetItems.Should().OnlyContain(p => p.AniDir == "Top", "the previews slide from the chosen side");
         }
 
         [AvaloniaFact]
@@ -97,12 +97,12 @@ namespace MosaicShell.Host.Tests
 
             vm.TesseraMotionDurationMs = TesseraMotionPresets.DurationMsFromSteps(glide.AniSteps) + 64;
 
-            vm.TesseraMotionIsCustom.Should().BeTrue();
-            vm.TesseraAniSteps.Should().Be(glide.AniSteps + 4);
+            _ = vm.TesseraMotionIsCustom.Should().BeTrue();
+            _ = vm.TesseraAniSteps.Should().Be(glide.AniSteps + 4);
 
             vm.TesseraMotionDurationMs = TesseraMotionPresets.DurationMsFromSteps(glide.AniSteps);
 
-            vm.TesseraMotionPresetName.Should().Be("Glide");
+            _ = vm.TesseraMotionPresetName.Should().Be("Glide");
         }
 
         [AvaloniaFact]
@@ -111,10 +111,10 @@ namespace MosaicShell.Host.Tests
             MainViewModel vm = OpenTesseraSettings();
 
             vm.TesseraMotionDurationMs = 1000;
-            vm.TesseraAniSteps.Should().Be(TesseraFlyoutAnimationPolicy.MaxAniSteps);
+            _ = vm.TesseraAniSteps.Should().Be(TesseraFlyoutAnimationPolicy.MaxAniSteps);
 
             vm.TesseraMotionDurationMs = 50;
-            vm.TesseraAniSteps.Should().Be(TesseraFlyoutAnimationPolicy.MinAniSteps);
+            _ = vm.TesseraAniSteps.Should().Be(TesseraFlyoutAnimationPolicy.MinAniSteps);
         }
 
         [AvaloniaFact]
@@ -123,17 +123,17 @@ namespace MosaicShell.Host.Tests
             MainViewModel vm = OpenTesseraSettings();
 
             vm.TesseraMotionRevealsMedia = false;
-            vm.TesseraAni.Should().Be(1, "slide without the media reveal");
+            _ = vm.TesseraAni.Should().Be(1, "slide without the media reveal");
 
             vm.TesseraMotionRevealsMedia = true;
-            vm.TesseraAni.Should().Be(2);
+            _ = vm.TesseraAni.Should().Be(2);
 
             vm.TesseraMotionSlides = false;
-            vm.TesseraAni.Should().Be(0, "fade only");
-            vm.TesseraMotionRevealEnabled.Should().BeFalse("a fade has no media reveal to switch on");
+            _ = vm.TesseraAni.Should().Be(0, "fade only");
+            _ = vm.TesseraMotionRevealEnabled.Should().BeFalse("a fade has no media reveal to switch on");
 
             vm.TesseraMotionSlides = true;
-            vm.TesseraAni.Should().Be(2, "the reveal choice is remembered");
+            _ = vm.TesseraAni.Should().Be(2, "the reveal choice is remembered");
         }
 
         [AvaloniaFact]
@@ -143,8 +143,8 @@ namespace MosaicShell.Host.Tests
 
             vm.TesseraMotionFromBottom = true;
 
-            vm.TesseraAniDir.Should().Be("Bottom");
-            (vm.TesseraMotionFromLeft, vm.TesseraMotionFromRight, vm.TesseraMotionFromTop, vm.TesseraMotionFromBottom)
+            _ = vm.TesseraAniDir.Should().Be("Bottom");
+            _ = (vm.TesseraMotionFromLeft, vm.TesseraMotionFromRight, vm.TesseraMotionFromTop, vm.TesseraMotionFromBottom)
                 .Should().Be((false, false, false, true));
         }
 
@@ -152,13 +152,13 @@ namespace MosaicShell.Host.Tests
         public void Choosing_a_named_feel_sets_the_curve_and_removes_the_custom_entry()
         {
             MainViewModel vm = OpenTesseraSettings(s => s.AniEase = "InOutBack");
-            vm.TesseraMotionCurves.Should().ContainSingle(c => c.IsCustomPlaceholder);
+            _ = vm.TesseraMotionCurves.Should().ContainSingle(c => c.IsCustomPlaceholder);
 
             vm.SelectedTesseraMotionCurve = vm.TesseraMotionCurves.First(c => c.Id == TesseraFlyoutAnimationPolicy.EaseOutBack);
 
-            vm.TesseraAniEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseOutBack);
-            vm.TesseraMotionCurves.Should().NotContain(c => c.IsCustomPlaceholder);
-            vm.SelectedTesseraMotionCurve!.Name.Should().Be("Overshoot");
+            _ = vm.TesseraAniEase.Should().Be(TesseraFlyoutAnimationPolicy.EaseOutBack);
+            _ = vm.TesseraMotionCurves.Should().NotContain(c => c.IsCustomPlaceholder);
+            _ = vm.SelectedTesseraMotionCurve!.Name.Should().Be("Overshoot");
         }
 
         [AvaloniaFact]
@@ -169,9 +169,9 @@ namespace MosaicShell.Host.Tests
             vm.TesseraAnimationDisplacement = 120;
             vm.TesseraMotionFromRight = true;
 
-            vm.TesseraMotionCurrent.DisplacementPx.Should().Be(120);
-            vm.TesseraMotionCurrent.AniDir.Should().Be("Right");
-            vm.TesseraMotionCurrent.Ani.Should().Be(vm.TesseraAni);
+            _ = vm.TesseraMotionCurrent.DisplacementPx.Should().Be(120);
+            _ = vm.TesseraMotionCurrent.AniDir.Should().Be("Right");
+            _ = vm.TesseraMotionCurrent.Ani.Should().Be(vm.TesseraAni);
         }
 
         [AvaloniaFact]
@@ -179,7 +179,7 @@ namespace MosaicShell.Host.Tests
         {
             MainViewModel vm = OpenTesseraSettings();
 
-            vm.TesseraMotionPresetItems.Select(p => p.Id).Should().Equal(TesseraMotionPresets.All.Select(p => p.Id));
+            _ = vm.TesseraMotionPresetItems.Select(p => p.Id).Should().Equal(TesseraMotionPresets.All.Select(p => p.Id));
         }
     }
 }

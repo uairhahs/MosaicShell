@@ -161,11 +161,9 @@ namespace MosaicShell.Core.Services
                     continue;
                 }
 
-                string name = s.DisplayName;
-                if (string.IsNullOrWhiteSpace(name))
-                {
-                    name = $"Session {i}";
-                }
+                (string? description, string? processName) = ProcessNames(s);
+                string name = AppAudioSessionNamePolicy.Resolve(
+                    s.DisplayName, s.IsSystemSoundsSession, ResolveIndirectString, description, processName);
 
                 string id = s.GetSessionIdentifier ?? $"{i}";
                 list.Add(new AppAudioSession(id, name, s.SimpleAudioVolume.Volume, s.SimpleAudioVolume.Mute));
@@ -173,6 +171,73 @@ namespace MosaicShell.Core.Services
 
             return list;
         }
+
+        /// <summary>The session process's file description and name, read once per process (Mixdeck refreshes every 2 s).</summary>
+        private (string? Description, string? Name) ProcessNames(AudioSessionControl session)
+        {
+            uint pid;
+            try
+            {
+                pid = session.GetProcessID;
+            }
+            catch (Exception)
+            {
+                return (null, null);
+            }
+
+            if (pid == 0)
+            {
+                return (null, null);
+            }
+
+            lock (_processNames)
+            {
+                if (_processNames.TryGetValue(pid, out (string?, string?) cached))
+                {
+                    return cached;
+                }
+            }
+
+            (string?, string?) names = (null, null);
+            try
+            {
+                using System.Diagnostics.Process process = System.Diagnostics.Process.GetProcessById((int)pid);
+                string? description = null;
+                try
+                {
+                    description = process.MainModule?.FileVersionInfo.FileDescription;
+                }
+                catch (Exception)
+                {
+                    // Elevated or protected processes refuse their modules; the process name still reads.
+                }
+
+                names = (description, process.ProcessName);
+            }
+            catch (Exception)
+            {
+                return (null, null);
+            }
+
+            lock (_processNames)
+            {
+                _processNames[pid] = names;
+            }
+
+            return names;
+        }
+
+        private readonly Dictionary<uint, (string?, string?)> _processNames = [];
+
+        private static string? ResolveIndirectString(string source)
+        {
+            System.Text.StringBuilder buffer = new(512);
+            return SHLoadIndirectString(source, buffer, buffer.Capacity, IntPtr.Zero) == 0 ? buffer.ToString() : null;
+        }
+
+        [System.Runtime.InteropServices.DllImport("shlwapi.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern int SHLoadIndirectString(
+            string pszSource, System.Text.StringBuilder pszOutBuf, int cchOutBuf, IntPtr ppvReserved);
 
         public void SetVolume(string sessionId, double volume)
         {

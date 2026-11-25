@@ -13,7 +13,7 @@ namespace MosaicShell.Core.Tests
         {
             FlyoutWindowLifecycle lifecycle = new();
             FlyoutLifecycleAction entrance = lifecycle.BeginEntrance(0, driver).Single();
-            lifecycle.CompleteEntrance(entrance.Generation);
+            _ = lifecycle.CompleteEntrance(entrance.Generation);
             return lifecycle;
         }
 
@@ -29,12 +29,12 @@ namespace MosaicShell.Core.Tests
         {
             FlyoutWindowLifecycle lifecycle = Shown();
             _ = lifecycle.Dismiss(1);
-            lifecycle.ExitInFlight.Should().BeTrue();
+            _ = lifecycle.ExitInFlight.Should().BeTrue();
 
             _ = lifecycle.BeginEntrance(0.4, FlyoutMotionDriver.Window);
 
-            lifecycle.ExitInFlight.Should().BeFalse("the exit was cancelled by the new entrance");
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Entering);
+            _ = lifecycle.ExitInFlight.Should().BeFalse("the exit was cancelled by the new entrance");
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Entering);
         }
 
         [Fact]
@@ -47,9 +47,9 @@ namespace MosaicShell.Core.Tests
             int current = lifecycle.Dismiss(0.5).Single().Generation;
             _ = lifecycle.BeginEntrance(0.5, FlyoutMotionDriver.Window);
 
-            lifecycle.CompleteExit(generation).Should().BeEmpty("a completion from a superseded exit is stale");
-            lifecycle.CompleteExit(current).Should().BeEmpty("an old exit cannot hide an entering flyout");
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Entering);
+            _ = lifecycle.CompleteExit(generation).Should().BeEmpty("a completion from a superseded exit is stale");
+            _ = lifecycle.CompleteExit(current).Should().BeEmpty("an old exit cannot hide an entering flyout");
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Entering);
         }
 
         [Fact]
@@ -59,10 +59,10 @@ namespace MosaicShell.Core.Tests
             int stale = lifecycle.Dismiss(1).Single().Generation;
             lifecycle.Supersede();
 
-            lifecycle.CompleteExit(stale).Should().BeEmpty();
+            _ = lifecycle.CompleteExit(stale).Should().BeEmpty();
 
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Exiting);
-            lifecycle.ExitInFlight.Should().BeTrue();
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Exiting);
+            _ = lifecycle.ExitInFlight.Should().BeTrue();
         }
 
         // ---- ordinary paths ----
@@ -72,8 +72,8 @@ namespace MosaicShell.Core.Tests
         {
             FlyoutWindowLifecycle lifecycle = new();
 
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Hidden);
-            lifecycle.ExitInFlight.Should().BeFalse();
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Hidden);
+            _ = lifecycle.ExitInFlight.Should().BeFalse();
         }
 
         [Fact]
@@ -83,10 +83,10 @@ namespace MosaicShell.Core.Tests
 
             IReadOnlyList<FlyoutLifecycleAction> actions = lifecycle.BeginEntrance(0, FlyoutMotionDriver.Window);
 
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Entering);
-            actions.Should().ContainSingle().Which.Kind.Should().Be(FlyoutLifecycleActionKind.StartEntrance);
-            lifecycle.CompleteEntrance(actions[0].Generation);
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Shown);
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Entering);
+            _ = actions.Should().ContainSingle().Which.Kind.Should().Be(FlyoutLifecycleActionKind.StartEntrance);
+            _ = lifecycle.CompleteEntrance(actions[0].Generation);
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Shown);
         }
 
         [Fact]
@@ -96,15 +96,15 @@ namespace MosaicShell.Core.Tests
 
             IReadOnlyList<FlyoutLifecycleAction> dismiss = lifecycle.Dismiss(1);
 
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Exiting);
-            lifecycle.ExitInFlight.Should().BeTrue();
-            dismiss.Should().ContainSingle().Which.Kind.Should().Be(FlyoutLifecycleActionKind.StartExit);
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Exiting);
+            _ = lifecycle.ExitInFlight.Should().BeTrue();
+            _ = dismiss.Should().ContainSingle().Which.Kind.Should().Be(FlyoutLifecycleActionKind.StartExit);
 
             IReadOnlyList<FlyoutLifecycleAction> end = lifecycle.CompleteExit(dismiss[0].Generation);
 
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Hidden);
-            lifecycle.ExitInFlight.Should().BeFalse();
-            Kinds(end).Should().Equal(FlyoutLifecycleActionKind.Hide);
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Hidden);
+            _ = lifecycle.ExitInFlight.Should().BeFalse();
+            _ = Kinds(end).Should().Equal(FlyoutLifecycleActionKind.Hide);
         }
 
         [Fact]
@@ -114,8 +114,8 @@ namespace MosaicShell.Core.Tests
 
             IReadOnlyList<FlyoutLifecycleAction> actions = lifecycle.Patch(1);
 
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Shown);
-            Kinds(actions).Should().Equal(FlyoutLifecycleActionKind.PatchContent, FlyoutLifecycleActionKind.ResetDismissTimer);
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Shown);
+            _ = Kinds(actions).Should().Equal(FlyoutLifecycleActionKind.PatchContent, FlyoutLifecycleActionKind.ResetDismissTimer);
         }
 
         [Fact]
@@ -125,8 +125,8 @@ namespace MosaicShell.Core.Tests
 
             IReadOnlyList<FlyoutLifecycleAction> actions = lifecycle.ApplyRequest(1);
 
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Shown);
-            Kinds(actions).Should().Equal(
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Shown);
+            _ = Kinds(actions).Should().Equal(
                 FlyoutLifecycleActionKind.ApplyContent,
                 FlyoutLifecycleActionKind.SnapToRest,
                 FlyoutLifecycleActionKind.ResetDismissTimer);
@@ -139,8 +139,8 @@ namespace MosaicShell.Core.Tests
 
             IReadOnlyList<FlyoutLifecycleAction> actions = lifecycle.ApplyRequest(0);
 
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Entering);
-            Kinds(actions).Should().Equal(FlyoutLifecycleActionKind.ApplyContent, FlyoutLifecycleActionKind.StartEntrance);
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Entering);
+            _ = Kinds(actions).Should().Equal(FlyoutLifecycleActionKind.ApplyContent, FlyoutLifecycleActionKind.StartEntrance);
         }
 
         [Fact]
@@ -148,8 +148,8 @@ namespace MosaicShell.Core.Tests
         {
             FlyoutWindowLifecycle lifecycle = new();
 
-            lifecycle.Patch(0).Should().BeEmpty();
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Hidden);
+            _ = lifecycle.Patch(0).Should().BeEmpty();
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Hidden);
         }
 
         [Fact]
@@ -158,8 +158,8 @@ namespace MosaicShell.Core.Tests
             FlyoutWindowLifecycle lifecycle = Shown();
             _ = lifecycle.Dismiss(1);
 
-            lifecycle.Dismiss(0.6).Should().BeEmpty();
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Exiting);
+            _ = lifecycle.Dismiss(0.6).Should().BeEmpty();
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Exiting);
         }
 
         // ---- F04 gap 1: rebuild during exit ----
@@ -172,15 +172,15 @@ namespace MosaicShell.Core.Tests
 
             IReadOnlyList<FlyoutLifecycleAction> actions = lifecycle.ApplyRequest(0.6);
 
-            lifecycle.Phase.Should().NotBe(TesseraFlyoutPhase.Exiting);
-            lifecycle.ExitInFlight.Should().BeFalse();
-            Kinds(actions).Should().Contain(FlyoutLifecycleActionKind.ApplyContent).And.Contain(FlyoutLifecycleActionKind.ReviveFromExit);
+            _ = lifecycle.Phase.Should().NotBe(TesseraFlyoutPhase.Exiting);
+            _ = lifecycle.ExitInFlight.Should().BeFalse();
+            _ = Kinds(actions).Should().Contain(FlyoutLifecycleActionKind.ApplyContent).And.Contain(FlyoutLifecycleActionKind.ReviveFromExit);
 
             // The next dismiss fades; it does not take a shortcut for an exit that is no longer running.
             FlyoutLifecycleAction revive = actions.Single(a => a.Kind == FlyoutLifecycleActionKind.ReviveFromExit);
-            lifecycle.CompleteEntrance(revive.Generation);
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Shown);
-            Kinds(lifecycle.Dismiss(1)).Should().Equal(FlyoutLifecycleActionKind.StartExit);
+            _ = lifecycle.CompleteEntrance(revive.Generation);
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Shown);
+            _ = Kinds(lifecycle.Dismiss(1)).Should().Equal(FlyoutLifecycleActionKind.StartExit);
         }
 
         // ---- F04 gap 2: patch during exit ----
@@ -193,12 +193,12 @@ namespace MosaicShell.Core.Tests
 
             IReadOnlyList<FlyoutLifecycleAction> actions = lifecycle.Patch(0.5);
 
-            Kinds(actions).Should().Equal(
+            _ = Kinds(actions).Should().Equal(
                 FlyoutLifecycleActionKind.PatchContent,
                 FlyoutLifecycleActionKind.ReviveFromExit,
                 FlyoutLifecycleActionKind.ResetDismissTimer);
-            lifecycle.Phase.Should().NotBe(TesseraFlyoutPhase.Exiting);
-            lifecycle.ExitInFlight.Should().BeFalse();
+            _ = lifecycle.Phase.Should().NotBe(TesseraFlyoutPhase.Exiting);
+            _ = lifecycle.ExitInFlight.Should().BeFalse();
         }
 
         // ---- F04 gap 3: motion starts from the current opacity ----
@@ -211,9 +211,9 @@ namespace MosaicShell.Core.Tests
 
             FlyoutLifecycleAction exit = lifecycle.Dismiss(0.4).Single();
 
-            exit.Kind.Should().Be(FlyoutLifecycleActionKind.StartExit);
-            exit.FromOpacity.Should().Be(0.4);
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Exiting);
+            _ = exit.Kind.Should().Be(FlyoutLifecycleActionKind.StartExit);
+            _ = exit.FromOpacity.Should().Be(0.4);
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Exiting);
         }
 
         [Fact]
@@ -224,8 +224,8 @@ namespace MosaicShell.Core.Tests
 
             FlyoutLifecycleAction revive = lifecycle.Patch(0.25).Single(a => a.Kind == FlyoutLifecycleActionKind.ReviveFromExit);
 
-            revive.FromOpacity.Should().Be(0.25);
-            revive.DurationScale.Should().BeApproximately(0.75, 1e-9);
+            _ = revive.FromOpacity.Should().Be(0.25);
+            _ = revive.DurationScale.Should().BeApproximately(0.75, 1e-9);
         }
 
         // ---- F04 gap 4: stacked entrance gap ----
@@ -237,12 +237,12 @@ namespace MosaicShell.Core.Tests
 
             // The presenter defers the motion by two dispatcher hops; the phase must already say Entering.
             _ = lifecycle.BeginEntrance(0, FlyoutMotionDriver.Presenter);
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Entering);
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Entering);
 
             IReadOnlyList<FlyoutLifecycleAction> actions = lifecycle.Patch(0);
 
-            Kinds(actions).Should().NotContain(FlyoutLifecycleActionKind.StartEntrance);
-            Kinds(actions).Should().Equal(FlyoutLifecycleActionKind.PatchContent, FlyoutLifecycleActionKind.ResetDismissTimer);
+            _ = Kinds(actions).Should().NotContain(FlyoutLifecycleActionKind.StartEntrance);
+            _ = Kinds(actions).Should().Equal(FlyoutLifecycleActionKind.PatchContent, FlyoutLifecycleActionKind.ResetDismissTimer);
         }
 
         // ---- F04 gap 5: double exit after a stacked rebuild while visible ----
@@ -253,13 +253,13 @@ namespace MosaicShell.Core.Tests
             FlyoutWindowLifecycle lifecycle = Shown(FlyoutMotionDriver.Presenter);
             _ = lifecycle.ApplyRequest(1);
 
-            lifecycle.Driver.Should().Be(FlyoutMotionDriver.Presenter);
+            _ = lifecycle.Driver.Should().Be(FlyoutMotionDriver.Presenter);
 
             IReadOnlyList<FlyoutLifecycleAction> dismiss = lifecycle.Dismiss(1);
 
-            dismiss.Should().ContainSingle();
-            dismiss[0].Kind.Should().Be(FlyoutLifecycleActionKind.StartExit);
-            dismiss[0].Driver.Should().Be(FlyoutMotionDriver.Presenter);
+            _ = dismiss.Should().ContainSingle();
+            _ = dismiss[0].Kind.Should().Be(FlyoutLifecycleActionKind.StartExit);
+            _ = dismiss[0].Driver.Should().Be(FlyoutMotionDriver.Presenter);
         }
 
         // ---- stale events ----
@@ -272,11 +272,11 @@ namespace MosaicShell.Core.Tests
             FlyoutLifecycleAction exit = lifecycle.Dismiss(0.5).Single();
 
             // The first entrance finishes late, after the exit began.
-            lifecycle.CompleteEntrance(first.Generation).Should().BeEmpty();
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Exiting);
+            _ = lifecycle.CompleteEntrance(first.Generation).Should().BeEmpty();
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Exiting);
 
-            lifecycle.CompleteExit(exit.Generation);
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Hidden);
+            _ = lifecycle.CompleteExit(exit.Generation);
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Hidden);
         }
 
         [Fact]
@@ -286,8 +286,8 @@ namespace MosaicShell.Core.Tests
             FlyoutLifecycleAction exit = lifecycle.Dismiss(1).Single();
             _ = lifecycle.Patch(0.8);
 
-            lifecycle.CompleteExit(exit.Generation).Should().BeEmpty();
-            lifecycle.Phase.Should().NotBe(TesseraFlyoutPhase.Hidden);
+            _ = lifecycle.CompleteExit(exit.Generation).Should().BeEmpty();
+            _ = lifecycle.Phase.Should().NotBe(TesseraFlyoutPhase.Hidden);
         }
 
         [Fact]
@@ -298,8 +298,8 @@ namespace MosaicShell.Core.Tests
 
             lifecycle.Supersede();
 
-            lifecycle.CompleteEntrance(entrance.Generation).Should().BeEmpty();
-            lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Entering);
+            _ = lifecycle.CompleteEntrance(entrance.Generation).Should().BeEmpty();
+            _ = lifecycle.Phase.Should().Be(TesseraFlyoutPhase.Entering);
         }
     }
 }

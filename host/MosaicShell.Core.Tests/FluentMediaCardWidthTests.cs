@@ -9,7 +9,7 @@ namespace MosaicShell.Core.Tests
     /// The Fluent media card, its reveal host, the window that sizes to it and the HWND region cut from
     /// that window must share one width. The card once subtracted a literal 16 from the shared constant
     /// while everything else used the constant, so the window and region ran 15 dip past the card and
-    /// showed a strip of OS acrylic to its right. Every Core-side consumer already read the spec, so
+    /// showed a strip of native translucency to its right. Every Core-side consumer already read the spec, so
     /// only the Host panel could disagree; these tests pin the value and fail on the shape of that bug.
     /// </summary>
     public class FluentMediaCardWidthTests

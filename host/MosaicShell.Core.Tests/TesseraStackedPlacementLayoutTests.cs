@@ -38,7 +38,7 @@ namespace MosaicShell.Core.Tests
         {
             IReadOnlyList<TesseraStackedPanelPlacement> placements =
                 TesseraStackedPlacementPolicy.ComputePlacementsFromMeasured(style, volW, volH, mediaW, mediaH);
-            placements.Should().HaveCount(2);
+            _ = placements.Should().HaveCount(2);
             return (
                 placements.Single(p => p.Role == TesseraStackedPanelRole.Volume),
                 placements.Single(p => p.Role == TesseraStackedPanelRole.Media));
@@ -56,10 +56,10 @@ namespace MosaicShell.Core.Tests
         {
             (TesseraStackedPanelPlacement volume, TesseraStackedPanelPlacement media) = Place(style);
 
-            (volume.WidthDip, volume.HeightDip).Should().Be((VolW, VolH));
-            (media.WidthDip, media.HeightDip).Should().Be((MediaW, MediaH));
-            new[] { volume.OffsetXDip, volume.OffsetYDip, media.OffsetXDip, media.OffsetYDip }.Should().OnlyContain(v => v >= 0);
-            Overlaps(volume, media).Should().BeFalse($"{style} must not park the volume panel under the media card");
+            _ = (volume.WidthDip, volume.HeightDip).Should().Be((VolW, VolH));
+            _ = (media.WidthDip, media.HeightDip).Should().Be((MediaW, MediaH));
+            _ = new[] { volume.OffsetXDip, volume.OffsetYDip, media.OffsetXDip, media.OffsetYDip }.Should().OnlyContain(v => v >= 0);
+            _ = Overlaps(volume, media).Should().BeFalse($"{style} must not park the volume panel under the media card");
         }
 
         [Theory]
@@ -73,20 +73,20 @@ namespace MosaicShell.Core.Tests
             {
                 case TesseraStackedLayoutKind.HorizontalVolumeFirst:
                 case TesseraStackedLayoutKind.HorizontalRadial:
-                    media.OffsetXDip.Should().BeGreaterThanOrEqualTo(volume.OffsetXDip + volume.WidthDip);
+                    _ = media.OffsetXDip.Should().BeGreaterThanOrEqualTo(volume.OffsetXDip + volume.WidthDip);
                     break;
                 case TesseraStackedLayoutKind.HorizontalMediaFirst:
-                    volume.OffsetXDip.Should().BeGreaterThanOrEqualTo(media.OffsetXDip + media.WidthDip);
+                    _ = volume.OffsetXDip.Should().BeGreaterThanOrEqualTo(media.OffsetXDip + media.WidthDip);
                     break;
                 case TesseraStackedLayoutKind.VerticalVolumeFirst:
                 case TesseraStackedLayoutKind.VerticalWin11:
                 case TesseraStackedLayoutKind.PlainTextColumn:
-                    volume.OffsetYDip.Should().Be(0);
-                    media.OffsetYDip.Should().BeGreaterThanOrEqualTo(volume.HeightDip);
+                    _ = volume.OffsetYDip.Should().Be(0);
+                    _ = media.OffsetYDip.Should().BeGreaterThanOrEqualTo(volume.HeightDip);
                     break;
                 case TesseraStackedLayoutKind.VerticalMediaFirst:
-                    media.OffsetYDip.Should().Be(0);
-                    volume.OffsetYDip.Should().BeGreaterThanOrEqualTo(media.HeightDip);
+                    _ = media.OffsetYDip.Should().Be(0);
+                    _ = volume.OffsetYDip.Should().BeGreaterThanOrEqualTo(media.HeightDip);
                     break;
                 default:
                     Assert.Fail($"{style} resolves to {kind}, which this test does not know how to check");
@@ -103,8 +103,8 @@ namespace MosaicShell.Core.Tests
             double clusterW = Math.Max(volume.OffsetXDip + volume.WidthDip, media.OffsetXDip + media.WidthDip);
             double clusterH = Math.Max(volume.OffsetYDip + volume.HeightDip, media.OffsetYDip + media.HeightDip);
 
-            clusterW.Should().BeGreaterThanOrEqualTo(Math.Max(VolW, MediaW));
-            clusterH.Should().BeGreaterThanOrEqualTo(Math.Max(VolH, MediaH));
+            _ = clusterW.Should().BeGreaterThanOrEqualTo(Math.Max(VolW, MediaW));
+            _ = clusterH.Should().BeGreaterThanOrEqualTo(Math.Max(VolH, MediaH));
         }
 
         [Theory]
@@ -113,9 +113,9 @@ namespace MosaicShell.Core.Tests
         {
             (TesseraStackedPanelPlacement volume, TesseraStackedPanelPlacement media) = Place(style, volW: 0, volH: -5, mediaW: 0, mediaH: 0);
 
-            (volume.WidthDip, volume.HeightDip).Should().Be((1, 1));
-            (media.WidthDip, media.HeightDip).Should().Be((1, 1));
-            Overlaps(volume, media).Should().BeFalse();
+            _ = (volume.WidthDip, volume.HeightDip).Should().Be((1, 1));
+            _ = (media.WidthDip, media.HeightDip).Should().Be((1, 1));
+            _ = Overlaps(volume, media).Should().BeFalse();
         }
 
         [Fact]
@@ -126,8 +126,8 @@ namespace MosaicShell.Core.Tests
 
             (TesseraStackedPanelPlacement volume, TesseraStackedPanelPlacement media) = Place(style);
 
-            volume.OffsetYDip.Should().Be((MediaH - VolH) / 2);
-            media.OffsetYDip.Should().Be(0);
+            _ = volume.OffsetYDip.Should().Be((MediaH - VolH) / 2);
+            _ = media.OffsetYDip.Should().Be(0);
         }
 
         [Fact]
@@ -135,9 +135,9 @@ namespace MosaicShell.Core.Tests
         {
             (TesseraStackedPanelPlacement volume, TesseraStackedPanelPlacement media) = Place(StyleIds.Meter);
 
-            media.OffsetXDip.Should().Be(0);
-            volume.OffsetXDip.Should().Be(MediaW + TesseraStackedPlacementSpec.MeterGapDip);
-            (media.OffsetYDip, volume.OffsetYDip).Should().Be((0, 0), "Meter aligns its panels to the top, not the middle");
+            _ = media.OffsetXDip.Should().Be(0);
+            _ = volume.OffsetXDip.Should().Be(MediaW + TesseraStackedPlacementSpec.MeterGapDip);
+            _ = (media.OffsetYDip, volume.OffsetYDip).Should().Be((0, 0), "Meter aligns its panels to the top, not the middle");
         }
 
         [Fact]
@@ -145,8 +145,8 @@ namespace MosaicShell.Core.Tests
         {
             (TesseraStackedPanelPlacement volume, TesseraStackedPanelPlacement media) = Place(StyleIds.Radial, volW: 40, mediaW: 40);
 
-            (media.OffsetXDip + media.WidthDip).Should().BeGreaterThanOrEqualTo(TesseraStackedPlacementSpec.RadialClusterWidthDip);
-            media.OffsetXDip.Should().BeGreaterThanOrEqualTo(volume.OffsetXDip + volume.WidthDip + TesseraStackedPlacementSpec.RadialColumnGapDip - 0.001
+            _ = (media.OffsetXDip + media.WidthDip).Should().BeGreaterThanOrEqualTo(TesseraStackedPlacementSpec.RadialClusterWidthDip);
+            _ = media.OffsetXDip.Should().BeGreaterThanOrEqualTo(volume.OffsetXDip + volume.WidthDip + TesseraStackedPlacementSpec.RadialColumnGapDip - 0.001
                 , "a wide-enough cluster still keeps the column gap");
         }
     }

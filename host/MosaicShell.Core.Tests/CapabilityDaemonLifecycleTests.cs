@@ -1,7 +1,6 @@
 using FluentAssertions;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Capabilities.Platform;
-using MosaicShell.Core.Modules;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 
@@ -49,9 +48,9 @@ namespace MosaicShell.Core.Tests
             using CapabilityDaemon daemon = CreateDaemon();
             _ = await daemon.ArmAsync("Tessera");
 
-            (await daemon.ArmAsync("Tessera")).Should().BeTrue();
+            _ = (await daemon.ArmAsync("Tessera")).Should().BeTrue();
 
-            _created.Should().ContainSingle();
+            _ = _created.Should().ContainSingle();
         }
 
         [Fact]
@@ -64,7 +63,7 @@ namespace MosaicShell.Core.Tests
             _ = await daemon.ArmAsync("Tessera");
             _ = await daemon.DisarmAsync("Tessera");
 
-            events.Select(e => (e.Kind, e.SourceModuleId)).Should().Equal(
+            _ = events.Select(e => (e.Kind, e.SourceModuleId)).Should().Equal(
                 (CapabilityEventKind.CapabilityArmed, "Tessera"),
                 (CapabilityEventKind.CapabilityDisarmed, "Tessera"));
         }
@@ -76,10 +75,10 @@ namespace MosaicShell.Core.Tests
             List<CapabilityEvent> events = [];
             using IDisposable subscription = daemon.Events.SubscribeAll(events.Add);
 
-            (await daemon.DisarmAsync("Tessera")).Should().BeFalse();
+            _ = (await daemon.DisarmAsync("Tessera")).Should().BeFalse();
 
-            events.Should().BeEmpty();
-            _flyouts.Hidden.Should().BeEmpty();
+            _ = events.Should().BeEmpty();
+            _ = _flyouts.Hidden.Should().BeEmpty();
         }
 
         [Fact]
@@ -90,8 +89,8 @@ namespace MosaicShell.Core.Tests
 
             _ = await daemon.DisarmAsync("Tessera");
 
-            _created.Single().Disposed.Should().BeTrue();
-            _flyouts.Hidden.Should().Equal("Tessera");
+            _ = _created.Single().Disposed.Should().BeTrue();
+            _ = _flyouts.Hidden.Should().Equal("Tessera");
         }
 
         [Fact]
@@ -102,8 +101,8 @@ namespace MosaicShell.Core.Tests
             _ = await daemon.ArmAsync("Inlay");
             _ = await daemon.DisarmAsync("Inlay");
 
-            daemon.ArmedModuleIds.Should().Equal("Tessera");
-            daemon.IsArmed("Inlay").Should().BeFalse();
+            _ = daemon.ArmedModuleIds.Should().Equal("Tessera");
+            _ = daemon.IsArmed("Inlay").Should().BeFalse();
         }
 
         [Fact]
@@ -112,12 +111,12 @@ namespace MosaicShell.Core.Tests
             using CapabilityDaemon daemon = CreateDaemon();
             _ = await daemon.ArmAsync("Tessera");
 
-            (await daemon.ReArmAsync("Tessera")).Should().BeTrue();
+            _ = (await daemon.ReArmAsync("Tessera")).Should().BeTrue();
 
-            _created.Should().HaveCount(2);
-            _created[0].Disposed.Should().BeTrue();
-            daemon.IsArmed("Tessera").Should().BeTrue();
-            CapabilityStore.Load().Armed.Should().Contain("Tessera");
+            _ = _created.Should().HaveCount(2);
+            _ = _created[0].Disposed.Should().BeTrue();
+            _ = daemon.IsArmed("Tessera").Should().BeTrue();
+            _ = CapabilityStore.Load().Armed.Should().Contain("Tessera");
         }
 
         [Fact]
@@ -129,9 +128,9 @@ namespace MosaicShell.Core.Tests
 
             await daemon.DisarmAllAsync();
 
-            daemon.ArmedModuleIds.Should().BeEmpty();
-            CapabilityStore.Load().Armed.Should().BeEmpty();
-            _flyouts.HideAllCalls.Should().Be(1);
+            _ = daemon.ArmedModuleIds.Should().BeEmpty();
+            _ = CapabilityStore.Load().Armed.Should().BeEmpty();
+            _ = _flyouts.HideAllCalls.Should().Be(1);
         }
 
         [Fact]
@@ -145,14 +144,14 @@ namespace MosaicShell.Core.Tests
                 // What a clean shutdown does: stop everything, but leave the saved list as it was.
                 await first.DisarmAllAsync(persist: false);
 
-                first.ArmedModuleIds.Should().BeEmpty();
-                _flyouts.HideAllCalls.Should().Be(1);
+                _ = first.ArmedModuleIds.Should().BeEmpty();
+                _ = _flyouts.HideAllCalls.Should().Be(1);
             }
 
-            CapabilityStore.Load().Armed.Should().BeEquivalentTo("Tessera", "Inlay");
+            _ = CapabilityStore.Load().Armed.Should().BeEquivalentTo("Tessera", "Inlay");
             using CapabilityDaemon second = CreateDaemon();
             await second.RestoreAsync();
-            second.ArmedModuleIds.Should().BeEquivalentTo("Tessera", "Inlay");
+            _ = second.ArmedModuleIds.Should().BeEquivalentTo("Tessera", "Inlay");
         }
 
         [Fact]
@@ -160,11 +159,11 @@ namespace MosaicShell.Core.Tests
         {
             using CapabilityDaemon daemon = CreateDaemon();
             _ = await daemon.ArmAsync("Tessera", persist: false);
-            CapabilityStore.Load().Armed.Should().BeEmpty("persist: false must not save");
+            _ = CapabilityStore.Load().Armed.Should().BeEmpty("persist: false must not save");
 
             daemon.Persist();
 
-            CapabilityStore.Load().Armed.Should().Equal("Tessera");
+            _ = CapabilityStore.Load().Armed.Should().Equal("Tessera");
         }
 
         [Fact]
@@ -173,8 +172,8 @@ namespace MosaicShell.Core.Tests
             using CapabilityDaemon daemon = CreateDaemon();
             _ = await daemon.ArmAsync("Tessera");
 
-            daemon.GetHotkeyError("Tessera").Should().BeNull();
-            daemon.GetHotkeyError("NotArmed").Should().BeNull();
+            _ = daemon.GetHotkeyError("Tessera").Should().BeNull();
+            _ = daemon.GetHotkeyError("NotArmed").Should().BeNull();
         }
 
         [Fact]
@@ -187,8 +186,8 @@ namespace MosaicShell.Core.Tests
             ((FakeAudioService)_services.Audio).MasterVolume = 0.9;
             _flyouts.RaiseTransientDismissed("Tessera");
 
-            events.Select(e => e.Kind).Should().Contain(CapabilityEventKind.VolumeChanged);
-            events.Should().Contain(e => e.Kind == CapabilityEventKind.FlyoutTransientDismissed && e.SourceModuleId == "Tessera");
+            _ = events.Select(e => e.Kind).Should().Contain(CapabilityEventKind.VolumeChanged);
+            _ = events.Should().Contain(e => e.Kind == CapabilityEventKind.FlyoutTransientDismissed && e.SourceModuleId == "Tessera");
         }
 
         [Fact]
@@ -204,9 +203,9 @@ namespace MosaicShell.Core.Tests
             ((FakeAudioService)_services.Audio).MasterVolume = 0.1;
             _flyouts.RaiseTransientDismissed("Tessera");
 
-            _created.Single().Disposed.Should().BeTrue();
-            events.Should().BeEmpty("a disposed daemon no longer forwards volume or dismissal events");
-            await daemon.Invoking(d => d.ArmAsync("Inlay")).Should().ThrowAsync<ObjectDisposedException>();
+            _ = _created.Single().Disposed.Should().BeTrue();
+            _ = events.Should().BeEmpty("a disposed daemon no longer forwards volume or dismissal events");
+            _ = await daemon.Invoking(d => d.ArmAsync("Inlay")).Should().ThrowAsync<ObjectDisposedException>();
         }
 
         [Fact]
@@ -217,9 +216,9 @@ namespace MosaicShell.Core.Tests
             _ = await daemon.ArmAsync("Inlay");
             _created[0].ThrowOnDispose = true;
 
-            daemon.Invoking(d => d.Dispose()).Should().NotThrow();
+            _ = daemon.Invoking(d => d.Dispose()).Should().NotThrow();
 
-            _created[1].Disposed.Should().BeTrue();
+            _ = _created[1].Disposed.Should().BeTrue();
         }
 
         private sealed class FakeFactory(string moduleId, List<FakeCapability> created) : ICapabilityFactory

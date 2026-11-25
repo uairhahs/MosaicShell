@@ -30,12 +30,7 @@ namespace MosaicShell.Core.Tests
             using DefaultEndpointBinding<Endpoint> binding = new(() =>
             {
                 calls++;
-                if (calls == 1)
-                {
-                    throw new InvalidOperationException("audio service not ready");
-                }
-
-                return new Endpoint(3);
+                return calls == 1 ? throw new InvalidOperationException("audio service not ready") : new Endpoint(3);
             });
 
             _ = binding.Run(e => e.Id, -1).Should().Be(-1);
@@ -77,12 +72,7 @@ namespace MosaicShell.Core.Tests
 
             int result = binding.Run(e =>
             {
-                if (e == dead)
-                {
-                    throw new InvalidOperationException("stale endpoint");
-                }
-
-                return e.Id;
+                return e == dead ? throw new InvalidOperationException("stale endpoint") : e.Id;
             }, -1);
 
             _ = result.Should().Be(2);

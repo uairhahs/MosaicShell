@@ -15,17 +15,17 @@ namespace MosaicShell.Host.Capabilities
             bool SoftFrostHwndReady,
             bool UseBackdropBlur,
             bool AllowGdiScreenCapture,
-            bool OsAcrylicEligible);
+            bool NativeTranslucencyEligible);
 
         public static Binding ApplyForLiveFlyout(
             bool settingsWantBlur,
-            bool osAcrylicEligible = false)
+            bool nativeTranslucencyEligible = false)
         {
             bool softFrostHwnd = TesseraFlyoutWindowPolicy.SoftFrostHwndReady;
             TesseraFlyoutGlassMode mode = TesseraFlyoutGlassPolicy.ResolveLiveMode(
                 softFrostHwnd,
                 settingsWantBlur,
-                osAcrylicEligible);
+                nativeTranslucencyEligible);
             bool useEmbedded = TesseraFlyoutGlassPolicy.ShouldUseEmbeddedPreviewBuild(
                 isConfigOrExportPreview: false,
                 softFrostHwndReady: softFrostHwnd);
@@ -36,10 +36,10 @@ namespace MosaicShell.Host.Capabilities
 
             TesseraGlass.UseBackdropBlur = useSimulatedBackdrop;
             TesseraGlass.AllowGdiScreenCapture = allowGdi;
-            TesseraGlass.UseOsAcrylicChrome = mode == TesseraFlyoutGlassMode.OsAcrylic;
+            TesseraGlass.UseNativeTranslucencyChrome = mode == TesseraFlyoutGlassMode.NativeTranslucency;
             TesseraGlass.SuppressInnerSkiaGlass = TesseraFlyoutGlassPolicy.SuppressMeterInnerSkiaGlass(mode);
 
-            return new Binding(mode, useEmbedded, softFrostHwnd, useSimulatedBackdrop, allowGdi, osAcrylicEligible);
+            return new Binding(mode, useEmbedded, softFrostHwnd, useSimulatedBackdrop, allowGdi, nativeTranslucencyEligible);
         }
     }
 }

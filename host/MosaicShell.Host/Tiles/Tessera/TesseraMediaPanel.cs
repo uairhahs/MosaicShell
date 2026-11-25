@@ -217,7 +217,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             top.Children.Add(art);
             StackPanel body = new() { Spacing = 4, Children = { top, scrub, transport } };
 
-            return TesseraStackedBuildContext.IsActive && TesseraGlass.UseOsAcrylicChrome
+            return TesseraStackedBuildContext.IsActive && TesseraGlass.UseNativeTranslucencyChrome
                 ? new Border
                 {
                     Width = TesseraStackedPlacementSpec.ModernFlyoutsMediaWidthDip,
@@ -233,7 +233,7 @@ namespace MosaicShell.Host.Tiles.Tessera
 
         private static Control SimpleRow(TesseraFlyoutViewModel vm)
         {
-            bool stackedOsAcrylic = TesseraStackedBuildContext.IsActive && TesseraGlass.UseOsAcrylicChrome;
+            bool stackedNativeTranslucency = TesseraStackedBuildContext.IsActive && TesseraGlass.UseNativeTranslucencyChrome;
             Border art = AlbumArt(vm, 64);
             TextBlock title = Text(vm.MediaTitle, 15, FontWeight.SemiBold, 200);
             TextBlock artist = Text(vm.MediaArtist, 12, FontWeight.Normal, 200, muted: true);
@@ -253,7 +253,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 }
             };
 
-            return stackedOsAcrylic
+            return stackedNativeTranslucency
                 ? new Border
                 {
                     Width = TesseraStackedPlacementSpec.CompactMediaWidthDip,
@@ -269,7 +269,7 @@ namespace MosaicShell.Host.Tiles.Tessera
 
         private static Control GnomePill(TesseraFlyoutViewModel vm)
         {
-            bool stackedOsAcrylic = TesseraStackedBuildContext.IsActive && TesseraGlass.UseOsAcrylicChrome;
+            bool stackedNativeTranslucency = TesseraStackedBuildContext.IsActive && TesseraGlass.UseNativeTranslucencyChrome;
             Border art = AlbumArt(vm, 36);
             art.CornerRadius = new CornerRadius(18);
             TextBlock title = Text(vm.MediaTitle, 13, FontWeight.SemiBold, 140);
@@ -294,7 +294,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 }
             };
 
-            return stackedOsAcrylic
+            return stackedNativeTranslucency
                 ? new Border
                 {
                     Width = TesseraStackedPlacementSpec.GnomeMediaWidthDip,
@@ -311,7 +311,7 @@ namespace MosaicShell.Host.Tiles.Tessera
         private static Control MeterCard(TesseraFlyoutViewModel vm)
         {
             bool stacked = TesseraStackedBuildContext.IsActive;
-            bool stackedOsAcrylic = stacked && TesseraGlass.UseOsAcrylicChrome;
+            bool stackedNativeTranslucency = stacked && TesseraGlass.UseNativeTranslucencyChrome;
             int artSize = stacked
                 ? (int)TesseraStackedPlacementSpec.MeterMediaArtDip
                 : 120;
@@ -385,7 +385,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 Border border = new()
                 {
                     CornerRadius = new CornerRadius(16),
-                    Background = stackedOsAcrylic ? Brushes.Transparent : TesseraChrome.TileFace,
+                    Background = stackedNativeTranslucency ? Brushes.Transparent : TesseraChrome.TileFace,
                     Padding = pad,
                     ClipToBounds = true,
                     Child = body

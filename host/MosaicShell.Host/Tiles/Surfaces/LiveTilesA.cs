@@ -9,6 +9,7 @@ using Material.Icons.Avalonia;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
+using MosaicShell.Host.Theming;
 
 namespace MosaicShell.Host.Tiles.Surfaces
 {
@@ -85,7 +86,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
             {
                 Text = t,
                 FontSize = compact ? 9 : 10,
-                Foreground = WidgetChrome.Brush("#6c7086"),
+                Foreground = ThemeTokens.Brush(ThemeTokens.TextTertiary),
                 LetterSpacing = 1.2
             };
         }
@@ -96,7 +97,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
             {
                 FontSize = 18,
                 FontWeight = FontWeight.SemiBold,
-                Foreground = WidgetChrome.Brush("#cdd6f4"),
+                Foreground = ThemeTokens.Brush(ThemeTokens.TextPrimary),
                 TextWrapping = TextWrapping.Wrap
             };
         }
@@ -108,12 +109,12 @@ namespace MosaicShell.Host.Tiles.Surfaces
         private readonly TextBlock _time = new()
         {
             FontWeight = FontWeight.Light,
-            Foreground = WidgetChrome.Brush("#cdd6f4"),
+            Foreground = ThemeTokens.Brush(ThemeTokens.TextPrimary),
             HorizontalAlignment = HorizontalAlignment.Center
         };
         private readonly TextBlock _date = new()
         {
-            Foreground = WidgetChrome.Brush("#a6adc8"),
+            Foreground = ThemeTokens.Brush(ThemeTokens.TextSecondary),
             HorizontalAlignment = HorizontalAlignment.Center,
             Margin = new Avalonia.Thickness(0, 8, 0, 0)
         };
@@ -149,14 +150,14 @@ namespace MosaicShell.Host.Tiles.Surfaces
         {
             FontSize = 16,
             FontWeight = FontWeight.SemiBold,
-            Foreground = WidgetChrome.Brush("#cdd6f4"),
+            Foreground = ThemeTokens.Brush(ThemeTokens.TextPrimary),
             TextTrimming = TextTrimming.CharacterEllipsis,
             MaxWidth = 220
         };
         private readonly TextBlock _artist = new()
         {
             FontSize = 12,
-            Foreground = WidgetChrome.Brush("#6c7086"),
+            Foreground = ThemeTokens.Brush(ThemeTokens.TextTertiary),
             Margin = new Avalonia.Thickness(0, 4, 0, 12),
             TextTrimming = TextTrimming.CharacterEllipsis,
             MaxWidth = 220
@@ -181,7 +182,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
                 Kind = MaterialIconKind.Play,
                 Width = 20,
                 Height = 20,
-                Foreground = WidgetChrome.Brush("#cdd6f4")
+                Foreground = ThemeTokens.Brush(ThemeTokens.TextPrimary)
             };
             StackPanel transport = new()
             {
@@ -238,7 +239,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
                 Kind = kind,
                 Width = 20,
                 Height = 20,
-                Foreground = WidgetChrome.Brush("#cdd6f4")
+                Foreground = ThemeTokens.Brush(ThemeTokens.TextPrimary)
             }, act);
         }
 
@@ -250,9 +251,6 @@ namespace MosaicShell.Host.Tiles.Surfaces
                 Width = 44,
                 Height = 36,
                 Padding = new Avalonia.Thickness(0),
-                Background = WidgetChrome.Brush("#313244"),
-                BorderThickness = new Avalonia.Thickness(0),
-                CornerRadius = new Avalonia.CornerRadius(8)
             };
             b.Click += (_, _) => act();
             return b;
@@ -295,7 +293,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
                     {
                         Width = 10,
                         Height = 10,
-                        Fill = WidgetChrome.Brush("#89dceb")
+                        Fill = ThemeTokens.Brush(ThemeTokens.AccentFill)
                     };
                     _viz.Add(dot);
                     ((Canvas)_host).Children.Add(dot);
@@ -306,7 +304,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
                     {
                         Width = 10,
                         Height = 8,
-                        Fill = WidgetChrome.Brush("#89dceb"),
+                        Fill = ThemeTokens.Brush(ThemeTokens.AccentFill),
                         RadiusX = 2,
                         RadiusY = 2,
                         VerticalAlignment = VerticalAlignment.Bottom

@@ -27,9 +27,7 @@ namespace MosaicShell.Core.Services.BrowserBridge
         public static BrowserSessionEntry? Select(
             IEnumerable<BrowserSessionEntry> entries, DateTimeOffset now, string? smtcTitle, string? smtcSite = null)
         {
-            return entries
-                .Where(e => now - e.LastHeard <= StalenessTimeout)
-                .Where(e => !(e.Report.PlaybackState == BrowserPlaybackState.Stopped && string.IsNullOrWhiteSpace(e.Report.Title)))
+            return Shown(entries, now)
                 .OrderByDescending(e => smtcSite is not null
                     && string.Equals(BrowserSiteNames.FromOrigin(e.Report.Origin), smtcSite, StringComparison.OrdinalIgnoreCase))
                 .ThenBy(e => Tier(e.Report))
@@ -38,6 +36,14 @@ namespace MosaicShell.Core.Services.BrowserBridge
                 .ThenBy(e => e.ConnectionId)
                 .ThenBy(e => e.Report.TabId)
                 .FirstOrDefault();
+        }
+
+        /// <summary>The sessions worth showing at all: from a browser still heard from, with something to show.</summary>
+        public static IEnumerable<BrowserSessionEntry> Shown(IEnumerable<BrowserSessionEntry> entries, DateTimeOffset now)
+        {
+            return entries
+                .Where(e => now - e.LastHeard <= StalenessTimeout)
+                .Where(e => !(e.Report.PlaybackState == BrowserPlaybackState.Stopped && string.IsNullOrWhiteSpace(e.Report.Title)));
         }
 
         private static int Tier(BrowserSessionReport report)

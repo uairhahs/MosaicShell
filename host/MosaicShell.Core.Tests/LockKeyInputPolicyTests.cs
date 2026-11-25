@@ -55,9 +55,8 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void Lock_keys_use_poll_policy()
+        public void Lock_keys_edge_toggle_on_key_down()
         {
-            _ = LockKeyPollPolicy.PreferPollOverLowLevelHook.Should().BeTrue();
             _ = LockKeyInputPolicy.MustEdgeToggleOnKeyDown.Should().BeTrue();
         }
     }

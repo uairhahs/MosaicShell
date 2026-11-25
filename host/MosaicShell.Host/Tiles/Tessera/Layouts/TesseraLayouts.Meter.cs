@@ -61,7 +61,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 Name = "TesseraPercent"
             };
 
-            bool stackedOsAcrylic = TesseraStackedBuildContext.IsActive && TesseraGlass.UseOsAcrylicChrome;
+            bool stackedNativeTranslucency = TesseraStackedBuildContext.IsActive && TesseraGlass.UseNativeTranslucencyChrome;
 
             TesseraTrack track = new()
             {
@@ -75,7 +75,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 TrackThickness = w,
                 TrackPad = 0,
                 ShellRadius = r,
-                GlassFill = !stackedOsAcrylic
+                GlassFill = !stackedNativeTranslucency
                     && !TesseraGlass.SuppressInnerSkiaGlass
                     && !TesseraStackedBuildContext.IsActive,
                 AccentBrushOverride = TesseraPalette.AccentBrush,
@@ -110,7 +110,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             const double h = TesseraStackedPlacementSpec.MeterVolumeHeightDip;
             const double r = 14;
 
-            return TesseraStackedBuildContext.IsActive && TesseraGlass.UseOsAcrylicChrome
+            return TesseraStackedBuildContext.IsActive && TesseraGlass.UseNativeTranslucencyChrome
                 ? new Border
                 {
                     Width = w,

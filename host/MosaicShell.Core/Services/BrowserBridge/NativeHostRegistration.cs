@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using System.Security;
 using System.Text;
 using System.Text.Json;
@@ -17,6 +18,7 @@ namespace MosaicShell.Core.Services.BrowserBridge
         void DeleteTree(string subKey);
     }
 
+    [SupportedOSPlatform("windows")]
     public sealed class CurrentUserRegistry : IUserRegistry
     {
         public string? GetDefault(string subKey)
@@ -116,6 +118,143 @@ namespace MosaicShell.Core.Services.BrowserBridge
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
             {
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// The Chromium browsers' folders under the Linux config home. On Linux a browser finds a native host by a manifest
+        /// file in its own <c>NativeMessagingHosts</c> folder, not by registry; Edge's store copy of Grout works in each.
+        /// </summary>
+        public static IReadOnlyList<string> LinuxBrowserConfigDirs { get; } =
+        [
+            "microsoft-edge",
+            "microsoft-edge-beta",
+            "microsoft-edge-dev",
+            "google-chrome",
+            "google-chrome-beta",
+            "google-chrome-unstable",
+            "chromium",
+            Path.Combine("BraveSoftware", "Brave-Browser"),
+            "vivaldi",
+        ];
+
+        /// <summary>
+        /// Writes the manifest into each installed browser's <c>NativeMessagingHosts</c> folder under
+        /// <paramref name="configHome"/>, so the browsers start <paramref name="relayPath"/> for the extension. A browser
+        /// whose folder does not exist is not installed and gets nothing. Writes only what differs. Returns how many
+        /// browsers now have the manifest; 0 when the relay is not where it says.
+        /// </summary>
+        public static int RegisterForLinuxBrowsers(string relayPath, string configHome)
+        {
+            if (!Path.IsPathFullyQualified(relayPath) || !File.Exists(relayPath))
+            {
+                return 0;
+            }
+
+            string manifest = ManifestFor(relayPath);
+            int registered = 0;
+            foreach (string browser in LinuxBrowserConfigDirs)
+            {
+                string browserDir = Path.Combine(configHome, browser);
+                if (!Directory.Exists(browserDir))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    string hosts = Path.Combine(browserDir, "NativeMessagingHosts");
+                    _ = Directory.CreateDirectory(hosts);
+                    string manifestPath = Path.Combine(hosts, HostName + ".json");
+                    if (!File.Exists(manifestPath) || File.ReadAllText(manifestPath) != manifest)
+                    {
+                        File.WriteAllText(manifestPath, manifest, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                    }
+
+                    registered++;
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
+                {
+                    // One browser's folder refusing the file must not stop the others.
+                }
+            }
+
+            return registered;
+        }
+
+        /// <summary>
+        /// The shared .NET root above a framework-dependent runtime directory (<c>root/shared/Microsoft.NETCore.App/ver</c>),
+        /// or null for a self-contained runtime. Works on the path's text (Linux paths), not the file system, so it gives
+        /// the same answer when tested on Windows, where <see cref="DirectoryInfo"/> would root it at the current drive.
+        /// </summary>
+        public static string? DotnetRootFromRuntimeDirectory(string runtimeDirectory)
+        {
+            string[] parts = runtimeDirectory.TrimEnd('/').Split('/');
+            return parts.Length >= 4
+                && parts[^2] == "Microsoft.NETCore.App"
+                && parts[^3] == "shared"
+                && string.Join('/', parts[..^3]) is { Length: > 0 } root
+                ? root
+                : null;
+        }
+
+        /// <summary>
+        /// A browser starts the relay without DOTNET_ROOT, so a framework-dependent relay cannot find .NET outside the
+        /// default paths (NixOS). Writes a launcher in <paramref name="dataDirectory"/> that hands it the Host's own root
+        /// and returns its path to register; returns the relay itself when there is no root, no relay, or no write.
+        /// </summary>
+        public static string EnsureLinuxLauncher(string relayPath, string? dotnetRoot, string dataDirectory)
+        {
+            if (dotnetRoot is null || !File.Exists(relayPath))
+            {
+                return relayPath;
+            }
+
+            try
+            {
+                string launcher = Path.Combine(dataDirectory, "grout-relay.sh");
+                string script = $"#!/bin/sh\nDOTNET_ROOT={ShellQuote(dotnetRoot)} exec {ShellQuote(relayPath)} \"$@\"\n";
+                _ = Directory.CreateDirectory(dataDirectory);
+                if (!File.Exists(launcher) || File.ReadAllText(launcher) != script)
+                {
+                    File.WriteAllText(launcher, script, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                }
+
+                if (!OperatingSystem.IsWindows())
+                {
+                    File.SetUnixFileMode(launcher, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+                }
+
+                return launcher;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
+            {
+                return relayPath;
+            }
+        }
+
+        private static string ShellQuote(string value)
+        {
+            return "'" + value.Replace("'", "'\\''") + "'";
+        }
+
+        /// <summary>Removes this host's manifest from every browser under <paramref name="configHome"/>, for an uninstall.</summary>
+        public static void UnregisterForLinuxBrowsers(string configHome)
+        {
+            foreach (string browser in LinuxBrowserConfigDirs)
+            {
+                try
+                {
+                    string manifestPath = Path.Combine(configHome, browser, "NativeMessagingHosts", HostName + ".json");
+                    if (File.Exists(manifestPath))
+                    {
+                        File.Delete(manifestPath);
+                    }
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
+                {
+                    // An uninstall that cannot clean up must still finish.
+                }
             }
         }
 

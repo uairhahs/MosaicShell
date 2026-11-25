@@ -204,7 +204,7 @@ namespace MosaicShell.Core.Capabilities.Platform
 
         private static FlyoutRequest Media(string styleId, string title, int autoDismissMs = NoAutoDismissMs)
         {
-            return Request("media", styleId, new Dictionary<string, string>
+            return Request(FlyoutKinds.Media, styleId, new Dictionary<string, string>
             {
                 ["mediaTitle"] = title,
                 ["mediaArtist"] = "Test Artist",
@@ -215,7 +215,7 @@ namespace MosaicShell.Core.Capabilities.Platform
 
         private static FlyoutRequest Volume(string styleId, int percent)
         {
-            return Request("vol", styleId, new Dictionary<string, string>
+            return Request(FlyoutKinds.Volume, styleId, new Dictionary<string, string>
             {
                 ["volume"] = (percent / 100.0).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture),
                 ["muted"] = "0",
@@ -224,7 +224,7 @@ namespace MosaicShell.Core.Capabilities.Platform
 
         private static FlyoutRequest Caps(string styleId, bool on)
         {
-            return Request("locks", styleId, new Dictionary<string, string>
+            return Request(FlyoutKinds.Locks, styleId, new Dictionary<string, string>
             {
                 ["lock"] = "CapsLock",
                 ["on"] = on ? "1" : "0",

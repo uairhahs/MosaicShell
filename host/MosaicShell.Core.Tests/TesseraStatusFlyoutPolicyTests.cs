@@ -18,7 +18,7 @@ namespace MosaicShell.Core.Tests
             _root = Path.Combine(Path.GetTempPath(), "MosaicStatusFlyout_" + Guid.NewGuid().ToString("N"));
             AppPaths.SetRootOverride(_root);
             AppPaths.EnsureLayout();
-            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseOsAcrylic = true, ShowMediaStripOnVolume = true });
+            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseNativeTranslucency = true, ShowMediaStripOnVolume = true });
             HostLaunchOptions.ResetForTests();
             HostLaunchOptions.Apply([]);
         }
@@ -44,16 +44,16 @@ namespace MosaicShell.Core.Tests
         [Theory]
         [InlineData("locks")]
         [InlineData("flight")]
-        public void Status_kinds_never_use_stacked_os_acrylic(string kind)
+        public void Status_kinds_never_use_stacked_native_translucency(string kind)
         {
             _ = TesseraStatusFlyoutPolicy.MustUseDedicatedSingleWindow(kind).Should().BeTrue();
 
             Dictionary<string, string> stacked = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
-            _ = TesseraOsAcrylicStackedPolicy
-                .UseMultiWindow(stacked, StyleIds.ModernFlyouts, trialRequested: true, osSupportsWinUiAcrylic: true, kind: kind)
+            _ = TesseraNativeTranslucencyStackedPolicy
+                .UseMultiWindow(stacked, StyleIds.ModernFlyouts, trialRequested: true, platformSupported: true, kind: kind)
                 .Should().BeFalse("caps/airplane must not fork into volume+media HWNDs");
-            _ = TesseraOsAcrylicStackedPolicy
-                .UseMultiWindow(stacked, StyleIds.ModernFlyouts, trialRequested: true, osSupportsWinUiAcrylic: true, kind: "vol")
+            _ = TesseraNativeTranslucencyStackedPolicy
+                .UseMultiWindow(stacked, StyleIds.ModernFlyouts, trialRequested: true, platformSupported: true, kind: "vol")
                 .Should().BeTrue();
         }
 
@@ -64,14 +64,14 @@ namespace MosaicShell.Core.Tests
             {
                 Style = StyleIds.ModernFlyouts,
                 ShowMediaStripOnVolume = true,
-                UseOsAcrylic = true
+                UseNativeTranslucency = true
             };
             HostServices services = HostServicesFakes.Create();
             TesseraFlyoutRequestBuilder builder = new();
             FlyoutRequest locks = builder.Build(services, settings, "locks",
                 new Dictionary<string, string> { ["lock"] = "CapsLock", ["on"] = "1" });
             _ = locks.Payload!["showMediaStrip"].Should().Be("0");
-            _ = TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(locks.Payload, locks.StyleId, locks.Kind)
+            _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(locks.Payload, locks.StyleId, locks.Kind)
                 .Should().BeFalse();
 
             FlyoutRequest vol = builder.Build(services, settings, "vol");
@@ -82,7 +82,7 @@ namespace MosaicShell.Core.Tests
         public void Status_shell_is_content_sized_not_volume_sized()
         {
             _ = TesseraStatusFlyoutPolicy.ForbidFixedVolumeShellSize.Should().BeTrue();
-            _ = TesseraStatusFlyoutPolicy.PreferOsAcrylicEdgeOnlyChrome.Should().BeTrue();
+            _ = TesseraStatusFlyoutPolicy.PreferNativeTranslucencyEdgeOnlyChrome.Should().BeTrue();
             _ = TesseraStatusFlyoutPolicy.ChipHeightDip.Should().Be(50);
             _ = TesseraStatusFlyoutPolicy.ResolveChipCornerRadiusDip(StyleIds.Windows11).Should().Be(12f);
             _ = TesseraStatusFlyoutPolicy.ResolveChipCornerRadiusDip(StyleIds.Square).Should().Be(24f);

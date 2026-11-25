@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules.Tessera;
@@ -33,8 +34,7 @@ namespace MosaicShell.Host.Capabilities
         private readonly Lock _gate = new();
         private readonly Dictionary<string, FlyoutWindow> _windows = new(StringComparer.OrdinalIgnoreCase);
         private FocusDimWindow? _focusDim;
-        private TesseraOutsideClickWatcher? _outsideClick;
-        private DispatcherTimer? _outsideClickArm;
+        private readonly List<FocusDimWindow> _otherScreenLayers = [];
         private readonly TesseraFlyoutLiveSyncCoalescer _patchCoalesce = new();
         private readonly TesseraFlyoutUpdateDispatchGate _updateDispatch = new();
         private readonly TesseraFlyoutSessionState _session = new();
@@ -86,8 +86,7 @@ namespace MosaicShell.Host.Capabilities
 
         private static bool IsImmediateStatusKind(FlyoutRequest request)
         {
-            return request.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
-            || request.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase);
+            return MediaFlyoutRouter.IsStatusKind(request.Kind);
         }
 
         public void Update(FlyoutRequest request)
@@ -189,9 +188,9 @@ namespace MosaicShell.Host.Capabilities
             {
                 lock (_gate)
                 {
-                    if (ShouldUseStackedOsAcrylic(request))
+                    if (ShouldUseStackedNativeTranslucency(request))
                     {
-                        string volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey(ModuleIds.Tessera, TesseraStackedPanelRole.Volume);
+                        string volumeKey = TesseraNativeTranslucencyStackedPolicy.WindowSlotKey(ModuleIds.Tessera, TesseraStackedPanelRole.Volume);
                         if (!_windows.TryGetValue(volumeKey, out FlyoutWindow? volumeWin)
                             || !volumeWin.IsFlyoutSessionShowing)
                         {
@@ -271,7 +270,6 @@ namespace MosaicShell.Host.Capabilities
                     _ = _windows.Remove(moduleId, out single);
                 }
                 try { single?.Close(); } catch { /* ignore */ }
-                StopOutsideClickWatcher();
                 CloseFocusDim();
                 CancelDeferredPatch();
                 _ = _session.Clear();
@@ -303,7 +301,6 @@ namespace MosaicShell.Host.Capabilities
                 HideCore(id);
             }
 
-            StopOutsideClickWatcher();
             CloseFocusDim();
             CancelDeferredPatch();
             _ = _session.Clear();
@@ -376,7 +373,7 @@ namespace MosaicShell.Host.Capabilities
         {
             InvalidateTesseraQueuesOnHandoff(request);
 
-            if (ShouldUseStackedOsAcrylic(request))
+            if (ShouldUseStackedNativeTranslucency(request))
             {
                 ShowOrUpdateStacked(request, resetDismiss, allowLivePatch);
                 return;
@@ -397,7 +394,7 @@ namespace MosaicShell.Host.Capabilities
                 return;
             }
 
-            bool nextStacked = ShouldUseStackedOsAcrylic(request);
+            bool nextStacked = ShouldUseStackedNativeTranslucency(request);
             string? openKind = null;
             string? openStyle = null;
             bool openStacked = _stackedSession is not null;
@@ -429,10 +426,6 @@ namespace MosaicShell.Host.Capabilities
 
             Log($"handoff invalidate open={openKind}/{openStyle} stacked={openStacked} → {request.Kind}/{request.StyleId} stacked={nextStacked}");
             CancelDeferredPatch();
-            if (TesseraFlyoutPresentHandoffPolicy.PresentMustStopOutsideClickBeforeRearm)
-            {
-                StopOutsideClickWatcher();
-            }
         }
 
         private void ShowOrUpdateCoreSinglePath(FlyoutRequest request, bool resetDismiss = true, bool allowLivePatch = true)
@@ -531,13 +524,27 @@ namespace MosaicShell.Host.Capabilities
                 && decision == FlyoutIngressDecision.ReviveHidden
                 && TryPatchLive(reuse, request, resetDismiss))
             {
+                // Transient dismiss closed the dim with the hide; open it again before the flyout shows, as a cold
+                // build does, so the flyout is the later topmost peer.
+                bool syncDim = TesseraFocusDimPolicy.MustSyncOnIngress(decision);
+                if (syncDim)
+                {
+                    SyncFocusDim(request);
+                }
+
                 if (!reuse.IsVisible)
                 {
                     reuse.Show();
                 }
 
-                Log($"revive kind={request.Kind} style={request.StyleId} {reuse.MotionStateTag}");
+                if (syncDim)
+                {
+                    RestackAboveDim(reuse);
+                }
+
+                Log($"revive kind={request.Kind} style={request.StyleId} focusDim={_focusDim is not null} {reuse.MotionStateTag}");
                 reuse.PlayShowAnimation();
+
                 return;
             }
 
@@ -583,6 +590,12 @@ namespace MosaicShell.Host.Capabilities
             EnsureTesseraSession(request, TesseraFlyoutSessionMode.Single);
             if (!reuse.IsVisible)
             {
+                // The layer first, as a cold build and a revive do: a layer shown after the flyout lands above it.
+                if (TesseraFocusDimPolicy.MustSyncOnIngress(FlyoutIngressDecision.RebuildInPlace))
+                {
+                    SyncFocusDim(request);
+                }
+
                 reuse.Show();
             }
 
@@ -635,7 +648,6 @@ namespace MosaicShell.Host.Capabilities
                 if (ModuleIds.IsTessera(request.ModuleId)
                     && !IsVisible(ModuleIds.Tessera))
                 {
-                    StopOutsideClickWatcher();
                     CloseFocusDim();
                     CancelDeferredPatch();
                 }
@@ -669,12 +681,8 @@ namespace MosaicShell.Host.Capabilities
             }
 
             Log($"patch kind={request.Kind} style={request.StyleId}");
-            // (PatchImpliesPresent|Win32Restack|OutsideClickRearm are false, Core tests).
+            // (PatchImpliesPresent|Win32Restack are false, Core tests).
             existing.EnsureLivePump();
-            if (TesseraFlyoutOutsideClickPolicy.PatchMustRefreshBoundsWithoutRearm)
-            {
-                _outsideClick?.RefreshBounds(existing);
-            }
 
             return true;
         }
@@ -754,7 +762,7 @@ namespace MosaicShell.Host.Capabilities
             SyncFocusDim(request);
             RestackAboveDim(window);
 
-            bool focusDimOn = TesseraFocusDimPolicy.EnabledFromPayload(request.Payload);
+            bool focusDimOn = _focusDim is not null;
             string layered = TesseraFlyoutWindowPolicy.MustApplyPresentableLayeredAlpha
                 ? Win32WindowChrome.ForceOpaqueLayer(window)
                 : "skipped";
@@ -781,38 +789,6 @@ namespace MosaicShell.Host.Capabilities
 
                 Log(DiagnosticLogLevel.Debug, $"present hwnds total={total} visible={visibleWindows} tracked={tracked}");
             }
-
-            if (ModuleIds.IsTessera(request.ModuleId))
-            {
-                ScheduleOutsideClickArm(window);
-            }
-        }
-
-        private void ScheduleOutsideClickArm(FlyoutWindow window)
-        {
-            // Present owns the hook: dispose prior watcher before the arm delay (stale bounds otherwise).
-            if (TesseraFlyoutOutsideClickPolicy.PresentMustStopPriorWatcherBeforeRearm)
-            {
-                StopOutsideClickWatcher();
-            }
-            else
-            {
-                _outsideClickArm?.Stop();
-            }
-
-            _outsideClickArm = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1500) };
-            FlyoutWindow captured = window;
-            _outsideClickArm.Tick += (_, _) =>
-            {
-                _outsideClickArm?.Stop();
-                _outsideClickArm = null;
-                if (captured.IsVisible)
-                {
-                    StartOutsideClickWatcher(captured);
-                    Log("outside-click armed");
-                }
-            };
-            _outsideClickArm.Start();
         }
 
         private void RestackAboveDim(FlyoutWindow flyout)
@@ -824,6 +800,14 @@ namespace MosaicShell.Host.Capabilities
                     long span = TesseraFlyoutDiagnostics.BeginSpan();
                     flyout.Topmost = true;
                     _focusDim?.Topmost = true;
+
+                    if (TesseraFocusDimPolicy.ResolveRestack(X11FocusDim.ResolveRoute()) == FlyoutRestack.X11RestackWindow)
+                    {
+                        string x11 = _focusDim is { } dim ? X11WindowLayer.RestackAbove(flyout, dim) : "no layer";
+                        TesseraFlyoutDiagnostics.EndSpan(span, $"zorder when={when}");
+                        Log($"z-order {when} {x11}");
+                        return;
+                    }
 
                     bool ok = Win32WindowChrome.TryStackAbove(flyout, _focusDim, out string? detail);
                     TesseraFlyoutDiagnostics.EndSpan(span, $"zorder when={when}");
@@ -843,8 +827,15 @@ namespace MosaicShell.Host.Capabilities
 
         private void SyncFocusDim(FlyoutRequest request)
         {
-            if (!ModuleIds.IsTessera(request.ModuleId)
-                || !TesseraFocusDimPolicy.EnabledFromPayload(request.Payload))
+            if (!ModuleIds.IsTessera(request.ModuleId))
+            {
+                CloseFocusDim();
+                return;
+            }
+
+            // Per call: X11 compositing can be switched off and on.
+            FocusDimRoute route = X11FocusDim.ResolveRoute();
+            if (!TesseraFocusDimPolicy.ShouldShowLayer(request.Payload, route))
             {
                 CloseFocusDim();
                 return;
@@ -852,53 +843,84 @@ namespace MosaicShell.Host.Capabilities
 
             if (_focusDim is null)
             {
-                _focusDim = new FocusDimWindow(request.MonitorIndex);
+                _focusDim = new FocusDimWindow(request.MonitorIndex, route, TesseraFocusDimPolicy.EnabledFromPayload(request.Payload));
+                _focusDim.OutsideClicked += (_, at) => DismissTesseraImmediate(at);
                 _focusDim.PrepareBeforeShow();
                 // Show dim BEFORE the flyout (caller order) so the flyout is the later topmost peer.
                 _focusDim.Show();
                 _focusDim.FadeIn();
-                Log($"focusDim shown mon={request.MonitorIndex}");
+                Log($"focusDim shown mon={request.MonitorIndex} route={route}");
             }
             else
             {
                 _focusDim.PlaceOnMonitor(request.MonitorIndex);
             }
+
+            SyncOtherScreenLayers(_focusDim, route);
         }
 
-        private void CloseFocusDim()
+        /// <summary>
+        /// Where the layer is the outside-click hitbox, every other screen gets a bare one too, so a click on another
+        /// display also dismisses. Rebuilt only when the set of other screens changed (the flyout moved monitor).
+        /// </summary>
+        private void SyncOtherScreenLayers(FocusDimWindow dim, FocusDimRoute route)
         {
-            FocusDimWindow? dim = _focusDim;
-            _focusDim = null;
-            if (dim is null)
+            List<Screen> others = TesseraFocusDimPolicy.LayerCoversEveryScreen(route) ? dim.OtherScreens() : [];
+            if (others.Select(static s => s.Bounds).SequenceEqual(_otherScreenLayers.Select(static l => l.FixedBounds ?? default)))
             {
                 return;
             }
 
-            try { dim.InstantClose(); }
+            CloseOtherScreenLayers();
+            foreach (Screen screen in others)
+            {
+                FocusDimWindow layer = new(screen, route);
+                layer.OutsideClicked += (_, at) => DismissTesseraImmediate(at);
+                layer.PrepareBeforeShow();
+                layer.Show();
+                layer.FadeIn();
+                _otherScreenLayers.Add(layer);
+            }
+
+            Log($"hitbox layers on other screens={_otherScreenLayers.Count}");
+        }
+
+        private void CloseFocusDim()
+        {
+            CloseOtherScreenLayers();
+            FocusDimWindow? dim = _focusDim;
+            _focusDim = null;
+            CloseLayer(dim);
+        }
+
+        private void CloseOtherScreenLayers()
+        {
+            foreach (FocusDimWindow layer in _otherScreenLayers)
+            {
+                CloseLayer(layer);
+            }
+
+            _otherScreenLayers.Clear();
+        }
+
+        private static void CloseLayer(FocusDimWindow? layer)
+        {
+            if (layer is null)
+            {
+                return;
+            }
+
+            try { layer.InstantClose(); }
             catch
             {
-                try { dim.Close(); } catch { /* ignore */ }
+                try { layer.Close(); } catch { /* ignore */ }
             }
         }
 
-        private void StartOutsideClickWatcher(FlyoutWindow flyout)
+        private void DismissTesseraImmediate(PixelPoint at)
         {
-            StopOutsideClickWatcher();
-            _outsideClick = new TesseraOutsideClickWatcher(flyout, DismissTesseraImmediate);
-            _outsideClick.Start();
-        }
-
-        private void StopOutsideClickWatcher()
-        {
-            _outsideClickArm?.Stop();
-            _outsideClickArm = null;
-            _outsideClick?.Dispose();
-            _outsideClick = null;
-        }
-
-        private void DismissTesseraImmediate()
-        {
-            Log("outside-click dismiss");
+            Log($"outside-click dismiss at={at.X},{at.Y}");
+            PlayOutsideClickRipple(at);
             if (_stackedSession is not null)
             {
                 DismissStackedTesseraImmediate();
@@ -906,6 +928,69 @@ namespace MosaicShell.Host.Capabilities
             }
 
             DismissTesseraSingleImmediate();
+        }
+
+        /// <summary>The ripple at the click (<see cref="TesseraOutsideClickRippleSpec"/>); it never blocks the dismiss.</summary>
+        private void PlayOutsideClickRipple(PixelPoint at)
+        {
+            try
+            {
+                Screens? screens = _focusDim?.Screens;
+                if (screens is null)
+                {
+                    lock (_gate)
+                    {
+                        screens = _windows.Values.FirstOrDefault()?.Screens;
+                    }
+                }
+
+                double? exitMs = PlannedTesseraExitMs();
+                OutsideClickRippleWindow? cold = OutsideClickRippleWindow.Play(at, X11FocusDim.ResolveRoute(), screens, exitMs);
+                Log($"ripple toward exit={exitMs?.ToString("0") ?? "none"}ms");
+                if (cold is not null)
+                {
+                    LogRippleFirstFrame(cold, "cold");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"ripple failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// How long the Tessera flyout being dismissed takes to leave, from the same plan its exit runs, so the glint ends
+        /// with it; null when no Tessera flyout is up.
+        /// </summary>
+        private double? PlannedTesseraExitMs()
+        {
+            List<FlyoutWindow> showing;
+            lock (_gate)
+            {
+                IEnumerable<string> keys = _stackedSession is not null ? _stackedSession.SlotKeys : [ModuleIds.Tessera];
+                showing = [.. keys.Select(k => _windows.TryGetValue(k, out FlyoutWindow? w) ? w : null).OfType<FlyoutWindow>()];
+            }
+
+            if (showing.Count == 0)
+            {
+                return null;
+            }
+
+            FlyoutRequest request = showing[0].FlyoutRequest;
+            bool showMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(request.Payload);
+            bool stacked = showing.Any(static w => w.StackedRole is not null);
+            // Phase 2 reveals the media strip's parts; with none in the flyout the Host skips it.
+            bool phase2Animates = showing.Any(static w => w.GetVisualDescendants().OfType<TesseraRevealHost>().Any());
+            return TesseraFlyoutMotionPlan.ResolveHide(request.Ani, request.StyleId, showMedia, stacked)
+                .PlannedDurationMs(request.Ani, request.AniSteps, phase2Animates);
+        }
+
+        /// <summary>Logs how long after the play the glint's first frame came, and the window's transparency.</summary>
+        private void LogRippleFirstFrame(OutsideClickRippleWindow ripple, string start)
+        {
+            _ = DispatcherTimer.RunOnce(() => Log(
+                $"ripple start={start} firstFrameMs={ripple.FirstFrameLatencyMs?.ToString("0") ?? "none"} " +
+                $"actual={ripple.ActualTransparencyLevel}"), TimeSpan.FromMilliseconds(300));
         }
 
         private void WireTesseraSession(FlyoutWindow window)
@@ -921,13 +1006,35 @@ namespace MosaicShell.Host.Capabilities
             if (ModuleIds.IsTessera(window.FlyoutRequest.ModuleId))
             {
                 _session.SetPhase(phase);
+                if (phase == TesseraFlyoutPhase.Hidden)
+                {
+                    // After the work in flight settles, so a re-present that is replacing this window wins.
+                    Dispatcher.UIThread.Post(CloseOrphanedFocusDim, DispatcherPriority.Background);
+                }
             }
+        }
+
+        private void CloseOrphanedFocusDim()
+        {
+            bool anyShowing;
+            lock (_gate)
+            {
+                anyShowing = _windows.Values.Any(static w => ModuleIds.IsTessera(w.FlyoutRequest.ModuleId) && w.IsFlyoutSessionShowing);
+            }
+
+            if (!TesseraFocusDimPolicy.ShouldCloseOrphanedDim(_focusDim is not null, anyShowing))
+            {
+                return;
+            }
+
+            Log("focusDim orphaned (no Tessera flyout showing), closing");
+            CloseFocusDim();
         }
 
         private void OnFlyoutTransientDismissed(string moduleId)
         {
             if (_stackedSession is not null
-                && TesseraOsAcrylicStackedPolicy.ShouldCascadeTransientDismissToStackedSession(
+                && TesseraNativeTranslucencyStackedPolicy.ShouldCascadeTransientDismissToStackedSession(
                     moduleId, _stackedSession.SlotKeys))
             {
                 lock (_gate)
@@ -945,7 +1052,7 @@ namespace MosaicShell.Host.Capabilities
                 StopStackedAutoDismiss();
             }
             else if (_stackedSession is not null
-                     && TesseraOsAcrylicStackedPolicy.TransientDismissMustHideAllSlots)
+                     && TesseraNativeTranslucencyStackedPolicy.TransientDismissMustHideAllSlots)
             {
                 // Superseded single-shell CapsLock Tick: ignore; do not touch live volume/media.
                 Log($"ignore superseded transient-dismiss key={moduleId}");
@@ -955,7 +1062,7 @@ namespace MosaicShell.Host.Capabilities
             try
             {
                 TransientDismissed?.Invoke(
-                    TesseraOsAcrylicStackedPolicy.ResolveTransientDismissConsumerKey(moduleId));
+                    TesseraNativeTranslucencyStackedPolicy.ResolveTransientDismissConsumerKey(moduleId));
             }
             catch { /* ignore */ }
 
@@ -965,7 +1072,6 @@ namespace MosaicShell.Host.Capabilities
             }
 
             Log("transient-dismiss, closing focusDim");
-            StopOutsideClickWatcher();
             CloseFocusDim();
         }
 
@@ -977,14 +1083,14 @@ namespace MosaicShell.Host.Capabilities
                     request.Payload, request.StyleId, request.Kind);
                 TesseraPalette.ApplyMaterial(material);
 
-                bool osAcrylicEligible = TesseraFlyoutMaterialFactory.OsAcrylicEligibleFromPayload(
+                bool nativeTranslucencyEligible = TesseraFlyoutMaterialFactory.NativeTranslucencyEligibleFromPayload(
                     request.Payload, request.StyleId, request.Kind);
                 bool settingsWantBlur = TesseraFlyoutRequestBuilder.BackdropBlurFromPayload(request.Payload);
-                TesseraFlyoutGlassBinder.Binding glass = TesseraFlyoutGlassBinder.ApplyForLiveFlyout(settingsWantBlur, osAcrylicEligible);
+                TesseraFlyoutGlassBinder.Binding glass = TesseraFlyoutGlassBinder.ApplyForLiveFlyout(settingsWantBlur, nativeTranslucencyEligible);
                 Log(
                     $"glass mode={glass.Mode} backdrop={glass.UseBackdropBlur} " +
                     $"embeddedPreview={glass.UseEmbeddedPreview} softFrostHwnd={glass.SoftFrostHwndReady} " +
-                    $"osAcrylic={glass.OsAcrylicEligible}");
+                    $"nativeTranslucency={glass.NativeTranslucencyEligible}");
 
                 TesseraFlyoutViewModel vm = TesseraFlyoutViewModel.FromRequest(_services, request, _hostUi);
                 Control root = TesseraStyleFactory.Create(

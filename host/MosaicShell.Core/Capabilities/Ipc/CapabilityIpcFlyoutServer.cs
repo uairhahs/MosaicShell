@@ -46,16 +46,13 @@ namespace MosaicShell.Core.Capabilities.Ipc
 
         private async Task AcceptLoopAsync()
         {
+            NamedPipeServerStream? next = null;
             while (!_cts.IsCancellationRequested)
             {
                 try
                 {
-                    NamedPipeServerStream pipe = new(
-                        _pipeName,
-                        PipeDirection.InOut,
-                        1,
-                        PipeTransmissionMode.Byte,
-                        PipeOptions.Asynchronous);
+                    NamedPipeServerStream pipe = next ?? CreatePipe();
+                    next = null;
 
                     try
                     {
@@ -83,15 +80,25 @@ namespace MosaicShell.Core.Capabilities.Ipc
 
                     connection.StartReadLoop();
 
-                    // The pipe allows one instance, so the next one can only be opened once this client is gone and its
-                    // instance is disposed. Waiting here is what lets the next Worker connect after this one exits.
+                    // One client at a time: the next instance opens once this client is gone. Waiting here is what lets the
+                    // next Worker connect after this one exits.
                     await connection.Completion.WaitAsync(_cts.Token).ConfigureAwait(false);
                     lock (_gate)
                     {
                         _client = ReferenceEquals(_client, connection) ? null : _client;
                     }
 
-                    connection.Dispose();
+                    // Open the next instance before closing this one. On Unix the instances share one listening socket, and
+                    // a Worker that connected while this client was leaving waits in its queue; closing the last instance
+                    // first would close the listener and drop that Worker.
+                    try
+                    {
+                        next = CreatePipe();
+                    }
+                    finally
+                    {
+                        connection.Dispose();
+                    }
                 }
                 catch (OperationCanceledException) { break; }
                 catch
@@ -101,6 +108,17 @@ namespace MosaicShell.Core.Capabilities.Ipc
                     catch (OperationCanceledException) { break; }
                 }
             }
+
+            next?.Dispose();
+        }
+
+        /// <summary>
+        /// Two instances, so the next can open while the last client's is still closing; only one client is served at a
+        /// time, since the next instance is opened only after that client has gone.
+        /// </summary>
+        private NamedPipeServerStream CreatePipe()
+        {
+            return new NamedPipeServerStream(_pipeName, PipeDirection.InOut, 2, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
         }
 
         private const int RetryDelayMs = 100;

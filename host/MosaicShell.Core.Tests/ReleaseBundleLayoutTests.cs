@@ -40,6 +40,23 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public void IsBundleRoot_true_for_a_linux_bundle_whose_executables_have_no_suffix()
+        {
+            File.Move(Path.Combine(_root, "Host", "MosaicShell.Host.exe"), Path.Combine(_root, "Host", "MosaicShell.Host"));
+            File.Move(Path.Combine(_root, "Mosaicist", "Mosaicist.exe"), Path.Combine(_root, "Mosaicist", "Mosaicist"));
+
+            _ = ReleaseBundleLayout.IsBundleRoot(_root).Should().BeTrue();
+            _ = ReleaseBundleLayout.TryFindRoot(Path.Combine(_root, "Host")).Should().Be(_root);
+        }
+
+        [Fact]
+        public void IsBundleRoot_false_without_Mosaicist_under_either_name()
+        {
+            File.Delete(Path.Combine(_root, "Mosaicist", "Mosaicist.exe"));
+            _ = ReleaseBundleLayout.IsBundleRoot(_root).Should().BeFalse();
+        }
+
+        [Fact]
         public void TryFindRoot_walks_up_from_Host_subdirectory()
         {
             string fromHost = Path.Combine(_root, "Host");

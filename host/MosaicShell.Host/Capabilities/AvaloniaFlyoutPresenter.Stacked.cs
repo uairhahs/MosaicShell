@@ -26,10 +26,13 @@ namespace MosaicShell.Host.Capabilities
         private DispatcherTimer? _stackedAutoDismiss;
         private bool _stackedClusterHovered;
 
-        private bool ShouldUseStackedOsAcrylic(FlyoutRequest request)
+        /// <summary>Slot motion generations of the stacked exit in flight, read right after it began; null when none runs.</summary>
+        private int[]? _stackedExitGenerations;
+
+        private bool ShouldUseStackedNativeTranslucency(FlyoutRequest request)
         {
             return ModuleIds.IsTessera(request.ModuleId)
-            && TesseraOsAcrylicStackedPolicy.UseMultiWindowFromPayload(
+            && TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(
                 request.Payload, request.StyleId, request.Kind);
         }
 
@@ -54,7 +57,7 @@ namespace MosaicShell.Host.Capabilities
                 return;
             }
 
-            IReadOnlyList<TesseraStackedPanelRole> panels = TesseraOsAcrylicStackedPolicy.ResolvePanels(request.Payload, request.StyleId);
+            IReadOnlyList<TesseraStackedPanelRole> panels = TesseraNativeTranslucencyStackedPolicy.ResolvePanels(request.Payload, request.StyleId);
             if (panels.Count == 0)
             {
                 Log("stacked panels empty, falling back to single HWND");
@@ -75,7 +78,7 @@ namespace MosaicShell.Host.Capabilities
                 return false;
             }
 
-            string volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey(ModuleIds.Tessera, TesseraStackedPanelRole.Volume);
+            string volumeKey = TesseraNativeTranslucencyStackedPolicy.WindowSlotKey(ModuleIds.Tessera, TesseraStackedPanelRole.Volume);
             lock (_gate)
             {
                 if (!_windows.TryGetValue(volumeKey, out FlyoutWindow? volumeWin)
@@ -103,19 +106,7 @@ namespace MosaicShell.Host.Capabilities
                     BumpStackedAutoDismiss();
                 }
             }
-
-            RefreshStackedOutsideClickBoundsAfterPatch();
             return true;
-        }
-
-        private void RefreshStackedOutsideClickBoundsAfterPatch()
-        {
-            if (_outsideClick is not { IsActive: true })
-            {
-                return;
-            }
-
-            _outsideClick.RefreshBounds(GetStackedWindowsFromSession());
         }
 
         private bool TryReviveStacked(FlyoutRequest request, bool resetDismiss)
@@ -137,7 +128,7 @@ namespace MosaicShell.Host.Capabilities
                 return false;
             }
 
-            string volumeKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey(ModuleIds.Tessera, TesseraStackedPanelRole.Volume);
+            string volumeKey = TesseraNativeTranslucencyStackedPolicy.WindowSlotKey(ModuleIds.Tessera, TesseraStackedPanelRole.Volume);
             FlyoutWindow? volumeWin;
             lock (_gate)
             {
@@ -203,7 +194,7 @@ namespace MosaicShell.Host.Capabilities
 
             foreach (TesseraStackedPanelRole role in panels)
             {
-                string slotKey = TesseraOsAcrylicStackedPolicy.WindowSlotKey(ModuleIds.Tessera, role);
+                string slotKey = TesseraNativeTranslucencyStackedPolicy.WindowSlotKey(ModuleIds.Tessera, role);
                 newKeys.Add(slotKey);
 
                 Control content;
@@ -221,7 +212,7 @@ namespace MosaicShell.Host.Capabilities
                 lock (_gate)
                 {
                     if (_windows.TryGetValue(slotKey, out FlyoutWindow? existing)
-                        && TesseraOsAcrylicStackedPolicy.MustReuseRegisteredFlyoutHwndPerSlot)
+                        && TesseraNativeTranslucencyStackedPolicy.MustReuseRegisteredFlyoutHwndPerSlot)
                     {
                         window = existing;
                         window.StackedRole = role;
@@ -423,16 +414,13 @@ namespace MosaicShell.Host.Capabilities
             foreach (FlyoutWindow window in windows)
             {
                 window.FinishLayout();
+                // Before the play check: ApplyRequest cleared it, and a slot rebuilt while visible does not replay.
+                window.PresenterDrivesMotion = TesseraNativeTranslucencyStackedPolicy.SlotMotionIsPresenterDriven(play);
             }
 
             if (!play)
             {
                 return;
-            }
-
-            foreach (FlyoutWindow window in windows)
-            {
-                window.PresenterDrivesMotion = true;
             }
 
             if (!TesseraFlyoutWindowPolicy.HideUntilCompositionReady)
@@ -476,6 +464,13 @@ namespace MosaicShell.Host.Capabilities
                 return;
             }
 
+            if (!TesseraFlyoutDismissPolicy.ShouldBeginStackedDismiss(
+                    _stackedExitGenerations, [.. windows.Select(static window => window.MotionGeneration)]))
+            {
+                Log("stacked dismiss ignored, its exit is already running");
+                return;
+            }
+
             if (_stackedDismissRequest is not null
                 && TesseraFlyoutAnimationPolicy.ShouldAnimateOpacity(_stackedDismissRequest.Ani)
                 && TesseraFlyoutAnimationPolicy.ExitMustMirrorEntrance)
@@ -494,12 +489,39 @@ namespace MosaicShell.Host.Capabilities
         {
             int gen = _session.Generation;
             _session.SetPhase(TesseraFlyoutPhase.Exiting);
-            await RunStackedExitAnimationAsync(request, windows).ConfigureAwait(true);
-            if (TesseraFlyoutDismissPolicy.ShouldFinishTransientDismiss(
-                    gen, _session.Generation, _session.Phase, windows.Any(static window => window.IsVisible)))
+            Task exit = RunStackedExitAnimationAsync(request, windows);
+            // Read after the exit began (BeginMotion runs before its first await): a re-present supersedes these.
+            int[] exitGenerations = [.. windows.Select(static window => window.MotionGeneration)];
+            _stackedExitGenerations = exitGenerations;
+            try
+            {
+                await exit.ConfigureAwait(true);
+            }
+            finally
+            {
+                if (ReferenceEquals(_stackedExitGenerations, exitGenerations))
+                {
+                    _stackedExitGenerations = null;
+                }
+            }
+
+            int[] nowGenerations = [.. windows.Select(static window => window.MotionGeneration)];
+            if (TesseraFlyoutDismissPolicy.ShouldFinishStackedTransientDismiss(
+                    gen,
+                    _session.Generation,
+                    exitGenerations,
+                    nowGenerations,
+                    _session.Phase,
+                    windows.Any(static window => window.IsVisible)))
             {
                 _session.SetPhase(TesseraFlyoutPhase.Hidden);
                 DismissStackedImmediate(notify, windows);
+                return;
+            }
+
+            if (!exitGenerations.SequenceEqual(nowGenerations))
+            {
+                Log("stacked dismiss superseded by a present during the exit, slots stay");
             }
         }
 
@@ -678,7 +700,7 @@ namespace MosaicShell.Host.Capabilities
 
                 window.StackedPanelWidthDip = placement.WidthDip;
                 window.StackedPanelHeightDip = placement.HeightDip;
-                window.BackdropCornerRadiusDip = TesseraOsAcrylicStackedPolicy.ResolvePanelCornerRadiusDip(
+                window.BackdropCornerRadiusDip = TesseraNativeTranslucencyStackedPolicy.ResolvePanelCornerRadiusDip(
                     request.StyleId,
                     role,
                     placement.WidthDip,
@@ -716,11 +738,11 @@ namespace MosaicShell.Host.Capabilities
                 request.Payload, request.StyleId, request.Kind);
             TesseraPalette.ApplyMaterial(material);
 
-            bool osAcrylicEligible = true;
+            bool nativeTranslucencyEligible = true;
             bool settingsWantBlur = TesseraFlyoutRequestBuilder.BackdropBlurFromPayload(request.Payload);
-            TesseraFlyoutGlassBinder.Binding glass = TesseraFlyoutGlassBinder.ApplyForLiveFlyout(settingsWantBlur, osAcrylicEligible);
+            TesseraFlyoutGlassBinder.Binding glass = TesseraFlyoutGlassBinder.ApplyForLiveFlyout(settingsWantBlur, nativeTranslucencyEligible);
             Log(
-                $"stacked glass role={role} mode={glass.Mode} osAcrylic={glass.OsAcrylicEligible}");
+                $"stacked glass role={role} mode={glass.Mode} nativeTranslucency={glass.NativeTranslucencyEligible}");
 
             TesseraFlyoutViewModel vm = TesseraFlyoutViewModel.FromRequest(_services, request, _hostUi);
             string? accent = TesseraFlyoutRequestBuilder.AccentFromPayload(request.Payload);
@@ -755,7 +777,7 @@ namespace MosaicShell.Host.Capabilities
             SyncFocusDim(request);
 
             foreach (string? slotKey in _stackedSession!.SlotKeys
-                         .OrderBy(k => TesseraOsAcrylicStackedPolicy.ZOrderRank(RoleForSlotKey(k))))
+                         .OrderBy(k => TesseraNativeTranslucencyStackedPolicy.ZOrderRank(RoleForSlotKey(k))))
             {
                 lock (_gate)
                 {
@@ -769,46 +791,12 @@ namespace MosaicShell.Host.Capabilities
                 }
             }
 
-            Log($"stacked presented slots={windows.Count} focusDim={TesseraFocusDimPolicy.EnabledFromPayload(request.Payload)}");
+            Log($"stacked presented slots={windows.Count} focusDim={_focusDim is not null}");
             if (TesseraFlyoutDiagnostics.IsEnabled(DiagnosticLogLevel.Debug))
             {
                 TesseraFlyoutDiagnostics.Log(
                     DiagnosticLogLevel.Debug, $"visible windows {Win32WindowChrome.DescribeVisibleProcessWindows()}");
             }
-            ScheduleStackedOutsideClickArm(windows);
-        }
-
-        private void ScheduleStackedOutsideClickArm(IReadOnlyList<FlyoutWindow> windows)
-        {
-            if (TesseraFlyoutOutsideClickPolicy.PresentMustStopPriorWatcherBeforeRearm)
-            {
-                StopOutsideClickWatcher();
-            }
-            else
-            {
-                _outsideClickArm?.Stop();
-            }
-
-            _outsideClickArm = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1500) };
-            List<FlyoutWindow> captured = [.. windows];
-            _outsideClickArm.Tick += (_, _) =>
-            {
-                _outsideClickArm?.Stop();
-                _outsideClickArm = null;
-                if (captured.Any(w => w.IsVisible))
-                {
-                    StartStackedOutsideClickWatcher(captured);
-                    Log("stacked outside-click armed");
-                }
-            };
-            _outsideClickArm.Start();
-        }
-
-        private void StartStackedOutsideClickWatcher(IReadOnlyList<FlyoutWindow> windows)
-        {
-            StopOutsideClickWatcher();
-            _outsideClick = new TesseraOutsideClickWatcher(windows, DismissTesseraImmediate);
-            _outsideClick.Start();
         }
 
         private void OnStackedSlotClosed(string slotKey, FlyoutWindow window)
@@ -830,7 +818,6 @@ namespace MosaicShell.Host.Capabilities
             if (_stackedSession.SlotKeys.Count == 0)
             {
                 _stackedSession = null;
-                StopOutsideClickWatcher();
                 CloseFocusDim();
                 CancelDeferredPatch();
                 _ = _session.Clear();
@@ -846,6 +833,7 @@ namespace MosaicShell.Host.Capabilities
 
             StopStackedAutoDismiss();
             _stackedDismissRequest = null;
+            _stackedExitGenerations = null;
 
             List<string> keys = [.. _stackedSession.SlotKeys];
             _stackedSession = null;
@@ -884,7 +872,7 @@ namespace MosaicShell.Host.Capabilities
                 // CapsLock→volume: cancel timer + detach before Close so a late Tick cannot
                 // cascade into the stacked session via OnFlyoutTransientDismissed.
                 single.TransientDismissed -= OnFlyoutTransientDismissed;
-                if (TesseraOsAcrylicStackedPolicy.SupersededSingleHwndMustCancelDismissBeforeClose
+                if (TesseraNativeTranslucencyStackedPolicy.SupersededSingleHwndMustCancelDismissBeforeClose
                     || TesseraStatusFlyoutPolicy.SupersededStatusMustCancelDismissBeforeClose)
                 {
                     single.SuppressAutoDismiss();
@@ -909,8 +897,10 @@ namespace MosaicShell.Host.Capabilities
             }
 
             Log("stacked dismiss");
+            // As FlyoutWindow.TransientDismissCore does: the clock stops when the dismiss begins, not when the exit ends,
+            // or a timer due within the exit fires into it.
+            StopStackedAutoDismiss();
             TransientDismissAllStackedSlots(notify);
-            StopOutsideClickWatcher();
             CloseFocusDim();
         }
 

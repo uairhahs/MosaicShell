@@ -17,10 +17,10 @@ namespace MosaicShell.Core.Tests
         {
             FlyoutTraceSummary summary = FlyoutTraceSummary.Parse([]);
 
-            summary.ToGolden().Should().Be(FlyoutTraceSummary.Parse(["unrelated line"]).ToGolden());
-            summary.Presents.Should().Be(0);
-            summary.IngressDecisions.Should().BeEmpty();
-            summary.MotionSequence.Should().BeEmpty();
+            _ = summary.ToGolden().Should().Be(FlyoutTraceSummary.Parse(["unrelated line"]).ToGolden());
+            _ = summary.Presents.Should().Be(0);
+            _ = summary.IngressDecisions.Should().BeEmpty();
+            _ = summary.MotionSequence.Should().BeEmpty();
         }
 
         [Fact]
@@ -34,9 +34,9 @@ namespace MosaicShell.Core.Tests
                 P + "INFO SoftRefresh queued kind=media style=ModernFlyouts gen=1",
             ]);
 
-            summary.ShowCalls.Should().Be(1);
-            summary.UpdateCalls.Should().Be(2);
-            summary.SoftRefreshCalls.Should().Be(1);
+            _ = summary.ShowCalls.Should().Be(1);
+            _ = summary.UpdateCalls.Should().Be(2);
+            _ = summary.SoftRefreshCalls.Should().Be(1);
         }
 
         [Fact]
@@ -49,7 +49,7 @@ namespace MosaicShell.Core.Tests
                 P + "INFO ingress decision=RebuildInPlace kind=vol style=PlainText",
             ]);
 
-            summary.IngressDecisions.Should().Equal("ColdBuild", "PatchActiveSession", "RebuildInPlace");
+            _ = summary.IngressDecisions.Should().Equal("ColdBuild", "PatchActiveSession", "RebuildInPlace");
         }
 
         [Fact]
@@ -67,10 +67,10 @@ namespace MosaicShell.Core.Tests
                 P + "INFO stacked revive kind=vol style=ModernFlyouts",
             ]);
 
-            summary.Presents.Should().Be(2);
-            summary.Patches.Should().Be(3);
-            summary.Rebuilds.Should().Be(1);
-            summary.Revives.Should().Be(2);
+            _ = summary.Presents.Should().Be(2);
+            _ = summary.Patches.Should().Be(3);
+            _ = summary.Rebuilds.Should().Be(1);
+            _ = summary.Revives.Should().Be(2);
         }
 
         [Fact]
@@ -83,7 +83,7 @@ namespace MosaicShell.Core.Tests
                 P + "INFO stacked revive kind=vol style=ModernFlyouts",
             ]);
 
-            (summary.Patches, summary.Presents, summary.Revives).Should().Be((1, 1, 1));
+            _ = (summary.Patches, summary.Presents, summary.Revives).Should().Be((1, 1, 1));
         }
 
         [Fact]
@@ -96,7 +96,7 @@ namespace MosaicShell.Core.Tests
                 P + "INFO motion plan entrance=False kind=vol style=ModernFlyouts ani=2 steps=24 showMedia=True stacked=True windows=2 roles=[Volume,Media] plan=[Begin,Phase2,Wait,Phase1,Complete] claims=[Begin,Phase2:2,Wait,Phase1:2,Complete]",
             ]);
 
-            summary.MotionSequence.Should().Equal("enter", "exit");
+            _ = summary.MotionSequence.Should().Equal("enter", "exit");
         }
 
         [Fact]
@@ -111,9 +111,9 @@ namespace MosaicShell.Core.Tests
                 P + "DEBUG marquee restart n=4 reason=attach len=24 granted=1 max=240 available=200 text=abc",
             ]);
 
-            summary.MotionRestarts.Should().Be(1);
-            summary.MotionSuperseded.Should().Be(2);
-            summary.MarqueeRestarts.Should().Be(2);
+            _ = summary.MotionRestarts.Should().Be(1);
+            _ = summary.MotionSuperseded.Should().Be(2);
+            _ = summary.MarqueeRestarts.Should().Be(2);
         }
 
         [Fact]
@@ -126,7 +126,7 @@ namespace MosaicShell.Core.Tests
                 P + "DEBUG visible windows 3 []",
             ]);
 
-            summary.MaxVisibleProcessWindows.Should().Be(4);
+            _ = summary.MaxVisibleProcessWindows.Should().Be(4);
         }
 
         [Fact]
@@ -138,8 +138,8 @@ namespace MosaicShell.Core.Tests
                 "Show queued kind=vol style=Fluent thread=2",
             ]);
 
-            summary.IngressDecisions.Should().Equal("ColdBuild");
-            summary.ShowCalls.Should().Be(1);
+            _ = summary.IngressDecisions.Should().Equal("ColdBuild");
+            _ = summary.ShowCalls.Should().Be(1);
         }
 
         [Fact]
@@ -153,7 +153,7 @@ namespace MosaicShell.Core.Tests
                 P + "INFO motion plan entrance=True kind=vol style=Fluent ani=2 steps=24 showMedia=True stacked=False windows=1 roles=[single] plan=[Begin] claims=[Begin]",
             ]);
 
-            summary.ToGolden().Should().Be(
+            _ = summary.ToGolden().Should().Be(
                 "calls: show=1 update=0 softRefresh=0\n"
                 + "decisions: ColdBuild\n"
                 + "pipeline: presents=1 patches=0 rebuilds=0 revives=0\n"

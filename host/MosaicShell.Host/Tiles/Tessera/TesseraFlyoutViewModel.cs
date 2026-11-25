@@ -4,6 +4,7 @@ using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
 using MosaicShell.Core.Modules;
+using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {
@@ -78,24 +79,24 @@ namespace MosaicShell.Host.Tiles.Tessera
         public bool LockOn { get; }
         public bool FlightOn { get; }
 
-        public double PrimaryValue => Kind.Equals("bright", StringComparison.OrdinalIgnoreCase) ? Brightness : Volume;
-        public string PrimaryPercent => Kind.Equals("bright", StringComparison.OrdinalIgnoreCase)
+        public double PrimaryValue => FlyoutKinds.Is(Kind, FlyoutKinds.Brightness) ? Brightness : Volume;
+        public string PrimaryPercent => FlyoutKinds.Is(Kind, FlyoutKinds.Brightness)
             ? $"{VolumePercent.ToPercent(Brightness)}%"
             : IsMuted ? "Mute" : $"{VolumePercent.ToPercent(Volume)}%";
 
         public string KindLabel => Kind.ToLowerInvariant() switch
         {
-            "bright" => "Brightness",
-            "media" => "Now playing",
-            "locks" => LockOn ? $"{LockName} On" : $"{LockName} Off",
-            "flight" => FlightOn ? "Airplane mode On" : "Airplane mode Off",
+            FlyoutKinds.Brightness => "Brightness",
+            FlyoutKinds.Media => "Now playing",
+            FlyoutKinds.Locks => LockOn ? $"{LockName} On" : $"{LockName} Off",
+            FlyoutKinds.Flight => FlightOn ? "Airplane mode On" : "Airplane mode Off",
             _ => IsMuted ? "Muted" : "Volume"
         };
 
         public void ApplyPrimary(double v)
         {
             v = VolumePercent.Quantize(v);
-            if (Kind.Equals("bright", StringComparison.OrdinalIgnoreCase))
+            if (FlyoutKinds.Is(Kind, FlyoutKinds.Brightness))
             {
                 if (Math.Abs(Brightness - v) < 0.004)
                 {
@@ -134,7 +135,7 @@ namespace MosaicShell.Host.Tiles.Tessera
 
         public void Nudge(double delta)
         {
-            if (Kind is "locks" or "flight" or "media")
+            if (Kind is FlyoutKinds.Locks or FlyoutKinds.Flight or FlyoutKinds.Media)
             {
                 return;
             }

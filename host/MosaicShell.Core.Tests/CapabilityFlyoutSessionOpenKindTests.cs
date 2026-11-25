@@ -64,7 +64,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Nothing_is_open_before_anything_is_presented()
         {
-            NewSession(new Presenter()).OpenKind.Should().BeEmpty();
+            _ = NewSession(new Presenter()).OpenKind.Should().BeEmpty();
         }
 
         [Fact]
@@ -75,16 +75,16 @@ namespace MosaicShell.Core.Tests
             MediaSessionInfo media = new("Track A", "Artist", "app", true, null, 10, 180);
             FlyoutRequest request = new("Tessera", "media");
             session.Route(request, FlyoutSyncTrigger.ShellMedia, "Fluent", media);
-            presenter.ShowCount.Should().Be(1);
+            _ = presenter.ShowCount.Should().Be(1);
 
             // The flyout is dismissed; a media tick for the same track follows and its cold present is suppressed.
             presenter.Visible = false;
             session.NotifyTransientDismissed();
             session.Route(request, FlyoutSyncTrigger.MediaSession, "Fluent", media);
 
-            presenter.ShowCount.Should().Be(1, "the second present was suppressed");
-            session.OpenKind.Should().BeEmpty();
-            session.OpenStyle.Should().BeNull();
+            _ = presenter.ShowCount.Should().Be(1, "the second present was suppressed");
+            _ = session.OpenKind.Should().BeEmpty();
+            _ = session.OpenStyle.Should().BeNull();
         }
 
         [Fact]
@@ -99,8 +99,8 @@ namespace MosaicShell.Core.Tests
 
             session.Route(new FlyoutRequest("Tessera", "media"), FlyoutSyncTrigger.Volume, "Fluent");
 
-            session.OpenKind.Should().Be("vol");
-            session.OpenStyle.Should().Be("Fluent");
+            _ = session.OpenKind.Should().Be("vol");
+            _ = session.OpenStyle.Should().Be("Fluent");
         }
 
         [Fact]
@@ -113,8 +113,8 @@ namespace MosaicShell.Core.Tests
             presenter.Visible = true;
             presenter.Snapshot = new(true, 1, TesseraFlyoutSessionMode.Single, "vol", "Fluent", TesseraFlyoutPhase.Entering);
 
-            presenter.ShowCount.Should().Be(1);
-            session.OpenKind.Should().Be("vol");
+            _ = presenter.ShowCount.Should().Be(1);
+            _ = session.OpenKind.Should().Be("vol");
         }
     }
 }

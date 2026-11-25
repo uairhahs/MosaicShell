@@ -44,7 +44,7 @@ namespace MosaicShell.Worker
                 return 1;
             }
 
-            using HostServices services = HostServices.CreateWindowsDefaults();
+            using HostServices services = HostServices.CreatePlatformDefaults();
             using IpcFlyoutPresenter flyouts = new();
             WorkerCapabilityUiBridge ui = new(flyouts);
             CapabilityRegistry registry = new();

@@ -121,7 +121,7 @@ namespace MosaicShell.Host.Capabilities
             double yTo = entrance ? 0d : dyRest;
 
             bool moves = slide && (Math.Abs(dxRest) > 0.01 || Math.Abs(dyRest) > 0.01);
-            TesseraSlideTarget target = TesseraFlyoutAnimationPolicy.ResolvePhase1SlideTarget(window.UsesOsAcrylicBackdrop());
+            TesseraSlideTarget target = TesseraFlyoutAnimationPolicy.ResolvePhase1SlideTarget(window.UsesNativeTranslucencyBackdrop());
             TranslateTransform? tt = null;
             if (moves && target == TesseraSlideTarget.RenderTransform)
             {

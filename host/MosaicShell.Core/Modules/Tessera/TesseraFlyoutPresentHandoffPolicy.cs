@@ -2,7 +2,7 @@ namespace MosaicShell.Core.Modules.Tessera
 {
     /// <summary>
     /// CapsLock ↔ volume/media Present handoffs. Pending Update/Patch queues and a live
-    /// outside-click hook from the prior session must not outlive a kind or stack-mode change.
+    /// layer state from the prior session must not outlive a kind or stack-mode change.
     /// </summary>
     public static class TesseraFlyoutPresentHandoffPolicy
     {
@@ -11,12 +11,6 @@ namespace MosaicShell.Core.Modules.Tessera
         /// so a late flush cannot replace the new session.
         /// </summary>
         public const bool PresentMustInvalidatePendingQueuesOnSessionChange = true;
-
-        /// <summary>
-        /// Present re-arm must dispose the prior outside-click watcher immediately; waiting for the
-        /// ~1.5s arm Tick leaves stale HWND bounds active across handoffs.
-        /// </summary>
-        public const bool PresentMustStopOutsideClickBeforeRearm = true;
 
         /// <summary>
         /// SoftRefresh shares the patch coalescer; a rejected flush must schedule last-value retry
@@ -36,7 +30,7 @@ namespace MosaicShell.Core.Modules.Tessera
         }
 
         /// <summary>
-        /// True when Host must <c>CancelDeferredPatch</c> (and stop outside-click) before applying
+        /// True when Host must <c>CancelDeferredPatch</c> before applying
         /// <paramref name="nextKind"/> / stack mode.
         /// </summary>
         public static bool MustInvalidatePendingWork(

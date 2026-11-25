@@ -1,8 +1,10 @@
-using System.Reflection;
 using System.Runtime.InteropServices;
 using FluentAssertions;
 using MosaicShell.Core.Services;
+#if WINDOWS
+using System.Reflection;
 using NAudio.Wave;
+#endif
 
 namespace MosaicShell.Core.Tests
 {
@@ -57,6 +59,7 @@ namespace MosaicShell.Core.Tests
             _ = peak.Should().Be(0);
         }
 
+#if WINDOWS
         [Fact]
         public void WindowsAudioLevelService_capture_field_is_WasapiRecorder()
         {
@@ -68,5 +71,6 @@ namespace MosaicShell.Core.Tests
                 "NAudio 3 deprecates WasapiLoopbackCapture; Pulse metering must use WasapiRecorder");
             _ = field.FieldType.Name.Should().NotBe("WasapiLoopbackCapture");
         }
+#endif
     }
 }

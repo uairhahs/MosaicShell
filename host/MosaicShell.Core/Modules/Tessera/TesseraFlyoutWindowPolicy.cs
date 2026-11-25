@@ -85,7 +85,7 @@ namespace MosaicShell.Core.Modules.Tessera
         public static double ResolveRelayoutMinWidthDip(bool stackedClusterPanel)
         {
             return stackedClusterPanel
-                ? TesseraOsAcrylicStackedPolicy.ClusterRelayoutMinWidthDip
+                ? TesseraNativeTranslucencyStackedPolicy.ClusterRelayoutMinWidthDip
                 : RelayoutMinWidthDip;
         }
 

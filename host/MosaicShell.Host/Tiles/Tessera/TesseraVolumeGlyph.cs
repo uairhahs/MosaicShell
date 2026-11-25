@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Material.Icons;
 using Material.Icons.Avalonia;
+using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {
@@ -9,17 +10,17 @@ namespace MosaicShell.Host.Tiles.Tessera
         /// <summary>YourFlyouts Win11 ladder: mute / low / mid / high / full.</summary>
         public static Control Create(TesseraFlyoutViewModel vm, double size = 20)
         {
-            if (vm.Kind.Equals("bright", StringComparison.OrdinalIgnoreCase))
+            if (FlyoutKinds.Is(vm.Kind, FlyoutKinds.Brightness))
             {
                 MaterialIconKind bright = vm.Brightness < 0.5 ? MaterialIconKind.Brightness5 : MaterialIconKind.Brightness7;
                 return Icon(bright, size);
             }
 
-            return vm.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
+            return FlyoutKinds.Is(vm.Kind, FlyoutKinds.Locks)
                 ? Icon(MaterialIconKind.AlphaCCircle, size)
-                : vm.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase)
+                : FlyoutKinds.Is(vm.Kind, FlyoutKinds.Flight)
                 ? Icon(MaterialIconKind.Airplane, size)
-                : vm.Kind.Equals("media", StringComparison.OrdinalIgnoreCase)
+                : FlyoutKinds.Is(vm.Kind, FlyoutKinds.Media)
                 ? Icon(MaterialIconKind.Music, size)
                 : vm.IsMuted || vm.Volume <= 0.001
                 ? Icon(MaterialIconKind.VolumeOff, size)

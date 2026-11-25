@@ -68,7 +68,7 @@ namespace MosaicShell.Host.Tests
 
             string[] runs = [.. Enumerable.Range(0, Repeats).Select(_ => FlyoutScenarioDriver.Run(scenario, FlyoutPipelineMode.Legacy).ToGolden())];
 
-            runs.Distinct().Should().ContainSingle(
+            _ = runs.Distinct().Should().ContainSingle(
                 $"'{scenarioName}' in {style} must replay the same way every time, but the runs were:\n{string.Join("\n---\n", runs)}");
 
             string path = GoldenPath(style, scenarioName);
@@ -79,8 +79,8 @@ namespace MosaicShell.Host.Tests
                 return;
             }
 
-            File.Exists(path).Should().BeTrue($"no baseline at {path}; record it with {RecordVariable}=1");
-            runs[0].Should().Be(File.ReadAllText(path).ReplaceLineEndings("\n"), $"the recorded baseline for '{scenarioName}' in {style}");
+            _ = File.Exists(path).Should().BeTrue($"no baseline at {path}; record it with {RecordVariable}=1");
+            _ = runs[0].Should().Be(File.ReadAllText(path).ReplaceLineEndings("\n"), $"the recorded baseline for '{scenarioName}' in {style}");
         }
 
         [AvaloniaTheory]
@@ -92,10 +92,10 @@ namespace MosaicShell.Host.Tests
 
             FlyoutScenarioDriver.ScenarioReplay replay = FlyoutScenarioDriver.Replay(scenario, FlyoutPipelineMode.Shadow);
 
-            replay.Summary.ToGolden().Should().Be(
+            _ = replay.Summary.ToGolden().Should().Be(
                 File.ReadAllText(GoldenPath(style, scenarioName)).ReplaceLineEndings("\n"),
                 "shadow mode must not change what the presenter does");
-            replay.ShadowDisagreements.Where(d => d.EndsWith("ledger=none", StringComparison.Ordinal)).Should().BeEmpty(
+            _ = replay.ShadowDisagreements.Where(d => d.EndsWith("ledger=none", StringComparison.Ordinal)).Should().BeEmpty(
                 "every disagreement must map to a row of the deliberate-changes ledger");
         }
 
@@ -111,7 +111,7 @@ namespace MosaicShell.Host.Tests
 
             if (disagreements == 0)
             {
-                next.Should().Be(
+                _ = next.Should().Be(
                     File.ReadAllText(GoldenPath(style, scenarioName)).ReplaceLineEndings("\n"),
                     "the unified resolver agrees with the legacy one on every request of this scenario");
             }

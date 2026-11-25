@@ -24,6 +24,12 @@ namespace MosaicShell.Core.Services.BrowserBridge
         /// <summary>The pipe name for this user. Pipe names are machine-wide, so a second user's Host must not collide.</summary>
         public static string PipeNameForCurrentUser()
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                // Elsewhere the pipe is a Unix domain socket in the shared temp directory; the user name keeps it per user.
+                return "MosaicShell.BrowserMedia." + Environment.UserName;
+            }
+
             using WindowsIdentity identity = WindowsIdentity.GetCurrent();
             return "MosaicShell.BrowserMedia." + (identity.User?.Value ?? Environment.UserName);
         }

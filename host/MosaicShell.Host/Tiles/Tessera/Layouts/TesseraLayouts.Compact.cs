@@ -81,7 +81,7 @@ namespace MosaicShell.Host.Tiles.Tessera
 
         private static Control CompactVolumeWrap(Control inner)
         {
-            return TesseraStackedBuildContext.IsActive && TesseraGlass.UseOsAcrylicChrome
+            return TesseraStackedBuildContext.IsActive && TesseraGlass.UseNativeTranslucencyChrome
                 ? new Border
                 {
                     Width = TesseraStackedPlacementSpec.CompactVolumeWidthDip,

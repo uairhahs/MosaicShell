@@ -10,6 +10,7 @@ using Material.Icons;
 using MosaicShell.Core;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Capabilities.BuiltIn;
+using MosaicShell.Core.HostPlatform;
 using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Modules.Tessera;
@@ -23,6 +24,7 @@ using MosaicShell.Host.Capabilities;
 using MosaicShell.Host.Input;
 using MosaicShell.Host.Tiles;
 using MosaicShell.Host.Tiles.Tessera;
+using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Host.ViewModels
 {
@@ -119,7 +121,10 @@ namespace MosaicShell.Host.ViewModels
         [ObservableProperty] private string _serviceProbe = "";
         [ObservableProperty] private string _configModuleId = "";
         [ObservableProperty] private string _configModuleTitle = "";
-        [ObservableProperty] private string _moduleStyle = "DEFAULT";
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(TesseraMaterialSelectable))]
+        [NotifyPropertyChangedFor(nameof(TesseraMaterialFixedNote))]
+        private string _moduleStyle = "DEFAULT";
         [ObservableProperty] private StyleDescriptor? _selectedModuleStyle;
         [ObservableProperty] private bool _chronoSeconds = true;
         [ObservableProperty] private bool _showChronoExtras;
@@ -168,11 +173,7 @@ namespace MosaicShell.Host.ViewModels
         [ObservableProperty] private bool _tesseraLockFlyouts = true;
         [ObservableProperty] private bool _tesseraFlightFlyouts = true;
         [ObservableProperty] private bool _tesseraMediaStrip = true;
-        [ObservableProperty] private bool _tesseraAcrylicBackdrop = true;
-        [ObservableProperty] private bool _tesseraOsAcrylic;
-        public bool TesseraOsAcrylicHubAvailable => TesseraOsAcrylicSignOffPolicy.Win11EvalComplete;
         [ObservableProperty] private bool _tesseraFocusDim = true;
-        [ObservableProperty] private bool _tesseraBackdropBlur = true;
         [ObservableProperty] private decimal _tesseraFlyoutScalePercent = 100;
         [ObservableProperty] private string _tesseraAccentHex = "";
         [ObservableProperty] private decimal _tesseraLegacyStepPercent = 2;
@@ -405,10 +406,8 @@ namespace MosaicShell.Host.ViewModels
                 TesseraLockFlyouts = s.EnableLockFlyouts;
                 TesseraFlightFlyouts = s.EnableFlightFlyouts;
                 TesseraMediaStrip = s.ShowMediaStripOnVolume;
-                TesseraAcrylicBackdrop = s.UseAcrylicBackdrop;
-                TesseraOsAcrylic = TesseraOsAcrylicSignOffPolicy.Win11EvalComplete && s.UseOsAcrylic;
+                LoadTesseraMaterial(s);
                 TesseraFocusDim = s.UseFocusDim;
-                TesseraBackdropBlur = s.UseBackdropBlur;
                 TesseraFlyoutScalePercent = Math.Clamp(s.FlyoutScalePercent, 50, 150);
                 TesseraAccentHex = s.AccentColor ?? "";
                 decimal stepPct = s.LegacyVolumeStep <= 1.0
@@ -535,7 +534,7 @@ namespace MosaicShell.Host.ViewModels
             TesseraSettings settings = TesseraFlyoutRequestBuilder.LoadSettings();
             // Preview: no FocusDim (Z-order fights Transparent/Topmost), land on Host's monitor.
             settings.UseFocusDim = false;
-            FlyoutRequest request = new TesseraFlyoutRequestBuilder().Build(_services, settings, "vol");
+            FlyoutRequest request = new TesseraFlyoutRequestBuilder().Build(_services, settings, FlyoutKinds.Volume);
             request = request with { MonitorIndex = ResolveHostMonitorIndex(settings.MonitorIndex) };
             _hostUi.PreviewFlyout(request);
             StatusMessage =
@@ -592,10 +591,8 @@ namespace MosaicShell.Host.ViewModels
             s.EnableLockFlyouts = TesseraLockFlyouts;
             s.EnableFlightFlyouts = TesseraFlightFlyouts;
             s.ShowMediaStripOnVolume = TesseraMediaStrip;
-            s.UseAcrylicBackdrop = TesseraAcrylicBackdrop;
-            s.UseOsAcrylic = TesseraOsAcrylicSignOffPolicy.Win11EvalComplete && TesseraOsAcrylic;
+            PersistTesseraMaterial(s);
             s.UseFocusDim = TesseraFocusDim;
-            s.UseBackdropBlur = TesseraBackdropBlur;
             s.FlyoutScalePercent = (int)Math.Clamp(TesseraFlyoutScalePercent, 50, 150);
             s.AccentColor = TesseraAccentColor.NormalizeOrEmpty(TesseraAccentHex);
             TesseraAccentHex = s.AccentColor;
@@ -685,7 +682,7 @@ namespace MosaicShell.Host.ViewModels
                 case string when ModuleIds.IsTessera(id):
                     {
                         TesseraSettings prior = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
-                        bool priorOsAcrylic = prior.UseOsAcrylic;
+                        bool priorNativeTranslucency = prior.UseNativeTranslucency;
                         PersistTesseraFromUi();
                         TesseraSettings saved = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
                         bool wasArmed = _capabilityHost?.IsArmed(ModuleIds.Tessera) == true;
@@ -704,9 +701,9 @@ namespace MosaicShell.Host.ViewModels
                             StatusMessage = "Tessera settings saved. Arm from Tiles to apply flyout hooks.";
                         }
 
-                        if (saved.UseOsAcrylic != priorOsAcrylic)
+                        if (saved.UseNativeTranslucency != priorNativeTranslucency)
                         {
-                            StatusMessage += " Restart Host after changing OS acrylic (process-wide corner radius).";
+                            StatusMessage += " Restart Host after changing native translucency (process-wide corner radius).";
                         }
 
                         break;
@@ -887,7 +884,7 @@ namespace MosaicShell.Host.ViewModels
 
             if (HotkeyGestureParser.IsLikelyOsReserved(gesture))
             {
-                StatusMessage = $"{gesture} is reserved by Windows. Pick Ctrl+Alt+Letter instead.";
+                StatusMessage = HostPlatformText.Current.ReservedShortcut(gesture);
                 e.Handled = true;
                 return true;
             }

@@ -56,7 +56,7 @@ namespace MosaicShell.Core.Tests
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void Resolve_transparency_hints_never_request_os_acrylic(bool softFrostMaterial)
+        public void Resolve_transparency_hints_never_request_native_translucency(bool softFrostMaterial)
         {
             TesseraFlyoutMaterial material = TesseraFlyoutMaterialFactory.Create(softFrostMaterial);
             _ = material.TransparencyHints.Should().Contain("Transparent");

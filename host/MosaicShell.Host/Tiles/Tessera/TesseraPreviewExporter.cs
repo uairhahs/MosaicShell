@@ -4,6 +4,7 @@ using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Modules;
+using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {
@@ -53,7 +54,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 ["mediaPlaying"] = "1"
             };
 
-            FlyoutRequest request = new(ModuleIds.Tessera, "vol", style, Payload: payload);
+            FlyoutRequest request = new(ModuleIds.Tessera, FlyoutKinds.Volume, style, Payload: payload);
             TesseraFlyoutViewModel vm = TesseraFlyoutViewModel.FromRequest(services, request);
             Control flyout = TesseraStyleFactory.Create(style, vm, accentColor, embeddedPreview: true);
             flyout.IsHitTestVisible = false;

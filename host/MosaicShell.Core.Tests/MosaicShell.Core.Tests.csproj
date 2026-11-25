@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <TargetFramework>$(MosaicTargetFramework)</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -24,6 +24,18 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+  </ItemGroup>
+
+  <!-- Portable (non-Windows) build: these tests exercise the Windows service implementations. -->
+  <ItemGroup Condition="'$(MosaicPortable)' == 'true'">
+    <Compile Remove="WindowsAudioEndpointPolicyTests.cs" />
+    <Compile Remove="WindowsHotkeyServiceTests.cs" />
+    <Compile Remove="WindowsLockKeysServiceTests.cs" />
+  </ItemGroup>
+
+  <!-- Tests of Core's Services/Linux, which the Windows build does not compile. -->
+  <ItemGroup Condition="'$(MosaicPortable)' != 'true'">
+    <Compile Remove="Linux/**" />
   </ItemGroup>
 
   <ItemGroup>

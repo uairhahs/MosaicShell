@@ -32,9 +32,7 @@ namespace MosaicShell.Core.Tests
         };
 
         // Guard 1: public policy members with no production reference ("File.cs:Member"). Seeded 2026-10-04 with
-        // the 111 found then (the audit counted 117 on 2026-09-19). D3 triages each one: wire it in, record it in
-        // the style-profile doc and delete it, or delete it.
-        private const string D3 = "D3: flag drift triage (wire in, document, or delete)";
+        // the 111 found then (the audit counted 117 on 2026-09-19); D3 (6f9079bc) triaged them down to the list below.
 
         // Not dead on purpose: honesty-gate support that the layout-fidelity and sign-off tests read, and the hook-thread
         // predicate that the planned C8.1 arm rework builds on. They stay until that feature work lands.
@@ -49,7 +47,7 @@ namespace MosaicShell.Core.Tests
             ["TesseraLayoutCoverage.cs:IsPolished"] = KeptOnPurpose,
             ["TesseraLayoutCoverage.cs:LayoutFidelityProofRelativeDirectory"] = KeptOnPurpose,
             ["TesseraLayoutCoverage.cs:RequiresLiveVolumePercentLabel"] = KeptOnPurpose,
-            ["TesseraOsAcrylicSignOffPolicy.cs:AllH3StackedStylesSignedOff"] = KeptOnPurpose,
+            ["TesseraNativeTranslucencySignOffPolicy.cs:AllH3StackedStylesSignedOff"] = KeptOnPurpose,
         };
 
         [Fact]

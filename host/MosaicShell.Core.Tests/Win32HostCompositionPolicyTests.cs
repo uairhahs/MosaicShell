@@ -32,21 +32,21 @@ namespace MosaicShell.Core.Tests
         {
             _ = Win32HostCompositionPolicy.PreferAngleEglRendering.Should().BeTrue();
             _ = Win32HostCompositionPolicy.RenderingModeHints.Should().Equal("AngleEgl", "Software");
-            _ = Win32HostCompositionPolicy.OsAcrylicRenderingAvailable.Should().BeTrue();
+            _ = Win32HostCompositionPolicy.NativeTranslucencyRenderingAvailable.Should().BeTrue();
         }
 
         [Fact]
-        public void Force_software_render_pins_software_only_and_blocks_os_acrylic()
+        public void Force_software_render_pins_software_only_and_blocks_native_translucency()
         {
             HostLaunchOptions.Apply([HostLaunchOptions.TesseraForceSoftwareRenderFlag]);
             _ = Win32HostCompositionPolicy.RenderingModeHints.Should().Equal("Software");
-            _ = Win32HostCompositionPolicy.OsAcrylicRenderingAvailable.Should().BeFalse();
+            _ = Win32HostCompositionPolicy.NativeTranslucencyRenderingAvailable.Should().BeFalse();
             HostLaunchOptions.Apply(
             [
-                HostLaunchOptions.TesseraOsAcrylicTrialFlag,
+                HostLaunchOptions.TesseraNativeTranslucencyTrialFlag,
                 HostLaunchOptions.TesseraForceSoftwareRenderFlag
             ]);
-            _ = Win32HostCompositionPolicy.OsAcrylicTrialRequested.Should().BeFalse(
+            _ = Win32HostCompositionPolicy.NativeTranslucencyTrialRequested.Should().BeFalse(
                 "Software-only path must fall back to frost even when acrylic flag is on");
             _ = Win32HostCompositionPolicy.WinUiCompositionBackdropCornerRadius.Should().BeNull();
         }

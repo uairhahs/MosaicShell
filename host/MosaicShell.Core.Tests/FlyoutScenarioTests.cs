@@ -2,7 +2,6 @@ using FluentAssertions;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules;
-using MosaicShell.Core.Modules.Tessera;
 
 namespace MosaicShell.Core.Tests
 {
@@ -27,7 +26,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void The_catalog_holds_the_scenarios_the_plan_names()
         {
-            FlyoutScenarios.All("Fluent").Select(s => s.Name).Should().Equal(Expected);
+            _ = FlyoutScenarios.All("Fluent").Select(s => s.Name).Should().Equal(Expected);
         }
 
         [Fact]
@@ -37,8 +36,8 @@ namespace MosaicShell.Core.Tests
             {
                 foreach (FlyoutScenarioStep step in scenario.Steps.Where(s => s.Request is not null))
                 {
-                    step.Request!.ModuleId.Should().Be(ModuleIds.Tessera, scenario.Name);
-                    step.Request.StyleId.Should().Be("Windows11", scenario.Name);
+                    _ = step.Request!.ModuleId.Should().Be(ModuleIds.Tessera, scenario.Name);
+                    _ = step.Request.StyleId.Should().Be("Windows11", scenario.Name);
                 }
             }
         }
@@ -48,8 +47,8 @@ namespace MosaicShell.Core.Tests
         {
             foreach (FlyoutScenario scenario in FlyoutScenarios.All("Fluent"))
             {
-                scenario.Steps[^1].Should().Be(FlyoutScenarioStep.WaitHidden(), scenario.Name);
-                scenario.Steps.Should().Contain(s => s.Kind == FlyoutScenarioStepKind.Hide, scenario.Name);
+                _ = scenario.Steps[^1].Should().Be(FlyoutScenarioStep.WaitHidden(), scenario.Name);
+                _ = scenario.Steps.Should().Contain(s => s.Kind == FlyoutScenarioStepKind.Hide, scenario.Name);
             }
         }
 
@@ -61,10 +60,10 @@ namespace MosaicShell.Core.Tests
             {
                 FlyoutRequest[] requests = [.. scenario.Steps.Where(s => s.Request is not null).Select(s => s.Request!)];
                 bool dismisses = selfDismissing.Contains(scenario.Name);
-                requests.Skip(dismisses ? 1 : 0).Should().OnlyContain(r => r.AutoDismissMs >= 60_000, scenario.Name);
+                _ = requests.Skip(dismisses ? 1 : 0).Should().OnlyContain(r => r.AutoDismissMs >= 60_000, scenario.Name);
                 if (dismisses)
                 {
-                    requests[0].AutoDismissMs.Should().BeLessThan(100, scenario.Name);
+                    _ = requests[0].AutoDismissMs.Should().BeLessThan(100, scenario.Name);
                 }
             }
         }
@@ -76,13 +75,13 @@ namespace MosaicShell.Core.Tests
             FlyoutScenario entrance = FlyoutScenarios.All("Fluent").Single(s => s.Name == "dismiss-during-entrance");
 
             // The skip is sent once the exit motion is seen to have begun.
-            exit.Steps.Select(s => s.Kind).Take(3).Should().Equal(
+            _ = exit.Steps.Select(s => s.Kind).Take(3).Should().Equal(
                 FlyoutScenarioStepKind.Show, FlyoutScenarioStepKind.WaitTrace, FlyoutScenarioStepKind.Show);
-            exit.Steps[1].TracePrefix.Should().Be("motion plan entrance=False");
+            _ = exit.Steps[1].TracePrefix.Should().Be("motion plan entrance=False");
 
             // The flyout is asked to dismiss almost at once, so the exit begins while it is still entering.
-            entrance.Steps[0].Request!.AutoDismissMs.Should().BeLessThan(100);
-            entrance.Steps[1].Kind.Should().Be(FlyoutScenarioStepKind.WaitTrace);
+            _ = entrance.Steps[0].Request!.AutoDismissMs.Should().BeLessThan(100);
+            _ = entrance.Steps[1].Kind.Should().Be(FlyoutScenarioStepKind.WaitTrace);
         }
 
         [Fact]
@@ -90,7 +89,7 @@ namespace MosaicShell.Core.Tests
         {
             FlyoutScenario scenario = FlyoutScenarios.All("Fluent").Single(s => s.Name == "skip-x3-long-titles");
 
-            scenario.Steps.Where(s => s.Request is not null)
+            _ = scenario.Steps.Where(s => s.Request is not null)
                 .Select(s => s.Request!.Payload!["mediaTitle"].Length)
                 .Should().OnlyContain(length => length > 260);
         }
@@ -101,8 +100,8 @@ namespace MosaicShell.Core.Tests
             FlyoutScenario scenario = FlyoutScenarios.All("Fluent").Single(s => s.Name == "volume-scrub");
 
             string[] levels = [.. scenario.Steps.Where(s => s.Request is not null).Select(s => s.Request!.Payload!["volume"])];
-            levels.Distinct().Count().Should().BeGreaterThanOrEqualTo(5);
-            scenario.Steps.Where(s => s.Kind == FlyoutScenarioStepKind.Update).Should().HaveCountGreaterThanOrEqualTo(5);
+            _ = levels.Distinct().Count().Should().BeGreaterThanOrEqualTo(5);
+            _ = scenario.Steps.Where(s => s.Kind == FlyoutScenarioStepKind.Update).Should().HaveCountGreaterThanOrEqualTo(5);
         }
     }
 }

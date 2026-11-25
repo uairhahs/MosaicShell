@@ -167,5 +167,51 @@ namespace MosaicShell.Core.Tests
                 .Should()
                 .Equal(MotionKinds(show).Reverse());
         }
+
+        [Fact]
+        public void A_hide_with_both_phases_lasts_phase_two_the_pause_and_phase_one()
+        {
+            // Measured on GNOME: Fluent volume with the media strip, 20 steps, left in 748 and 751 ms.
+            TesseraFlyoutMotionPlan hide = TesseraFlyoutMotionPlan.ResolveHide(2, "Fluent", true, stacked: false);
+
+            int planned = hide.PlannedDurationMs(ani: 2, aniSteps: 20);
+
+            _ = planned.Should().Be(320 + TesseraFlyoutAnimationPolicy.FancyPauseMs + 320);
+        }
+
+        [Fact]
+        public void When_phase_two_finds_nothing_to_reveal_only_the_pause_and_phase_one_remain()
+        {
+            // Measured on GNOME: the same plan with no media playing (no strip to reveal) left in 426 ms.
+            TesseraFlyoutMotionPlan hide = TesseraFlyoutMotionPlan.ResolveHide(2, "Fluent", true, stacked: false);
+
+            int planned = hide.PlannedDurationMs(ani: 2, aniSteps: 20, phase2Animates: false);
+
+            _ = planned.Should().Be(TesseraFlyoutAnimationPolicy.FancyPauseMs + 320);
+        }
+
+        [Fact]
+        public void A_phase_one_only_hide_lasts_one_phase()
+        {
+            TesseraFlyoutMotionPlan hide = TesseraFlyoutMotionPlan.ResolveHide(1, "Fluent", true, stacked: false);
+
+            _ = hide.PlannedDurationMs(ani: 1, aniSteps: 20).Should().Be(320);
+        }
+
+        [Fact]
+        public void Without_animation_the_hide_is_the_fade()
+        {
+            TesseraFlyoutMotionPlan hide = TesseraFlyoutMotionPlan.ResolveHide(0, "Fluent", true, stacked: false);
+
+            _ = hide.PlannedDurationMs(ani: 0, aniSteps: 20).Should().Be(TesseraFlyoutAnimationPolicy.FadeDurationMs);
+        }
+
+        [Fact]
+        public void The_phase_length_follows_the_step_count()
+        {
+            TesseraFlyoutMotionPlan hide = TesseraFlyoutMotionPlan.ResolveHide(2, "Fluent", true, stacked: false);
+
+            _ = hide.PlannedDurationMs(ani: 2, aniSteps: 10).Should().Be(160 + TesseraFlyoutAnimationPolicy.FancyPauseMs + 160);
+        }
     }
 }

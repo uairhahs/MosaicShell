@@ -1,0 +1,13 @@
+enable=all
+source-path=SCRIPTDIR
+disable=SC2154
+
+# Optional checks that flag deliberate patterns in the packaging scripts:
+# SC2310: `step || die "message"` turns off set -e inside step, which is the intent (the caller handles the failure).
+# SC2312: `$(command)` inside another command masks its exit status; the scripts check the result they read instead.
+disable=SC2310
+disable=SC2312
+
+# If you're having issues with shellcheck following source, disable the errors via:
+# disable=SC1090
+# disable=SC1091

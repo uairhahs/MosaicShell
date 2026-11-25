@@ -1,5 +1,7 @@
 using FluentAssertions;
+#if WINDOWS
 using MosaicShell.Core.HostPlatform;
+#endif
 using MosaicShell.Core.Services;
 
 namespace MosaicShell.Core.Tests
@@ -51,6 +53,7 @@ namespace MosaicShell.Core.Tests
             _ = levels.Bands.Should().HaveCount(16);
         }
 
+#if WINDOWS
         [Fact]
         public void Windows_services_factory_constructs()
         {
@@ -65,5 +68,6 @@ namespace MosaicShell.Core.Tests
             using HostServices hub = HostServices.CreateWindowsDefaults();
             _ = hub.Metrics.Sample().MachineName.Should().Be(Environment.MachineName);
         }
+#endif
     }
 }

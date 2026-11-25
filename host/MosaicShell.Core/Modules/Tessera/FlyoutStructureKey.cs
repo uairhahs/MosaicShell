@@ -20,7 +20,8 @@ namespace MosaicShell.Core.Modules.Tessera
         TesseraFlyoutSessionMode Topology,
         bool Acrylic,
         bool BackdropBlur,
-        string Accent)
+        string Accent,
+        bool NativeTranslucency = false)
     {
         /// <summary>The key of <paramref name="request"/> as it would be built on <paramref name="topology"/>.</summary>
         public static FlyoutStructureKey From(FlyoutRequest request, TesseraFlyoutSessionMode topology)
@@ -34,7 +35,9 @@ namespace MosaicShell.Core.Modules.Tessera
                 Topology: topology,
                 Acrylic: TesseraFlyoutMaterialFactory.UseAcrylicFromPayload(payload),
                 BackdropBlur: TesseraFlyoutRequestBuilder.BackdropBlurFromPayload(payload),
-                Accent: TesseraFlyoutRequestBuilder.AccentFromPayload(payload) ?? string.Empty);
+                Accent: TesseraFlyoutRequestBuilder.AccentFromPayload(payload) ?? string.Empty,
+                NativeTranslucency: TesseraFlyoutMaterialFactory.FromPayload(payload, request.StyleId, request.Kind)
+                    .UseNativeTranslucency);
         }
 
         /// <summary>True when a flyout built with <paramref name="builtFrom"/> can take this request as a patch.</summary>
@@ -55,6 +58,7 @@ namespace MosaicShell.Core.Modules.Tessera
             AddIf(names, Acrylic != other.Acrylic, "acrylic");
             AddIf(names, BackdropBlur != other.BackdropBlur, "backdropBlur");
             AddIf(names, Accent != other.Accent, "accent");
+            AddIf(names, NativeTranslucency != other.NativeTranslucency, "nativeTranslucency");
             return names;
         }
 
