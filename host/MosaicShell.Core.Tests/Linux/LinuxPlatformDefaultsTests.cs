@@ -84,6 +84,19 @@ namespace MosaicShell.Core.Tests.Linux
         }
 
         [Fact]
+        public void Lock_keys_come_from_KWin_on_KDE_and_from_the_keyboard_LEDs_elsewhere()
+        {
+            // GNOME offers no lock state to clients (no org_kde_kwin_keystate), so Caps Lock opened nothing there.
+            using ILockKeysService kde = HostServices.CreateLinuxLockKeys("KDE");
+            using ILockKeysService gnome = HostServices.CreateLinuxLockKeys("GNOME");
+            using ILockKeysService unknown = HostServices.CreateLinuxLockKeys(null);
+
+            _ = kde.Should().BeOfType<KWinKeystateLockKeys>();
+            _ = gnome.Should().BeOfType<LedLockKeysService>();
+            _ = unknown.Should().BeOfType<LedLockKeysService>();
+        }
+
+        [Fact]
         public void Airplane_mode_follows_Plasmas_setting_on_KDE_and_the_radios_elsewhere()
         {
             using IAirplaneModeService kde = HostServices.CreateLinuxAirplane("KDE");

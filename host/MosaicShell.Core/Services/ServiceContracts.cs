@@ -263,7 +263,7 @@ namespace MosaicShell.Core.Services
                 brightness,
                 companions,
                 new Linux.KGlobalAccelHotkeyService(),
-                new Linux.KWinKeystateLockKeys(),
+                CreateLinuxLockKeys(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP")),
                 streams,
                 new Linux.ParecAudioLevelService(),
                 streams,
@@ -272,6 +272,17 @@ namespace MosaicShell.Core.Services
                 new Linux.WaylandIdleService(),
                 new Linux.KWinFullscreenProbe(),
                 CreateLinuxAirplane(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP")));
+        }
+
+        /// <summary>
+        /// On Plasma, KWin pushes each lock key change (keystate protocol); elsewhere (GNOME offers none) the keyboard LEDs
+        /// are read.
+        /// </summary>
+        public static ILockKeysService CreateLinuxLockKeys(string? xdgCurrentDesktop)
+        {
+            return Kde.PlasmaAirplanePolicy.IsPlasmaSession(xdgCurrentDesktop)
+                ? new Linux.KWinKeystateLockKeys()
+                : new Linux.LedLockKeysService();
         }
 
         /// <summary>

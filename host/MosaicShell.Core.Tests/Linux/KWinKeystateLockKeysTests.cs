@@ -107,7 +107,7 @@ namespace MosaicShell.Core.Tests.Linux
         }
 
         [Fact]
-        public void Platform_defaults_on_linux_take_lock_keys_from_kwin()
+        public void Platform_defaults_on_linux_take_lock_keys_from_kwin_on_Plasma_and_the_LEDs_elsewhere()
         {
             if (!OperatingSystem.IsLinux())
             {
@@ -116,7 +116,8 @@ namespace MosaicShell.Core.Tests.Linux
 
             using HostServices hub = HostServices.CreatePlatformDefaults();
 
-            _ = hub.LockKeys.Should().BeOfType<KWinKeystateLockKeys>();
+            bool plasma = Services.Kde.PlasmaAirplanePolicy.IsPlasmaSession(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP"));
+            _ = hub.LockKeys.Should().BeOfType(plasma ? typeof(KWinKeystateLockKeys) : typeof(LedLockKeysService));
         }
     }
 
