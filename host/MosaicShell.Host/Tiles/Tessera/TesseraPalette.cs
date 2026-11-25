@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using Avalonia.Media;
 using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.Services;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {
@@ -54,32 +55,27 @@ namespace MosaicShell.Host.Tiles.Tessera
             RefreshAccentFromSystem();
         }
 
+        /// <summary>
+        /// The system accent (<see cref="SystemAccent.Resolve"/>): Windows' DWM colorization, the desktop's portal accent
+        /// on Linux, else the Windows blue. Each flyout build calls this, so a changed accent shows on the next flyout.
+        /// </summary>
         public static void RefreshAccentFromSystem()
         {
-            Color fallback = Color.FromRgb(2, 115, 205);
-            try
+            uint? colorization = null;
+            if (OperatingSystem.IsWindows())
             {
-                if (DwmGetColorizationColor(out uint color, out _) == 0)
+                try
                 {
-                    byte a = (byte)((color >> 24) & 0xFF);
-                    byte r = (byte)((color >> 16) & 0xFF);
-                    byte g = (byte)((color >> 8) & 0xFF);
-                    byte b = (byte)(color & 0xFF);
-                    if (a == 0)
+                    if (DwmGetColorizationColor(out uint color, out _) == 0)
                     {
-                        a = 255;
-                    }
-
-                    if (r + g + b is > 30 and < 750)
-                    {
-                        SetAccent(Color.FromArgb(a, r, g, b));
-                        return;
+                        colorization = color;
                     }
                 }
+                catch { /* keep the other answers */ }
             }
-            catch { /* keep fallback */ }
 
-            SetAccent(fallback);
+            (byte a, byte r, byte g, byte b) = SystemAccent.Resolve(colorization, SystemAccent.DesktopAccent);
+            SetAccent(Color.FromArgb(a, r, g, b));
         }
 
         public static Color LightenAccent(double amount)
