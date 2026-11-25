@@ -300,79 +300,14 @@ namespace MosaicShell.Core.Services.Linux
             return connection.CallMethodAsync(message, static (m, _) => m.GetBodyReader().ReadUInt32());
         }
 
-        /// <summary>
-        /// One Start-to-Stop run. Owns its connection and watch, so a Stop that lands mid-connect closes them, and a stale
-        /// run's signals are dropped even if they were already in flight.
-        /// </summary>
-        private sealed class Session
+        /// <summary>A <see cref="ListeningSession"/> that also keeps its connection and Mutter's watch ids.</summary>
+        private sealed class Session : ListeningSession
         {
-            private readonly Lock _gate = new();
-            private readonly List<IDisposable> _owned = [];
-            private bool _closed;
-            private bool _listening;
-
             public DBusConnection? Connection { get; set; }
 
             public uint IdleWatchId { get; set; }
 
             public uint ActiveWatchId { get; set; }
-
-            public bool IsListening
-            {
-                get
-                {
-                    lock (_gate)
-                    {
-                        return _listening && !_closed;
-                    }
-                }
-            }
-
-            /// <summary>Keeps a resource for Close, or disposes it at once when Close has already run.</summary>
-            public bool Adopt(IDisposable resource)
-            {
-                lock (_gate)
-                {
-                    if (!_closed)
-                    {
-                        _owned.Add(resource);
-                        return true;
-                    }
-                }
-
-                resource.Dispose();
-                return false;
-            }
-
-            public void MarkListening()
-            {
-                lock (_gate)
-                {
-                    _listening = !_closed;
-                }
-            }
-
-            public void Close()
-            {
-                IDisposable[] owned;
-                lock (_gate)
-                {
-                    if (_closed)
-                    {
-                        return;
-                    }
-
-                    _closed = true;
-                    owned = [.. _owned];
-                    _owned.Clear();
-                }
-
-                // The watch before the connection that carries it.
-                for (int i = owned.Length - 1; i >= 0; i--)
-                {
-                    owned[i].Dispose();
-                }
-            }
         }
     }
 }
