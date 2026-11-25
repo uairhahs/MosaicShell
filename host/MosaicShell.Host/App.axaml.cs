@@ -264,7 +264,24 @@ namespace MosaicShell.Host
 
             bool minimizeToTray = _vm?.Hub.CloseMinimizesToTray ?? true;
 
-            if (minimizeToTray)
+            MainWindowCloseTrigger trigger = e.CloseReason switch
+            {
+                WindowCloseReason.OSShutdown => MainWindowCloseTrigger.SessionEnding,
+                WindowCloseReason.ApplicationShutdown => MainWindowCloseTrigger.ApplicationShutdown,
+                _ => MainWindowCloseTrigger.User,
+            };
+
+            MainWindowCloseAction action = MainWindowClosePolicy.Decide(trigger, minimizeToTray);
+
+            if (action == MainWindowCloseAction.AllowClose)
+            {
+                // Logout or app shutdown: cancelling would veto it. Save now; the lifetime's Exit runs teardown.
+                _tileHost?.PersistAll();
+                _capabilityHost?.Persist();
+                return;
+            }
+
+            if (action == MainWindowCloseAction.HideToTray)
 
             {
 
