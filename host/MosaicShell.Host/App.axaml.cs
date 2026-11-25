@@ -16,6 +16,8 @@ using MosaicShell.Core.Capabilities.Ipc;
 
 using MosaicShell.Core.Capabilities.Platform;
 
+using MosaicShell.Core.HostPlatform;
+
 using MosaicShell.Core.Runtime;
 
 using MosaicShell.Core.Services;
@@ -327,6 +329,12 @@ namespace MosaicShell.Host
         private async void TrayExit_OnClick(object? sender, EventArgs e)
         {
             await ExitApplicationAsync();
+        }
+
+        /// <summary>A second launch asked this Host to show itself (<see cref="HostSingleInstance"/>).</summary>
+        internal void ShowHubOnRequest()
+        {
+            ShowMainWindow();
         }
 
         private void ShowMainWindow()
