@@ -82,5 +82,17 @@ namespace MosaicShell.Core.Tests.Linux
             _ = hub.Autostart.Should().BeOfType<XdgAutostartService>();
             _ = hub.Airplane.IsSupported.Should().BeFalse();
         }
+
+        [Fact]
+        public void Airplane_mode_follows_Plasmas_setting_on_KDE_and_the_radios_elsewhere()
+        {
+            using IAirplaneModeService kde = HostServices.CreateLinuxAirplane("KDE");
+            using IAirplaneModeService gnome = HostServices.CreateLinuxAirplane("GNOME");
+            using IAirplaneModeService unknown = HostServices.CreateLinuxAirplane(null);
+
+            _ = kde.Should().BeOfType<PlasmaAirplaneModeService>();
+            _ = gnome.Should().BeOfType<RfkillAirplaneModeService>();
+            _ = unknown.Should().BeOfType<RfkillAirplaneModeService>();
+        }
     }
 }

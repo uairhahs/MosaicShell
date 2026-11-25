@@ -183,7 +183,7 @@ namespace MosaicShell.Core.Tests.Linux
         }
 
         [Fact]
-        public void Platform_defaults_on_linux_watch_rfkill()
+        public void Platform_defaults_on_linux_watch_rfkill_or_on_Plasma_its_setting()
         {
             if (!OperatingSystem.IsLinux())
             {
@@ -192,7 +192,8 @@ namespace MosaicShell.Core.Tests.Linux
 
             using HostServices hub = HostServices.CreatePlatformDefaults();
 
-            _ = hub.Airplane.Should().BeOfType<RfkillAirplaneModeService>();
+            bool plasma = Services.Kde.PlasmaAirplanePolicy.IsPlasmaSession(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP"));
+            _ = hub.Airplane.Should().BeOfType(plasma ? typeof(PlasmaAirplaneModeService) : typeof(RfkillAirplaneModeService));
         }
     }
 }

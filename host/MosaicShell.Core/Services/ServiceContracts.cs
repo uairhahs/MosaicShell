@@ -271,7 +271,18 @@ namespace MosaicShell.Core.Services
                 Linux.XdgAutostartService.ForCurrentProcess(),
                 new Linux.WaylandIdleService(),
                 new Linux.KWinFullscreenProbe(),
-                new Linux.RfkillAirplaneModeService());
+                CreateLinuxAirplane(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP")));
+        }
+
+        /// <summary>
+        /// On Plasma, its own airplane setting with the radios saying whether there is one to switch off; elsewhere the
+        /// radios alone (every radio blocked), until a desktop's own setting is wired the same way.
+        /// </summary>
+        public static IAirplaneModeService CreateLinuxAirplane(string? xdgCurrentDesktop)
+        {
+            return Kde.PlasmaAirplanePolicy.IsPlasmaSession(xdgCurrentDesktop)
+                ? new Linux.PlasmaAirplaneModeService(new Linux.RfkillAirplaneModeService())
+                : new Linux.RfkillAirplaneModeService();
         }
 
         /// <summary>
