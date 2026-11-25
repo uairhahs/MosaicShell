@@ -23,6 +23,7 @@ using MosaicShell.Host.Capabilities;
 using MosaicShell.Host.Input;
 using MosaicShell.Host.Tiles;
 using MosaicShell.Host.Tiles.Tessera;
+using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Host.ViewModels
 {
@@ -532,7 +533,7 @@ namespace MosaicShell.Host.ViewModels
             TesseraSettings settings = TesseraFlyoutRequestBuilder.LoadSettings();
             // Preview: no FocusDim (Z-order fights Transparent/Topmost), land on Host's monitor.
             settings.UseFocusDim = false;
-            FlyoutRequest request = new TesseraFlyoutRequestBuilder().Build(_services, settings, "vol");
+            FlyoutRequest request = new TesseraFlyoutRequestBuilder().Build(_services, settings, FlyoutKinds.Volume);
             request = request with { MonitorIndex = ResolveHostMonitorIndex(settings.MonitorIndex) };
             _hostUi.PreviewFlyout(request);
             StatusMessage =

@@ -160,7 +160,7 @@ namespace MosaicShell.Core.Services.Linux
                 hider.AddMethodHandler(new GuardHandler(session));
                 await hider.RequestNameAsync(KWinOsdScriptPolicy.GuardBusName).ConfigureAwait(false);
 
-                string directory = Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR") is { Length: > 0 } runtime
+                string directory = Environment.GetEnvironmentVariable(Xdg.XdgBaseDirectories.RuntimeDirVariable) is { Length: > 0 } runtime
                     ? runtime
                     : Path.GetTempPath();
                 string file = Path.Combine(directory, $"{KWinOsdScriptPolicy.ScriptName}-{Environment.ProcessId}.js");

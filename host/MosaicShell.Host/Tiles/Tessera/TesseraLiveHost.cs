@@ -6,6 +6,7 @@ using Material.Icons.Avalonia;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
+using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {
@@ -109,8 +110,7 @@ namespace MosaicShell.Host.Tiles.Tessera
         private void ApplyLiveCore(HostServices services, FlyoutRequest request)
         {
             TesseraLiveBindings b = Bindings;
-            if (request.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
-                || request.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase))
+            if (MediaFlyoutRouter.IsStatusKind(request.Kind))
             {
                 Dictionary<string, string> live = TesseraFlyoutRequestBuilder.RefreshStatusPayload(
                     services, request.Kind, request.Payload);
@@ -121,7 +121,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             }
 
             MediaSessionInfo? media = services.Media.Current;
-            bool isBright = request.Kind.Equals("bright", StringComparison.OrdinalIgnoreCase);
+            bool isBright = FlyoutKinds.Is(request.Kind, FlyoutKinds.Brightness);
 
             if (!isBright && (b.VolumeTrack is not null || b.VolumeRing is not null))
             {

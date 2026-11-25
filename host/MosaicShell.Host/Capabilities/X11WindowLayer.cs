@@ -12,7 +12,7 @@ namespace MosaicShell.Host.Capabilities
     /// <remarks>Keeps its own Xlib connection, used from the UI thread.</remarks>
     internal static class X11WindowLayer
     {
-        private const string LibX11 = "libX11.so.6";
+        private const string LibX11 = X11Native.LibX11;
         private const int ClientMessage = 33;
         private const nint StateRemove = 0;
         private const nint StateAdd = 1;

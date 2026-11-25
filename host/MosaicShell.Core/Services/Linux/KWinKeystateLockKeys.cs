@@ -17,8 +17,8 @@ namespace MosaicShell.Core.Services.Linux
     public sealed class KWinKeystateLockKeys(string? socketPath = null) : ILockKeysService
     {
         private readonly string? _socketPath = socketPath ?? KWinKeystatePolicy.SocketPath(
-            Environment.GetEnvironmentVariable("WAYLAND_DISPLAY"),
-            Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR"));
+            Environment.GetEnvironmentVariable(Xdg.XdgBaseDirectories.WaylandDisplayVariable),
+            Environment.GetEnvironmentVariable(Xdg.XdgBaseDirectories.RuntimeDirVariable));
 
         private readonly Lock _gate = new();
         private EventHandler<LockKeyState>? _changed;

@@ -108,7 +108,7 @@ namespace MosaicShell.Core.Capabilities.Platform
                 _presenter.Update(request);
                 Delivered(request, nextStyle);
                 if (trigger == FlyoutSyncTrigger.MediaSession
-                    && request.Kind.Equals("media", StringComparison.OrdinalIgnoreCase))
+                    && FlyoutKinds.Is(request.Kind, FlyoutKinds.Media))
                 {
                     _lastMediaIdentity = currentMedia;
                 }
@@ -126,7 +126,7 @@ namespace MosaicShell.Core.Capabilities.Platform
             }
 
             if (action == FlyoutSyncAction.Present
-                && request.Kind.Equals("media", StringComparison.OrdinalIgnoreCase))
+                && FlyoutKinds.Is(request.Kind, FlyoutKinds.Media))
             {
                 _lastMediaIdentity = currentMedia;
             }

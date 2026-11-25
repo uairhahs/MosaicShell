@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Material.Icons.Avalonia;
+using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {
@@ -16,7 +17,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 return StatusChip(vm, TesseraWindows11Metrics.CornerRadius);
             }
 
-            if (vm.Kind.Equals("media", StringComparison.OrdinalIgnoreCase)
+            if (FlyoutKinds.Is(vm.Kind, FlyoutKinds.Media)
                 && !TesseraStackedBuildContext.IsActive)
             {
                 return Win11MediaOnlyReveal(vm);

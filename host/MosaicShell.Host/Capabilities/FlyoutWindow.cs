@@ -13,6 +13,7 @@ using MosaicShell.Core.Services;
 using MosaicShell.Core.Services.Kde;
 using MosaicShell.Host.Tiles.Tessera;
 using MosaicShell.Core.Modules;
+using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Host.Capabilities
 {
@@ -377,8 +378,7 @@ namespace MosaicShell.Host.Capabilities
             {
                 try
                 {
-                    if (FlyoutRequest.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
-                        || FlyoutRequest.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase))
+                    if (MediaFlyoutRouter.IsStatusKind(FlyoutRequest.Kind))
                     {
                         RefreshStatusFromServices();
                         return;
@@ -433,8 +433,7 @@ namespace MosaicShell.Host.Capabilities
         public void ApplyLiveOnly(FlyoutRequest request, HostServices services)
         {
             FlyoutRequest = request;
-            if (FlyoutRequest.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
-                || FlyoutRequest.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase))
+            if (MediaFlyoutRouter.IsStatusKind(FlyoutRequest.Kind))
             {
                 RefreshStatusFromServices();
                 return;

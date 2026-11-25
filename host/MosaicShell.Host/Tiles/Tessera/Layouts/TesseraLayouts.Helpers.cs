@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Material.Icons;
 using Material.Icons.Avalonia;
 using MosaicShell.Core.Modules.Tessera;
+using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {
@@ -197,8 +198,7 @@ namespace MosaicShell.Host.Tiles.Tessera
 
         private static bool IsStatus(TesseraFlyoutViewModel vm)
         {
-            return vm.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
-            || vm.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase);
+            return MediaFlyoutRouter.IsStatusKind(vm.Kind);
         }
 
         private static string FormatTime(double seconds)

@@ -23,8 +23,8 @@ namespace MosaicShell.Core.Modules.Tessera
         /// <summary>CoreUI N-window fork ships after volume+media strip is signed off.</summary>
         public const bool CoreUiMultiWindowEnabled = false;
 
-        public const string VolumeSlotSuffix = "vol";
-        public const string MediaSlotSuffix = "media";
+        public const string VolumeSlotSuffix = FlyoutKinds.Volume;
+        public const string MediaSlotSuffix = FlyoutKinds.Media;
         public const string DeviceSlotSuffix = "device";
 
         /// <summary>

@@ -76,7 +76,7 @@ namespace MosaicShell.Core.Services.Linux
                 _pending = pending;
             }
 
-            string directory = Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR") is { Length: > 0 } runtime
+            string directory = Environment.GetEnvironmentVariable(Xdg.XdgBaseDirectories.RuntimeDirVariable) is { Length: > 0 } runtime
                 ? runtime
                 : Path.GetTempPath();
             string file = Path.Combine(directory, $"{KWinFullscreenPolicy.ScriptName}-{Environment.ProcessId}.js");

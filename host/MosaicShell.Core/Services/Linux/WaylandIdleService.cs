@@ -20,8 +20,8 @@ namespace MosaicShell.Core.Services.Linux
     public sealed class WaylandIdleService(string? socketPath = null) : IIdleService
     {
         private readonly string? _socketPath = socketPath ?? KWinKeystatePolicy.SocketPath(
-            Environment.GetEnvironmentVariable("WAYLAND_DISPLAY"),
-            Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR"));
+            Environment.GetEnvironmentVariable(Xdg.XdgBaseDirectories.WaylandDisplayVariable),
+            Environment.GetEnvironmentVariable(Xdg.XdgBaseDirectories.RuntimeDirVariable));
 
         private readonly Lock _gate = new();
         private Session? _session;

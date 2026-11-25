@@ -86,8 +86,7 @@ namespace MosaicShell.Host.Capabilities
 
         private static bool IsImmediateStatusKind(FlyoutRequest request)
         {
-            return request.Kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
-            || request.Kind.Equals("flight", StringComparison.OrdinalIgnoreCase);
+            return MediaFlyoutRouter.IsStatusKind(request.Kind);
         }
 
         public void Update(FlyoutRequest request)

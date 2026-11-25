@@ -109,10 +109,10 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                 switch (kind)
                 {
                     case ShellFlyoutKind.Volume:
-                        RouteFlyout("vol", FlyoutSyncTrigger.Volume);
+                        RouteFlyout(FlyoutKinds.Volume, FlyoutSyncTrigger.Volume);
                         break;
                     case ShellFlyoutKind.Brightness:
-                        RouteFlyout("bright", FlyoutSyncTrigger.Brightness);
+                        RouteFlyout(FlyoutKinds.Brightness, FlyoutSyncTrigger.Brightness);
                         break;
                     case ShellFlyoutKind.Media:
                         if (_settings.EnableMediaFlyouts)
@@ -129,12 +129,12 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
 
         private void OnVolume(object? s, EventArgs e)
         {
-            _ctx.Ui.RunOnHostThread(() => RouteFlyout("vol", FlyoutSyncTrigger.Volume));
+            _ctx.Ui.RunOnHostThread(() => RouteFlyout(FlyoutKinds.Volume, FlyoutSyncTrigger.Volume));
         }
 
         private void OnBrightness(object? s, EventArgs e)
         {
-            _ctx.Ui.RunOnHostThread(() => RouteFlyout("bright", FlyoutSyncTrigger.Brightness));
+            _ctx.Ui.RunOnHostThread(() => RouteFlyout(FlyoutKinds.Brightness, FlyoutSyncTrigger.Brightness));
         }
 
         private void OnMediaSignal(MediaSessionSignal signal)
@@ -149,7 +149,7 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                         return;
                     }
 
-                    if (Flyouts.OpenKind is not ("vol" or "bright" or "media"))
+                    if (!MediaFlyoutRouter.IsStripKind(Flyouts.OpenKind))
                     {
                         return;
                     }
@@ -182,11 +182,11 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
 
                 if (action == MediaFlyoutAction.PresentMediaFlyout
                     && visible
-                    && Flyouts.OpenKind.Equals("media", StringComparison.OrdinalIgnoreCase)
+                    && FlyoutKinds.Is(Flyouts.OpenKind, FlyoutKinds.Media)
                     && !signal.IsTrackBoundary)
                 {
                     FlyoutTrace.Write("media signal -> SoftRefresh (non-boundary on visible media)");
-                    Flyouts.SoftRefresh(BuildRequest("media", null));
+                    Flyouts.SoftRefresh(BuildRequest(FlyoutKinds.Media, null));
                     return;
                 }
 
@@ -230,7 +230,7 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                 ["lock"] = state.Key.ToString(),
                 ["on"] = state.IsOn ? "1" : "0"
             };
-            _ctx.Ui.RunOnHostThread(() => RouteFlyout("locks", FlyoutSyncTrigger.StatusToggle, payload));
+            _ctx.Ui.RunOnHostThread(() => RouteFlyout(FlyoutKinds.Locks, FlyoutSyncTrigger.StatusToggle, payload));
         }
 
         private void OnFlight(object? s, EventArgs e)
@@ -245,7 +245,7 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
             {
                 ["on"] = Services.Airplane.IsEnabled ? "1" : "0"
             };
-            _ctx.Ui.RunOnHostThread(() => RouteFlyout("flight", FlyoutSyncTrigger.StatusToggle, payload));
+            _ctx.Ui.RunOnHostThread(() => RouteFlyout(FlyoutKinds.Flight, FlyoutSyncTrigger.StatusToggle, payload));
         }
 
         private void OnLegacyKey(object? s, LegacyVolumeKey key)
@@ -268,7 +268,7 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                 default:
                     break;
             }
-            RouteFlyout("vol", FlyoutSyncTrigger.Volume);
+            RouteFlyout(FlyoutKinds.Volume, FlyoutSyncTrigger.Volume);
         }
 
         private static double StepVolume(double current, int deltaPercent)
@@ -288,7 +288,7 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
 
             if (_presentingMedia)
             {
-                RouteFlyout("media", trigger);
+                RouteFlyout(FlyoutKinds.Media, trigger);
                 return;
             }
 
@@ -300,7 +300,7 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                     _ctx.Media.PumpTimeline();
                 }
 
-                RouteFlyout("media", trigger);
+                RouteFlyout(FlyoutKinds.Media, trigger);
             }
             finally
             {
@@ -341,7 +341,7 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
             try
             {
                 _ctx.Media.PumpTimeline();
-                if (!Flyouts.OpenKind.Equals("media", StringComparison.OrdinalIgnoreCase))
+                if (!FlyoutKinds.Is(Flyouts.OpenKind, FlyoutKinds.Media))
                 {
                     return;
                 }
@@ -357,7 +357,7 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                     return;
                 }
 
-                Flyouts.SoftRefresh(BuildRequest("media", null));
+                Flyouts.SoftRefresh(BuildRequest(FlyoutKinds.Media, null));
             }
             catch (Exception ex)
             {

@@ -9,6 +9,8 @@ namespace MosaicShell.Core.Services.Xdg
     {
         public const string ConfigHomeVariable = "XDG_CONFIG_HOME";
         public const string DataHomeVariable = "XDG_DATA_HOME";
+        public const string RuntimeDirVariable = "XDG_RUNTIME_DIR";
+        public const string WaylandDisplayVariable = "WAYLAND_DISPLAY";
         public const string ConfigHomeDefault = ".config";
         public const string DataHomeDefault = ".local/share";
 

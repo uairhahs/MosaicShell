@@ -16,7 +16,7 @@ namespace MosaicShell.Host.Capabilities
     /// </remarks>
     internal static class X11FocusDim
     {
-        private const string LibX11 = "libX11.so.6";
+        private const string LibX11 = X11Native.LibX11;
         private const string LibXext = "libXext.so.6";
         private const int ShapeInput = 2;
         private const int ShapeSet = 0;

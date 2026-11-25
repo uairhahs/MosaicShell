@@ -16,7 +16,7 @@ namespace MosaicShell.Host.Capabilities
     /// </remarks>
     internal static class X11BlurBehind
     {
-        private const string LibX11 = "libX11.so.6";
+        private const string LibX11 = X11Native.LibX11;
         private const string RegionAtomName = "_KDE_NET_WM_BLUR_BEHIND_REGION";
         private const nint XaCardinal = 6;
         private const int PropModeReplace = 0;

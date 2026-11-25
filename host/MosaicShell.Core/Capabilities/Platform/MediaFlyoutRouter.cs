@@ -21,7 +21,7 @@ namespace MosaicShell.Core.Capabilities.Platform
             string? lastKind)
         {
             if (flyoutVisible && IsStripKind(lastKind)
-                && !string.Equals(lastKind, "media", StringComparison.OrdinalIgnoreCase))
+                && !FlyoutKinds.Is(lastKind, FlyoutKinds.Media))
             {
                 return MediaFlyoutAction.SoftRefreshVisible;
             }
@@ -37,10 +37,9 @@ namespace MosaicShell.Core.Capabilities.Platform
 
         public static bool IsStripKind(string? kind)
         {
-            return kind is not null
-            && (kind.Equals("vol", StringComparison.OrdinalIgnoreCase)
-                || kind.Equals("bright", StringComparison.OrdinalIgnoreCase)
-                || kind.Equals("media", StringComparison.OrdinalIgnoreCase));
+            return FlyoutKinds.Is(kind, FlyoutKinds.Volume)
+                || FlyoutKinds.Is(kind, FlyoutKinds.Brightness)
+                || FlyoutKinds.Is(kind, FlyoutKinds.Media);
         }
 
         /// <summary>
@@ -49,9 +48,7 @@ namespace MosaicShell.Core.Capabilities.Platform
         /// </summary>
         public static bool IsStatusKind(string? kind)
         {
-            return kind is not null
-            && (kind.Equals("locks", StringComparison.OrdinalIgnoreCase)
-                || kind.Equals("flight", StringComparison.OrdinalIgnoreCase));
+            return FlyoutKinds.Is(kind, FlyoutKinds.Locks) || FlyoutKinds.Is(kind, FlyoutKinds.Flight);
         }
 
         public static bool IsTrackBoundary(MediaSessionInfo? previous, MediaSessionInfo? next)
