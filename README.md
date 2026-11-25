@@ -15,7 +15,7 @@
 
 ## About
 
-MosaicShell is a native Windows desktop shell built from composable tiles. The Avalonia **Host** installs modules, arms tray capabilities, and opens widget overlays, with no Rainmeter and no `.rmskin`.
+MosaicShell is a desktop shell for Windows and Linux (KDE Plasma and GNOME) built from composable tiles. The Avalonia **Host** installs modules, arms tray capabilities, and opens widget overlays, with no Rainmeter and no `.rmskin`.
 
 It continues the JaxCore idea of a modular desktop (forked from [Jax-Core/JaxCore](https://github.com/Jax-Core/JaxCore), archived November 2024). Historical Rainmeter sources live in the [Jax-Core archives](https://github.com/Jax-Core).
 
@@ -23,12 +23,12 @@ It continues the JaxCore idea of a modular desktop (forked from [Jax-Core/JaxCor
 
 ## Prerequisites
 
-| Requirement  | Minimum                                                                                                                              |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| OS           | Windows 10 version 2004 (build 19041) or later, x64                                                                                  |
-| .NET Runtime | 10.0. The Host is self-contained, but Mosaicist, which installs the default modules (Setup and the portable zip both use it), is not |
-| .NET SDK     | 10.0, only to build from source                                                                                                      |
-| Browser      | Optional: Edge or Chrome 116 or later, for the Grout extension                                                                       |
+| Requirement  | Minimum                                                                                                                                  |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| OS           | Windows 10 version 2004 (build 19041) or later, x64; or Linux x86_64 with KDE Plasma 6 (checked on 6.6 and 6.8) or GNOME (checked on 51) |
+| .NET Runtime | Windows: 10.0. The Host is self-contained, but Mosaicist, which installs the default modules, is not. Linux: none, it ships its own      |
+| .NET SDK     | 10.0, only to build from source                                                                                                          |
+| Browser      | Optional: Edge or Chrome 116 or later (on Linux also Chromium, Brave or Vivaldi), for the Grout extension                                |
 
 ## Install
 
@@ -42,9 +42,42 @@ In-app **Check Updates** downloads the latest Setup and runs a silent upgrade.
 
 Release tags use date-build (`yyyy.M.d-bN`, e.g. `2026.8.23-b1`), not semver.
 
+### Linux
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/uairhahs/MosaicShell/main/packaging/linux/mosaicist.sh | bash
+```
+
+This installs MosaicShell for your account only, with no root: the app and its own .NET runtime go to
+`~/.local/lib/mosaicshell`, with a menu entry and a `mosaicshell` command in `~/.local/bin`, and the default modules
+(Tessera, Mixdeck). The download is checked against the release's `SHA256SUMS.txt`. Run the same command again to
+update; a running MosaicShell restarts on the new version. To remove it, run the script with `--uninstall` (your
+settings and modules are kept):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/uairhahs/MosaicShell/main/packaging/linux/mosaicist.sh | bash -s -- --uninstall
+```
+
+What to expect on Linux:
+
+- **KDE Plasma 6 (Wayland):** checked live with Tessera's flyouts (volume, brightness, media, lock keys and
+  airplane mode, from the keys), Mixdeck, the Pulse visualizer and the Grout browser bridge. Plasma's own volume
+  and brightness pop-ups are hidden while Tessera is armed.
+- **GNOME (Wayland, checked on 51):** Tessera's volume, media, lock key and airplane mode flyouts, Slate's idle clock
+  and the system accent colour work. MosaicShell installs a small GNOME Shell extension that hides GNOME's own
+  volume and brightness pop-ups while Tessera is armed; GNOME loads it after you log out and back in once. Not yet
+  on GNOME: media keys and global hotkeys (including Mixdeck's Ctrl+Alt+M), the brightness flyout, Slate's
+  fullscreen check and a tray icon. Open the Hub from the application menu instead; a second launch brings the
+  running MosaicShell forward.
+- **Other tiles and desktops:** the other tiles, and desktops other than Plasma and GNOME, have not been checked on
+  Linux yet.
+- **Updates:** run the install command again. The Hub's **Check Updates** does not handle Linux yet.
+- **Start at login:** the Hub's toggle writes an entry to `~/.config/autostart`, as it adds a Startup shortcut on
+  Windows.
+
 ### Portable zip (advanced)
 
-Download `MosaicShell-Portable-*.zip`, extract, and run `Host\MosaicShell.Host.exe`. Use `Mosaicist\` next to Host to install modules from the bundled `Tiles\` folder.
+Download `MosaicShell-Portable-*.zip` (Windows), extract, and run `Host\MosaicShell.Host.exe`. Use `Mosaicist\` next to Host to install modules from the bundled `Tiles\` folder.
 
 ### From source (developers)
 
@@ -56,7 +89,7 @@ dotnet run --project Mosaicist -- install-module Mixdeck
 dotnet run --project MosaicShell.Host
 ```
 
-Local Setup builds: [packaging/README.md](packaging/README.md).
+The same commands work on Linux from a shell. Local Setup and Linux tarball builds: [packaging/README.md](packaging/README.md).
 
 See [host/README.md](host/README.md) and [`.github/docs/parity.md`](.github/docs/parity.md).
 
@@ -83,7 +116,10 @@ needs no administrator rights. Get Grout from its
 installs it from the same page once you allow extensions from other stores. Grout runs only on YouTube Music, YouTube, Spotify and SoundCloud, and talks only
 to MosaicShell on your computer.
 
-Without Grout, MosaicShell falls back to reading the player's buttons through Windows accessibility, which needs
+On Linux, MosaicShell registers Grout's connection for Edge, Chrome, Chromium, Brave and Vivaldi in the same way, and
+also publishes each Grout tab as a media player of its own, so Plasma's media controls see the right title and cover.
+
+Without Grout on Windows, MosaicShell falls back to reading the player's buttons through Windows accessibility, which needs
 nothing installed but sees only a window that is on screen. A browser stops updating the page of a window it
 cannot see, so the buttons would show a state that may no longer be the page's; MosaicShell offers nothing rather
 than a wrong state. The fallback does not work when:
@@ -96,8 +132,8 @@ than a wrong state. The fallback does not work when:
 
 ## Troubleshooting and logs
 
-MosaicShell writes diagnostic logs to `%LocalAppData%\MosaicShell\Cache\` (for example `flyout.log` for the
-Tessera flyouts). Logs stay on your computer; nothing is uploaded. Attach the relevant log when you open an issue.
+MosaicShell writes diagnostic logs to `%LocalAppData%\MosaicShell\Cache\` on Windows and
+`~/.local/share/MosaicShell/Cache/` on Linux (for example `flyout.log` for the Tessera flyouts). Logs stay on your computer; nothing is uploaded. Attach the relevant log when you open an issue.
 
 - Every line carries the date, time, a per-run id and a level (`DEBUG`, `INFO`, `WARN`, `ERROR`), so runs can be
   told apart.
@@ -105,16 +141,23 @@ Tessera flyouts). Logs stay on your computer; nothing is uploaded. Attach the re
 - Release builds record `INFO` and above. The detailed flyout trace is `DEBUG`, and it includes track titles and
   artists, so it is off unless you ask for it.
 
-| Environment variable    | Effect                                                                                                     |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `MOSAICSHELL_LOG_LEVEL` | `debug`, `info`, `warning` or `error`. Set `debug` to record the detailed flyout trace in a release build. |
-| `MOSAICSHELL_HOME`      | Moves the whole data folder (settings, modules and logs) from `%LocalAppData%\MosaicShell`.                |
+| Environment variable    | Effect                                                                                                                            |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `MOSAICSHELL_LOG_LEVEL` | `debug`, `info`, `warning` or `error`. Set `debug` to record the detailed flyout trace in a release build.                        |
+| `MOSAICSHELL_HOME`      | Moves the whole data folder (settings, modules and logs) from `%LocalAppData%\MosaicShell` (Linux: `~/.local/share/MosaicShell`). |
 
 To capture a detailed trace once, start the Host from PowerShell:
 
 ```powershell
 $env:MOSAICSHELL_LOG_LEVEL = "debug"
 & "$env:LocalAppData\Programs\MosaicShell\Host\MosaicShell.Host.exe"
+```
+
+On Linux, quit MosaicShell first (from the tray on Plasma; GNOME has no tray, so end it with
+`pkill -f MosaicShell.Host`), then:
+
+```bash
+MOSAICSHELL_LOG_LEVEL=debug mosaicshell
 ```
 
 ---
