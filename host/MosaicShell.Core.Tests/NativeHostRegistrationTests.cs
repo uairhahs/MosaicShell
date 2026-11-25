@@ -302,17 +302,6 @@ namespace MosaicShell.Core.Tests
         }
 
         [Theory]
-        [InlineData("/custom/config", "/home/u", "/custom/config")]
-        [InlineData(null, "/home/u", "/home/u/.config")]
-        [InlineData("", "/home/u", "/home/u/.config")]
-        [InlineData("relative/config", "/home/u", "/home/u/.config")]
-        public void The_config_home_follows_XDG_and_falls_back_to_dot_config(string? xdgConfigHome, string home, string expected)
-        {
-            // The XDG spec ignores a relative XDG_CONFIG_HOME.
-            _ = NativeHostRegistration.LinuxConfigHome(xdgConfigHome, home).Should().Be(expected);
-        }
-
-        [Theory]
         [InlineData("/nix/store/x-dotnet/share/dotnet/shared/Microsoft.NETCore.App/10.0.14/", "/nix/store/x-dotnet/share/dotnet")]
         [InlineData("/usr/share/dotnet/shared/Microsoft.NETCore.App/10.0.14", "/usr/share/dotnet")]
         [InlineData("/opt/MosaicShell/", null)]

@@ -55,7 +55,7 @@ namespace MosaicShell.Core.Services
                 Path.Combine(AppContext.BaseDirectory, RelayFileNameFor(isWindows: false)),
                 NativeHostRegistration.DotnetRootFromRuntimeDirectory(RuntimeEnvironment.GetRuntimeDirectory()),
                 NativeHostRegistration.DefaultDataDirectory());
-            _ = NativeHostRegistration.RegisterForLinuxBrowsers(relay, NativeHostRegistration.DefaultLinuxConfigHome());
+            _ = NativeHostRegistration.RegisterForLinuxBrowsers(relay, Xdg.XdgBaseDirectories.CurrentConfigHome());
             return [BrowserMediaSource.Create(() => session()?.Title, () => session()?.AppId)];
         }
 #endif

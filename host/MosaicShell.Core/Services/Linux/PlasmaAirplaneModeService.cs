@@ -28,8 +28,8 @@ namespace MosaicShell.Core.Services.Linux
     public sealed class PlasmaAirplaneModeService(IAirplaneModeService radios, string? configPath = null, string? address = null) : IAirplaneModeService
     {
         private readonly string _configPath = configPath ?? PlasmaAirplanePolicy.ConfigPath(
-            Environment.GetEnvironmentVariable("XDG_CONFIG_HOME"),
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+            Environment.GetEnvironmentVariable(Xdg.XdgBaseDirectories.ConfigHomeVariable),
+            Xdg.XdgBaseDirectories.CurrentHome());
 
         private readonly string? _address = address ?? DBusAddress.Session;
         private readonly Lock _gate = new();

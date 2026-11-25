@@ -22,10 +22,7 @@ namespace MosaicShell.Core.Services.Kde
         /// <summary><c>$XDG_CONFIG_HOME/plasma-nm</c>, with ~/.config when it is unset or relative.</summary>
         public static string ConfigPath(string? xdgConfigHome, string home)
         {
-            string config = !string.IsNullOrEmpty(xdgConfigHome) && xdgConfigHome.StartsWith('/')
-                ? xdgConfigHome.TrimEnd('/')
-                : home.TrimEnd('/') + "/.config";
-            return config + "/" + ConfigFileName;
+            return Xdg.XdgBaseDirectories.ConfigHome(xdgConfigHome, home) + "/" + ConfigFileName;
         }
 
         /// <summary>

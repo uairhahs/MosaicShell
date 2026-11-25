@@ -138,21 +138,6 @@ namespace MosaicShell.Core.Services.BrowserBridge
             "vivaldi",
         ];
 
-        /// <summary>XDG_CONFIG_HOME when it is an absolute path (the XDG spec ignores a relative one), else ~/.config.</summary>
-        public static string LinuxConfigHome(string? xdgConfigHome, string home)
-        {
-            return !string.IsNullOrEmpty(xdgConfigHome) && xdgConfigHome.StartsWith('/')
-                ? xdgConfigHome
-                : home.TrimEnd('/') + "/.config";
-        }
-
-        public static string DefaultLinuxConfigHome()
-        {
-            return LinuxConfigHome(
-                Environment.GetEnvironmentVariable("XDG_CONFIG_HOME"),
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
-        }
-
         /// <summary>
         /// Writes the manifest into each installed browser's <c>NativeMessagingHosts</c> folder under
         /// <paramref name="configHome"/>, so the browsers start <paramref name="relayPath"/> for the extension. A browser

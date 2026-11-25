@@ -52,15 +52,6 @@ namespace MosaicShell.Core.Tests.Linux
         }
 
         [Theory]
-        [InlineData(null, "/home/u", "/home/u/.local/share")]
-        [InlineData("/data", "/home/u", "/data")]
-        [InlineData("relative", "/home/u", "/home/u/.local/share")]
-        public void The_users_data_home_follows_XDG(string? xdgDataHome, string home, string expected)
-        {
-            _ = LinuxDesktopEntries.DataHome(xdgDataHome, home).Should().Be(expected);
-        }
-
-        [Theory]
         [InlineData(null, new[] { "/usr/local/share", "/usr/share" })]
         [InlineData("", new[] { "/usr/local/share", "/usr/share" })]
         [InlineData("/a:/b::relative", new[] { "/a", "/b" })]

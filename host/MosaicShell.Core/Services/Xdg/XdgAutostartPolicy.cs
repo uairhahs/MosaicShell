@@ -15,10 +15,7 @@ namespace MosaicShell.Core.Services.Xdg
         /// <summary><c>$XDG_CONFIG_HOME/autostart/mosaicshell.desktop</c>, with ~/.config when it is unset or relative.</summary>
         public static string EntryPath(string? xdgConfigHome, string home)
         {
-            string config = !string.IsNullOrEmpty(xdgConfigHome) && xdgConfigHome.StartsWith('/')
-                ? xdgConfigHome.TrimEnd('/')
-                : home.TrimEnd('/') + "/.config";
-            return config + "/autostart/" + EntryFileName;
+            return XdgBaseDirectories.ConfigHome(xdgConfigHome, home) + "/autostart/" + EntryFileName;
         }
 
         /// <summary>

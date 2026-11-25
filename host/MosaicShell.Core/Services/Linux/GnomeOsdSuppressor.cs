@@ -82,7 +82,7 @@ namespace MosaicShell.Core.Services.Linux
     public sealed class GnomeOsdSuppressor(string? address = null, string? dataHome = null, IGnomeSettings? settings = null) : INativeOsdSuppressor
     {
         private readonly string? _address = address ?? DBusAddress.Session;
-        private readonly string _dataHome = dataHome ?? DefaultDataHome();
+        private readonly string _dataHome = dataHome ?? Xdg.XdgBaseDirectories.CurrentDataHome();
         private readonly IGnomeSettings _settings = settings ?? new GsettingsCommand();
         private readonly Lock _gate = new();
         private DBusConnection? _connection;
@@ -217,14 +217,6 @@ namespace MosaicShell.Core.Services.Linux
             {
                 File.WriteAllText(path, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
             }
-        }
-
-        private static string DefaultDataHome()
-        {
-            string? xdg = Environment.GetEnvironmentVariable("XDG_DATA_HOME");
-            return !string.IsNullOrEmpty(xdg) && xdg.StartsWith('/')
-                ? xdg
-                : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).TrimEnd('/') + "/.local/share";
         }
     }
 }

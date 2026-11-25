@@ -11,7 +11,7 @@ namespace MosaicShell.Core.Services.Linux
         public static LinuxDesktopEntries ForCurrentUser()
         {
             return new LinuxDesktopEntries(
-                DataHome(Environment.GetEnvironmentVariable("XDG_DATA_HOME"), Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)),
+                Xdg.XdgBaseDirectories.CurrentDataHome(),
                 DataDirs(Environment.GetEnvironmentVariable("XDG_DATA_DIRS")));
         }
 
@@ -22,14 +22,6 @@ namespace MosaicShell.Core.Services.Linux
                 && !name.Contains('/')
                 && !name.Contains("..", StringComparison.Ordinal)
                 && new[] { dataHome }.Concat(dataDirs).Any(dir => File.Exists(Path.Combine(dir, "applications", name + ".desktop")));
-        }
-
-        /// <summary>XDG_DATA_HOME when absolute, else ~/.local/share.</summary>
-        public static string DataHome(string? xdgDataHome, string home)
-        {
-            return !string.IsNullOrEmpty(xdgDataHome) && xdgDataHome.StartsWith('/')
-                ? xdgDataHome
-                : home.TrimEnd('/') + "/.local/share";
         }
 
         /// <summary>The absolute entries of XDG_DATA_DIRS, or the spec's default when it is unset or empty.</summary>

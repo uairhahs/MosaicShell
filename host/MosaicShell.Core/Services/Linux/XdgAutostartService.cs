@@ -16,10 +16,9 @@ namespace MosaicShell.Core.Services.Linux
         /// <summary>The user's autostart folder, starting this Host as it is running now.</summary>
         public static XdgAutostartService ForCurrentProcess()
         {
-            string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             string processPath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "MosaicShell.Host");
             return new XdgAutostartService(
-                XdgAutostartPolicy.EntryPath(Environment.GetEnvironmentVariable("XDG_CONFIG_HOME"), home),
+                XdgAutostartPolicy.EntryPath(Environment.GetEnvironmentVariable(XdgBaseDirectories.ConfigHomeVariable), XdgBaseDirectories.CurrentHome()),
                 XdgAutostartPolicy.ExecLine(processPath, Assembly.GetEntryAssembly()?.Location));
         }
 
