@@ -96,7 +96,7 @@ namespace MosaicShell.Core.Capabilities.Platform
 
         /// <summary>
         /// Whether <paramref name="decision"/> presents the flyout session: shows it from hidden or rebuilds it, so the
-        /// session chrome (focus dim, outside-click watcher, stacking) must be set up again. Transient dismiss tears
+        /// session chrome (the focus dim layer, which is also the outside-click hitbox, and stacking) must be set up again. Transient dismiss tears
         /// that chrome down with the hide, a revived hidden window included. Only a patch of a session that is already
         /// showing keeps what it has.
         /// </summary>

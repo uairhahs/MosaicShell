@@ -21,29 +21,9 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void A_revived_hidden_flyout_presents_the_session()
         {
-            // Transient dismiss stops the outside-click watcher and closes the dim with the hide. The revive path
-            // skipped both, so a revived flyout had no dim and ignored outside clicks (found 2026-11-23).
+            // Transient dismiss closes the layer (the dim and outside-click hitbox) with the hide. The revive path
+            // skipped it, so a revived flyout had no dim and ignored outside clicks (found 2026-11-23).
             _ = FlyoutIngressPolicy.PresentsSession(FlyoutIngressDecision.ReviveHidden).Should().BeTrue();
-        }
-
-        [Fact]
-        public void The_outside_click_watcher_is_armed_whenever_the_session_is_presented()
-        {
-            foreach (FlyoutIngressDecision decision in Enum.GetValues<FlyoutIngressDecision>())
-            {
-                _ = TesseraFlyoutOutsideClickPolicy.MustArmOnIngress(decision)
-                    .Should().Be(FlyoutIngressPolicy.PresentsSession(decision), decision.ToString());
-            }
-        }
-
-        [Theory]
-        [InlineData(true, true)]
-        [InlineData(false, false)]
-        public void Only_windows_has_the_outside_click_watcher(bool isWindows, bool expected)
-        {
-            // The watcher is a WH_MOUSE_LL hook in user32. Elsewhere every arm threw DllNotFoundException inside a
-            // dispatcher timer, which Avalonia swallowed, so outside clicks never dismissed (KDE, 2026-11-23).
-            _ = TesseraFlyoutOutsideClickPolicy.PlatformCanWatch(isWindows).Should().Be(expected);
         }
 
         [Fact]

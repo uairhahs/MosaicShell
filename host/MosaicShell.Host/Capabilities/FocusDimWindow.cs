@@ -12,19 +12,20 @@ using MosaicShell.Core.Services;
 namespace MosaicShell.Host.Capabilities
 {
     /// <summary>
-    /// Full-screen dim behind Tessera flyouts. Hit-testing is off in Avalonia;
-    /// Win32 WS_EX_TRANSPARENT is kept so mouse still reaches windows underneath
-    /// (Avalonia IsHitTestVisible alone does not make the HWND click-through).
-    /// Uses constant LWA_ALPHA (not Transparent composition) so RedirectionSurface
-    /// builds stay a subtle wash instead of an opaque black fill via FallbackBrush.
+    /// Full-screen layer behind Tessera flyouts: the focus dim, and the outside-click hitbox on every platform (a press on
+    /// it dismisses the flyout and is swallowed, popup-menu style). On Windows it uses constant LWA_ALPHA (not Transparent
+    /// composition) so RedirectionSurface builds stay a subtle wash instead of an opaque black fill via FallbackBrush;
+    /// with the dim off it is one step above invisible, so it still takes the click.
     /// </summary>
     internal sealed class FocusDimWindow : Window
     {
         private int _monitorIndex;
         private readonly FocusDimRoute _route;
+        private readonly bool _dimEnabled;
+        private readonly bool _onFlyoutScreen;
         private readonly double _fixedScaling = 1.0;
 
-        /// <summary>A press on the layer where it is the outside-click hitbox (X11), at its screen pixel.</summary>
+        /// <summary>A press on the layer where it is the outside-click hitbox, at its screen pixel.</summary>
         public event EventHandler<PixelPoint>? OutsideClicked;
 
         /// <summary>
@@ -47,6 +48,8 @@ namespace MosaicShell.Host.Capabilities
         {
             _monitorIndex = monitorIndexOneBased;
             _route = route;
+            _dimEnabled = dimEnabled;
+            _onFlyoutScreen = onFlyoutScreen;
             Title = "MosaicShell - Focus dim";
             WindowDecorations = WindowDecorations.None;
             CanResize = false;
@@ -146,10 +149,10 @@ namespace MosaicShell.Host.Capabilities
 
             if (TesseraFocusDimPolicy.UseConstantLayeredAlpha)
             {
-                _ = Win32WindowChrome.ApplySubtleDim(this, TesseraFocusDimPolicy.ResolveLayeredAlpha());
+                _ = Win32WindowChrome.ApplySubtleDim(this, TesseraFocusDimPolicy.ResolveLayeredAlpha(_dimEnabled, _onFlyoutScreen));
             }
 
-            Win32WindowChrome.ApplyClickThroughNow(this);
+            Win32WindowChrome.ApplyOverlayStylesNow(this, clickThrough: !TesseraFocusDimPolicy.LayerIsOutsideClickHitbox(_route));
         }
 
         public void FadeIn()
@@ -168,10 +171,10 @@ namespace MosaicShell.Host.Capabilities
 
             if (TesseraFocusDimPolicy.UseConstantLayeredAlpha)
             {
-                _ = Win32WindowChrome.ApplySubtleDim(this, TesseraFocusDimPolicy.ResolveLayeredAlpha());
+                _ = Win32WindowChrome.ApplySubtleDim(this, TesseraFocusDimPolicy.ResolveLayeredAlpha(_dimEnabled, _onFlyoutScreen));
             }
 
-            Win32WindowChrome.ApplyClickThrough(this);
+            Win32WindowChrome.ApplyOverlayStyles(this, clickThrough: !TesseraFocusDimPolicy.LayerIsOutsideClickHitbox(_route));
         }
 
         public void InstantClose()
@@ -222,8 +225,18 @@ namespace MosaicShell.Host.Capabilities
         private const uint SwpNoSize = 0x0001;
         private const uint SwpNoActivate = 0x0010;
 
-        /// <summary>Same styles as <see cref="ApplyClickThrough"/>, applied at once (before Show).</summary>
+        /// <summary>Overlay styles plus click-through, applied at once (before Show); for the glint window.</summary>
         public static void ApplyClickThroughNow(Window window)
+        {
+            ApplyOverlayStylesNow(window, clickThrough: true);
+        }
+
+        /// <summary>
+        /// An overlay window's styles, applied at once: layered, never activated, no taskbar entry; click-through
+        /// (WS_EX_TRANSPARENT) only when <paramref name="clickThrough"/>, so a layer that is the outside-click hitbox
+        /// takes the click.
+        /// </summary>
+        public static void ApplyOverlayStylesNow(Window window, bool clickThrough)
         {
             try
             {
@@ -234,7 +247,8 @@ namespace MosaicShell.Host.Capabilities
                 }
 
                 nint current = GetWindowLongPtr(handle, GwlExStyle);
-                nint next = current | WsExLayered | WsExTransparent | WsExNoActivate | WsExToolWindow;
+                nint next = current | WsExLayered | WsExNoActivate | WsExToolWindow;
+                next = clickThrough ? next | WsExTransparent : next & ~WsExTransparent;
                 if (next != current)
                 {
                     _ = SetWindowLongPtr(handle, GwlExStyle, next);
@@ -242,34 +256,14 @@ namespace MosaicShell.Host.Capabilities
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[Win32 click-through] {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[Win32 overlay styles] {ex.Message}");
             }
         }
 
-        public static void ApplyClickThrough(Window window)
+        /// <summary><see cref="ApplyOverlayStylesNow"/>, posted until the window has loaded.</summary>
+        public static void ApplyOverlayStyles(Window window, bool clickThrough)
         {
-            Dispatcher.UIThread.Post(() =>
-            {
-                try
-                {
-                    nint handle = window.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
-                    if (handle == IntPtr.Zero)
-                    {
-                        return;
-                    }
-
-                    nint current = GetWindowLongPtr(handle, GwlExStyle);
-                    nint next = current | WsExLayered | WsExTransparent | WsExNoActivate | WsExToolWindow;
-                    if (next != current)
-                    {
-                        _ = SetWindowLongPtr(handle, GwlExStyle, next);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[Win32 click-through] {ex.Message}");
-                }
-            }, DispatcherPriority.Loaded);
+            Dispatcher.UIThread.Post(() => ApplyOverlayStylesNow(window, clickThrough), DispatcherPriority.Loaded);
         }
 
         public static void SetZOrder(Window window, IntPtr insertAfter)

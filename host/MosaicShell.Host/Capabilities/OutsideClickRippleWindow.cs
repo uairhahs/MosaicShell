@@ -110,40 +110,6 @@ namespace MosaicShell.Host.Capabilities
             return ripple;
         }
 
-        /// <summary>
-        /// A click-through glint window shown now, off every screen (<see cref="TesseraOutsideClickRippleSpec.ParkedOrigin"/>),
-        /// so a later <see cref="Replay"/> needs no cold Show (<see cref="TesseraOutsideClickRippleSpec.WarmBeforeTheClick"/>).
-        /// <paramref name="near"/> picks the scaling it is built at. Null where it is not warmed.
-        /// </summary>
-        public static OutsideClickRippleWindow? Warm(PixelPoint near, FocusDimRoute route, Screens? screens)
-        {
-            if (!TesseraOutsideClickRippleSpec.ShouldPlay(route) || !TesseraOutsideClickRippleSpec.WarmBeforeTheClick(route))
-            {
-                return null;
-            }
-
-            double scaling = ScalingAt(near, screens);
-            OutsideClickRippleWindow ripple = new(near, scaling, route);
-            IReadOnlyList<Avalonia.Platform.Screen> all = screens?.All ?? [];
-            int left = all.Count > 0 ? all.Min(s => s.Bounds.X) : 0;
-            int top = all.Count > 0 ? all.Min(s => s.Bounds.Y) : 0;
-            (int x, int y) = TesseraOutsideClickRippleSpec.ParkedOrigin(left, top, scaling);
-            ripple.Position = new PixelPoint(x, y);
-            ripple.ApplyIdle();
-            ripple.ApplyClickThrough();
-            ripple.Show();
-            return ripple;
-        }
-
-        /// <summary>Moves a warmed window to <paramref name="click"/> and plays it; it closes when done.</summary>
-        public void Replay(PixelPoint click)
-        {
-            double scaling = ScalingAt(click, Screens);
-            (int x, int y) = TesseraOutsideClickRippleSpec.WindowOrigin(click.X, click.Y, scaling);
-            Position = new PixelPoint(x, y);
-            Start(closeWhenDone: true);
-        }
-
         private static double ScalingAt(PixelPoint point, Screens? screens)
         {
             double scaling = screens?.ScreenFromPoint(point)?.Scaling ?? 1.0;
@@ -181,13 +147,6 @@ namespace MosaicShell.Host.Capabilities
                     try { Close(); } catch { /* ignore */ }
                 }
             }
-        }
-
-        /// <summary>Nothing drawn: the warmed window waits clear for the click.</summary>
-        private void ApplyIdle()
-        {
-            _glow.Opacity = 0;
-            _ring.Opacity = 0;
         }
 
         private void ApplyFrame(double progress)

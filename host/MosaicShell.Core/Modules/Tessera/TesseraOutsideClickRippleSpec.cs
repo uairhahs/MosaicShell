@@ -3,10 +3,9 @@ namespace MosaicShell.Core.Modules.Tessera
     /// <summary>
     /// The glint at the point of an outside click that dismissed Tessera: a soft holographic ring in the logo's colours
     /// that contracts onto the click while a sheen sweeps round it, like light on iridescent glass mosaic. The ring is one blurred stroke whose colour changes gradually round it; separate
-    /// tiles read as harshly segmented. On X11 the layer behind the flyout
-    /// swallows that click (popup-menu style), so the glint is the sign that the click did something. Windows passes
-    /// the click on and plays the same glint. It is drawn in its own small click-through window, because the layer
-    /// closes as the dismiss begins.
+    /// tiles read as harshly segmented. On every platform the layer behind the flyout
+    /// swallows that click (popup-menu style), so the glint is the sign that the click did something. It is drawn in its
+    /// own small click-through window, shown at the click, because the layer closes as the dismiss begins.
     /// </summary>
     public static class TesseraOutsideClickRippleSpec
     {
@@ -87,17 +86,6 @@ namespace MosaicShell.Core.Modules.Tessera
         public static double ProgressAt(double elapsedMs)
         {
             return Math.Clamp(elapsedMs / DurationMs, 0, 1);
-        }
-
-        /// <summary>
-        /// Windows: the glint window is shown (click-through) off-screen when the outside-click watcher arms
-        /// (<see cref="ParkedOrigin"/>), then moved to the click and played, so no cold Show sits between the click and
-        /// the glint: a cold Transparent HWND first appeared 100 to 150 ms after Show, a quarter of the
-        /// <see cref="DurationMs"/> glint. X11 shows it cold at the click.
-        /// </summary>
-        public static bool WarmBeforeTheClick(FocusDimRoute route)
-        {
-            return route == FocusDimRoute.Win32LayeredAlpha && TesseraFlyoutWindowPolicy.HideUntilCompositionReady;
         }
 
         /// <summary>
@@ -227,19 +215,6 @@ namespace MosaicShell.Core.Modules.Tessera
             int size = (int)Math.Ceiling(WindowSizeDip * scale);
             return size % 2 == 0 ? size : size + 1;
         }
-
-        /// <summary>
-        /// Where a warm glint window waits: wholly left of the virtual screen (<paramref name="virtualLeft"/>,
-        /// <paramref name="virtualTop"/> is its top-left pixel), with a margin, so an idle window never sits over the
-        /// flyout. On Avalonia 12.1.1 an idle one there showed as a black square about half the time (a surface that
-        /// had presented no frame); 12.2.0 no longer does (Windows 11, 2026-11-24: 0 of 8, against 5 of 8 on 12.1.1).
-        /// </summary>
-        public static (int X, int Y) ParkedOrigin(int virtualLeft, int virtualTop, double scaling)
-        {
-            return (virtualLeft - WindowSizePx(scaling) - ParkMarginPx, virtualTop);
-        }
-
-        private const int ParkMarginPx = 64;
 
         /// <summary>Top-left pixel of the window centered on the click.</summary>
         public static (int X, int Y) WindowOrigin(int clickX, int clickY, double scaling)

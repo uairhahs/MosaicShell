@@ -34,8 +34,6 @@ namespace MosaicShell.Host.Capabilities
         private readonly Dictionary<string, FlyoutWindow> _windows = new(StringComparer.OrdinalIgnoreCase);
         private FocusDimWindow? _focusDim;
         private readonly List<FocusDimWindow> _otherScreenLayers = [];
-        private TesseraOutsideClickWatcher? _outsideClick;
-        private DispatcherTimer? _outsideClickArm;
         private readonly TesseraFlyoutLiveSyncCoalescer _patchCoalesce = new();
         private readonly TesseraFlyoutUpdateDispatchGate _updateDispatch = new();
         private readonly TesseraFlyoutSessionState _session = new();
@@ -272,7 +270,6 @@ namespace MosaicShell.Host.Capabilities
                     _ = _windows.Remove(moduleId, out single);
                 }
                 try { single?.Close(); } catch { /* ignore */ }
-                StopOutsideClickWatcher();
                 CloseFocusDim();
                 CancelDeferredPatch();
                 _ = _session.Clear();
@@ -304,7 +301,6 @@ namespace MosaicShell.Host.Capabilities
                 HideCore(id);
             }
 
-            StopOutsideClickWatcher();
             CloseFocusDim();
             CancelDeferredPatch();
             _ = _session.Clear();
@@ -430,10 +426,6 @@ namespace MosaicShell.Host.Capabilities
 
             Log($"handoff invalidate open={openKind}/{openStyle} stacked={openStacked} → {request.Kind}/{request.StyleId} stacked={nextStacked}");
             CancelDeferredPatch();
-            if (TesseraFlyoutPresentHandoffPolicy.PresentMustStopOutsideClickBeforeRearm)
-            {
-                StopOutsideClickWatcher();
-            }
         }
 
         private void ShowOrUpdateCoreSinglePath(FlyoutRequest request, bool resetDismiss = true, bool allowLivePatch = true)
@@ -553,12 +545,6 @@ namespace MosaicShell.Host.Capabilities
                 Log($"revive kind={request.Kind} style={request.StyleId} focusDim={_focusDim is not null} {reuse.MotionStateTag}");
                 reuse.PlayShowAnimation();
 
-                // Transient dismiss stopped the watcher with the hide; arm it again as PresentFlyout does.
-                if (ModuleIds.IsTessera(request.ModuleId) && TesseraFlyoutOutsideClickPolicy.MustArmOnIngress(decision))
-                {
-                    ScheduleOutsideClickArm(reuse);
-                }
-
                 return;
             }
 
@@ -662,7 +648,6 @@ namespace MosaicShell.Host.Capabilities
                 if (ModuleIds.IsTessera(request.ModuleId)
                     && !IsVisible(ModuleIds.Tessera))
                 {
-                    StopOutsideClickWatcher();
                     CloseFocusDim();
                     CancelDeferredPatch();
                 }
@@ -696,12 +681,8 @@ namespace MosaicShell.Host.Capabilities
             }
 
             Log($"patch kind={request.Kind} style={request.StyleId}");
-            // (PatchImpliesPresent|Win32Restack|OutsideClickRearm are false, Core tests).
+            // (PatchImpliesPresent|Win32Restack are false, Core tests).
             existing.EnsureLivePump();
-            if (TesseraFlyoutOutsideClickPolicy.PatchMustRefreshBoundsWithoutRearm)
-            {
-                _outsideClick?.RefreshBounds(existing);
-            }
 
             return true;
         }
@@ -808,43 +789,6 @@ namespace MosaicShell.Host.Capabilities
 
                 Log(DiagnosticLogLevel.Debug, $"present hwnds total={total} visible={visibleWindows} tracked={tracked}");
             }
-
-            if (ModuleIds.IsTessera(request.ModuleId))
-            {
-                ScheduleOutsideClickArm(window);
-            }
-        }
-
-        private void ScheduleOutsideClickArm(FlyoutWindow window)
-        {
-            // Present owns the hook: dispose prior watcher before the arm delay (stale bounds otherwise).
-            if (TesseraFlyoutOutsideClickPolicy.PresentMustStopPriorWatcherBeforeRearm)
-            {
-                StopOutsideClickWatcher();
-            }
-            else
-            {
-                _outsideClickArm?.Stop();
-            }
-
-            if (!TesseraFlyoutOutsideClickPolicy.PlatformCanWatch(OperatingSystem.IsWindows()))
-            {
-                return;
-            }
-
-            _outsideClickArm = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(TesseraFlyoutOutsideClickPolicy.ArmDelayMs) };
-            FlyoutWindow captured = window;
-            _outsideClickArm.Tick += (_, _) =>
-            {
-                _outsideClickArm?.Stop();
-                _outsideClickArm = null;
-                if (captured.IsVisible)
-                {
-                    StartOutsideClickWatcher(captured);
-                    Log("outside-click armed");
-                }
-            };
-            _outsideClickArm.Start();
         }
 
         private void RestackAboveDim(FlyoutWindow flyout)
@@ -973,46 +917,6 @@ namespace MosaicShell.Host.Capabilities
             }
         }
 
-        private void StartOutsideClickWatcher(FlyoutWindow flyout)
-        {
-            StopOutsideClickWatcher();
-            _outsideClick = new TesseraOutsideClickWatcher(flyout, DismissTesseraImmediate);
-            _outsideClick.Start();
-            WarmOutsideClickRipple(flyout);
-        }
-
-        private void StopOutsideClickWatcher()
-        {
-            _outsideClickArm?.Stop();
-            _outsideClickArm = null;
-            _outsideClick?.Dispose();
-            _outsideClick = null;
-            CloseWarmRipple();
-        }
-
-        /// <summary>The glint window shown clear while the watcher is armed (<see cref="TesseraOutsideClickRippleSpec.WarmBeforeTheClick"/>).</summary>
-        private OutsideClickRippleWindow? _warmRipple;
-
-        private void WarmOutsideClickRipple(FlyoutWindow near)
-        {
-            CloseWarmRipple();
-            try
-            {
-                _warmRipple = OutsideClickRippleWindow.Warm(near.Position, X11FocusDim.ResolveRoute(), near.Screens);
-            }
-            catch (Exception ex)
-            {
-                Log($"ripple warm failed: {ex.Message}");
-            }
-        }
-
-        private void CloseWarmRipple()
-        {
-            OutsideClickRippleWindow? warm = _warmRipple;
-            _warmRipple = null;
-            try { warm?.Close(); } catch { /* ignore */ }
-        }
-
         private void DismissTesseraImmediate(PixelPoint at)
         {
             Log($"outside-click dismiss at={at.X},{at.Y}");
@@ -1031,16 +935,6 @@ namespace MosaicShell.Host.Capabilities
         {
             try
             {
-                // Taken off the presenter first, so the dismiss's watcher stop does not close it mid-play.
-                OutsideClickRippleWindow? warm = _warmRipple;
-                _warmRipple = null;
-                if (warm is not null)
-                {
-                    warm.Replay(at);
-                    LogRippleFirstFrame(warm, "warm");
-                    return;
-                }
-
                 Screens? screens = _focusDim?.Screens;
                 if (screens is null)
                 {
@@ -1105,7 +999,6 @@ namespace MosaicShell.Host.Capabilities
             }
 
             Log("focusDim orphaned (no Tessera flyout showing), closing");
-            StopOutsideClickWatcher();
             CloseFocusDim();
         }
 
@@ -1150,7 +1043,6 @@ namespace MosaicShell.Host.Capabilities
             }
 
             Log("transient-dismiss, closing focusDim");
-            StopOutsideClickWatcher();
             CloseFocusDim();
         }
 

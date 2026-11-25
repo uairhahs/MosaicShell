@@ -2,16 +2,16 @@ using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Core.Modules.Tessera
 {
-    /// <summary>The OS mechanism that draws the focus dim translucent and click-through.</summary>
+    /// <summary>The OS mechanism that draws the focus dim layer (translucent, and the outside-click hitbox).</summary>
     public enum FocusDimRoute
     {
         /// <summary>No mechanism on this system; the dim stays off.</summary>
         None,
 
-        /// <summary>Windows: opaque background, constant LWA_ALPHA and WS_EX_TRANSPARENT.</summary>
+        /// <summary>Windows: opaque background and constant LWA_ALPHA; the layer takes the outside click.</summary>
         Win32LayeredAlpha,
 
-        /// <summary>X11 or XWayland with a compositor: ARGB background alpha and an empty input shape.</summary>
+        /// <summary>X11 or XWayland with a compositor: ARGB background alpha; the layer takes the outside click.</summary>
         X11ArgbInputShape,
     }
 
@@ -29,7 +29,8 @@ namespace MosaicShell.Core.Modules.Tessera
 
     /// <summary>
     /// Subtle desktop dim behind Tessera (Focus-plugin analogue). Extremely light, not a modal scrim.
-    /// Must never capture input (Win32 click-through); outside clicks dismiss Tessera instantly without swallowing the click.
+    /// The layer behind the flyout is the outside-click hitbox on every platform: a click outside the flyout dismisses Tessera
+    /// instantly and is swallowed, popup-menu style.
     /// </summary>
     public static class TesseraFocusDimPolicy
     {
@@ -78,16 +79,25 @@ namespace MosaicShell.Core.Modules.Tessera
             return dimOpen && !anyTesseraFlyoutShowing;
         }
 
-        /// <summary>Host must use this for SetLayeredWindowAttributes, never a parallel magic number.</summary>
-        public static byte ResolveLayeredAlpha()
+        /// <summary>
+        /// LWA_ALPHA of a Windows layer that is only the outside-click hitbox (the dim is off, or another screen's bare
+        /// layer): one step above invisible, since the layer must still take the click, as the X11 layer does.
+        /// </summary>
+        public const byte HitboxOnlyLayeredAlpha = 1;
+
+        /// <summary>
+        /// The Windows layer's SetLayeredWindowAttributes alpha; Host must use this, never a parallel magic number. The
+        /// flyout's screen is dimmed when the dim is on; otherwise the layer is a hitbox only.
+        /// </summary>
+        public static byte ResolveLayeredAlpha(bool dimEnabled, bool onFlyoutScreen)
         {
-            return OverlayAlpha;
+            return dimEnabled && onFlyoutScreen ? OverlayAlpha : HitboxOnlyLayeredAlpha;
         }
 
         /// <summary>
-        /// How this system draws the dim as the policy requires: a translucent wash that never captures input. Windows
-        /// uses constant LWA_ALPHA plus WS_EX_TRANSPARENT. Linux on X11 or XWayland uses a Transparent (ARGB) window
-        /// whose background carries the alpha, plus an empty X11 input shape so every click passes through; that needs
+        /// How this system draws the layer: a translucent wash that is also the outside-click hitbox. Windows uses an
+        /// opaque window with constant LWA_ALPHA. Linux on X11 or XWayland uses a Transparent (ARGB) window whose
+        /// background carries the alpha; that needs
         /// a running compositor, because without one the alpha is ignored and the dim is an opaque full-screen sheet
         /// that hides the flyouts and swallows clicks. Anywhere else there is no route and the dim stays off.
         /// </summary>
@@ -142,10 +152,14 @@ namespace MosaicShell.Core.Modules.Tessera
             };
         }
 
-        /// <summary>On X11 the layer catches outside clicks (Wayland gives no others), so it shows with the dim off too.</summary>
+        /// <summary>
+        /// The layer catches outside clicks and swallows them, popup-menu style, so it shows with the dim off too. On X11
+        /// it must (Wayland gives the Host no clicks on other windows); Windows does the same, so both platforms behave
+        /// alike.
+        /// </summary>
         public static bool LayerIsOutsideClickHitbox(FocusDimRoute route)
         {
-            return route == FocusDimRoute.X11ArgbInputShape;
+            return route != FocusDimRoute.None;
         }
 
         public static bool ShouldShowLayer(IReadOnlyDictionary<string, string>? payload, FocusDimRoute route)
@@ -153,10 +167,13 @@ namespace MosaicShell.Core.Modules.Tessera
             return LayerIsOutsideClickHitbox(route) || ShouldShow(payload, CanDim(route));
         }
 
-        /// <summary>The dim's alpha, or fully transparent when the layer is only the hitbox.</summary>
+        /// <summary>
+        /// Alpha of the layer's background brush: on X11 the dim's alpha, or fully transparent when the layer is only the
+        /// hitbox. On Windows the brush stays opaque and <see cref="ResolveLayeredAlpha"/> sets the window's alpha.
+        /// </summary>
         public static byte ResolveLayerAlpha(FocusDimRoute route, bool dimEnabled)
         {
-            return dimEnabled ? ResolveBackgroundAlpha(route) : (byte)0;
+            return dimEnabled || !PaintsAlphaInWindow(route) ? ResolveBackgroundAlpha(route) : (byte)0;
         }
 
         /// <summary>
@@ -174,7 +191,7 @@ namespace MosaicShell.Core.Modules.Tessera
         /// </summary>
         public static byte ResolveLayerAlpha(FocusDimRoute route, bool dimEnabled, bool onFlyoutScreen)
         {
-            return onFlyoutScreen ? ResolveLayerAlpha(route, dimEnabled) : (byte)0;
+            return ResolveLayerAlpha(route, dimEnabled && onFlyoutScreen);
         }
 
         /// <summary>Payload <c>focusDim</c>: "0" off; missing / other → on (default).</summary>

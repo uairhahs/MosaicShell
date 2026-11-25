@@ -106,19 +106,7 @@ namespace MosaicShell.Host.Capabilities
                     BumpStackedAutoDismiss();
                 }
             }
-
-            RefreshStackedOutsideClickBoundsAfterPatch();
             return true;
-        }
-
-        private void RefreshStackedOutsideClickBoundsAfterPatch()
-        {
-            if (_outsideClick is not { IsActive: true })
-            {
-                return;
-            }
-
-            _outsideClick.RefreshBounds(GetStackedWindowsFromSession());
         }
 
         private bool TryReviveStacked(FlyoutRequest request, bool resetDismiss)
@@ -809,49 +797,6 @@ namespace MosaicShell.Host.Capabilities
                 TesseraFlyoutDiagnostics.Log(
                     DiagnosticLogLevel.Debug, $"visible windows {Win32WindowChrome.DescribeVisibleProcessWindows()}");
             }
-            ScheduleStackedOutsideClickArm(windows);
-        }
-
-        private void ScheduleStackedOutsideClickArm(IReadOnlyList<FlyoutWindow> windows)
-        {
-            if (TesseraFlyoutOutsideClickPolicy.PresentMustStopPriorWatcherBeforeRearm)
-            {
-                StopOutsideClickWatcher();
-            }
-            else
-            {
-                _outsideClickArm?.Stop();
-            }
-
-            if (!TesseraFlyoutOutsideClickPolicy.PlatformCanWatch(OperatingSystem.IsWindows()))
-            {
-                return;
-            }
-
-            _outsideClickArm = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(TesseraFlyoutOutsideClickPolicy.ArmDelayMs) };
-            List<FlyoutWindow> captured = [.. windows];
-            _outsideClickArm.Tick += (_, _) =>
-            {
-                _outsideClickArm?.Stop();
-                _outsideClickArm = null;
-                if (captured.Any(w => w.IsVisible))
-                {
-                    StartStackedOutsideClickWatcher(captured);
-                    Log("stacked outside-click armed");
-                }
-            };
-            _outsideClickArm.Start();
-        }
-
-        private void StartStackedOutsideClickWatcher(IReadOnlyList<FlyoutWindow> windows)
-        {
-            StopOutsideClickWatcher();
-            _outsideClick = new TesseraOutsideClickWatcher(windows, DismissTesseraImmediate);
-            _outsideClick.Start();
-            if (windows.Count > 0)
-            {
-                WarmOutsideClickRipple(windows[0]);
-            }
         }
 
         private void OnStackedSlotClosed(string slotKey, FlyoutWindow window)
@@ -873,7 +818,6 @@ namespace MosaicShell.Host.Capabilities
             if (_stackedSession.SlotKeys.Count == 0)
             {
                 _stackedSession = null;
-                StopOutsideClickWatcher();
                 CloseFocusDim();
                 CancelDeferredPatch();
                 _ = _session.Clear();
@@ -957,7 +901,6 @@ namespace MosaicShell.Host.Capabilities
             // or a timer due within the exit fires into it.
             StopStackedAutoDismiss();
             TransientDismissAllStackedSlots(notify);
-            StopOutsideClickWatcher();
             CloseFocusDim();
         }
 

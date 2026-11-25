@@ -38,10 +38,22 @@ namespace MosaicShell.Core.Tests
         {
             // High-alpha Transparent FallbackBrush under RedirectionSurface paints a black fill.
             _ = TesseraFocusDimPolicy.UseConstantLayeredAlpha.Should().BeTrue();
-            _ = TesseraFocusDimPolicy.ResolveLayeredAlpha()
+            _ = TesseraFocusDimPolicy.ResolveLayeredAlpha(dimEnabled: true, onFlyoutScreen: true)
                 .Should().Be(TesseraFocusDimPolicy.OverlayAlpha);
-            _ = TesseraFocusDimPolicy.ResolveLayeredAlpha()
+            _ = TesseraFocusDimPolicy.ResolveLayeredAlpha(dimEnabled: true, onFlyoutScreen: true)
                 .Should().BeLessThan(100);
+        }
+
+        [Theory]
+        [InlineData(true, false)]
+        [InlineData(false, true)]
+        [InlineData(false, false)]
+        public void A_windows_layer_that_is_only_the_hitbox_is_one_step_above_invisible(bool dimEnabled, bool onFlyoutScreen)
+        {
+            // Not 0: the layer must still take the outside click, as the X11 layer does, without showing a wash.
+            _ = TesseraFocusDimPolicy.ResolveLayeredAlpha(dimEnabled, onFlyoutScreen)
+                .Should().Be(TesseraFocusDimPolicy.HitboxOnlyLayeredAlpha);
+            _ = TesseraFocusDimPolicy.HitboxOnlyLayeredAlpha.Should().Be(1);
         }
 
         [Fact]
@@ -128,17 +140,17 @@ namespace MosaicShell.Core.Tests
         [InlineData(FocusDimRoute.X11ArgbInputShape, "1", true)]
         [InlineData(FocusDimRoute.X11ArgbInputShape, "0", true)]
         [InlineData(FocusDimRoute.Win32LayeredAlpha, "1", true)]
-        [InlineData(FocusDimRoute.Win32LayeredAlpha, "0", false)]
+        [InlineData(FocusDimRoute.Win32LayeredAlpha, "0", true)]
         [InlineData(FocusDimRoute.None, "1", false)]
-        public void On_x11_the_layer_shows_with_the_dim_off_too_as_the_outside_click_hitbox(
+        public void The_layer_shows_with_the_dim_off_too_as_the_outside_click_hitbox(
             FocusDimRoute route, string focusDim, bool expected)
         {
             // Wayland gives the Host no clicks on other windows, so on X11 the layer catches them (the click is not
-            // passed on, as with a popup menu). Windows keeps its hook and shows the layer only for the dim.
+            // passed on, as with a popup menu). Windows does the same, so both platforms behave alike.
             Dictionary<string, string> payload = new() { ["focusDim"] = focusDim };
 
             _ = TesseraFocusDimPolicy.ShouldShowLayer(payload, route).Should().Be(expected);
-            _ = TesseraFocusDimPolicy.LayerIsOutsideClickHitbox(route).Should().Be(route == FocusDimRoute.X11ArgbInputShape);
+            _ = TesseraFocusDimPolicy.LayerIsOutsideClickHitbox(route).Should().Be(route != FocusDimRoute.None);
         }
 
         [Theory]
@@ -151,12 +163,12 @@ namespace MosaicShell.Core.Tests
 
         [Theory]
         [InlineData(FocusDimRoute.X11ArgbInputShape, true)]
-        [InlineData(FocusDimRoute.Win32LayeredAlpha, false)]
+        [InlineData(FocusDimRoute.Win32LayeredAlpha, true)]
         [InlineData(FocusDimRoute.None, false)]
-        public void On_x11_the_hitbox_layer_covers_every_screen(FocusDimRoute route, bool expected)
+        public void The_hitbox_layer_covers_every_screen(FocusDimRoute route, bool expected)
         {
             // A layer on the flyout's screen alone let a click on another display reach the app there and leave the
-            // flyout up (KDE, two displays, 2026-11-23). Windows' hook already sees clicks on every screen.
+            // flyout up (KDE, two displays, 2026-11-23).
             _ = TesseraFocusDimPolicy.LayerCoversEveryScreen(route).Should().Be(expected);
         }
 

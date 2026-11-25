@@ -9,16 +9,13 @@ namespace MosaicShell.Core.Tests
         public void Present_handoff_contracts_are_armed()
         {
             _ = TesseraFlyoutPresentHandoffPolicy.PresentMustInvalidatePendingQueuesOnSessionChange.Should().BeTrue();
-            _ = TesseraFlyoutPresentHandoffPolicy.PresentMustStopOutsideClickBeforeRearm.Should().BeTrue();
             _ = TesseraFlyoutPresentHandoffPolicy.SoftRefreshMustScheduleDeferredLastValue.Should().BeTrue();
-            _ = TesseraFlyoutOutsideClickPolicy.PresentMustStopPriorWatcherBeforeRearm.Should().BeTrue();
             _ = TesseraFlyoutLiveSyncPolicy.SoftRefreshMustScheduleDeferredLastValue.Should().BeTrue();
             _ = TesseraFlyoutPresentHandoffPolicy.SoftRefreshMustHonorSessionGeneration.Should().BeTrue();
             _ = TesseraFlyoutPresentHandoffPolicy.ShouldPostHideToUiThread(alreadyOnUiThread: true)
                 .Should().BeFalse();
             _ = TesseraFlyoutPresentHandoffPolicy.ShouldPostHideToUiThread(alreadyOnUiThread: false)
                 .Should().BeTrue();
-            _ = TesseraFlyoutOutsideClickPolicy.PatchMustRefreshBoundsWithoutRearm.Should().BeTrue();
         }
 
         [Theory]
