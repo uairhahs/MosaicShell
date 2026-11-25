@@ -43,6 +43,52 @@ jobs:
         working-directory: host
         run: dotnet test MosaicShell.Host.Tests --configuration Release --nologo
 
+  # The same suites on Linux, where the portable build (net10.0) and the Linux services compile. Tests that need a
+  # session bus start their own dbus-daemon, so it must be installed; without it they report as skipped.
+  test-linux:
+    name: test (linux)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install dbus-daemon
+        run: command -v dbus-daemon || (sudo apt-get update && sudo apt-get install -y --no-install-recommends dbus-daemon)
+
+      - name: Test (Core)
+        working-directory: host
+        run: dotnet test MosaicShell.Core.Tests --configuration Release --nologo
+
+      - name: Test (Host, Avalonia headless)
+        working-directory: host
+        run: dotnet test MosaicShell.Host.Tests --configuration Release --nologo
+
+  # Builds the Linux release tarball and runs the installer against it end to end in a throwaway home.
+  package-linux:
+    name: package (linux)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build tarball
+        run: packaging/linux/build-tarball.sh 0.0.0-ci "$RUNNER_TEMP/dist"
+
+      - name: Install, update and uninstall
+        run: packaging/linux/test-install.sh "$RUNNER_TEMP/dist/MosaicShell-0.0.0-ci-linux-x86_64.tar.gz"
+
   lint:
     name: lint
     runs-on: ubuntu-latest
