@@ -116,8 +116,10 @@ needs no administrator rights. Get Grout from its
 installs it from the same page once you allow extensions from other stores. Grout runs only on YouTube Music, YouTube, Spotify and SoundCloud, and talks only
 to MosaicShell on your computer.
 
-On Linux, MosaicShell registers Grout's connection for Edge, Chrome, Chromium, Brave and Vivaldi in the same way, and
-also publishes each Grout tab as a media player of its own, so Plasma's media controls see the right title and cover.
+On Linux, MosaicShell registers Grout's connection for Edge, Chrome, Chromium, Brave and Vivaldi in the same way. On
+Plasma it also publishes each Grout tab as a media player of its own, in place of the browser's, so Plasma's media
+controls see the right title and the full-size cover. GNOME has no way to replace the browser's player, so there its
+media controls keep the browser's own.
 
 Without Grout on Windows, MosaicShell falls back to reading the player's buttons through Windows accessibility, which needs
 nothing installed but sees only a window that is on screen. A browser stops updating the page of a window it

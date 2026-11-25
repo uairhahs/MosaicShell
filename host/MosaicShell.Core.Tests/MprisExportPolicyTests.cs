@@ -273,5 +273,17 @@ namespace MosaicShell.Core.Tests
             _ = MprisExportPolicy.ChangedPlayerProperties(controllable, not)
                 .Should().BeEquivalentTo(["CanPlay", "CanPause", "CanGoNext", "CanGoPrevious", "CanSeek"]);
         }
+
+        [Theory]
+        [InlineData("KDE", true)]
+        [InlineData("GNOME", false)]
+        [InlineData("ubuntu:GNOME", false)]
+        [InlineData(null, false)]
+        public void Grouts_player_is_published_only_where_the_desktop_can_hide_the_browsers_own(string? desktop, bool expected)
+        {
+            // Plasma hides the browser's own player for ours through kde:pid; GNOME lists every player, so publishing there
+            // showed the tab twice (seen on GNOME 51), and the browser's own player is already right without Plasma's mirror.
+            _ = MprisExportPolicy.PublishesFor(desktop).Should().Be(expected);
+        }
     }
 }

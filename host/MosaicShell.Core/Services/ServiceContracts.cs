@@ -241,13 +241,16 @@ namespace MosaicShell.Core.Services
             {
                 IBrowserMediaSource[] browser = BrowserSourceStack.CreateLinux(() => mpris.Current);
                 CompositeMediaSessionService composite = new(mpris, browser);
-                companions.Add(new Mpris.GroutMprisBridge(
-                    browser[0],
-                    composite,
-                    (busName, commands) => new Linux.DBusMprisExport(address: null, commands, busName: busName),
-                    Mpris.MprisExportPolicy.DefaultArtCacheDirectory(),
-                    () => mpris.ActiveProcessId,
-                    LinuxDesktopEntryResolver()));
+                if (Mpris.MprisExportPolicy.PublishesFor(desktop))
+                {
+                    companions.Add(new Mpris.GroutMprisBridge(
+                        browser[0],
+                        composite,
+                        (busName, commands) => new Linux.DBusMprisExport(address: null, commands, busName: busName),
+                        Mpris.MprisExportPolicy.DefaultArtCacheDirectory(),
+                        () => mpris.ActiveProcessId,
+                        LinuxDesktopEntryResolver()));
+                }
                 media = composite;
             }
             else

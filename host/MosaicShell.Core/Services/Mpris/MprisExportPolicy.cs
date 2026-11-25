@@ -38,6 +38,16 @@ namespace MosaicShell.Core.Services.Mpris
 
         private const string TrackIdPrefix = "/org/mosaicshell/track/t";
 
+        /// <summary>
+        /// Whether Grout's tabs are published as MPRIS players here. Only on Plasma, which hides the browser's own player
+        /// for ours through <c>kde:pid</c>; GNOME lists every player, so ours would show the tab a second time, and there
+        /// the browser's own player is already right (no Plasma Integration mirror degrades it).
+        /// </summary>
+        public static bool PublishesFor(string? xdgCurrentDesktop)
+        {
+            return Xdg.XdgCurrentDesktop.IsPlasma(xdgCurrentDesktop);
+        }
+
         /// <summary>The player name for one browser tab, under <see cref="BusName"/>.</summary>
         public static string BusNameFor(string tabKey)
         {
