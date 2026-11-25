@@ -177,21 +177,19 @@ namespace MosaicShell.Core.Services.Linux
 
         private static Task<(byte R, byte G, byte B)?> CallAsync(DBusConnection connection, string member)
         {
-            MessageBuffer message;
-            MessageWriter writer = connection.GetMessageWriter();
-            try
-            {
-                writer.WriteMethodCallHeader(PortalAccentPolicy.BusName, PortalAccentPolicy.ObjectPath, PortalAccentPolicy.Interface, member, "ss");
-                writer.WriteString(PortalAccentPolicy.Namespace);
-                writer.WriteString(PortalAccentPolicy.Key);
-                message = writer.CreateMessage();
-            }
-            finally
-            {
-                writer.Dispose();
-            }
-
-            return connection.CallMethodAsync(message, static (m, _) => Decode(m.GetBodyReader().ReadVariantValue()));
+            return DBusCalls.CallAsync(
+                connection,
+                PortalAccentPolicy.BusName,
+                PortalAccentPolicy.ObjectPath,
+                PortalAccentPolicy.Interface,
+                member,
+                "ss",
+                (ref w) =>
+                {
+                    w.WriteString(PortalAccentPolicy.Namespace);
+                    w.WriteString(PortalAccentPolicy.Key);
+                },
+                static (m, _) => Decode(m.GetBodyReader().ReadVariantValue()));
         }
 
         /// <summary>The (ddd) inside however many variants wrap it; null for anything else.</summary>

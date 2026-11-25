@@ -18,7 +18,7 @@ namespace MosaicShell.Core.Services.Linux
         string busName = MprisExportPolicy.BusName)
         : IPathMethodHandler, IMprisExport
     {
-        private const string PropertiesInterface = "org.freedesktop.DBus.Properties";
+        private const string PropertiesInterface = DBusCalls.PropertiesInterface;
 
         private static readonly ReadOnlyMemory<byte>[] IntrospectXml =
         [

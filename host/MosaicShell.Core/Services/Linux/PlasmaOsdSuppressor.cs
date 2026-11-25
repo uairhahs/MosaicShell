@@ -167,14 +167,14 @@ namespace MosaicShell.Core.Services.Linux
                 await File.WriteAllTextAsync(file, KWinOsdScriptPolicy.Script).ConfigureAwait(false);
                 session.SetScriptFile(file);
 
-                _ = await UnloadScriptAsync(hider).ConfigureAwait(false);
-                if (await LoadScriptAsync(hider, file).ConfigureAwait(false) < 0)
+                _ = await KWinScripting.UnloadAsync(hider, KWinOsdScriptPolicy.ScriptName).ConfigureAwait(false);
+                if (await KWinScripting.LoadAsync(hider, file, KWinOsdScriptPolicy.ScriptName).ConfigureAwait(false) < 0)
                 {
                     System.Diagnostics.Debug.WriteLine("[PlasmaOsd] KWin refused the guard script");
                     return;
                 }
 
-                await StartScriptsAsync(hider).ConfigureAwait(false);
+                await KWinScripting.StartAsync(hider).ConfigureAwait(false);
                 session.MarkScriptLoaded();
             }
             catch (Exception ex)
@@ -182,48 +182,6 @@ namespace MosaicShell.Core.Services.Linux
                 // No KWin scripting (or the guard name is taken by another Host): the hide calls still run.
                 System.Diagnostics.Debug.WriteLine($"[PlasmaOsd] KWin guard unavailable: {ex.Message}");
             }
-        }
-
-        private static Task<bool> UnloadScriptAsync(DBusConnection connection)
-        {
-            MessageBuffer message;
-            using (MessageWriter w = connection.GetMessageWriter())
-            {
-                w.WriteMethodCallHeader(
-                    KWinOsdScriptPolicy.KWinBusName, KWinOsdScriptPolicy.ScriptingPath, KWinOsdScriptPolicy.ScriptingInterface, "unloadScript", "s");
-                w.WriteString(KWinOsdScriptPolicy.ScriptName);
-                message = w.CreateMessage();
-            }
-
-            return connection.CallMethodAsync(message, static (m, _) => m.GetBodyReader().ReadBool());
-        }
-
-        private static Task<int> LoadScriptAsync(DBusConnection connection, string file)
-        {
-            MessageBuffer message;
-            using (MessageWriter w = connection.GetMessageWriter())
-            {
-                w.WriteMethodCallHeader(
-                    KWinOsdScriptPolicy.KWinBusName, KWinOsdScriptPolicy.ScriptingPath, KWinOsdScriptPolicy.ScriptingInterface, "loadScript", "ss");
-                w.WriteString(file);
-                w.WriteString(KWinOsdScriptPolicy.ScriptName);
-                message = w.CreateMessage();
-            }
-
-            return connection.CallMethodAsync(message, static (m, _) => m.GetBodyReader().ReadInt32());
-        }
-
-        private static Task StartScriptsAsync(DBusConnection connection)
-        {
-            MessageBuffer message;
-            using (MessageWriter w = connection.GetMessageWriter())
-            {
-                w.WriteMethodCallHeader(
-                    KWinOsdScriptPolicy.KWinBusName, KWinOsdScriptPolicy.ScriptingPath, KWinOsdScriptPolicy.ScriptingInterface, "start");
-                message = w.CreateMessage();
-            }
-
-            return connection.CallMethodAsync(message);
         }
 
         /// <summary>The guard object the KWin script asks about each OSD window it hid.</summary>
@@ -355,15 +313,7 @@ namespace MosaicShell.Core.Services.Linux
 
                 try
                 {
-                    using MessageWriter w = hider.GetMessageWriter();
-                    w.WriteMethodCallHeader(
-                        PlasmaOsdPolicy.BusName,
-                        PlasmaOsdPolicy.ObjectPath,
-                        PlasmaOsdPolicy.Interface,
-                        PlasmaOsdPolicy.HideMember,
-                        signature: null,
-                        flags: MessageFlags.NoReplyExpected);
-                    _ = hider.TrySendMessage(w.CreateMessage());
+                    _ = DBusCalls.SendNoReply(hider, PlasmaOsdPolicy.BusName, PlasmaOsdPolicy.ObjectPath, PlasmaOsdPolicy.Interface, PlasmaOsdPolicy.HideMember);
                 }
                 catch (Exception ex)
                 {
@@ -419,16 +369,7 @@ namespace MosaicShell.Core.Services.Linux
             {
                 try
                 {
-                    using MessageWriter w = hider.GetMessageWriter();
-                    w.WriteMethodCallHeader(
-                        KWinOsdScriptPolicy.KWinBusName,
-                        KWinOsdScriptPolicy.ScriptingPath,
-                        KWinOsdScriptPolicy.ScriptingInterface,
-                        "unloadScript",
-                        "s",
-                        MessageFlags.NoReplyExpected);
-                    w.WriteString(KWinOsdScriptPolicy.ScriptName);
-                    _ = hider.TrySendMessage(w.CreateMessage());
+                    _ = KWinScripting.UnloadNoReply(hider, KWinOsdScriptPolicy.ScriptName);
                 }
                 catch (Exception ex)
                 {

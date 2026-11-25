@@ -83,14 +83,14 @@ namespace MosaicShell.Core.Services.Linux
             await File.WriteAllTextAsync(file, KWinFullscreenPolicy.Script).ConfigureAwait(false);
             try
             {
-                _ = await UnloadAsync(connection).ConfigureAwait(false);
-                if (await LoadAsync(connection, file).ConfigureAwait(false) < 0)
+                _ = await KWinScripting.UnloadAsync(connection, KWinFullscreenPolicy.ScriptName).ConfigureAwait(false);
+                if (await KWinScripting.LoadAsync(connection, file, KWinFullscreenPolicy.ScriptName).ConfigureAwait(false) < 0)
                 {
                     Debug.WriteLine("[Fullscreen] KWin refused the probe script");
                     return null;
                 }
 
-                await StartAsync(connection).ConfigureAwait(false);
+                await KWinScripting.StartAsync(connection).ConfigureAwait(false);
                 Task finished = await Task.WhenAny(pending.Task, Task.Delay(ReportWait)).ConfigureAwait(false);
                 return finished == pending.Task ? await pending.Task.ConfigureAwait(false) : null;
             }
@@ -103,7 +103,7 @@ namespace MosaicShell.Core.Services.Linux
 
                 try
                 {
-                    _ = await UnloadAsync(connection).ConfigureAwait(false);
+                    _ = await KWinScripting.UnloadAsync(connection, KWinFullscreenPolicy.ScriptName).ConfigureAwait(false);
                 }
                 catch (Exception ex) when (ex is DBusErrorReplyException or DBusConnectionException or ObjectDisposedException)
                 {
@@ -160,48 +160,6 @@ namespace MosaicShell.Core.Services.Linux
             {
                 _ = _pending?.TrySetResult(report);
             }
-        }
-
-        private static Task<bool> UnloadAsync(DBusConnection connection)
-        {
-            MessageBuffer message;
-            using (MessageWriter w = connection.GetMessageWriter())
-            {
-                w.WriteMethodCallHeader(
-                    KWinOsdScriptPolicy.KWinBusName, KWinOsdScriptPolicy.ScriptingPath, KWinOsdScriptPolicy.ScriptingInterface, "unloadScript", "s");
-                w.WriteString(KWinFullscreenPolicy.ScriptName);
-                message = w.CreateMessage();
-            }
-
-            return connection.CallMethodAsync(message, static (m, _) => m.GetBodyReader().ReadBool());
-        }
-
-        private static Task<int> LoadAsync(DBusConnection connection, string file)
-        {
-            MessageBuffer message;
-            using (MessageWriter w = connection.GetMessageWriter())
-            {
-                w.WriteMethodCallHeader(
-                    KWinOsdScriptPolicy.KWinBusName, KWinOsdScriptPolicy.ScriptingPath, KWinOsdScriptPolicy.ScriptingInterface, "loadScript", "ss");
-                w.WriteString(file);
-                w.WriteString(KWinFullscreenPolicy.ScriptName);
-                message = w.CreateMessage();
-            }
-
-            return connection.CallMethodAsync(message, static (m, _) => m.GetBodyReader().ReadInt32());
-        }
-
-        private static Task StartAsync(DBusConnection connection)
-        {
-            MessageBuffer message;
-            using (MessageWriter w = connection.GetMessageWriter())
-            {
-                w.WriteMethodCallHeader(
-                    KWinOsdScriptPolicy.KWinBusName, KWinOsdScriptPolicy.ScriptingPath, KWinOsdScriptPolicy.ScriptingInterface, "start");
-                message = w.CreateMessage();
-            }
-
-            return connection.CallMethodAsync(message);
         }
 
         /// <summary>The object the probe script reports to.</summary>

@@ -10,9 +10,10 @@ namespace MosaicShell.Core.Services.Linux
     /// </summary>
     public static class KWinBlurProbe
     {
-        public const string BusName = "org.kde.KWin";
+        public const string BusName = Kde.KWinOsdScriptPolicy.KWinBusName;
         public const string EffectsPath = "/Effects";
         public const string EffectsInterface = "org.kde.kwin.Effects";
+        public const string IsEffectLoadedMember = "isEffectLoaded";
         public const string BlurEffect = "blur";
 
         private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(2);
@@ -51,15 +52,10 @@ namespace MosaicShell.Core.Services.Linux
         private static async Task<bool> AskAsync(DBusConnection connection)
         {
             await connection.ConnectAsync().ConfigureAwait(false);
-            MessageBuffer message;
-            using (MessageWriter writer = connection.GetMessageWriter())
-            {
-                writer.WriteMethodCallHeader(BusName, EffectsPath, EffectsInterface, "isEffectLoaded", "s");
-                writer.WriteString(BlurEffect);
-                message = writer.CreateMessage();
-            }
-
-            return await connection.CallMethodAsync(message, static (m, _) => m.GetBodyReader().ReadBool()).ConfigureAwait(false);
+            return await DBusCalls.CallAsync(
+                connection, BusName, EffectsPath, EffectsInterface, IsEffectLoadedMember, "s",
+                static (ref w) => w.WriteString(BlurEffect),
+                static (m, _) => m.GetBodyReader().ReadBool()).ConfigureAwait(false);
         }
     }
 }

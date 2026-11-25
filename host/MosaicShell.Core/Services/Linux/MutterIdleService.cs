@@ -264,40 +264,16 @@ namespace MosaicShell.Core.Services.Linux
 
         private static Task RemoveWatchAsync(DBusConnection connection, uint id)
         {
-            MessageBuffer message;
-            MessageWriter writer = connection.GetMessageWriter();
-            try
-            {
-                writer.WriteMethodCallHeader(MutterIdlePolicy.BusName, MutterIdlePolicy.ObjectPath, MutterIdlePolicy.Interface, MutterIdlePolicy.RemoveWatchMember, "u");
-                writer.WriteUInt32(id);
-                message = writer.CreateMessage();
-            }
-            finally
-            {
-                writer.Dispose();
-            }
-
-            return connection.CallMethodAsync(message);
+            return DBusCalls.CallAsync(
+                connection, MutterIdlePolicy.BusName, MutterIdlePolicy.ObjectPath, MutterIdlePolicy.Interface,
+                MutterIdlePolicy.RemoveWatchMember, "u", (ref w) => w.WriteUInt32(id));
         }
 
-        private delegate void BodyWriter(ref MessageWriter writer);
-
-        private static Task<uint> CallForIdAsync(DBusConnection connection, string member, string? signature, BodyWriter? write)
+        private static Task<uint> CallForIdAsync(DBusConnection connection, string member, string? signature, DBusBodyWriter? write)
         {
-            MessageBuffer message;
-            MessageWriter writer = connection.GetMessageWriter();
-            try
-            {
-                writer.WriteMethodCallHeader(MutterIdlePolicy.BusName, MutterIdlePolicy.ObjectPath, MutterIdlePolicy.Interface, member, signature);
-                write?.Invoke(ref writer);
-                message = writer.CreateMessage();
-            }
-            finally
-            {
-                writer.Dispose();
-            }
-
-            return connection.CallMethodAsync(message, static (m, _) => m.GetBodyReader().ReadUInt32());
+            return DBusCalls.CallAsync(
+                connection, MutterIdlePolicy.BusName, MutterIdlePolicy.ObjectPath, MutterIdlePolicy.Interface,
+                member, signature, write, static (m, _) => m.GetBodyReader().ReadUInt32());
         }
 
         /// <summary>A <see cref="ListeningSession"/> that also keeps its connection and Mutter's watch ids.</summary>

@@ -17,7 +17,7 @@ namespace MosaicShell.Core.Services.Linux
     /// </remarks>
     public sealed class KdeScreenBrightness : IBrightnessService, IBrightnessChangeSource
     {
-        private const string PropertiesInterface = "org.freedesktop.DBus.Properties";
+        private const string PropertiesInterface = DBusCalls.PropertiesInterface;
 
         private readonly string? _address;
         private readonly Lock _gate = new();
@@ -351,31 +351,16 @@ namespace MosaicShell.Core.Services.Linux
             }
         }
 
-        private delegate void BodyWriter(ref MessageWriter writer);
-
         private static Task<T> CallAsync<T>(
             DBusConnection connection,
             string path,
             string member,
             string signature,
-            BodyWriter write,
+            DBusBodyWriter write,
             MessageValueReader<T> reader,
             string iface = PropertiesInterface)
         {
-            MessageBuffer message;
-            MessageWriter writer = connection.GetMessageWriter();
-            try
-            {
-                writer.WriteMethodCallHeader(KdeScreenBrightnessPolicy.BusName, path, iface, member, signature);
-                write(ref writer);
-                message = writer.CreateMessage();
-            }
-            finally
-            {
-                writer.Dispose();
-            }
-
-            return connection.CallMethodAsync(message, reader);
+            return DBusCalls.CallAsync(connection, KdeScreenBrightnessPolicy.BusName, path, iface, member, signature, write, reader);
         }
 
         private void RaiseChanged()

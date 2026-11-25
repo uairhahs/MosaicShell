@@ -16,9 +16,6 @@ namespace MosaicShell.Core.Services.Linux
     /// <param name="address">A bus address; null for the user's session bus, empty for none. Tests pass a private bus.</param>
     public sealed class KGlobalAccelHotkeyService(string? address = null) : IHotkeyService
     {
-        /// <summary>By ref: MessageWriter is a ref struct, and a copy's writes never reach the message.</summary>
-        private delegate void Body(ref MessageWriter writer);
-
         private static readonly TimeSpan CallTimeout = TimeSpan.FromSeconds(3);
 
         private readonly string? _address = address ?? DBusAddress.Session;
@@ -219,24 +216,14 @@ namespace MosaicShell.Core.Services.Linux
                 static (m, _) => m.GetBodyReader().ReadBool());
         }
 
-        private static Task CallAsync(DBusConnection connection, string member, string signature, Body body)
+        private static Task CallAsync(DBusConnection connection, string member, string signature, DBusBodyWriter body)
         {
             return connection.CallMethodAsync(Message(connection, member, signature, body));
         }
 
-        private static MessageBuffer Message(DBusConnection connection, string member, string signature, Body body)
+        private static MessageBuffer Message(DBusConnection connection, string member, string signature, DBusBodyWriter body)
         {
-            MessageWriter w = connection.GetMessageWriter();
-            try
-            {
-                w.WriteMethodCallHeader(KGlobalAccelPolicy.BusName, KGlobalAccelHotkeyPolicy.Path, KGlobalAccelHotkeyPolicy.Interface, member, signature);
-                body(ref w);
-                return w.CreateMessage();
-            }
-            finally
-            {
-                w.Dispose();
-            }
+            return DBusCalls.Message(connection, KGlobalAccelPolicy.BusName, KGlobalAccelHotkeyPolicy.Path, KGlobalAccelHotkeyPolicy.Interface, member, signature, body);
         }
     }
 }

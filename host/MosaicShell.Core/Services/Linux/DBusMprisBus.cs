@@ -16,11 +16,9 @@ namespace MosaicShell.Core.Services.Linux
         /// the body lands in a copy, the real writer never advances, and the bus drops the connection over the
         /// malformed message. Hence by ref.
         /// </summary>
-        private delegate void BodyWriter(ref MessageWriter writer);
-
-        private const string DBusName = "org.freedesktop.DBus";
-        private const string DBusPath = "/org/freedesktop/DBus";
-        private const string PropertiesInterface = "org.freedesktop.DBus.Properties";
+        private const string DBusName = DBusCalls.BusName;
+        private const string DBusPath = DBusCalls.BusPath;
+        private const string PropertiesInterface = DBusCalls.PropertiesInterface;
 
         // Checked in ConnectAsync, not here, so a machine without a session bus (a bare TTY, a container) still builds
         // its services and simply has no media session.
@@ -349,13 +347,13 @@ namespace MosaicShell.Core.Services.Linux
                 static (m, _) => m.GetBodyReader().ReadDictionaryOfStringToVariantValue());
         }
 
-        private Task PlayerCallAsync(string busName, string member, string? signature = null, BodyWriter? write = null)
+        private Task PlayerCallAsync(string busName, string member, string? signature = null, DBusBodyWriter? write = null)
         {
             return CallAsync(busName, MprisPolicy.ObjectPath, MprisPolicy.PlayerInterface, member, signature, write,
                 static (_, _) => true);
         }
 
-        private Task SetPropertyAsync(string busName, string property, BodyWriter writeValue)
+        private Task SetPropertyAsync(string busName, string property, DBusBodyWriter writeValue)
         {
             return CallAsync(busName, MprisPolicy.ObjectPath, PropertiesInterface, "Set", "ssv",
                 (ref w) =>
@@ -373,24 +371,10 @@ namespace MosaicShell.Core.Services.Linux
             string iface,
             string member,
             string? signature,
-            BodyWriter? write,
+            DBusBodyWriter? write,
             MessageValueReader<T> reader)
         {
-            DBusConnection connection = Connection;
-            MessageBuffer message;
-            MessageWriter writer = connection.GetMessageWriter();
-            try
-            {
-                writer.WriteMethodCallHeader(destination, path, iface, member, signature);
-                write?.Invoke(ref writer);
-                message = writer.CreateMessage();
-            }
-            finally
-            {
-                writer.Dispose();
-            }
-
-            return connection.CallMethodAsync(message, reader);
+            return DBusCalls.CallAsync(Connection, destination, path, iface, member, signature, write, reader);
         }
     }
 }
