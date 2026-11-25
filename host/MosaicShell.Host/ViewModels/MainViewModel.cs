@@ -10,6 +10,7 @@ using Material.Icons;
 using MosaicShell.Core;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Capabilities.BuiltIn;
+using MosaicShell.Core.HostPlatform;
 using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Modules.Tessera;
@@ -883,7 +884,7 @@ namespace MosaicShell.Host.ViewModels
 
             if (HotkeyGestureParser.IsLikelyOsReserved(gesture))
             {
-                StatusMessage = $"{gesture} is reserved by Windows. Pick Ctrl+Alt+Letter instead.";
+                StatusMessage = HostPlatformText.Current.ReservedShortcut(gesture);
                 e.Handled = true;
                 return true;
             }

@@ -656,7 +656,7 @@
                         <TextBlock Text="/ 100" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="13" />
                       </StackPanel>
                       <TextBlock Classes="sectionHint" Margin="0"
-                                 Text="Stock Windows volume HUD is hidden best-effort (WinEvent + ShellHook) while Tessera is armed. Vendor laptop OSDs (Dell/HP/…) unsupported. Media is SMTC-only. Re-arm after changing hooks." />
+                                 Text="{x:Static vm:PlatformTexts.NativePopups}" />
                     </StackPanel>
                   </Border>
                 </StackPanel>
@@ -718,7 +718,7 @@
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
                       <TextBox Classes="config" Text="{Binding TesseraAccentHex}"
-                               PlaceholderText="#0273CD or leave blank for Windows accent"
+                               PlaceholderText="{x:Static vm:PlatformTexts.AccentPlaceholder}"
                                ToolTip.Tip="Hex accent used by every Tessera style (sliders, play, toggles, highlights). Empty = system accent." />
                     </StackPanel>
                     <StackPanel Spacing="4">
@@ -787,7 +787,7 @@
                   <StackPanel Spacing="10">
                     <TextBlock Classes="sectionTitle" Text="Hotkey" Margin="0" />
                     <TextBlock Classes="sectionHint" Margin="0"
-                               Text="Capture a shortcut (Ctrl/Alt/Shift/Win + key). Win+S / Win+A / Win+Q are reserved by Windows and will be replaced automatically." />
+                               Text="{x:Static vm:PlatformTexts.ReservedShortcuts}" />
                     <StackPanel Orientation="Horizontal" Spacing="8">
                       <Border Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}" CornerRadius="8" Padding="12,8" MinWidth="160"
                               BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
@@ -941,7 +941,7 @@
             </StackPanel>
           </StackPanel>
           <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14" LineHeight="22"
-                     Text="MosaicShell is a native Windows desktop shell. Install tiles for flyouts, launchers, clocks, and overlays; arm capabilities in the tray Host so they stay available without keeping the hub window open." />
+                     Text="{x:Static vm:PlatformTexts.About}" />
           <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14" LineHeight="22"
                      Text="Built as an Avalonia rewrite of the JaxCore / Rainmeter era, with the same idea of composable surfaces, without Rainmeter or .rmskin installs. Tessera and Mixdeck are first-party capabilities; widgets run as native overlays." />
           <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="13" LineHeight="20"
@@ -996,7 +996,7 @@
             <StackPanel Spacing="10">
               <TextBlock Classes="sectionTitle" Text="Startup" />
               <TextBlock Classes="sectionHint"
-                         Text="Launch MosaicShell Host when you sign in to Windows." />
+                         Text="{x:Static vm:PlatformTexts.Autostart}" />
               <Button Content="{Binding AutostartEnabled, StringFormat=Autostart: {0}}"
                       Command="{Binding ToggleAutostartCommand}" HorizontalAlignment="Left" />
             </StackPanel>
