@@ -216,6 +216,23 @@ namespace MosaicShell.Core.Modules.Tessera
             return size % 2 == 0 ? size : size + 1;
         }
 
+        /// <summary>
+        /// Progress points the per-OS reference images freeze the glint at (<c>--capture-glint</c>), so two sets compare
+        /// frame for frame without depending on timing.
+        /// </summary>
+        public static readonly IReadOnlyList<double> ReferenceProgressSteps =
+            [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1];
+
+        /// <summary>
+        /// Flat backdrops the reference images are taken over: the dim's crust (dark, what the glint usually plays over)
+        /// and a light one. Compositors differ most in how they blend translucent edges, which the two together show.
+        /// </summary>
+        public static readonly IReadOnlyList<(string Name, (byte R, byte G, byte B) Rgb)> ReferenceBackdrops =
+        [
+            ("dark", (TesseraFocusDimPolicy.CrustR, TesseraFocusDimPolicy.CrustG, TesseraFocusDimPolicy.CrustB)),
+            ("light", (0xEF, 0xF1, 0xF5)),
+        ];
+
         /// <summary>Top-left pixel of the window centered on the click.</summary>
         public static (int X, int Y) WindowOrigin(int clickX, int clickY, double scaling)
         {

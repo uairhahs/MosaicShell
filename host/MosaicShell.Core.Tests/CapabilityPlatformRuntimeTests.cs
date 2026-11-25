@@ -41,6 +41,25 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public void Capture_glint_flag_takes_the_folder_that_follows_it()
+        {
+            HostLaunchOptions.ResetForTests();
+            HostLaunchOptions.Apply([HostLaunchOptions.GlintCaptureFlag, "refs/windows"]);
+            _ = HostLaunchOptions.Mode.Should().Be(HostLaunchMode.GlintCapture);
+            _ = HostLaunchOptions.GlintCaptureDirectory.Should().Be("refs/windows");
+            HostLaunchOptions.ResetForTests();
+        }
+
+        [Fact]
+        public void Capture_glint_flag_without_a_folder_is_ignored()
+        {
+            HostLaunchOptions.ResetForTests();
+            HostLaunchOptions.Apply([HostLaunchOptions.GlintCaptureFlag]);
+            _ = HostLaunchOptions.Mode.Should().Be(HostLaunchMode.FullHub);
+            _ = HostLaunchOptions.GlintCaptureDirectory.Should().BeNull();
+        }
+
+        [Fact]
         public void Tray_only_flag_sets_mode()
         {
             HostLaunchOptions.ResetForTests();

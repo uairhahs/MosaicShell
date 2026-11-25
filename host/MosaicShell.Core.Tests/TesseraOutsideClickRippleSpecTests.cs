@@ -16,6 +16,25 @@ namespace MosaicShell.Core.Tests
             _ = TesseraOutsideClickRippleSpec.ShouldPlay(route).Should().Be(expected);
         }
 
+        [Fact]
+        public void Reference_frames_sample_the_whole_glint_at_even_steps()
+        {
+            // Per-OS reference images freeze the glint at these points, so the sets compare frame for frame.
+            _ = TesseraOutsideClickRippleSpec.ReferenceProgressSteps.Should().HaveCount(11);
+            _ = TesseraOutsideClickRippleSpec.ReferenceProgressSteps[0].Should().Be(0);
+            _ = TesseraOutsideClickRippleSpec.ReferenceProgressSteps[^1].Should().Be(1);
+            _ = TesseraOutsideClickRippleSpec.ReferenceProgressSteps.Should().BeInAscendingOrder();
+        }
+
+        [Fact]
+        public void Reference_frames_are_taken_over_a_dark_and_a_light_backdrop()
+        {
+            // Compositors differ most in how they blend translucent edges, which a dark and a light flat backdrop show.
+            _ = TesseraOutsideClickRippleSpec.ReferenceBackdrops.Select(b => b.Name).Should().Equal("dark", "light");
+            _ = TesseraOutsideClickRippleSpec.ReferenceBackdrops[0].Rgb
+                .Should().Be((TesseraFocusDimPolicy.CrustR, TesseraFocusDimPolicy.CrustG, TesseraFocusDimPolicy.CrustB));
+        }
+
         [Theory]
         [InlineData(null, 0.0, 0.0)]
         [InlineData(null, 200.0, 0.0)]

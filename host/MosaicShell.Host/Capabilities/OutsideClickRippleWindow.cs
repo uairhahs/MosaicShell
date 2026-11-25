@@ -110,6 +110,27 @@ namespace MosaicShell.Host.Capabilities
             return ripple;
         }
 
+        /// <summary>
+        /// For reference images (<c>--capture-glint</c>): the same window, shown at <paramref name="click"/> with no clock,
+        /// so each frame is drawn on demand with <see cref="DrawAt"/>.
+        /// </summary>
+        internal static OutsideClickRippleWindow ShowFrozen(PixelPoint click, FocusDimRoute route, double scaling)
+        {
+            OutsideClickRippleWindow ripple = new(click, scaling, route);
+            ripple.ApplyClickThrough();
+            ripple.Show();
+            return ripple;
+        }
+
+        /// <summary>Draws the glint as it is at <paramref name="progress"/> (0 to 1), as the clock would.</summary>
+        internal void DrawAt(double progress)
+        {
+            ApplyFrame(progress);
+        }
+
+        /// <summary>What the window draws, for rendering it off-screen.</summary>
+        internal Control Stage => (Control)Content!;
+
         private static double ScalingAt(PixelPoint point, Screens? screens)
         {
             double scaling = screens?.ScreenFromPoint(point)?.Scaling ?? 1.0;
