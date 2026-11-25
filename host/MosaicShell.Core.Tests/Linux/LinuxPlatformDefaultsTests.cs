@@ -84,6 +84,19 @@ namespace MosaicShell.Core.Tests.Linux
         }
 
         [Fact]
+        public void The_desktops_own_pop_ups_are_hidden_by_the_route_each_desktop_allows()
+        {
+            // GNOME has no API to hide its pop-ups, so MosaicShell's Shell extension does; Plasma has osdService and KWin.
+            using INativeOsdSuppressor gnome = HostServices.CreateLinuxOsdSuppressor("GNOME");
+            using INativeOsdSuppressor kde = HostServices.CreateLinuxOsdSuppressor("KDE");
+            using INativeOsdSuppressor unknown = HostServices.CreateLinuxOsdSuppressor(null);
+
+            _ = gnome.Should().BeOfType<GnomeOsdSuppressor>();
+            _ = kde.Should().BeOfType<PlasmaOsdSuppressor>();
+            _ = unknown.Should().BeOfType<PlasmaOsdSuppressor>();
+        }
+
+        [Fact]
         public void Idle_comes_from_Mutter_on_GNOME_and_from_the_Wayland_idle_protocol_elsewhere()
         {
             // Mutter offers no ext_idle_notifier_v1, so Slate's idle never fired on GNOME.

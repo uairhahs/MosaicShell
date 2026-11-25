@@ -167,7 +167,10 @@ namespace MosaicShell.Core.Tests.Linux
             using HostServices hub = HostServices.CreatePlatformDefaults();
 
             _ = hub.ShellFlyoutTriggers.Should().BeOfType<KGlobalAccelShellFlyoutTriggers>();
-            _ = hub.OsdSuppressor.Should().BeOfType<PlasmaOsdSuppressor>("Plasma's own volume and brightness pop-ups are hidden while Tessera is armed");
+            bool gnome = Services.Gnome.MutterIdlePolicy.IsGnomeSession(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP"));
+            _ = hub.OsdSuppressor.Should().BeOfType(
+                gnome ? typeof(GnomeOsdSuppressor) : typeof(PlasmaOsdSuppressor),
+                "the desktop's own volume and brightness pop-ups are hidden while Tessera is armed");
         }
     }
 

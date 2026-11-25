@@ -257,7 +257,7 @@ namespace MosaicShell.Core.Services
             return CreateInert(
                 media,
                 new Linux.KGlobalAccelShellFlyoutTriggers(),
-                new Linux.PlasmaOsdSuppressor(),
+                CreateLinuxOsdSuppressor(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP")),
                 new Linux.PulseAudioService(),
                 brightness,
                 brightness,
@@ -272,6 +272,17 @@ namespace MosaicShell.Core.Services
                 CreateLinuxIdle(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP")),
                 new Linux.KWinFullscreenProbe(),
                 CreateLinuxAirplane(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP")));
+        }
+
+        /// <summary>
+        /// On GNOME, MosaicShell's Shell extension (GNOME has no API to hide its pop-ups); elsewhere Plasma's osdService
+        /// and KWin route.
+        /// </summary>
+        public static INativeOsdSuppressor CreateLinuxOsdSuppressor(string? xdgCurrentDesktop)
+        {
+            return Gnome.MutterIdlePolicy.IsGnomeSession(xdgCurrentDesktop)
+                ? new Linux.GnomeOsdSuppressor()
+                : new Linux.PlasmaOsdSuppressor();
         }
 
         /// <summary>
