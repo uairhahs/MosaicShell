@@ -269,9 +269,19 @@ namespace MosaicShell.Core.Services
                 streams,
                 new Linux.ProcSystemMetricsService(),
                 Linux.XdgAutostartService.ForCurrentProcess(),
-                new Linux.WaylandIdleService(),
+                CreateLinuxIdle(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP")),
                 new Linux.KWinFullscreenProbe(),
                 CreateLinuxAirplane(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP")));
+        }
+
+        /// <summary>
+        /// On GNOME, Mutter's idle monitor (it has no ext_idle_notifier_v1); elsewhere the Wayland idle protocol.
+        /// </summary>
+        public static IIdleService CreateLinuxIdle(string? xdgCurrentDesktop)
+        {
+            return Gnome.MutterIdlePolicy.IsGnomeSession(xdgCurrentDesktop)
+                ? new Linux.MutterIdleService()
+                : new Linux.WaylandIdleService();
         }
 
         /// <summary>

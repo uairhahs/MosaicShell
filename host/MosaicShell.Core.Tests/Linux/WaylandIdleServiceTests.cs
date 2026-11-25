@@ -151,7 +151,7 @@ namespace MosaicShell.Core.Tests.Linux
         }
 
         [Fact]
-        public void Platform_defaults_on_linux_take_idle_from_the_compositor()
+        public void Platform_defaults_on_linux_take_idle_from_the_compositor_or_on_GNOME_from_Mutter()
         {
             if (!OperatingSystem.IsLinux())
             {
@@ -160,7 +160,8 @@ namespace MosaicShell.Core.Tests.Linux
 
             using HostServices hub = HostServices.CreatePlatformDefaults();
 
-            _ = hub.Idle.Should().BeOfType<WaylandIdleService>();
+            bool gnome = Services.Gnome.MutterIdlePolicy.IsGnomeSession(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP"));
+            _ = hub.Idle.Should().BeOfType(gnome ? typeof(MutterIdleService) : typeof(WaylandIdleService));
         }
     }
 

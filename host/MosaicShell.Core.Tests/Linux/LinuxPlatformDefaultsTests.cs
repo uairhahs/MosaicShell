@@ -84,6 +84,19 @@ namespace MosaicShell.Core.Tests.Linux
         }
 
         [Fact]
+        public void Idle_comes_from_Mutter_on_GNOME_and_from_the_Wayland_idle_protocol_elsewhere()
+        {
+            // Mutter offers no ext_idle_notifier_v1, so Slate's idle never fired on GNOME.
+            using IIdleService gnome = HostServices.CreateLinuxIdle("GNOME");
+            using IIdleService kde = HostServices.CreateLinuxIdle("KDE");
+            using IIdleService unknown = HostServices.CreateLinuxIdle(null);
+
+            _ = gnome.Should().BeOfType<MutterIdleService>();
+            _ = kde.Should().BeOfType<WaylandIdleService>();
+            _ = unknown.Should().BeOfType<WaylandIdleService>();
+        }
+
+        [Fact]
         public void Lock_keys_come_from_KWin_on_KDE_and_from_the_keyboard_LEDs_elsewhere()
         {
             // GNOME offers no lock state to clients (no org_kde_kwin_keystate), so Caps Lock opened nothing there.
