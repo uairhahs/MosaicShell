@@ -75,7 +75,10 @@ namespace MosaicShell.Host.Capabilities
             PointerPressed += (_, e) =>
             {
                 e.Handled = true;
-                OutsideClicked?.Invoke(this, this.PointToScreen(e.GetPosition(this)));
+                PixelPoint fromWindow = this.PointToScreen(e.GetPosition(this));
+                (int X, int Y)? fromServer = TesseraFocusDimPolicy.ClickPointFromServer(_route) ? X11WindowLayer.PointerOnRoot() : null;
+                (int x, int y) = TesseraFocusDimPolicy.ResolveClickPoint(_route, (fromWindow.X, fromWindow.Y), fromServer);
+                OutsideClicked?.Invoke(this, new PixelPoint(x, y));
             };
             Opened += (_, _) =>
             {

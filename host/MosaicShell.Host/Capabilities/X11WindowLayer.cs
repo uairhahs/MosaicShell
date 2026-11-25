@@ -41,6 +41,31 @@ namespace MosaicShell.Host.Capabilities
             }
         }
 
+        /// <summary>
+        /// The pointer's position on the root window, in X's own screen pixels; null without a display. Exact where a
+        /// window's asked position is not where the window manager put it.
+        /// </summary>
+        public static (int X, int Y)? PointerOnRoot()
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                return null;
+            }
+
+            lock (Gate)
+            {
+                if (!TryOpen())
+                {
+                    return null;
+                }
+
+                nint root = XDefaultRootWindow(_display);
+                return XQueryPointer(_display, root, out _, out _, out int x, out int y, out _, out _, out _) != 0
+                    ? (x, y)
+                    : null;
+            }
+        }
+
         /// <summary>Adds or removes the below state on <paramref name="window"/>; returns what it did, for the log.</summary>
         public static string SetBelow(Window window, bool below)
         {
@@ -200,5 +225,17 @@ namespace MosaicShell.Host.Capabilities
 
         [DllImport(LibX11)]
         private static extern int XFlush(nint display);
+
+        [DllImport(LibX11)]
+        private static extern int XQueryPointer(
+            nint display,
+            nint window,
+            out nint rootReturn,
+            out nint childReturn,
+            out int rootX,
+            out int rootY,
+            out int winX,
+            out int winY,
+            out uint mask);
     }
 }

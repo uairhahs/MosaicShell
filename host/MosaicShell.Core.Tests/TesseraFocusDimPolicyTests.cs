@@ -226,5 +226,37 @@ namespace MosaicShell.Core.Tests
             // layer; 14 of 137 outside-click dismisses landed inside the flyout).
             _ = TesseraFocusDimPolicy.ResolveRestack(route).Should().Be(expected);
         }
+
+        [Fact]
+        public void On_X11_the_click_is_where_the_server_says_the_pointer_is()
+        {
+            // GNOME keeps the layer below its top bar (asked for 0,0, placed at 0,58 on a 2x laptop screen), so converting
+            // through the layer's asked position put the glint 58 px above the click. The server's pointer is exact.
+            (int X, int Y) fromWindow = (1695, 1060);
+            (int X, int Y) fromServer = (1695, 1118);
+
+            _ = TesseraFocusDimPolicy.ResolveClickPoint(FocusDimRoute.X11ArgbInputShape, fromWindow, fromServer).Should().Be(fromServer);
+        }
+
+        [Fact]
+        public void Without_the_servers_pointer_the_window_conversion_stands()
+        {
+            _ = TesseraFocusDimPolicy.ResolveClickPoint(FocusDimRoute.X11ArgbInputShape, (10, 20), null).Should().Be((10, 20));
+        }
+
+        [Fact]
+        public void Windows_keeps_the_window_conversion_which_places_the_layer_where_it_asks()
+        {
+            _ = TesseraFocusDimPolicy.ResolveClickPoint(FocusDimRoute.Win32LayeredAlpha, (10, 20), (30, 40)).Should().Be((10, 20));
+        }
+
+        [Theory]
+        [InlineData(FocusDimRoute.X11ArgbInputShape, true)]
+        [InlineData(FocusDimRoute.Win32LayeredAlpha, false)]
+        [InlineData(FocusDimRoute.None, false)]
+        public void Only_the_X11_route_asks_the_server_for_the_pointer(FocusDimRoute route, bool expected)
+        {
+            _ = TesseraFocusDimPolicy.ClickPointFromServer(route).Should().Be(expected);
+        }
     }
 }

@@ -194,6 +194,22 @@ namespace MosaicShell.Core.Modules.Tessera
             return ResolveLayerAlpha(route, dimEnabled && onFlyoutScreen);
         }
 
+        /// <summary>
+        /// Whether the outside click's screen point is read from the X server's pointer. A window manager may place the
+        /// layer away from where it asked (GNOME keeps it below its top bar), and converting through the asked position
+        /// then misplaces the click by that offset. Windows places the layer where it asks.
+        /// </summary>
+        public static bool ClickPointFromServer(FocusDimRoute route)
+        {
+            return route == FocusDimRoute.X11ArgbInputShape;
+        }
+
+        /// <summary>The outside click's screen point: the server's pointer where <see cref="ClickPointFromServer"/> and it was read.</summary>
+        public static (int X, int Y) ResolveClickPoint(FocusDimRoute route, (int X, int Y) fromWindow, (int X, int Y)? fromServer)
+        {
+            return ClickPointFromServer(route) && fromServer is { } server ? server : fromWindow;
+        }
+
         /// <summary>Payload <c>focusDim</c>: "0" off; missing / other → on (default).</summary>
         public static bool EnabledFromPayload(IReadOnlyDictionary<string, string>? payload)
         {
