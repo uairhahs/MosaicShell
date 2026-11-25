@@ -76,8 +76,18 @@ done
 
 HOST_EXE="${APP_DIR}/Host/MosaicShell.Host"
 
+# Every Host running from this install, however it was started (the menu entry, the
+# ~/.local/bin/mosaicshell link or the full path): matched on the executable the
+# process runs, not on its command line.
 running_pids() {
-	pgrep -u "${UID}" -f "^${HOST_EXE}( |$)" || true
+	local pid exe
+	exe="$(readlink -f "${HOST_EXE}" 2>/dev/null || true)"
+	[[ -n ${exe} ]] || return 0
+	for pid in $(pgrep -u "${UID}" || true); do
+		if [[ $(readlink -f "/proc/${pid}/exe" 2>/dev/null || true) == "${exe}" ]]; then
+			echo "${pid}"
+		fi
+	done
 }
 
 # Asks a running Host to quit and waits up to 10 seconds. Returns 1 if it is still running.
