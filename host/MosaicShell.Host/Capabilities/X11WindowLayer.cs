@@ -19,6 +19,8 @@ namespace MosaicShell.Host.Capabilities
         private const nint SourceApplication = 1;
         private const nint SubstructureNotifyMask = 1 << 19;
         private const nint SubstructureRedirectMask = 1 << 20;
+        private const nint XaAtom = 4;
+        private const int PropModeReplace = 0;
 
         private static readonly Lock Gate = new();
         private static nint _display;
@@ -63,6 +65,34 @@ namespace MosaicShell.Host.Capabilities
                 return XQueryPointer(_display, root, out _, out _, out int x, out int y, out _, out _, out _) != 0
                     ? (x, y)
                     : null;
+            }
+        }
+
+        /// <summary>
+        /// Replaces <paramref name="window"/>'s <c>_NET_WM_WINDOW_TYPE</c> with <paramref name="typeAtom"/>. Works before
+        /// the first map (the window manager reads it when it takes the window on) and after (it re-reads on change).
+        /// </summary>
+        public static string SetWindowType(Window window, string typeAtom)
+        {
+            lock (Gate)
+            {
+                if (!TryOpen())
+                {
+                    return "no X display";
+                }
+
+                if (window.TryGetPlatformHandle() is not { } handle
+                    || !string.Equals(handle.HandleDescriptor, "XID", StringComparison.Ordinal)
+                    || handle.Handle == 0)
+                {
+                    return "no XID";
+                }
+
+                nint property = XInternAtom(_display, "_NET_WM_WINDOW_TYPE", false);
+                nint value = XInternAtom(_display, typeAtom, false);
+                _ = XChangeProperty(_display, handle.Handle, property, XaAtom, 32, PropModeReplace, ref value, 1);
+                _ = XFlush(_display);
+                return typeAtom;
             }
         }
 
@@ -225,6 +255,17 @@ namespace MosaicShell.Host.Capabilities
 
         [DllImport(LibX11)]
         private static extern int XFlush(nint display);
+
+        [DllImport(LibX11)]
+        private static extern int XChangeProperty(
+            nint display,
+            nint window,
+            nint property,
+            nint type,
+            int format,
+            int mode,
+            ref nint data,
+            int elements);
 
         [DllImport(LibX11)]
         private static extern int XQueryPointer(

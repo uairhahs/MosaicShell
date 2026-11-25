@@ -34,6 +34,7 @@ namespace MosaicShell.Host.Capabilities
             Topmost = true;
             ShowInTaskbar = false;
             X11WindowState.ReassertOnShow(this);
+            X11WindowState.DeclareOverlay(this);
             ShowActivated = false;
             Focusable = false;
             IsHitTestVisible = false;

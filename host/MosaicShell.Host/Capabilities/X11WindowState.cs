@@ -13,6 +13,24 @@ namespace MosaicShell.Host.Capabilities
     /// </summary>
     internal static class X11WindowState
     {
+        private static readonly string? OverlayType =
+            Core.HostPlatform.X11OverlayWindowTypePolicy.WindowTypeFor(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP"));
+
+        /// <summary>
+        /// Declares <paramref name="window"/> an overlay (<see cref="Core.HostPlatform.X11OverlayWindowTypePolicy"/>), now,
+        /// before its first map, and again on each open in case the toolkit wrote the type back.
+        /// </summary>
+        public static void DeclareOverlay(Window window)
+        {
+            if (OperatingSystem.IsWindows() || OverlayType is not string type)
+            {
+                return;
+            }
+
+            _ = X11WindowLayer.SetWindowType(window, type);
+            window.Opened += (_, _) => X11WindowLayer.SetWindowType(window, type);
+        }
+
         /// <summary>Sends the window's Topmost and taskbar state again each time it becomes visible.</summary>
         public static void ReassertOnShow(Window window)
         {
