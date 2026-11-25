@@ -167,7 +167,7 @@ namespace MosaicShell.Core.Tests.Linux
             using HostServices hub = HostServices.CreatePlatformDefaults();
 
             _ = hub.ShellFlyoutTriggers.Should().BeOfType<KGlobalAccelShellFlyoutTriggers>();
-            bool gnome = Services.Gnome.MutterIdlePolicy.IsGnomeSession(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP"));
+            bool gnome = Services.Xdg.XdgCurrentDesktop.IsGnome(Services.Xdg.XdgCurrentDesktop.Current);
             _ = hub.OsdSuppressor.Should().BeOfType(
                 gnome ? typeof(GnomeOsdSuppressor) : typeof(PlasmaOsdSuppressor),
                 "the desktop's own volume and brightness pop-ups are hidden while Tessera is armed");

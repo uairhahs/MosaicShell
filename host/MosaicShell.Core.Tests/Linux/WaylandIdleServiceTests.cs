@@ -160,7 +160,7 @@ namespace MosaicShell.Core.Tests.Linux
 
             using HostServices hub = HostServices.CreatePlatformDefaults();
 
-            bool gnome = Services.Gnome.MutterIdlePolicy.IsGnomeSession(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP"));
+            bool gnome = Services.Xdg.XdgCurrentDesktop.IsGnome(Services.Xdg.XdgCurrentDesktop.Current);
             _ = hub.Idle.Should().BeOfType(gnome ? typeof(MutterIdleService) : typeof(WaylandIdleService));
         }
     }

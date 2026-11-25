@@ -21,12 +21,5 @@ namespace MosaicShell.Core.Services.Gnome
         {
             return (ulong)Math.Max(1, (long)threshold.TotalMilliseconds);
         }
-
-        /// <summary>GNOME is the desktop when XDG_CURRENT_DESKTOP, a colon-separated list, names it.</summary>
-        public static bool IsGnomeSession(string? xdgCurrentDesktop)
-        {
-            return !string.IsNullOrEmpty(xdgCurrentDesktop)
-                && xdgCurrentDesktop.Split(':').Contains("GNOME", StringComparer.OrdinalIgnoreCase);
-        }
     }
 }

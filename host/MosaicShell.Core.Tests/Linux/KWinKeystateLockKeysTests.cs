@@ -116,7 +116,7 @@ namespace MosaicShell.Core.Tests.Linux
 
             using HostServices hub = HostServices.CreatePlatformDefaults();
 
-            bool plasma = Services.Kde.PlasmaAirplanePolicy.IsPlasmaSession(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP"));
+            bool plasma = Services.Xdg.XdgCurrentDesktop.IsPlasma(Services.Xdg.XdgCurrentDesktop.Current);
             _ = hub.LockKeys.Should().BeOfType(plasma ? typeof(KWinKeystateLockKeys) : typeof(LedLockKeysService));
         }
     }

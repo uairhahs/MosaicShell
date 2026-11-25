@@ -84,17 +84,5 @@ namespace MosaicShell.Core.Tests
             _ = PlasmaAirplanePolicy.NotifyInterface.Should().Be("org.kde.kconfig.notify");
             _ = PlasmaAirplanePolicy.NotifyMember.Should().Be("ConfigChanged");
         }
-
-        [Theory]
-        [InlineData("KDE", true)]
-        [InlineData("ubuntu:KDE", true)]
-        [InlineData("GNOME", false)]
-        [InlineData("ubuntu:GNOME", false)]
-        [InlineData("", false)]
-        [InlineData(null, false)]
-        public void Plasma_is_the_session_when_XDG_CURRENT_DESKTOP_names_KDE(string? desktop, bool expected)
-        {
-            _ = PlasmaAirplanePolicy.IsPlasmaSession(desktop).Should().Be(expected);
-        }
     }
 }

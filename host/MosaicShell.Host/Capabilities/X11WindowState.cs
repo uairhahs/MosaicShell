@@ -14,7 +14,7 @@ namespace MosaicShell.Host.Capabilities
     internal static class X11WindowState
     {
         private static readonly string? OverlayType =
-            Core.HostPlatform.X11OverlayWindowTypePolicy.WindowTypeFor(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP"));
+            Core.HostPlatform.X11OverlayWindowTypePolicy.WindowTypeFor(Core.Services.Xdg.XdgCurrentDesktop.Current);
 
         /// <summary>
         /// Declares <paramref name="window"/> an overlay (<see cref="Core.HostPlatform.X11OverlayWindowTypePolicy"/>), now,

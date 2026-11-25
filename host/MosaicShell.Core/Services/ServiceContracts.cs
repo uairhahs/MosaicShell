@@ -228,6 +228,7 @@ namespace MosaicShell.Core.Services
         /// <param name="browserSources">The Grout extension source beside MPRIS (the Host passes true; tests leave it off).</param>
         public static HostServices CreateLinuxDefaults(bool browserSources = false)
         {
+            string? desktop = Xdg.XdgCurrentDesktop.Current;
             // One PowerDevil watcher serves both the value and its changes, as Windows' pair shares one service.
             Linux.KdeScreenBrightness brightness = new();
 
@@ -257,21 +258,21 @@ namespace MosaicShell.Core.Services
             return CreateInert(
                 media,
                 new Linux.KGlobalAccelShellFlyoutTriggers(),
-                CreateLinuxOsdSuppressor(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP")),
+                CreateLinuxOsdSuppressor(desktop),
                 new Linux.PulseAudioService(),
                 brightness,
                 brightness,
                 companions,
                 new Linux.KGlobalAccelHotkeyService(),
-                CreateLinuxLockKeys(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP")),
+                CreateLinuxLockKeys(desktop),
                 streams,
                 new Linux.ParecAudioLevelService(),
                 streams,
                 new Linux.ProcSystemMetricsService(),
                 Linux.XdgAutostartService.ForCurrentProcess(),
-                CreateLinuxIdle(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP")),
+                CreateLinuxIdle(desktop),
                 new Linux.KWinFullscreenProbe(),
-                CreateLinuxAirplane(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP")));
+                CreateLinuxAirplane(desktop));
         }
 
         /// <summary>
@@ -280,7 +281,7 @@ namespace MosaicShell.Core.Services
         /// </summary>
         public static INativeOsdSuppressor CreateLinuxOsdSuppressor(string? xdgCurrentDesktop)
         {
-            return Gnome.MutterIdlePolicy.IsGnomeSession(xdgCurrentDesktop)
+            return Xdg.XdgCurrentDesktop.IsGnome(xdgCurrentDesktop)
                 ? new Linux.GnomeOsdSuppressor()
                 : new Linux.PlasmaOsdSuppressor();
         }
@@ -290,7 +291,7 @@ namespace MosaicShell.Core.Services
         /// </summary>
         public static IIdleService CreateLinuxIdle(string? xdgCurrentDesktop)
         {
-            return Gnome.MutterIdlePolicy.IsGnomeSession(xdgCurrentDesktop)
+            return Xdg.XdgCurrentDesktop.IsGnome(xdgCurrentDesktop)
                 ? new Linux.MutterIdleService()
                 : new Linux.WaylandIdleService();
         }
@@ -301,7 +302,7 @@ namespace MosaicShell.Core.Services
         /// </summary>
         public static ILockKeysService CreateLinuxLockKeys(string? xdgCurrentDesktop)
         {
-            return Kde.PlasmaAirplanePolicy.IsPlasmaSession(xdgCurrentDesktop)
+            return Xdg.XdgCurrentDesktop.IsPlasma(xdgCurrentDesktop)
                 ? new Linux.KWinKeystateLockKeys()
                 : new Linux.LedLockKeysService();
         }
@@ -312,7 +313,7 @@ namespace MosaicShell.Core.Services
         /// </summary>
         public static IAirplaneModeService CreateLinuxAirplane(string? xdgCurrentDesktop)
         {
-            return Kde.PlasmaAirplanePolicy.IsPlasmaSession(xdgCurrentDesktop)
+            return Xdg.XdgCurrentDesktop.IsPlasma(xdgCurrentDesktop)
                 ? new Linux.PlasmaAirplaneModeService(new Linux.RfkillAirplaneModeService())
                 : new Linux.RfkillAirplaneModeService();
         }

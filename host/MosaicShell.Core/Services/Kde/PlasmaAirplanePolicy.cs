@@ -80,13 +80,6 @@ namespace MosaicShell.Core.Services.Kde
             return group == Group && keys.Contains(Key, StringComparer.Ordinal);
         }
 
-        /// <summary>Plasma is the desktop when XDG_CURRENT_DESKTOP, a colon-separated list, names KDE.</summary>
-        public static bool IsPlasmaSession(string? xdgCurrentDesktop)
-        {
-            return !string.IsNullOrEmpty(xdgCurrentDesktop)
-                && xdgCurrentDesktop.Split(':').Contains("KDE", StringComparer.OrdinalIgnoreCase);
-        }
-
         private static bool IsTrue(string value)
         {
             return value.Equals("true", StringComparison.OrdinalIgnoreCase)

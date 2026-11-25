@@ -14,10 +14,7 @@ namespace MosaicShell.Core.HostPlatform
         /// <summary>The type to declare before the first map, or null to keep the toolkit's default.</summary>
         public static string? WindowTypeFor(string? xdgCurrentDesktop)
         {
-            return !string.IsNullOrEmpty(xdgCurrentDesktop)
-                && xdgCurrentDesktop.Split(':').Contains("GNOME", StringComparer.OrdinalIgnoreCase)
-                ? Utility
-                : null;
+            return Services.Xdg.XdgCurrentDesktop.IsGnome(xdgCurrentDesktop) ? Utility : null;
         }
     }
 }

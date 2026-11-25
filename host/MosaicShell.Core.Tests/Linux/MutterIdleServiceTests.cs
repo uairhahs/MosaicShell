@@ -70,16 +70,6 @@ namespace MosaicShell.Core.Tests.Linux
             _ = MutterIdlePolicy.WatchIntervalMs(TimeSpan.Zero).Should().Be(1UL);
         }
 
-        [Theory]
-        [InlineData("GNOME", true)]
-        [InlineData("ubuntu:GNOME", true)]
-        [InlineData("KDE", false)]
-        [InlineData(null, false)]
-        public void Mutter_is_the_idle_source_in_a_GNOME_session(string? desktop, bool expected)
-        {
-            _ = MutterIdlePolicy.IsGnomeSession(desktop).Should().Be(expected);
-        }
-
         [LinuxBusFact]
         public async Task Start_asks_Mutter_for_an_idle_watch_at_the_threshold()
         {
