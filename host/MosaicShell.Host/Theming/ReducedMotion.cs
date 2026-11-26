@@ -1,5 +1,7 @@
 using System.Runtime.InteropServices;
 using MosaicShell.Core.HostPlatform;
+using MosaicShell.Core.Runtime;
+using MosaicShell.Core.Settings;
 using MosaicShell.Core.Services.Xdg;
 
 namespace MosaicShell.Host.Theming
@@ -11,8 +13,20 @@ namespace MosaicShell.Host.Theming
     internal static class ReducedMotion
     {
         private static readonly Lazy<bool> Cached = new(Read);
+        private static bool? _followSystem;
 
-        public static bool IsOn => Cached.Value;
+        /// <summary>Whether to reduce motion now: the Hub's "follow the system" choice and the OS setting together.</summary>
+        public static bool IsOn => ReducedMotionPolicy.IsReduced(FollowSystem, SystemReduced);
+
+        /// <summary>What the OS says, whether or not MosaicShell follows it.</summary>
+        public static bool SystemReduced => Cached.Value;
+
+        /// <summary>The Hub setting, read once and then kept in step by the Hub when it changes.</summary>
+        public static bool FollowSystem
+        {
+            get => _followSystem ??= ModuleSettingsStore.Load("Hub", () => new HubSettings()).FollowSystemReducedMotion;
+            set => _followSystem = value;
+        }
 
         private static bool Read()
         {

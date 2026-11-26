@@ -1010,6 +1010,17 @@
             <Separator />
 
             <StackPanel Spacing="10">
+              <TextBlock Classes="sectionTitle" Text="Motion" />
+              <TextBlock Classes="sectionHint" Margin="0" TextWrapping="Wrap"
+                         Text="When on, and your system's animation effects are off, pop-ups fade in place instead of sliding, motion previews hold still, and buttons do not move when pressed." />
+              <ToggleSwitch Content="Reduce motion when my system does"
+                            IsChecked="{Binding FollowSystemReducedMotion}" />
+              <TextBlock Classes="sectionHint" Margin="0" TextWrapping="Wrap" Text="{Binding ReducedMotionStatus}" />
+            </StackPanel>
+
+            <Separator />
+
+            <StackPanel Spacing="10">
               <TextBlock Classes="sectionTitle" Text="Updates" />
               <TextBlock Classes="sectionHint" Margin="0"
                          Text="Compare the installed host build against the latest GitHub release (date+build tags)." />

@@ -153,6 +153,12 @@ namespace MosaicShell.Core.Settings
         public bool AutostartHost { get; set; }
         /// <summary>When true, window close hides to tray; when false, close exits the host.</summary>
         public bool CloseMinimizesToTray { get; set; } = true;
+
+        /// <summary>
+        /// When true, the OS reduce-motion setting turns flyout slides into fades (<see cref="HostPlatform.ReducedMotionPolicy"/>).
+        /// Off by default: many people turn Windows animations off for speed, and the flyout look is their own choice.
+        /// </summary>
+        public bool FollowSystemReducedMotion { get; set; }
         public List<string> BatchInstallSelection { get; set; } = [];
     }
 }

@@ -37,6 +37,20 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public void The_system_setting_applies_only_when_the_user_asked_to_follow_it()
+        {
+            _ = ReducedMotionPolicy.IsReduced(followSystem: false, systemReduced: true).Should().BeFalse();
+            _ = ReducedMotionPolicy.IsReduced(followSystem: true, systemReduced: true).Should().BeTrue();
+            _ = ReducedMotionPolicy.IsReduced(followSystem: true, systemReduced: false).Should().BeFalse();
+        }
+
+        [Fact]
+        public void Following_the_system_is_off_by_default()
+        {
+            _ = new Settings.HubSettings().FollowSystemReducedMotion.Should().BeFalse();
+        }
+
+        [Fact]
         public void Reduced_motion_turns_every_flyout_into_a_plain_fade()
         {
             FlyoutRequest slide = new("Tessera", "vol", Ani: 2);

@@ -60,6 +60,16 @@ namespace MosaicShell.Core.HostPlatform
             return false;
         }
 
+        /// <summary>
+        /// Whether motion is reduced: only when the user asked MosaicShell to follow the system and the system says so.
+        /// The OS setting alone never overrides the motion look chosen in the Hub (it did once, and turned every flyout
+        /// into a fade on a machine with Windows animations off for speed).
+        /// </summary>
+        public static bool IsReduced(bool followSystem, bool systemReduced)
+        {
+            return followSystem && systemReduced;
+        }
+
         /// <summary>The request as it plays: a plain fade (<c>Ani = 0</c>) when motion is reduced.</summary>
         public static FlyoutRequest ApplyTo(FlyoutRequest request, bool reduced)
         {

@@ -1035,6 +1035,29 @@ namespace MosaicShell.Host.ViewModels
                 : "Close button exits the app.";
         }
 
+        /// <summary>The Settings toggle: whether the OS reduce-motion setting turns flyout slides into fades.</summary>
+        public bool FollowSystemReducedMotion
+        {
+            get => Hub.FollowSystemReducedMotion;
+            set
+            {
+                if (Hub.FollowSystemReducedMotion == value)
+                {
+                    return;
+                }
+
+                Hub.FollowSystemReducedMotion = value;
+                Theming.ReducedMotion.FollowSystem = value;
+                ModuleSettingsStore.Save("Hub", Hub);
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>What the OS says now, so the Settings row can tell whether turning it on changes anything.</summary>
+        public string ReducedMotionStatus => Theming.ReducedMotion.SystemReduced
+            ? "Your system's animation effects are off, so this is in effect while it is on."
+            : "Your system's animation effects are on, so this changes nothing right now.";
+
         partial void OnCloseMinimizesToTrayChanged(bool value)
         {
             // Keep Hub in sync when bound ToggleButton/CheckBox flips the property
