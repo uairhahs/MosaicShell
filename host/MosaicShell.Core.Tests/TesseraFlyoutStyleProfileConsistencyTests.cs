@@ -152,10 +152,10 @@ namespace MosaicShell.Core.Tests
         /// shared default arm for these three), so the rest-size invariant below does not apply
         /// to them - their profile sizes serve reveal binders, not a stacked-cluster estimate.
         /// </summary>
-        private static readonly HashSet<string> StylesWithoutStackedPlacement = new(StringComparer.OrdinalIgnoreCase)
-        {
-            StyleIds.Square, StyleIds.CoreUI, StyleIds.MaterialYou,
-        };
+        private static readonly HashSet<string> StylesWithoutStackedPlacement =
+        [
+with(StringComparer.OrdinalIgnoreCase),             StyleIds.Square, StyleIds.CoreUI, StyleIds.MaterialYou,
+        ];
 
         /// <summary>
         /// The placement estimate's volume/media rest sizes must equal the profile's rest sizes -

@@ -1,9 +1,9 @@
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
 using MosaicShell.Core.Styles;
-using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Core.Modules.Tessera
 {
@@ -51,7 +51,7 @@ namespace MosaicShell.Core.Modules.Tessera
         {
             Dictionary<string, string> p = extraPayload is null
                 ? []
-                : new Dictionary<string, string>(extraPayload);
+                : [with(extraPayload)];
 
             p["volume"] = services.Audio.MasterVolume.ToString("0.###");
             p["muted"] = services.Audio.IsMuted ? "1" : "0";
@@ -115,7 +115,7 @@ namespace MosaicShell.Core.Modules.Tessera
         {
             Dictionary<string, string> p = existing is null
                 ? []
-                : new Dictionary<string, string>(existing);
+                : [with(existing)];
 
             if (FlyoutKinds.Is(kind, FlyoutKinds.Locks))
             {

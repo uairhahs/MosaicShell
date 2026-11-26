@@ -1,12 +1,12 @@
 using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Layout;
-using Avalonia.Media;
-using MosaicShell.Core.Modules.Tessera;
-using MosaicShell.Core.HostPlatform;
 using Avalonia.Animation;
 using Avalonia.Animation.Easings;
+using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Layout;
+using Avalonia.Media;
+using MosaicShell.Core.HostPlatform;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 
 namespace MosaicShell.Host.Tiles.Tessera

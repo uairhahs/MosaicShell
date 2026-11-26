@@ -165,7 +165,7 @@ namespace MosaicShell.Core.Services
 
     public sealed class FakeHotkeyService : IHotkeyService
     {
-        private readonly Dictionary<string, Action> _callbacks = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, Action> _callbacks = [with(StringComparer.OrdinalIgnoreCase)];
 
         public IReadOnlyCollection<string> RegisteredIds => [.. _callbacks.Keys];
 

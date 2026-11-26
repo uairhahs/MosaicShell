@@ -4,8 +4,8 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Material.Icons;
 using Material.Icons.Avalonia;
-using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Capabilities.Platform;
+using MosaicShell.Core.Modules.Tessera;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {

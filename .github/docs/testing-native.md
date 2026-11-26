@@ -1,6 +1,6 @@
 # Testing the native host
 
-MosaicShell is **Host-only** (Avalonia + .NET 10, Windows). Contracts live in Core; Host reads them.
+MosaicShell is **Host-only** (Avalonia + .NET 11, Windows). Contracts live in Core; Host reads them.
 
 ```powershell
 cd host

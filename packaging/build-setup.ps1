@@ -68,9 +68,11 @@ if (-not $SkipPublish) {
         -o (Join-Path $stage "Host")
     if ($LASTEXITCODE -ne 0) { throw "Host publish failed" }
 
-    Write-Host "Publishing Mosaicist..."
+    # Self-contained like the Host: the installer runs it to install the default modules, so it cannot
+    # depend on a .NET runtime the user may not have (a missing runtime failed that step silently).
+    Write-Host "Publishing Mosaicist (self-contained win-x64)..."
     dotnet publish $mosaicistProj `
-        -c Release -r win-x64 --self-contained false `
+        -c Release -r win-x64 --self-contained true `
         -p:Version=$Version `
         -o (Join-Path $stage "Mosaicist")
     if ($LASTEXITCODE -ne 0) { throw "Mosaicist publish failed" }

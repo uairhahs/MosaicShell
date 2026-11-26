@@ -20,7 +20,7 @@ namespace MosaicShell.Host.Tiles
         IHostUiBridge hostUi,
         Action<string>? onClosedByUser = null) : ITileSurfaceHost
     {
-        private readonly Dictionary<string, TileOverlayWindow> _windows = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, TileOverlayWindow> _windows = [with(StringComparer.OrdinalIgnoreCase)];
         private readonly HostServices _services = services;
         private readonly IHostUiBridge _hostUi = hostUi;
         private readonly Action<string>? _onClosedByUser = onClosedByUser;

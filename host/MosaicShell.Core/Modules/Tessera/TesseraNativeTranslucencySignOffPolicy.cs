@@ -40,13 +40,14 @@ namespace MosaicShell.Core.Modules.Tessera
         public static bool HubOffersNativeTranslucency =>
             EvalCompleteForThisPlatform && Capabilities.Platform.NativeTranslucencyPlatform.IsAvailable;
 
-        private static readonly HashSet<string> H3StackedStylesSignedOff = new(StringComparer.OrdinalIgnoreCase)
-        {
+        private static readonly HashSet<string> H3StackedStylesSignedOff =
+        [
+            with(StringComparer.OrdinalIgnoreCase),
             StyleIds.Meter,
             StyleIds.Gnome,
             StyleIds.Compact,
             StyleIds.ModernFlyouts,
-        };
+        ];
 
         public static bool IsH3StackedStyleSignedOff(string? styleId)
         {

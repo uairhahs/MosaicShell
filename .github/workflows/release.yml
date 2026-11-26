@@ -50,7 +50,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: 11.0.x
 
       - name: Install dbus-daemon
         run: command -v dbus-daemon || (sudo apt-get update && sudo apt-get install -y --no-install-recommends dbus-daemon)
@@ -66,7 +66,7 @@ jobs:
         run: packaging/linux/test-install.sh "dist/MosaicShell-${{ needs.version.outputs.name }}-linux-x86_64.tar.gz"
 
       - name: Upload tarball
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: linux-tarball
           path: dist/MosaicShell-*-linux-x86_64.tar.gz
@@ -85,7 +85,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: 11.0.x
 
       - name: Resolve date-build version
         id: tag
@@ -96,7 +96,7 @@ jobs:
           Write-Host "Release tag: $env:RELEASE_TAG"
 
       - name: Download Linux tarball
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: linux-tarball
           path: linux
@@ -312,7 +312,7 @@ jobs:
           ## Install
           Download **MosaicShell-Setup-$name.exe** and run it (per-user, no admin required).
 
-          - Includes self-contained Host (no separate .NET Desktop Runtime install).
+          - Self-contained: no .NET runtime to install.
           - Installs Tessera and Mixdeck module stubs by default.
           - Optional: **MosaicShell-Portable-$name.zip** for a folder-based layout.
           $signNote

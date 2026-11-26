@@ -10,6 +10,7 @@ using Material.Icons;
 using MosaicShell.Core;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Capabilities.BuiltIn;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.HostPlatform;
 using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
@@ -24,7 +25,6 @@ using MosaicShell.Host.Capabilities;
 using MosaicShell.Host.Input;
 using MosaicShell.Host.Tiles;
 using MosaicShell.Host.Tiles.Tessera;
-using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Host.ViewModels
 {
@@ -102,9 +102,9 @@ namespace MosaicShell.Host.ViewModels
             new("BR", "Bottom right"),
         ];
         public ObservableCollection<string> TesseraEaseFamilies { get; } =
-            new(TesseraFlyoutAnimationPolicy.EaseFamilies);
+            [with(TesseraFlyoutAnimationPolicy.EaseFamilies)];
         public ObservableCollection<string> TesseraEaseVariants { get; } =
-            new(TesseraFlyoutAnimationPolicy.EaseVariants);
+            [with(TesseraFlyoutAnimationPolicy.EaseVariants)];
         public HubSettings Hub { get; }
 
         [ObservableProperty] private string _selectedPage = "Home";

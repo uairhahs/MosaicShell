@@ -112,7 +112,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             StackPanel textCol = new() { Spacing = 4, Margin = new Thickness(0, 4, 0, 0), Children = { header, TesseraMarqueeText.Wrap(title, titleWidth, vm.AutoDismissMs), artist } };
             Grid top = new()
             {
-                ColumnDefinitions = new ColumnDefinitions("*,80"),
+                ColumnDefinitions = [with("*,80")],
                 Margin = new Thickness(pad, 8, pad, 0)
             };
             Grid.SetColumn(textCol, 0);
@@ -205,7 +205,7 @@ namespace MosaicShell.Host.Tiles.Tessera
 
             (StackPanel? scrub, TesseraTrack? track, TextBlock? pos, TextBlock? dur) = ScrubberStacked(vm, 260);
             TesseraLiveAmbient.RegisterMedia(art, title, artist, track, pos, dur, playIcon, likeIcon, dislikeIcon);
-            Grid top = new() { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+            Grid top = new() { ColumnDefinitions = [with("*,Auto")] };
             StackPanel left = new()
             {
                 Margin = new Thickness(0, 0, 8, 0),
@@ -427,7 +427,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             Grid row = new()
             {
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                ColumnDefinitions = new ColumnDefinitions($"{artSize},*")
+                ColumnDefinitions = [with($"{artSize},*")]
             };
             Grid.SetColumn(art, 0);
             Grid.SetColumn(textCol, 1);
@@ -513,7 +513,7 @@ namespace MosaicShell.Host.Tiles.Tessera
 
             Grid timeRow = new()
             {
-                ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
+                ColumnDefinitions = [with("Auto,*,Auto")],
                 Margin = new Thickness(0, 6, 0, 6)
             };
             Grid.SetColumn(pos, 0);
@@ -569,7 +569,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                     _ = vm.SeekAsync(v * d);
                 }
             };
-            Grid times = new() { Width = width, ColumnDefinitions = new ColumnDefinitions("*,*") };
+            Grid times = new() { Width = width, ColumnDefinitions = [with("*,*")] };
             pos.HorizontalAlignment = HorizontalAlignment.Left;
             dur.HorizontalAlignment = HorizontalAlignment.Right;
             Grid.SetColumn(dur, 1);

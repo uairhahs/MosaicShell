@@ -26,8 +26,8 @@ It continues the JaxCore idea of a modular desktop (forked from [Jax-Core/JaxCor
 | Requirement  | Minimum                                                                                                                                  |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | OS           | Windows 10 version 2004 (build 19041) or later, x64; or Linux x86_64 with KDE Plasma 6 (checked on 6.6 and 6.8) or GNOME (checked on 51) |
-| .NET Runtime | Windows: 10.0. The Host is self-contained, but Mosaicist, which installs the default modules, is not. Linux: none, it ships its own      |
-| .NET SDK     | 10.0, only to build from source                                                                                                          |
+| .NET Runtime | None: the Windows and Linux builds both ship their own                                                                                   |
+| .NET SDK     | 11.0, only to build from source                                                                                                          |
 | Browser      | Optional: Edge or Chrome 116 or later (on Linux also Chromium, Brave or Vivaldi), for the Grout extension                                |
 
 ## Install

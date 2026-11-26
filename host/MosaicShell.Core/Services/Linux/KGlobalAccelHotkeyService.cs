@@ -20,7 +20,7 @@ namespace MosaicShell.Core.Services.Linux
 
         private readonly string? _address = address ?? DBusAddress.Session;
         private readonly Lock _gate = new();
-        private readonly Dictionary<string, Action> _callbacks = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, Action> _callbacks = [with(StringComparer.OrdinalIgnoreCase)];
         private Task<DBusConnection?>? _connecting;
         private bool _disposed;
 

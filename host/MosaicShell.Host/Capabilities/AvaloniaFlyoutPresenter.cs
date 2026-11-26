@@ -6,11 +6,11 @@ using Avalonia.Platform;
 using Avalonia.Threading;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Capabilities.Platform;
+using MosaicShell.Core.HostPlatform;
+using MosaicShell.Core.Modules;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 using MosaicShell.Host.Tiles.Tessera;
-using MosaicShell.Core.Modules;
-using MosaicShell.Core.HostPlatform;
 
 namespace MosaicShell.Host.Capabilities
 {
@@ -32,7 +32,7 @@ namespace MosaicShell.Host.Capabilities
         private readonly HostServices _services;
         private IHostUiBridge? _hostUi;
         private readonly Lock _gate = new();
-        private readonly Dictionary<string, FlyoutWindow> _windows = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, FlyoutWindow> _windows = [with(StringComparer.OrdinalIgnoreCase)];
         private FocusDimWindow? _focusDim;
         private readonly TesseraFlyoutLiveSyncCoalescer _patchCoalesce = new();
         private readonly TesseraFlyoutUpdateDispatchGate _updateDispatch = new();

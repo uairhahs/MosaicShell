@@ -29,7 +29,7 @@ namespace MosaicShell.Core.Services.Linux
         private readonly Lock _lifetimeGate = new();
 
         // Unique name to the player names it owns. A process may own several (a browser with two windows).
-        private readonly Dictionary<string, HashSet<string>> _owners = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, HashSet<string>> _owners = [with(StringComparer.Ordinal)];
         private readonly List<IDisposable> _watches = [];
         private DBusConnection? _connection;
         private bool _disposed;
@@ -318,7 +318,7 @@ namespace MosaicShell.Core.Services.Linux
             {
                 if (!_owners.TryGetValue(owner, out HashSet<string>? names))
                 {
-                    names = new HashSet<string>(StringComparer.Ordinal);
+                    names = [with(StringComparer.Ordinal)];
                     _owners[owner] = names;
                 }
 

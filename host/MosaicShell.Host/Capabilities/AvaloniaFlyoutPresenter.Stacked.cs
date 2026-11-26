@@ -4,10 +4,10 @@ using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using MosaicShell.Core.Capabilities;
-using MosaicShell.Core.Modules.Tessera;
-using MosaicShell.Host.Tiles.Tessera;
 using MosaicShell.Core.Modules;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
+using MosaicShell.Host.Tiles.Tessera;
 
 namespace MosaicShell.Host.Capabilities
 {

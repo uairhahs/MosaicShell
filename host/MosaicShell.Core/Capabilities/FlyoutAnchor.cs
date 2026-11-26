@@ -4,10 +4,9 @@ namespace MosaicShell.Core.Capabilities
     public static class FlyoutAnchor
     {
         private static readonly HashSet<string> Known =
-            new(StringComparer.OrdinalIgnoreCase)
-            {
-                "TL", "TC", "TR", "CL", "CC", "CR", "BL", "BC", "BR"
-            };
+            [
+with(StringComparer.OrdinalIgnoreCase),                 "TL", "TC", "TR", "CL", "CC", "CR", "BL", "BC", "BR"
+            ];
 
         /// <summary>Normalize to a known code; unknown/empty → TL (JaxCore default).</summary>
         public static string Normalize(string? position)

@@ -4,9 +4,9 @@ using Avalonia.VisualTree;
 using Material.Icons;
 using Material.Icons.Avalonia;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
-using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {

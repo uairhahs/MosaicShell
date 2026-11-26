@@ -8,12 +8,12 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.Platform;
+using MosaicShell.Core.Modules;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Services.Kde;
 using MosaicShell.Host.Tiles.Tessera;
-using MosaicShell.Core.Modules;
-using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Host.Capabilities
 {

@@ -99,7 +99,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             {
                 Width = w,
                 Height = TesseraWindows11Metrics.VolumeHeight,
-                ColumnDefinitions = new ColumnDefinitions("60,*,60")
+                ColumnDefinitions = [with("60,*,60")]
             };
             Grid.SetColumn(glyph, 0);
             Grid.SetColumn(track, 1);

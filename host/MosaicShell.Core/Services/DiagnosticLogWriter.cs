@@ -143,7 +143,7 @@ namespace MosaicShell.Core.Services
         private async Task PumpAsync()
         {
             ChannelReader<Entry> reader = _queue.Reader;
-            List<Entry> batch = new(MaxBatchLines);
+            List<Entry> batch = [with(MaxBatchLines)];
             try
             {
                 while (await reader.WaitToReadAsync().ConfigureAwait(false))
@@ -170,7 +170,7 @@ namespace MosaicShell.Core.Services
                 return;
             }
 
-            Dictionary<string, List<string>> byFile = new(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, List<string>> byFile = [with(StringComparer.OrdinalIgnoreCase)];
             long dropped = Interlocked.Exchange(ref _droppedSinceReport, 0);
             if (dropped > 0)
             {

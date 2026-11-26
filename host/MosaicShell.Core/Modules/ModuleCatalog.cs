@@ -81,7 +81,7 @@ namespace MosaicShell.Core.Modules
         /// <summary>Built-ins, then directories under Modules/ with a readable manifest (or folder name fallback).</summary>
         public static IEnumerable<ModuleInfo> EnumerateAll()
         {
-            HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> seen = [with(StringComparer.OrdinalIgnoreCase)];
             foreach (ModuleInfo m in BuiltIns)
             {
                 _ = seen.Add(m.Id);

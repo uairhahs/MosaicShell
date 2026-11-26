@@ -68,7 +68,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 Background = new SolidColorBrush(Color.Parse("#585b70")),
                 Child = new Grid
                 {
-                    ColumnDefinitions = new ColumnDefinitions("Auto,*"),
+                    ColumnDefinitions = [with("Auto,*")],
                     Margin = new Thickness(9, 0),
                     Children =
                     {
@@ -106,7 +106,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 Opacity = 0,
                 Child = new Grid
                 {
-                    ColumnDefinitions = new ColumnDefinitions("Auto,*"),
+                    ColumnDefinitions = [with("Auto,*")],
                     Margin = new Thickness(7, 0),
                     Children =
                     {
