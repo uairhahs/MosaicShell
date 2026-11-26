@@ -1050,8 +1050,18 @@ namespace MosaicShell.Host.ViewModels
                 Theming.ReducedMotion.FollowSystem = value;
                 ModuleSettingsStore.Save("Hub", Hub);
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(IsReducedMotionInEffect));
+                OnPropertyChanged(nameof(TesseraMotionSettingsOpacity));
             }
         }
+
+        /// <summary>Reduced motion is on and the system asks for it, so Tessera's motion settings change nothing.</summary>
+        public bool IsReducedMotionInEffect => Theming.ReducedMotion.IsOn;
+
+        public string ReducedMotionNotice => Core.HostPlatform.ReducedMotionPolicy.MotionSettingsNotice;
+
+        public double TesseraMotionSettingsOpacity =>
+            IsReducedMotionInEffect ? Core.HostPlatform.ReducedMotionPolicy.MotionSettingsDimmedOpacity : 1;
 
         /// <summary>What the OS says now, so the Settings row can tell whether turning it on changes anything.</summary>
         public string ReducedMotionStatus => Theming.ReducedMotion.SystemReduced

@@ -112,6 +112,25 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public void Tessera_motion_settings_grey_out_and_say_why_while_reduced_motion_is_in_effect()
+        {
+            // User, 2026-11-26: with Reduce motion on (Settings) the motion settings change nothing, so they are disabled
+            // and dimmed, with a notice and a way to Settings. Play on screen stays outside, to show the fade that plays.
+            Match panel = Regex.Match(MainWindowXaml, "<StackPanel[^>]*x:Name=\"TesseraMotionSettings\"[^>]*>", RegexOptions.Singleline);
+            _ = panel.Success.Should().BeTrue();
+            _ = panel.Value.Should().Contain("IsEnabled=\"{Binding !IsReducedMotionInEffect}\"");
+            _ = panel.Value.Should().Contain("Opacity=\"{Binding TesseraMotionSettingsOpacity}\"");
+            _ = MainWindowXaml.Should().Contain("Text=\"{Binding ReducedMotionNotice}\"");
+
+            int notice = MainWindowXaml.IndexOf("ReducedMotionNotice", StringComparison.Ordinal);
+            int looks = MainWindowXaml.IndexOf("TesseraMotionPresetItems", StringComparison.Ordinal);
+            int play = MainWindowXaml.IndexOf("PreviewTesseraFlyoutCommand", StringComparison.Ordinal);
+            _ = panel.Index.Should().BeLessThan(looks);
+            _ = play.Should().BeLessThan(panel.Index, "Play on screen is not greyed out");
+            _ = notice.Should().BeLessThan(panel.Index);
+        }
+
+        [Fact]
         public void Remove_is_hidden_on_modules_that_are_not_installed()
         {
             Match remove = Regex.Match(MainWindowXaml, "<Button[^>]*RemoveModuleCommand[^>]*>", RegexOptions.Singleline);

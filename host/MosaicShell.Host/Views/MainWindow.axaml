@@ -529,6 +529,21 @@
                                 ToolTip.Tip="Save these settings and play a volume flyout on the desktop" />
                       </Grid>
 
+                      <!-- Reduce motion (Settings) overrides everything below; say so and where to change it. -->
+                      <Border IsVisible="{Binding IsReducedMotionInEffect}" CornerRadius="8" Padding="12,10"
+                              Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                          <icons:MaterialIcon Kind="InformationOutline" Width="18" Height="18" VerticalAlignment="Center"
+                                              Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                          <TextBlock Grid.Column="1" Margin="10,0,12,0" VerticalAlignment="Center" TextWrapping="Wrap" FontSize="13"
+                                     Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding ReducedMotionNotice}" />
+                          <Button Grid.Column="2" Content="Open Settings" VerticalAlignment="Center"
+                                  Command="{Binding NavigateCommand}" CommandParameter="Settings" />
+                        </Grid>
+                      </Border>
+
+                      <StackPanel x:Name="TesseraMotionSettings" Spacing="14"
+                                  IsEnabled="{Binding !IsReducedMotionInEffect}" Opacity="{Binding TesseraMotionSettingsOpacity}">
                       <!-- What it will look like -->
                       <Border Background="{DynamicResource SolidBackgroundFillColorBaseBrush}" CornerRadius="10" Padding="12">
                         <Grid ColumnDefinitions="260,*">
@@ -660,6 +675,7 @@
                           </Expander>
                         </StackPanel>
                       </Expander>
+                      </StackPanel>
                     </StackPanel>
                   </Border>
 

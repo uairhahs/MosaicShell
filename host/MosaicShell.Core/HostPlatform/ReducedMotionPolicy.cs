@@ -10,6 +10,14 @@ namespace MosaicShell.Core.HostPlatform
     /// </summary>
     public static class ReducedMotionPolicy
     {
+        /// <summary>Shown over Tessera's motion settings while reduced motion is in effect, which they then cannot change.</summary>
+        public const string MotionSettingsNotice =
+            "Reduce motion is on in Settings and your system's animation effects are off, so pop-ups fade in place. "
+            + "Turn it off in Settings to use these.";
+
+        /// <summary>Opacity of the motion settings while reduced motion makes them do nothing.</summary>
+        public const double MotionSettingsDimmedOpacity = 0.45;
+
         public const string GnomeSchema = "org.gnome.desktop.interface";
         public const string GnomeKey = "enable-animations";
 
