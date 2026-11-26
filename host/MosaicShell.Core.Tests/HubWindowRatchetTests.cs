@@ -104,8 +104,11 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void The_hub_window_cannot_be_maximized()
         {
-            // User, 2026-11-26: the full-screen toggle in the title bar goes; the Hub is a fixed-shape window.
+            // User, 2026-11-26: the full-screen toggle in the title bar goes; the Hub is a fixed-shape window. The native
+            // caption reads CanMaximize; Avalonia's drawn title bar (Linux, 12.2) reads TitleBarDecorations, which also has
+            // a separate full-screen button.
             _ = MainWindowXaml.Should().Contain("CanMaximize=\"False\"");
+            _ = MainWindowXaml.Should().Contain("WindowDrawnDecorations.TitleBarDecorations=\"Title, MinimizeButton, CloseButton\"");
         }
 
         [Fact]
