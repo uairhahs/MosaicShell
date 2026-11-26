@@ -17,20 +17,16 @@ namespace MosaicShell.Host
             DiagnosticLog.Start(
                 AppPaths.CacheDirectory,
                 DiagnosticLogLevels.Resolve(Environment.GetEnvironmentVariable(DiagnosticLogLevels.EnvironmentVariable), IsDebugBuild));
-            HostSingleInstance? instance = null;
-            if (HostSingleInstance.AppliesTo(Core.Capabilities.Platform.HostLaunchOptions.Mode))
+            HostSingleInstance? instance = HostSingleInstance.TryAcquire(AppPaths.RootDirectory);
+            if (instance is null)
             {
-                instance = HostSingleInstance.TryAcquire(AppPaths.RootDirectory);
-                if (instance is null)
-                {
-                    DeferToRunningHost();
-                    return 0;
-                }
-
-                instance.ActivationRequested += static (_, _) =>
-                    Dispatcher.UIThread.Post(static () => (Application.Current as App)?.ShowHubOnRequest());
-                instance.StartListening();
+                DeferToRunningHost();
+                return 0;
             }
+
+            instance.ActivationRequested += static (_, _) =>
+                Dispatcher.UIThread.Post(static () => (Application.Current as App)?.ShowHubOnRequest());
+            instance.StartListening();
 
             Capabilities.ProcessPowerThrottling.OptOutAndLog();
             try
@@ -39,7 +35,7 @@ namespace MosaicShell.Host
             }
             finally
             {
-                instance?.Dispose();
+                instance.Dispose();
                 DiagnosticLog.Stop();
             }
 

@@ -84,18 +84,6 @@ namespace MosaicShell.Host
 
                 desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
-                if (HostLaunchOptions.Mode == HostLaunchMode.GlintCapture && HostLaunchOptions.GlintCaptureDirectory is string captureDir)
-                {
-                    // Reference images only: nothing else starts (no tray, Hub, services or capability daemon).
-                    Dispatcher.UIThread.Post(async () =>
-                    {
-                        try { await Diagnostics.GlintReferenceCapture.RunAsync(captureDir); }
-                        finally { desktop.Shutdown(); }
-                    });
-                    base.OnFrameworkInitializationCompleted();
-                    return;
-                }
-
                 _services = HostServices.CreatePlatformDefaults(browserSources: true);
 
 

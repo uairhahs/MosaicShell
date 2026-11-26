@@ -129,6 +129,12 @@ namespace MosaicShell.Host.Capabilities
             PointerExited += (_, _) =>
             {
                 IsFlyoutHovered = false;
+                // Leaving is how most people send the flyout off; it goes soon after, not a full timer later. Only while
+                // it is up: a pointer that "leaves" because the window hid under it must not start another dismiss.
+                if (Phase is TesseraFlyoutPhase.Entering or TesseraFlyoutPhase.Shown)
+                {
+                    RestartPointerLeaveDismiss();
+                }
                 PointerHoverChanged?.Invoke();
             };
             PointerWheelChanged += OnWheel;
@@ -348,6 +354,15 @@ namespace MosaicShell.Host.Capabilities
         public event Action? PointerHoverChanged;
 
         public bool IsFlyoutHovered { get; private set; }
+
+        /// <summary>The pointer is on the flyout's Dismiss link, which sits outside this window; it holds the flyout up as hover does.</summary>
+        internal bool IsDismissLinkHovered { get; set; }
+
+        /// <summary>
+        /// Where the window rests once its motion settles, in physical pixels: the place and size Relayout anchors it to.
+        /// The live position and size move during the entrance slide and the reveal; the Dismiss link is placed from this.
+        /// </summary>
+        internal PixelRect? RestBoundsPx { get; private set; }
 
         /// <summary>H3 stacked acrylic: only the presenter runs auto-dismiss for the cluster.</summary>
         public void SuppressAutoDismiss()
@@ -854,6 +869,7 @@ namespace MosaicShell.Host.Capabilities
                         clusterX + (int)Math.Round(PanelOffsetXDip * scale),
                         clusterY + (int)Math.Round(PanelOffsetYDip * scale));
                     CommitRestPosition(pt);
+                    RestBoundsPx = new PixelRect(pt, new PixelSize(w, h));
                     ApplyStackedBackdropClip(w, h, scale);
                     SyncStrokeBRegion();
                     _lastSize = Bounds.Size;
@@ -866,6 +882,7 @@ namespace MosaicShell.Host.Capabilities
                     FlyoutRequest.Anchor ?? "TL",
                     xPad,
                     yPad);
+                RestBoundsPx = new PixelRect(x, y, w, h);
                 CommitRestPosition(new PixelPoint(x, y));
                 ApplyStackedBackdropClip(w, h, scale);
                 SyncRevealRegion();
@@ -1387,16 +1404,31 @@ namespace MosaicShell.Host.Capabilities
 
         private void ResetDismissTimer()
         {
+            RestartDismissTimer(FlyoutRequest.AutoDismissMs);
+        }
+
+        /// <summary>
+        /// The pointer left the flyout (or its Dismiss link): it goes soon after, not a full timer later
+        /// (<see cref="TesseraFlyoutDismissPolicy.ResolvePointerLeaveDismissMs"/>).
+        /// </summary>
+        internal void RestartPointerLeaveDismiss()
+        {
+            RestartDismissTimer(TesseraFlyoutDismissPolicy.ResolvePointerLeaveDismissMs(FlyoutRequest.AutoDismissMs));
+        }
+
+        /// <summary>Restarts the dismiss clock at <paramref name="ms"/>; none when auto dismiss is suppressed or off.</summary>
+        private void RestartDismissTimer(int ms)
+        {
             _dismiss?.Stop();
-            if (_autoDismissSuppressed || FlyoutRequest.AutoDismissMs <= 0)
+            if (_autoDismissSuppressed || ms <= 0)
             {
                 return;
             }
 
-            _dismiss = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(FlyoutRequest.AutoDismissMs) };
+            _dismiss = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(ms) };
             _dismiss.Tick += (_, _) =>
             {
-                if (IsFlyoutHovered)
+                if (IsFlyoutHovered || IsDismissLinkHovered)
                 {
                     return;
                 }

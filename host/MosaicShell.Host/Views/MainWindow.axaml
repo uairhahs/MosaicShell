@@ -742,7 +742,10 @@
                                  IsVisible="{Binding !TesseraMaterialSelectable}" />
                     </StackPanel>
                     <CheckBox Content="Subtle desktop dim (Focus)" IsChecked="{Binding TesseraFocusDim}"
-                              ToolTip.Tip="Very light dim behind the flyout. Never blocks input; outside click dismisses instantly." />
+                              ToolTip.Tip="Very light dim behind the flyout on its screen." />
+                    <TextBlock Text="Clicks always go through to what is underneath. A pop-up closes on its own, about a second after the pointer leaves it, or from the Dismiss link that shows under it while the pointer is over it."
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11"
+                               TextWrapping="Wrap" MaxWidth="320" HorizontalAlignment="Left" Margin="28,-4,0,0" />
                     <StackPanel Spacing="4" Margin="0,4,0,0">
                       <TextBlock Text="Flyout scale %" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                       <NumericUpDown Classes="config" Minimum="50" Maximum="150" Increment="5"

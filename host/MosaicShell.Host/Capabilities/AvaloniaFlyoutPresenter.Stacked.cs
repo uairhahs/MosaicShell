@@ -355,7 +355,14 @@ namespace MosaicShell.Host.Capabilities
 
         private void OnStackedPointerHoverChanged()
         {
+            bool wasHovered = _stackedClusterHovered;
             UpdateStackedClusterHover();
+            if (wasHovered && !_stackedClusterHovered && GetStackedWindowsFromSession().Any(static w => w.IsFlyoutSessionShowing))
+            {
+                // The pointer left the whole cluster: it goes soon after, not a full timer later. Crossing the gap
+                // between two panels restarts the clock too, but the tick sees the cluster hovered again and waits.
+                StartStackedAutoDismiss(TesseraFlyoutDismissPolicy.ResolvePointerLeaveDismissMs(_stackedDismissRequest?.AutoDismissMs ?? 0));
+            }
         }
 
         private void UpdateStackedClusterHover()
@@ -365,8 +372,12 @@ namespace MosaicShell.Host.Capabilities
 
         private void StartStackedAutoDismiss()
         {
+            StartStackedAutoDismiss(_stackedDismissRequest?.AutoDismissMs ?? 0);
+        }
+
+        private void StartStackedAutoDismiss(int ms)
+        {
             StopStackedAutoDismiss();
-            int ms = _stackedDismissRequest?.AutoDismissMs ?? 0;
             if (!TesseraFlyoutDismissCoordinator.ShouldArmSessionAutoDismiss(ms, _stackedSession is not null))
             {
                 return;
@@ -376,7 +387,7 @@ namespace MosaicShell.Host.Capabilities
             _stackedAutoDismiss.Tick += (_, _) =>
             {
                 UpdateStackedClusterHover();
-                if (_stackedClusterHovered)
+                if (_stackedClusterHovered || (_dismissLink?.IsHovered ?? false))
                 {
                     return;
                 }

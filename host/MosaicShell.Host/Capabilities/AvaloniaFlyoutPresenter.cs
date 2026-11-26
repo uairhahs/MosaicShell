@@ -4,7 +4,6 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Threading;
-using Avalonia.VisualTree;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules.Tessera;
@@ -34,7 +33,6 @@ namespace MosaicShell.Host.Capabilities
         private readonly Lock _gate = new();
         private readonly Dictionary<string, FlyoutWindow> _windows = new(StringComparer.OrdinalIgnoreCase);
         private FocusDimWindow? _focusDim;
-        private readonly List<FocusDimWindow> _otherScreenLayers = [];
         private readonly TesseraFlyoutLiveSyncCoalescer _patchCoalesce = new();
         private readonly TesseraFlyoutUpdateDispatchGate _updateDispatch = new();
         private readonly TesseraFlyoutSessionState _session = new();
@@ -835,7 +833,7 @@ namespace MosaicShell.Host.Capabilities
 
             // Per call: X11 compositing can be switched off and on.
             FocusDimRoute route = X11FocusDim.ResolveRoute();
-            if (!TesseraFocusDimPolicy.ShouldShowLayer(request.Payload, route))
+            if (!TesseraFocusDimPolicy.ShouldShow(request.Payload, TesseraFocusDimPolicy.CanDim(route)))
             {
                 CloseFocusDim();
                 return;
@@ -843,8 +841,7 @@ namespace MosaicShell.Host.Capabilities
 
             if (_focusDim is null)
             {
-                _focusDim = new FocusDimWindow(request.MonitorIndex, route, TesseraFocusDimPolicy.EnabledFromPayload(request.Payload));
-                _focusDim.OutsideClicked += (_, at) => DismissTesseraImmediate(at);
+                _focusDim = new FocusDimWindow(request.MonitorIndex, route);
                 _focusDim.PrepareBeforeShow();
                 // Show dim BEFORE the flyout (caller order) so the flyout is the later topmost peer.
                 _focusDim.Show();
@@ -855,142 +852,22 @@ namespace MosaicShell.Host.Capabilities
             {
                 _focusDim.PlaceOnMonitor(request.MonitorIndex);
             }
-
-            SyncOtherScreenLayers(_focusDim, route);
-        }
-
-        /// <summary>
-        /// Where the layer is the outside-click hitbox, every other screen gets a bare one too, so a click on another
-        /// display also dismisses. Rebuilt only when the set of other screens changed (the flyout moved monitor).
-        /// </summary>
-        private void SyncOtherScreenLayers(FocusDimWindow dim, FocusDimRoute route)
-        {
-            List<Screen> others = TesseraFocusDimPolicy.LayerCoversEveryScreen(route) ? dim.OtherScreens() : [];
-            if (others.Select(static s => s.Bounds).SequenceEqual(_otherScreenLayers.Select(static l => l.FixedBounds ?? default)))
-            {
-                return;
-            }
-
-            CloseOtherScreenLayers();
-            foreach (Screen screen in others)
-            {
-                FocusDimWindow layer = new(screen, route);
-                layer.OutsideClicked += (_, at) => DismissTesseraImmediate(at);
-                layer.PrepareBeforeShow();
-                layer.Show();
-                layer.FadeIn();
-                _otherScreenLayers.Add(layer);
-            }
-
-            Log($"hitbox layers on other screens={_otherScreenLayers.Count}");
         }
 
         private void CloseFocusDim()
         {
-            CloseOtherScreenLayers();
             FocusDimWindow? dim = _focusDim;
             _focusDim = null;
-            CloseLayer(dim);
-        }
-
-        private void CloseOtherScreenLayers()
-        {
-            foreach (FocusDimWindow layer in _otherScreenLayers)
-            {
-                CloseLayer(layer);
-            }
-
-            _otherScreenLayers.Clear();
-        }
-
-        private static void CloseLayer(FocusDimWindow? layer)
-        {
-            if (layer is null)
+            if (dim is null)
             {
                 return;
             }
 
-            try { layer.InstantClose(); }
+            try { dim.InstantClose(); }
             catch
             {
-                try { layer.Close(); } catch { /* ignore */ }
+                try { dim.Close(); } catch { /* ignore */ }
             }
-        }
-
-        private void DismissTesseraImmediate(PixelPoint at)
-        {
-            Log($"outside-click dismiss at={at.X},{at.Y}");
-            PlayOutsideClickRipple(at);
-            if (_stackedSession is not null)
-            {
-                DismissStackedTesseraImmediate();
-                return;
-            }
-
-            DismissTesseraSingleImmediate();
-        }
-
-        /// <summary>The ripple at the click (<see cref="TesseraOutsideClickRippleSpec"/>); it never blocks the dismiss.</summary>
-        private void PlayOutsideClickRipple(PixelPoint at)
-        {
-            try
-            {
-                Screens? screens = _focusDim?.Screens;
-                if (screens is null)
-                {
-                    lock (_gate)
-                    {
-                        screens = _windows.Values.FirstOrDefault()?.Screens;
-                    }
-                }
-
-                double? exitMs = PlannedTesseraExitMs();
-                OutsideClickRippleWindow? cold = OutsideClickRippleWindow.Play(at, X11FocusDim.ResolveRoute(), screens, exitMs);
-                Log($"ripple toward exit={exitMs?.ToString("0") ?? "none"}ms");
-                if (cold is not null)
-                {
-                    LogRippleFirstFrame(cold, "cold");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log($"ripple failed: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// How long the Tessera flyout being dismissed takes to leave, from the same plan its exit runs, so the glint ends
-        /// with it; null when no Tessera flyout is up.
-        /// </summary>
-        private double? PlannedTesseraExitMs()
-        {
-            List<FlyoutWindow> showing;
-            lock (_gate)
-            {
-                IEnumerable<string> keys = _stackedSession is not null ? _stackedSession.SlotKeys : [ModuleIds.Tessera];
-                showing = [.. keys.Select(k => _windows.TryGetValue(k, out FlyoutWindow? w) ? w : null).OfType<FlyoutWindow>()];
-            }
-
-            if (showing.Count == 0)
-            {
-                return null;
-            }
-
-            FlyoutRequest request = showing[0].FlyoutRequest;
-            bool showMedia = TesseraFlyoutRequestBuilder.ShowMediaStripFromPayload(request.Payload);
-            bool stacked = showing.Any(static w => w.StackedRole is not null);
-            // Phase 2 reveals the media strip's parts; with none in the flyout the Host skips it.
-            bool phase2Animates = showing.Any(static w => w.GetVisualDescendants().OfType<TesseraRevealHost>().Any());
-            return TesseraFlyoutMotionPlan.ResolveHide(request.Ani, request.StyleId, showMedia, stacked)
-                .PlannedDurationMs(request.Ani, request.AniSteps, phase2Animates);
-        }
-
-        /// <summary>Logs how long after the play the glint's first frame came, and the window's transparency.</summary>
-        private void LogRippleFirstFrame(OutsideClickRippleWindow ripple, string start)
-        {
-            _ = DispatcherTimer.RunOnce(() => Log(
-                $"ripple start={start} firstFrameMs={ripple.FirstFrameLatencyMs?.ToString("0") ?? "none"} " +
-                $"actual={ripple.ActualTransparencyLevel}"), TimeSpan.FromMilliseconds(300));
         }
 
         private void WireTesseraSession(FlyoutWindow window)
@@ -999,6 +876,8 @@ namespace MosaicShell.Host.Capabilities
             window.TransientDismissed += OnFlyoutTransientDismissed;
             window.PhaseChanged -= OnFlyoutPhaseChanged;
             window.PhaseChanged += OnFlyoutPhaseChanged;
+            window.PointerHoverChanged -= OnTesseraHoverChanged;
+            window.PointerHoverChanged += OnTesseraHoverChanged;
         }
 
         private void OnFlyoutPhaseChanged(FlyoutWindow window, TesseraFlyoutPhase phase)
@@ -1006,6 +885,7 @@ namespace MosaicShell.Host.Capabilities
             if (ModuleIds.IsTessera(window.FlyoutRequest.ModuleId))
             {
                 _session.SetPhase(phase);
+                SyncDismissLink();
                 if (phase == TesseraFlyoutPhase.Hidden)
                 {
                     // After the work in flight settles, so a re-present that is replacing this window wins.
