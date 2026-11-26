@@ -9,7 +9,7 @@ namespace MosaicShell.Host.Tiles.Tessera
     /// <summary>
     /// YourFlyouts-style track. Panel + Borders (Canvas+Shape left children un-arranged = purple “dot”).
     /// </summary>
-    public sealed class TesseraTrack : Panel
+    public sealed partial class TesseraTrack : Panel
     {
         private const double M3HandleThin = 4.0;
         private const double M3HandleWide = 44.0;
@@ -20,48 +20,6 @@ namespace MosaicShell.Host.Tiles.Tessera
 
         public static readonly StyledProperty<double> ValueProperty =
             AvaloniaProperty.Register<TesseraTrack, double>(nameof(Value), 0.5);
-
-        public static readonly StyledProperty<bool> IsVerticalProperty =
-            AvaloniaProperty.Register<TesseraTrack, bool>(nameof(IsVertical), true);
-
-        public static readonly StyledProperty<bool> FatThumbProperty =
-            AvaloniaProperty.Register<TesseraTrack, bool>(nameof(FatThumb));
-
-        public static readonly StyledProperty<bool> ShowThumbProperty =
-            AvaloniaProperty.Register<TesseraTrack, bool>(nameof(ShowThumb), true);
-
-        public static readonly StyledProperty<double> TrackThicknessProperty =
-            AvaloniaProperty.Register<TesseraTrack, double>(nameof(TrackThickness), 4);
-
-        /// <summary>Inset of the track within the control. 0 = fill edge-to-edge (Amber pill).</summary>
-        public static readonly StyledProperty<double> TrackPadProperty =
-            AvaloniaProperty.Register<TesseraTrack, double>(nameof(TrackPad), 8);
-
-        /// <summary>When set, vertical full-bleed fill follows a rounded-rect shell (Center card) instead of a circle.</summary>
-        public static readonly StyledProperty<double> ShellRadiusProperty =
-            AvaloniaProperty.Register<TesseraTrack, double>(nameof(ShellRadius), 0);
-
-        /// <summary>Bottom corner radius when clipped to a shell (0 = square bottom, e.g. track above a label row).</summary>
-        public static readonly StyledProperty<double> ShellEndRadiusProperty =
-            AvaloniaProperty.Register<TesseraTrack, double>(nameof(ShellEndRadius), 0);
-
-        public static readonly StyledProperty<IBrush?> AccentBrushOverrideProperty =
-            AvaloniaProperty.Register<TesseraTrack, IBrush?>(nameof(AccentBrushOverride));
-
-        public static readonly StyledProperty<IBrush?> TrackBackBrushOverrideProperty =
-            AvaloniaProperty.Register<TesseraTrack, IBrush?>(nameof(TrackBackBrushOverride));
-
-        /// <summary>Pixel.inc vertical slider: thin spine + wide rounded fill, no thumb.</summary>
-        public static readonly StyledProperty<bool> MaterialYouVerticalFillProperty =
-            AvaloniaProperty.Register<TesseraTrack, bool>(nameof(MaterialYouVerticalFill));
-
-        /// <summary>M3 vertical slider: wide inactive/active track, handle bar at junction, top stop, inset icon.</summary>
-        public static readonly StyledProperty<bool> ExpressiveVerticalProperty =
-            AvaloniaProperty.Register<TesseraTrack, bool>(nameof(ExpressiveVertical));
-
-        /// <summary>Translucent accent fill (Amber pill).</summary>
-        public static readonly StyledProperty<bool> GlassFillProperty =
-            AvaloniaProperty.Register<TesseraTrack, bool>(nameof(GlassFill));
 
         private readonly Border _back = new();
         private readonly Border _fill = new();
@@ -115,77 +73,47 @@ namespace MosaicShell.Host.Tiles.Tessera
             set => SetValue(ValueProperty, Math.Clamp(value, 0, 1));
         }
 
-        public bool IsVertical
-        {
-            get => GetValue(IsVerticalProperty);
-            set => SetValue(IsVerticalProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = true)]
+        public partial bool IsVertical { get; set; }
 
-        public bool FatThumb
-        {
-            get => GetValue(FatThumbProperty);
-            set => SetValue(FatThumbProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial bool FatThumb { get; set; }
 
-        public bool ShowThumb
-        {
-            get => GetValue(ShowThumbProperty);
-            set => SetValue(ShowThumbProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = true)]
+        public partial bool ShowThumb { get; set; }
 
-        public double TrackThickness
-        {
-            get => GetValue(TrackThicknessProperty);
-            set => SetValue(TrackThicknessProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = 4d)]
+        public partial double TrackThickness { get; set; }
 
-        public double TrackPad
-        {
-            get => GetValue(TrackPadProperty);
-            set => SetValue(TrackPadProperty, value);
-        }
+        /// <summary>Inset of the track within the control. 0 = fill edge-to-edge (Amber pill).</summary>
+        [GeneratedStyledProperty(DefaultValue = 8d)]
+        public partial double TrackPad { get; set; }
 
-        public double ShellRadius
-        {
-            get => GetValue(ShellRadiusProperty);
-            set => SetValue(ShellRadiusProperty, value);
-        }
+        /// <summary>When set, vertical full-bleed fill follows a rounded-rect shell (Center card) instead of a circle.</summary>
+        [GeneratedStyledProperty]
+        public partial double ShellRadius { get; set; }
 
-        public double ShellEndRadius
-        {
-            get => GetValue(ShellEndRadiusProperty);
-            set => SetValue(ShellEndRadiusProperty, value);
-        }
+        /// <summary>Bottom corner radius when clipped to a shell (0 = square bottom, e.g. track above a label row).</summary>
+        [GeneratedStyledProperty]
+        public partial double ShellEndRadius { get; set; }
 
-        public IBrush? AccentBrushOverride
-        {
-            get => GetValue(AccentBrushOverrideProperty);
-            set => SetValue(AccentBrushOverrideProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial IBrush? AccentBrushOverride { get; set; }
 
-        public IBrush? TrackBackBrushOverride
-        {
-            get => GetValue(TrackBackBrushOverrideProperty);
-            set => SetValue(TrackBackBrushOverrideProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial IBrush? TrackBackBrushOverride { get; set; }
 
-        public bool MaterialYouVerticalFill
-        {
-            get => GetValue(MaterialYouVerticalFillProperty);
-            set => SetValue(MaterialYouVerticalFillProperty, value);
-        }
+        /// <summary>Pixel.inc vertical slider: thin spine + wide rounded fill, no thumb.</summary>
+        [GeneratedStyledProperty]
+        public partial bool MaterialYouVerticalFill { get; set; }
 
-        public bool ExpressiveVertical
-        {
-            get => GetValue(ExpressiveVerticalProperty);
-            set => SetValue(ExpressiveVerticalProperty, value);
-        }
+        /// <summary>M3 vertical slider: wide inactive/active track, handle bar at junction, top stop, inset icon.</summary>
+        [GeneratedStyledProperty]
+        public partial bool ExpressiveVertical { get; set; }
 
-        public bool GlassFill
-        {
-            get => GetValue(GlassFillProperty);
-            set => SetValue(GlassFillProperty, value);
-        }
+        /// <summary>Translucent accent fill (Amber pill).</summary>
+        [GeneratedStyledProperty]
+        public partial bool GlassFill { get; set; }
 
         public event EventHandler<double>? ValueChanged;
 

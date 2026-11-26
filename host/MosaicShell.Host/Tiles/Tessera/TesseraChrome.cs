@@ -434,27 +434,10 @@ namespace MosaicShell.Host.Tiles.Tessera
         }
     }
 
-    public sealed class TesseraRingVolume : Panel
+    public sealed partial class TesseraRingVolume : Panel
     {
         public static readonly StyledProperty<double> ValueProperty =
             AvaloniaProperty.Register<TesseraRingVolume, double>(nameof(Value), 0.5);
-
-        public static readonly StyledProperty<IBrush?> AccentBrushOverrideProperty =
-            AvaloniaProperty.Register<TesseraRingVolume, IBrush?>(nameof(AccentBrushOverride));
-
-        public static readonly StyledProperty<IBrush?> PercentBrushOverrideProperty =
-            AvaloniaProperty.Register<TesseraRingVolume, IBrush?>(nameof(PercentBrushOverride));
-
-        /// <summary>Hero ring: glass disc, glow bed, thick arc, Smouti centerpiece.</summary>
-        public static readonly StyledProperty<bool> ShowcaseProperty =
-            AvaloniaProperty.Register<TesseraRingVolume, bool>(nameof(Showcase));
-
-        /// <summary>
-        /// Fancy phase-2 entrance: scales the fill arc so it sweeps up from nothing to the live
-        /// level. 1 = the ring's own Value owns the arc (rest pose).
-        /// </summary>
-        public static readonly StyledProperty<double> SweepFactorProperty =
-            AvaloniaProperty.Register<TesseraRingVolume, double>(nameof(SweepFactor), 1);
 
         private readonly Border _glass = new() { IsHitTestVisible = false, IsVisible = false };
         private readonly Arc _glow = new() { IsHitTestVisible = false, IsVisible = false };
@@ -521,29 +504,22 @@ namespace MosaicShell.Host.Tiles.Tessera
             set => SetValue(ValueProperty, Math.Clamp(value, 0, 1));
         }
 
-        public IBrush? AccentBrushOverride
-        {
-            get => GetValue(AccentBrushOverrideProperty);
-            set => SetValue(AccentBrushOverrideProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial IBrush? AccentBrushOverride { get; set; }
 
-        public IBrush? PercentBrushOverride
-        {
-            get => GetValue(PercentBrushOverrideProperty);
-            set => SetValue(PercentBrushOverrideProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial IBrush? PercentBrushOverride { get; set; }
 
-        public bool Showcase
-        {
-            get => GetValue(ShowcaseProperty);
-            set => SetValue(ShowcaseProperty, value);
-        }
+        /// <summary>Hero ring: glass disc, glow bed, thick arc, Smouti centerpiece.</summary>
+        [GeneratedStyledProperty]
+        public partial bool Showcase { get; set; }
 
-        public double SweepFactor
-        {
-            get => GetValue(SweepFactorProperty);
-            set => SetValue(SweepFactorProperty, value);
-        }
+        /// <summary>
+        /// Fancy phase-2 entrance: scales the fill arc so it sweeps up from nothing to the live
+        /// level. 1 = the ring's own Value owns the arc (rest pose).
+        /// </summary>
+        [GeneratedStyledProperty(DefaultValue = 1d)]
+        public partial double SweepFactor { get; set; }
 
         public event EventHandler<double>? ValueChanged;
         public bool IsUserAdjusting => _dragging || DateTime.UtcNow < _userUntil;

@@ -15,24 +15,8 @@ namespace MosaicShell.Host.Tiles.Tessera
     /// afterwards. It is what makes the looks comparable at a glance in the Hub, so it samples the same policy functions
     /// the Host's motion controller does and draws nothing the engine would not.
     /// </summary>
-    public sealed class TesseraMotionPreview : UserControl
+    public sealed partial class TesseraMotionPreview : UserControl
     {
-        public static readonly StyledProperty<int> AniProperty =
-            AvaloniaProperty.Register<TesseraMotionPreview, int>(nameof(Ani), TesseraFlyoutAnimationPolicy.DefaultAni);
-
-        public static readonly StyledProperty<int> AniStepsProperty =
-            AvaloniaProperty.Register<TesseraMotionPreview, int>(nameof(AniSteps), TesseraFlyoutAnimationPolicy.DefaultAniSteps);
-
-        public static readonly StyledProperty<string?> AniEaseProperty =
-            AvaloniaProperty.Register<TesseraMotionPreview, string?>(nameof(AniEase), TesseraFlyoutAnimationPolicy.DefaultEase);
-
-        public static readonly StyledProperty<string?> AniDirProperty =
-            AvaloniaProperty.Register<TesseraMotionPreview, string?>(nameof(AniDir), "Left");
-
-        public static readonly StyledProperty<int> DisplacementPxProperty =
-            AvaloniaProperty.Register<TesseraMotionPreview, int>(
-                nameof(DisplacementPx), TesseraFlyoutAnimationPolicy.DefaultDisplacementPx);
-
         private const double CardWidth = 104;
         private const double CardHeight = 26;
         private const double MediaHeight = 22;
@@ -163,35 +147,20 @@ namespace MosaicShell.Host.Tiles.Tessera
             PointerExited += (_, _) => Tick();
         }
 
-        public int Ani
-        {
-            get => GetValue(AniProperty);
-            set => SetValue(AniProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = TesseraFlyoutAnimationPolicy.DefaultAni)]
+        public partial int Ani { get; set; }
 
-        public int AniSteps
-        {
-            get => GetValue(AniStepsProperty);
-            set => SetValue(AniStepsProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = TesseraFlyoutAnimationPolicy.DefaultAniSteps)]
+        public partial int AniSteps { get; set; }
 
-        public string? AniEase
-        {
-            get => GetValue(AniEaseProperty);
-            set => SetValue(AniEaseProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = TesseraFlyoutAnimationPolicy.DefaultEase)]
+        public partial string? AniEase { get; set; }
 
-        public string? AniDir
-        {
-            get => GetValue(AniDirProperty);
-            set => SetValue(AniDirProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = "Left")]
+        public partial string? AniDir { get; set; }
 
-        public int DisplacementPx
-        {
-            get => GetValue(DisplacementPxProperty);
-            set => SetValue(DisplacementPxProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = TesseraFlyoutAnimationPolicy.DefaultDisplacementPx)]
+        public partial int DisplacementPx { get; set; }
 
         private void Restart()
         {

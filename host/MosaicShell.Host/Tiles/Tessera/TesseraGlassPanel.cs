@@ -217,22 +217,10 @@ namespace MosaicShell.Host.Tiles.Tessera
         }
     }
 
-    internal sealed class TesseraGlassBackground : Control
+    internal sealed partial class TesseraGlassBackground : Control
     {
-        public static readonly StyledProperty<double> CornerRadiusProperty =
-            AvaloniaProperty.Register<TesseraGlassBackground, double>(nameof(CornerRadius), 14);
-
-        public static readonly StyledProperty<double> BlurRadiusProperty =
-            AvaloniaProperty.Register<TesseraGlassBackground, double>(nameof(BlurRadius), TesseraGlassPanel.DefaultBlurRadius);
-
         public static readonly StyledProperty<Color> TintProperty =
             AvaloniaProperty.Register<TesseraGlassBackground, Color>(nameof(Tint), TesseraPalette.Primary);
-
-        public static readonly StyledProperty<bool> UseSharedBackdropProperty =
-            AvaloniaProperty.Register<TesseraGlassBackground, bool>(nameof(UseSharedBackdrop));
-
-        public static readonly StyledProperty<bool> LightTintOnlyProperty =
-            AvaloniaProperty.Register<TesseraGlassBackground, bool>(nameof(LightTintOnly));
 
         private sealed class LayerCache : IDisposable
         {
@@ -273,17 +261,11 @@ namespace MosaicShell.Host.Tiles.Tessera
             IsHitTestVisible = false;
         }
 
-        public double CornerRadius
-        {
-            get => GetValue(CornerRadiusProperty);
-            set => SetValue(CornerRadiusProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = 14d)]
+        public partial double CornerRadius { get; set; }
 
-        public double BlurRadius
-        {
-            get => GetValue(BlurRadiusProperty);
-            set => SetValue(BlurRadiusProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = TesseraGlassPanel.DefaultBlurRadius)]
+        public partial double BlurRadius { get; set; }
 
         public Color Tint
         {
@@ -291,17 +273,11 @@ namespace MosaicShell.Host.Tiles.Tessera
             set => SetValue(TintProperty, value);
         }
 
-        public bool UseSharedBackdrop
-        {
-            get => GetValue(UseSharedBackdropProperty);
-            set => SetValue(UseSharedBackdropProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial bool UseSharedBackdrop { get; set; }
 
-        public bool LightTintOnly
-        {
-            get => GetValue(LightTintOnlyProperty);
-            set => SetValue(LightTintOnlyProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial bool LightTintOnly { get; set; }
 
         protected override Size MeasureOverride(Size availableSize)
         {
