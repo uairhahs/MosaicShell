@@ -3,7 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Platform;
 using Avalonia.Threading;
-using Avalonia.VisualTree;
+using Avalonia.Platform.Storage;
 using MosaicShell.Core.HostPlatform;
 using MosaicShell.Core.Services;
 using MosaicShell.Host.ViewModels;
@@ -303,37 +303,28 @@ namespace MosaicShell.Host.Views
             base.OnKeyDown(e);
         }
 
-        private void OnDiscoverCardPressed(object? sender, PointerPressedEventArgs e)
+        /// <summary>Opens the data folder in the OS file manager (Explorer, Dolphin, Files) through Avalonia's launcher.</summary>
+        private async void OnOpenDataFolderClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            if (sender is not Border border || border.DataContext is not DiscoverCard card)
+            if (DataContext is not MainViewModel vm)
             {
                 return;
             }
 
-            if (DataContext is MainViewModel vm)
+            try
             {
-                vm.OpenCardCommand.Execute(card);
+                DirectoryInfo folder = new(vm.DataFolderPath);
+                folder.Create();
+                bool opened = await Launcher.LaunchDirectoryInfoAsync(folder);
+                if (!opened)
+                {
+                    vm.StatusMessage = $"Could not open {folder.FullName}.";
+                }
             }
-        }
-
-        private void OnLibraryTileBodyPressed(object? sender, PointerPressedEventArgs e)
-        {
-            if (e.Source is Control source && source.FindAncestorOfType<Button>(includeSelf: true) is not null)
+            catch (Exception ex)
             {
-                return;
+                vm.StatusMessage = $"Could not open the data folder: {ex.Message}";
             }
-
-            if (sender is not Border border || border.DataContext is not LibraryItemViewModel item)
-            {
-                return;
-            }
-
-            if (DataContext is MainViewModel vm)
-            {
-                vm.OpenModuleConfigCommand.Execute(item);
-            }
-
-            e.Handled = true;
         }
     }
 }

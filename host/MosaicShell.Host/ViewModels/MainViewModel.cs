@@ -182,6 +182,9 @@ namespace MosaicShell.Host.ViewModels
         [ObservableProperty] private string _updateStatus = "";
         [ObservableProperty] private string _hostBuildLabel = HostBuildVersionPolicy.LocalDevLabel;
 
+        /// <summary>The real data root (honours <c>MOSAICSHELL_HOME</c> and the platform's local app data).</summary>
+        public string DataFolderPath => AppPaths.RootDirectory;
+
         public void RestoreSessions()
         {
             foreach (TileSessionState s in SessionStore.Load())
@@ -1018,7 +1021,9 @@ namespace MosaicShell.Host.ViewModels
             _services.Autostart.SetEnabled(AutostartEnabled);
             Hub.AutostartHost = AutostartEnabled;
             ModuleSettingsStore.Save("Hub", Hub);
-            StatusMessage = AutostartEnabled ? "Host will start at logon." : "Autostart disabled.";
+            StatusMessage = AutostartEnabled
+                ? "MosaicShell will start when you sign in."
+                : "MosaicShell will not start when you sign in.";
         }
 
         [RelayCommand]
@@ -1264,22 +1269,6 @@ namespace MosaicShell.Host.ViewModels
         }
 
         [RelayCommand]
-        private async Task UninstallModule(LibraryItemViewModel? item)
-        {
-            if (item is null || !item.IsInstalled)
-            {
-                return;
-            }
-
-            if (ModuleUninstaller.Uninstall(item.Id, _runtime, _capabilityHost))
-            {
-                StatusMessage = $"Uninstalled {item.Name}.";
-                RefreshLibrary();
-            }
-            await Task.CompletedTask;
-        }
-
-        [RelayCommand]
         private void ImportShp()
         {
             string? path = Environment.GetEnvironmentVariable("MOSAICSHELL_SHP");
@@ -1342,6 +1331,9 @@ namespace MosaicShell.Host.ViewModels
         public required MaterialIconKind GlyphKind { get; init; }
         public required IBrush GlyphBrush { get; init; }
         public bool IsCapability { get; init; }
+
+        public string SettingsAutomationName => $"{Name} settings";
+        public string RemoveAutomationName => $"Remove {Name}";
 
         [ObservableProperty] private bool _isInstalled;
         [ObservableProperty] private bool _isInstalling;

@@ -69,14 +69,22 @@
     <Style Selector="Button.accentSwatch.selected">
       <Setter Property="BorderBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
     </Style>
-    <Style Selector="Border.card">
+    <!-- Home cards and library row bodies are real Buttons (focus, keyboard, automation, pressed state). -->
+    <Style Selector="Button.card">
       <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+      <Setter Property="BorderThickness" Value="0" />
       <Setter Property="CornerRadius" Value="{DynamicResource OverlayCornerRadius}" />
       <Setter Property="Padding" Value="20" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
       <Setter Property="Cursor" Value="Hand" />
     </Style>
-    <Style Selector="Border.card:pointerover">
+    <Style Selector="Button.card:pointerover /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+    </Style>
+    <Style Selector="Button.card:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
     </Style>
     <Style Selector="Border.row">
       <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
@@ -87,28 +95,23 @@
     <Style Selector="Border.row:pointerover">
       <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
     </Style>
-    <Style Selector="Button.tileCog">
+    <Style Selector="Button.libraryHit">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="Padding" Value="0" />
-      <Setter Property="Margin" Value="0,0,4,0" />
-      <Setter Property="MinWidth" Value="0" />
-      <Setter Property="MinHeight" Value="0" />
-      <Setter Property="VerticalAlignment" Value="Center" />
-      <Setter Property="HorizontalAlignment" Value="Left" />
-      <Setter Property="Focusable" Value="False" />
-      <Setter Property="Cursor" Value="Hand" />
-    </Style>
-    <Style Selector="Button.tileCog:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="Transparent" />
-    </Style>
-    <Style Selector="Border.libraryHit">
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="Padding" Value="0" />
-      <Setter Property="Margin" Value="0" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="6,4" />
+      <Setter Property="Margin" Value="0,0,6,0" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="VerticalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
       <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.libraryHit:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+    </Style>
+    <Style Selector="Button.libraryHit:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
     </Style>
     <Style Selector="Border.section">
       <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
@@ -187,8 +190,13 @@
   <DockPanel Margin="0,28,0,0">
     <Border DockPanel.Dock="Bottom" Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}" Padding="24,8"
             BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
-      <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12"
-                 TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12"
+                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+        <Button Grid.Column="1" Content="{Binding UndoLabel}" Padding="10,2" FontSize="12" Margin="12,0,0,0"
+                IsVisible="{Binding CanUndoRemove}"
+                Command="{Binding UndoRemoveCommand}" />
+      </Grid>
     </Border>
 
     <Border DockPanel.Dock="Bottom" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Padding="24,12"
@@ -228,8 +236,6 @@
                   <TextBlock Text="Compose your desktop from modules and widgets." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13" />
                 </StackPanel>
               </StackPanel>
-              <Button Grid.Column="1" Content="Check catalog"
-                      Command="{Binding CheckUpdatesCommand}" VerticalAlignment="Center" />
             </Grid>
             <ItemsControl ItemsSource="{Binding HomeCards}"
                           HorizontalAlignment="Stretch" VerticalAlignment="Top">
@@ -241,9 +247,12 @@
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:DiscoverCard">
                   <!-- Content-sized cards, do not stretch to fill a tall window -->
-                  <Border Classes="card" HorizontalAlignment="Stretch" VerticalAlignment="Top"
+                  <Button Classes="card" VerticalAlignment="Top"
                           Padding="20,18"
-                          PointerPressed="OnDiscoverCardPressed">
+                          Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenCardCommand}"
+                          CommandParameter="{Binding}"
+                          AutomationProperties.Name="{Binding Title}"
+                          AutomationProperties.HelpText="{Binding Body}">
                     <Grid ColumnDefinitions="Auto,*">
                       <Border Width="48" Height="48" CornerRadius="12" Margin="0,0,20,0"
                               Background="{DynamicResource SubtleFillColorSecondaryBrush}" VerticalAlignment="Center">
@@ -256,7 +265,7 @@
                         <TextBlock Text="{Binding Body}" FontSize="14" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
                       </StackPanel>
                     </Grid>
-                  </Border>
+                  </Button>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
@@ -301,17 +310,15 @@
                                                 HorizontalAlignment="Center" VerticalAlignment="Center"
                                                 Foreground="{Binding GlyphBrush}" />
                           </Border>
-                          <Border Grid.Column="2" Classes="libraryHit"
-                                  PointerPressed="OnLibraryTileBodyPressed"
-                                  ToolTip.Tip="Tile settings">
+                          <Button Grid.Column="2" Classes="libraryHit"
+                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
+                                  CommandParameter="{Binding}"
+                                  AutomationProperties.Name="{Binding SettingsAutomationName}"
+                                  ToolTip.Tip="Settings">
                             <StackPanel VerticalAlignment="Center">
                               <StackPanel Orientation="Horizontal" Spacing="4">
-                                <Button Classes="tileCog"
-                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
-                                        CommandParameter="{Binding}"
-                                        ToolTip.Tip="Tile settings">
-                                  <icons:MaterialIcon Kind="Cog" Width="16" Height="16" />
-                                </Button>
+                                <icons:MaterialIcon Kind="Cog" Width="16" Height="16" Margin="0,0,4,0"
+                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                                 <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
                                 <TextBlock Text="{Binding StatusText}" FontSize="12"
@@ -321,11 +328,13 @@
                               <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                          TextWrapping="Wrap" Margin="0,4,0,0" />
                             </StackPanel>
-                          </Border>
+                          </Button>
                           <Button Grid.Column="3" Classes="icon" Margin="0,0,6,0"
-                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).UninstallModuleCommand}"
+                                  IsVisible="{Binding IsInstalled}"
+                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).RemoveModuleCommand}"
                                   CommandParameter="{Binding}"
-                                  ToolTip.Tip="Uninstall">
+                                  AutomationProperties.Name="{Binding RemoveAutomationName}"
+                                  ToolTip.Tip="Remove">
                             <icons:MaterialIcon Kind="Minus" Width="18" Height="18" />
                           </Button>
                           <Button Grid.Column="4" Classes="icon accent"
@@ -358,17 +367,15 @@
                                                 HorizontalAlignment="Center" VerticalAlignment="Center"
                                                 Foreground="{Binding GlyphBrush}" />
                           </Border>
-                          <Border Grid.Column="2" Classes="libraryHit"
-                                  PointerPressed="OnLibraryTileBodyPressed"
-                                  ToolTip.Tip="Tile settings">
+                          <Button Grid.Column="2" Classes="libraryHit"
+                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
+                                  CommandParameter="{Binding}"
+                                  AutomationProperties.Name="{Binding SettingsAutomationName}"
+                                  ToolTip.Tip="Settings">
                             <StackPanel VerticalAlignment="Center">
                               <StackPanel Orientation="Horizontal" Spacing="4">
-                                <Button Classes="tileCog"
-                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
-                                        CommandParameter="{Binding}"
-                                        ToolTip.Tip="Tile settings">
-                                  <icons:MaterialIcon Kind="Cog" Width="16" Height="16" />
-                                </Button>
+                                <icons:MaterialIcon Kind="Cog" Width="16" Height="16" Margin="0,0,4,0"
+                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                                 <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
                                 <TextBlock Text="{Binding StatusText}" FontSize="12"
@@ -378,11 +385,13 @@
                               <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                          TextWrapping="Wrap" Margin="0,4,0,0" />
                             </StackPanel>
-                          </Border>
+                          </Button>
                           <Button Grid.Column="3" Classes="icon" Margin="0,0,6,0"
-                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).UninstallModuleCommand}"
+                                  IsVisible="{Binding IsInstalled}"
+                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).RemoveModuleCommand}"
                                   CommandParameter="{Binding}"
-                                  ToolTip.Tip="Uninstall">
+                                  AutomationProperties.Name="{Binding RemoveAutomationName}"
+                                  ToolTip.Tip="Remove">
                             <icons:MaterialIcon Kind="Minus" Width="18" Height="18" />
                           </Button>
                           <Button Grid.Column="4" Classes="icon accent"
@@ -997,8 +1006,9 @@
               <TextBlock Classes="sectionTitle" Text="Startup" />
               <TextBlock Classes="sectionHint"
                          Text="{x:Static vm:PlatformTexts.Autostart}" />
-              <Button Content="{Binding AutostartEnabled, StringFormat=Autostart: {0}}"
-                      Command="{Binding ToggleAutostartCommand}" HorizontalAlignment="Left" />
+              <ToggleSwitch Content="Start MosaicShell when I sign in"
+                            IsChecked="{Binding AutostartEnabled, Mode=OneWay}"
+                            Command="{Binding ToggleAutostartCommand}" />
             </StackPanel>
           </Border>
 
@@ -1010,7 +1020,7 @@
               <TextBlock Text="{Binding HostBuildLabel, StringFormat=Installed build: {0}}"
                          Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
               <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="Check GitHub releases" Command="{Binding CheckUpdatesCommand}" />
+                <Button Content="Check for updates" Command="{Binding CheckUpdatesCommand}" />
                 <TextBlock Text="{Binding UpdateStatus}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"
                            TextWrapping="Wrap" />
               </StackPanel>
@@ -1021,15 +1031,35 @@
             <StackPanel Spacing="8">
               <TextBlock Classes="sectionTitle" Text="Data location" />
               <TextBlock Classes="sectionHint"
-                         Text="Config, modules, sessions, and capability arm state live here." />
-              <TextBlock Text="%LocalAppData%\MosaicShell" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13"
-                         FontFamily="Cascadia Mono, Consolas, monospace" />
+                         Text="Settings, modules and saved window positions live here." />
+              <Grid ColumnDefinitions="*,Auto">
+                <SelectableTextBlock Text="{Binding DataFolderPath}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13"
+                                     FontFamily="Cascadia Mono, Consolas, monospace" TextWrapping="Wrap" VerticalAlignment="Center" />
+                <Button Grid.Column="1" Content="Open folder" Margin="12,0,0,0" Click="OnOpenDataFolderClicked" />
+              </Grid>
             </StackPanel>
           </Border>
 
         </StackPanel>
       </ScrollViewer>
       </DockPanel>
+
+      <!-- Remove confirmation, only for modules MosaicShell cannot bring back (ModuleRemovalPolicy.ConfirmFirst). -->
+      <Border IsVisible="{Binding HasPendingRemoval}"
+              Background="{DynamicResource SmokeFillColorDefaultBrush}">
+        <Border Classes="section" MaxWidth="460" HorizontalAlignment="Center" VerticalAlignment="Center"
+                BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="1">
+          <StackPanel Spacing="12">
+            <TextBlock Classes="sectionTitle" Text="{Binding PendingRemovalTitle}" />
+            <TextBlock Text="{Binding PendingRemovalBody}" TextWrapping="Wrap"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+              <Button Content="Cancel" IsCancel="True" Command="{Binding CancelRemoveCommand}" />
+              <Button Classes="accent" Content="Remove" Command="{Binding ConfirmRemoveCommand}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      </Border>
     </Grid>
   </DockPanel>
 </Window>
