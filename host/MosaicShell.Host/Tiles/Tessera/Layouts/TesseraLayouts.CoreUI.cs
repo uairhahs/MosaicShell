@@ -96,9 +96,8 @@ namespace MosaicShell.Host.Tiles.Tessera
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Child = playIcon
             };
-            TesseraChrome.ApplyHoverHighlight(playBtn, Brushes.White,
-                new SolidColorBrush(Color.FromRgb(245, 245, 250)));
-            playBtn.PointerPressed += (_, e) => { _ = vm.PlayPauseAsync(); e.Handled = true; };
+            TesseraChrome.WirePress(playBtn, Brushes.White,
+                new SolidColorBrush(Color.FromRgb(245, 245, 250)), () => _ = vm.PlayPauseAsync(playIcon));
 
             const double transportBtn = 22;
             Control media = TesseraMediaPanel.Create(vm, TesseraMediaMode.CoreUiBlock, mediaH);

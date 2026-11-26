@@ -10,6 +10,7 @@ using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
 using MosaicShell.Host.Tiles.Tessera;
 using MosaicShell.Core.Modules;
+using MosaicShell.Core.HostPlatform;
 
 namespace MosaicShell.Host.Capabilities
 {
@@ -99,6 +100,8 @@ namespace MosaicShell.Host.Capabilities
             bool resetDismiss,
             bool immediate)
         {
+            // Reduced motion is applied once, here, so every path (single, stacked, patch, soft refresh) plays a fade.
+            request = ReducedMotionPolicy.ApplyTo(request, Theming.ReducedMotion.IsOn);
             TesseraFlyoutIngressWork work = new(kind, _session.Generation, request, resetDismiss);
             if (immediate)
             {

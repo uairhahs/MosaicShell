@@ -136,7 +136,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             List<Control> transportKids = [];
             dislikeIcon = AppendRatingButtons(vm, transportKids, likeIcon, 28);
             transportKids.Add(GlyphBtn(MaterialIconKind.SkipPrevious, () => _ = vm.PreviousAsync(), size: 28));
-            transportKids.Add(GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: 28, playStyle: true));
+            transportKids.Add(GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(playIcon), size: 28, playStyle: true));
             transportKids.Add(GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: 28));
             transportKids.Add(GlyphBtn(shuffleIcon, () => _ = vm.ToggleShuffleAsync(shuffleIcon), size: 28));
             StackPanel transport = new()
@@ -187,7 +187,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             List<Control> transportKids = [];
             dislikeIcon = AppendRatingButtons(vm, transportKids, likeIcon, 28);
             transportKids.Add(GlyphBtn(MaterialIconKind.SkipPrevious, () => _ = vm.PreviousAsync(), size: 28));
-            transportKids.Add(GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: 28, playStyle: true));
+            transportKids.Add(GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(playIcon), size: 28, playStyle: true));
             transportKids.Add(GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: 28));
             transportKids.Add(GlyphBtn(shuffleIcon, () => _ = vm.ToggleShuffleAsync(shuffleIcon), size: 28));
             StackPanel transport = new()
@@ -276,7 +276,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             TextBlock artist = Text(vm.MediaArtist, 11, FontWeight.Normal, 140, muted: true);
             MaterialIcon playIcon = PlayIcon(vm, 16);
             Control prev = GlyphBtn(MaterialIconKind.SkipPrevious, () => _ = vm.PreviousAsync(), size: 32);
-            Control play = GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: 32, playStyle: true);
+            Control play = GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(playIcon), size: 32, playStyle: true);
             Control next = GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: 32);
             TesseraLiveAmbient.RegisterMedia(art, title, artist, null, null, null, playIcon);
             StackPanel body = new()
@@ -539,7 +539,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                     Spacing = 6,
                     Children =
                     {
-                        GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: 26, playStyle: true),
+                        GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(playIcon), size: 26, playStyle: true),
                         GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: 26)
                     }
                 }
@@ -597,7 +597,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 kids.Add(GlyphBtn(shuffleIcon, () => _ = vm.ToggleShuffleAsync(shuffleIcon), btnSize));
             }
             kids.Add(GlyphBtn(MaterialIconKind.SkipPrevious, () => _ = vm.PreviousAsync(), size: btnSize));
-            kids.Add(GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: btnSize, playStyle: true));
+            kids.Add(GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(playIcon), size: btnSize, playStyle: true));
             kids.Add(GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: btnSize));
             if (shuffleRepeat)
             {

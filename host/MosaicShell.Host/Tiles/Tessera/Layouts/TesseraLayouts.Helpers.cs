@@ -82,7 +82,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             };
         }
 
-        private static Border MaterialYouIconTile(MaterialIconKind kind, double iconSize, double tile)
+        private static Border MaterialYouIconTile(MaterialIconKind kind, double iconSize, double tile, Action act)
         {
             Border tileBorder = new()
             {
@@ -100,8 +100,8 @@ namespace MosaicShell.Host.Tiles.Tessera
                     Foreground = TesseraStylePalette.MaterialYou.AccentBrush
                 }
             };
-            TesseraChrome.ApplyHoverHighlight(tileBorder, TesseraStylePalette.MaterialYou.ShellBrush,
-                new SolidColorBrush(Color.FromRgb(40, 40, 44)));
+            TesseraChrome.WirePress(tileBorder, TesseraStylePalette.MaterialYou.ShellBrush,
+                new SolidColorBrush(Color.FromRgb(40, 40, 44)), act);
             return tileBorder;
         }
 
@@ -142,8 +142,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 ClipToBounds = true,
                 Child = icon
             };
-            TesseraChrome.ApplyHoverHighlight(pill, normal, hover);
-            pill.PointerPressed += (_, e) => { _ = vm.PlayPauseAsync(); e.Handled = true; };
+            TesseraChrome.WirePress(pill, normal, hover, () => _ = vm.PlayPauseAsync(icon));
             return pill;
         }
 

@@ -155,8 +155,14 @@ namespace MosaicShell.Host.Tiles.Tessera
             Services.Audio.IsMuted = IsMuted;
         }
 
-        public Task PlayPauseAsync()
+        /// <summary>Plays or pauses; with <paramref name="icon"/>, flips it at once (<see cref="TesseraPlayPauseIcon"/>).</summary>
+        public Task PlayPauseAsync(Material.Icons.Avalonia.MaterialIcon? icon = null)
         {
+            if (icon is not null)
+            {
+                TesseraPlayPauseIcon.Press(icon, () => Services.Media.Current?.IsPlaying);
+            }
+
             return Services.Media.PlayPauseAsync();
         }
 

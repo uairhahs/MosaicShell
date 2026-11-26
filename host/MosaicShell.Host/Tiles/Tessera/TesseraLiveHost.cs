@@ -204,7 +204,10 @@ namespace MosaicShell.Host.Tiles.Tessera
                 TesseraMediaPanel.ApplyArtToBorder(b.MediaArt, thumb, fillHost);
             }
 
-            b.PlayPauseIcon?.Kind = media?.IsPlaying == true ? MaterialIconKind.Pause : MaterialIconKind.Play;
+            if (b.PlayPauseIcon is { } playIcon)
+            {
+                TesseraPlayPauseIcon.Apply(playIcon, media?.IsPlaying == true);
+            }
 
             if (b.LikeIcon is not null)
             {

@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
+using MosaicShell.Core.HostPlatform;
 using MosaicShell.Core.Modules.Tessera;
 
 namespace MosaicShell.Host.Tiles.Tessera
@@ -157,6 +158,9 @@ namespace MosaicShell.Host.Tiles.Tessera
             _timer.Tick += (_, _) => Tick();
             AttachedToVisualTree += (_, _) => Restart();
             DetachedFromVisualTree += (_, _) => _timer.Stop();
+            // Under reduced motion a preview holds its resting frame and plays only while pointed at (audit U30).
+            PointerEntered += (_, _) => Restart();
+            PointerExited += (_, _) => Tick();
         }
 
         public int Ani
@@ -212,7 +216,17 @@ namespace MosaicShell.Host.Tiles.Tessera
                 return;
             }
 
-            Frame frame = Sample(_clock.Elapsed.TotalMilliseconds);
+            Frame frame;
+            if (ReducedMotionPolicy.PreviewPlays(Theming.ReducedMotion.IsOn, IsPointerOver))
+            {
+                frame = Sample(_clock.Elapsed.TotalMilliseconds);
+            }
+            else
+            {
+                _timer.Stop();
+                frame = new Frame(0, 0, 1, 1);
+            }
+
             _move.X = frame.Dx;
             _move.Y = frame.Dy;
             _cluster.Opacity = frame.Opacity;
