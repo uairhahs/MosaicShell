@@ -67,6 +67,12 @@ namespace MosaicShell.Core.Modules
             return info is not null;
         }
 
+        /// <summary>True for a module MosaicShell ships, which Mosaicist can always install again.</summary>
+        public static bool IsBundled(string moduleId)
+        {
+            return BuiltIns.Any(m => m.Id.Equals(moduleId, StringComparison.OrdinalIgnoreCase));
+        }
+
         public static bool IsInstalled(string moduleId)
         {
             return Directory.Exists(Path.Combine(AppPaths.ModulesDirectory, moduleId));
