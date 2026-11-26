@@ -71,6 +71,28 @@ namespace MosaicShell.Host.Capabilities
             RebuildStackedSlots(request, panels);
         }
 
+        /// <summary>
+        /// Gives every stacked window the motion of <paramref name="request"/>. Patch and revive apply the request to the
+        /// Volume window only; each window animates from its own request, so without this the Media window kept the look
+        /// it was built with.
+        /// </summary>
+        private void AdoptStackedMotion(FlyoutRequest request)
+        {
+            int changed = 0;
+            foreach (FlyoutWindow window in GetStackedWindowsFromSession())
+            {
+                if (window.AdoptMotion(request))
+                {
+                    changed++;
+                }
+            }
+
+            if (changed > 0)
+            {
+                Log($"stacked motion adopted windows={changed} ani={request.Ani} steps={request.AniSteps} ease={request.AniEase}");
+            }
+        }
+
         private bool TryPatchStacked(FlyoutRequest request, bool resetDismiss)
         {
             if (_stackedSession is null || _stackedSession.SlotKeys.Count == 0)
@@ -99,6 +121,7 @@ namespace MosaicShell.Host.Capabilities
                 }
 
                 Log($"stacked patch kind={request.Kind} style={request.StyleId}");
+                AdoptStackedMotion(request);
                 volumeWin.EnsureLivePump();
                 ApplyStackedPlacement(request);
                 if (resetDismiss)
@@ -149,7 +172,14 @@ namespace MosaicShell.Host.Capabilities
                 // patch content, not replay PlayStackedShowAnimation - that restarts BeginMotion
                 // on every stacked window (resets Position/Opacity) before the previous run
                 // finishes, so a fast run of requests can perpetually restart and never complete.
-                return volumeWin.TryApplyLive(request, _services, resetDismiss);
+                if (!volumeWin.TryApplyLive(request, _services, resetDismiss))
+                {
+                    return false;
+                }
+
+                // Not mid-flight: each phase reads its window's motion when it starts, so the exit plays the new look.
+                AdoptStackedMotion(request);
+                return true;
             }
 
             if (!volumeWin.TryApplyLive(request, _services, resetDismiss))
@@ -158,6 +188,7 @@ namespace MosaicShell.Host.Capabilities
             }
 
             Log($"stacked revive kind={request.Kind} style={request.StyleId}");
+            AdoptStackedMotion(request);
             ApplyStackedPlacement(request);
             SyncFocusDim(request);
             FlyoutMotionSession.ArmEntranceStartPose(windows);

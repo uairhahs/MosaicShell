@@ -445,6 +445,21 @@ namespace MosaicShell.Host.Capabilities
             }
         }
 
+        /// <summary>
+        /// Takes the motion of <paramref name="request"/> and keeps this window's own content (<see cref="FlyoutRequestMotion"/>).
+        /// Returns whether the motion changed.
+        /// </summary>
+        public bool AdoptMotion(FlyoutRequest request)
+        {
+            if (FlyoutRequestMotion.SameMotion(FlyoutRequest, request))
+            {
+                return false;
+            }
+
+            FlyoutRequest = FlyoutRequestMotion.Adopt(FlyoutRequest, request);
+            return true;
+        }
+
         public void ApplyLiveOnly(FlyoutRequest request, HostServices services)
         {
             FlyoutRequest = request;
