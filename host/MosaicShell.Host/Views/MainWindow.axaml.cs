@@ -1,4 +1,3 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Platform;
@@ -11,29 +10,14 @@ using MosaicShell.Host.ViewModels;
 namespace MosaicShell.Host.Views
 {
     /// <summary>
-    /// Keep the Host at a stable fraction of the current screen working area when moving
-    /// between monitors (Avalonia Screens: WorkingArea=pixels, Width/Height=DIPs, Scaling=DPI).
-    ///
-    /// Important: only <see cref="WindowResizeReason.User"/> updates the stored fraction.
-    /// DPI / layout / application resizes must not, that was poisoning frac≈0.97 and making
-    /// the window fill the destination display (see host-size.log).
+    /// The Hub window keeps the size the user gives it when it moves to another monitor (<see cref="HostWindowFitPolicy"/>):
+    /// sizes are in device-independent pixels, so the OS handles a scaling change, and the window is only shrunk when it no
+    /// longer fits the work area, once a move has settled. It is never resized during a drag.
     /// </summary>
     public partial class MainWindow : Window
     {
-        private const double DefaultFracW = 0.55;
-        private const double DefaultFracH = 0.65;
-        private const double MaxRememberedFrac = 0.90;
-        private const double MinW = 780;
-        private const double MinH = 560;
-
-        private double _fracW = DefaultFracW;
-        private double _fracH = DefaultFracH;
-        private PixelRect _lastSeenWorkArea;
-        private double _lastSeenScaling = double.NaN;
-        private bool _applying;
-        private bool _suppressCapture;
+        private DispatcherTimer? _fitTimer;
         private EventHandler? _screensChanged;
-        private int _applyGeneration;
 
         public MainWindow()
         {
@@ -43,25 +27,29 @@ namespace MosaicShell.Host.Views
         protected override void OnOpened(EventArgs e)
         {
             base.OnOpened(e);
+            _fitTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(HostWindowFitPolicy.SettleMs) };
+            _fitTimer.Tick += (_, _) =>
+            {
+                _fitTimer.Stop();
+                FitToScreen();
+            };
 
-            // Seed fraction from the designed startup size once, never from a DPI-bloated size.
-            CaptureFractionFromCurrentSize(userInitiated: false);
-            SanitizeFraction();
-            SyncLastSeenScreen(ResolveScreen());
-
-            ScalingChanged += OnScalingChanged;
-            PositionChanged += OnPositionChanged;
+            ScalingChanged += OnMovedOrRescaled;
+            PositionChanged += OnMovedOrRescaled;
             if (Screens is not null)
             {
-                _screensChanged = (_, _) => RequestFractionApply("screens", force: true, deferPasses: 2);
+                _screensChanged = OnMovedOrRescaled;
                 Screens.Changed += _screensChanged;
             }
+
+            FitToScreen();
         }
 
         protected override void OnClosed(EventArgs e)
         {
-            ScalingChanged -= OnScalingChanged;
-            PositionChanged -= OnPositionChanged;
+            _fitTimer?.Stop();
+            ScalingChanged -= OnMovedOrRescaled;
+            PositionChanged -= OnMovedOrRescaled;
             if (Screens is not null && _screensChanged is not null)
             {
                 Screens.Changed -= _screensChanged;
@@ -70,227 +58,44 @@ namespace MosaicShell.Host.Views
             base.OnClosed(e);
         }
 
-        private void OnScalingChanged(object? sender, EventArgs e)
+        /// <summary>Restarts the settle timer, so the fit runs once, after the last move of a drag.</summary>
+        private void OnMovedOrRescaled(object? sender, EventArgs e)
         {
-            RequestFractionApply("scaling", force: true, deferPasses: 3);
+            _fitTimer?.Stop();
+            _fitTimer?.Start();
         }
 
-        private void OnPositionChanged(object? sender, PixelPointEventArgs e)
+        private void FitToScreen()
         {
-            RequestFractionApply("position", force: false, deferPasses: 2);
-        }
-
-        protected override void OnResized(WindowResizedEventArgs e)
-        {
-            base.OnResized(e);
-            if (_applying || _suppressCapture)
-            {
-                return;
-            }
-
-            // Only an explicit user drag of the resize border/corner may change the remembered ratio.
-            // DpiChange / Layout / Application / Unspecified during monitor moves must not.
-            if (e.Reason == WindowResizeReason.User)
-            {
-                CaptureFractionFromCurrentSize(userInitiated: true);
-                SanitizeFraction();
-                Log($"capture-user frac={_fracW:0.###}x{_fracH:0.###} client={ClientSize.Width:0}x{ClientSize.Height:0}");
-                return;
-            }
-
-            if (e.Reason == WindowResizeReason.DpiChange)
-            {
-                RequestFractionApply("dpi-resize", force: true, deferPasses: 3);
-            }
-        }
-
-        private void RequestFractionApply(string reason, bool force, int deferPasses, int settleRetries = 0)
-        {
-            int gen = ++_applyGeneration;
-            _suppressCapture = true;
-
-            for (int i = 0; i < Math.Max(1, deferPasses); i++)
-            {
-                int pass = i;
-                Dispatcher.UIThread.Post(
-                    () =>
-                    {
-                        if (gen != _applyGeneration)
-                        {
-                            return;
-                        }
-
-                        ApplyFractionToCurrentScreen(force || pass > 0, reason, pass, settleRetries);
-                        if (pass == deferPasses - 1)
-                        {
-                            // One more tick later, allow user captures again.
-                            Dispatcher.UIThread.Post(
-                                () =>
-                                {
-                                    if (gen == _applyGeneration)
-                                    {
-                                        _suppressCapture = false;
-                                    }
-                                },
-                                DispatcherPriority.Background);
-                        }
-                    },
-                    pass == 0 ? DispatcherPriority.Background : DispatcherPriority.Render);
-            }
-        }
-
-        private void ApplyFractionToCurrentScreen(bool force, string reason, int pass, int settleRetries)
-        {
-            if (_applying)
-            {
-                return;
-            }
-
-            Screen? screen = ResolveScreen();
-            if (screen is null)
-            {
-                return;
-            }
-
-            SanitizeFraction();
-
-            double scaling = screen.Scaling > 0.1 ? screen.Scaling : 1.0;
-            PixelRect work = screen.WorkingArea;
-            double workDipW = Math.Max(1.0, work.Width / scaling);
-            double workDipH = Math.Max(1.0, work.Height / scaling);
-            double targetW = workDipW * _fracW;
-            double targetH = workDipH * _fracH;
-
-            bool screenChanged = work != _lastSeenWorkArea
-                                || double.IsNaN(_lastSeenScaling)
-                                || Math.Abs(scaling - _lastSeenScaling) >= 0.001;
-            bool sizeOff = Math.Abs(Width - targetW) > 4 || Math.Abs(Height - targetH) > 4;
-            double desktopScale = DesktopScaling > 0.1 ? DesktopScaling : RenderScaling;
-            bool scalingSettled = Math.Abs(desktopScale - scaling) < 0.05;
-
-            if (!force && !screenChanged && !sizeOff)
-            {
-                return;
-            }
-
-            // Capped: mixed-DPI straddling can keep the scalings apart forever (runaway loop once
-            // filled host-size.log to 160 GB).
-            if (HostWindowFractionPolicy.ShouldWaitForScaleSettle(scalingSettled, pass, settleRetries))
-            {
-                RequestFractionApply(reason, force: true, deferPasses: 2, settleRetries + 1);
-                return;
-            }
-
-            _applying = true;
-            _suppressCapture = true;
-            try
-            {
-                MinWidth = 1;
-                MinHeight = 1;
-
-                double w = Math.Clamp(targetW, Math.Min(MinW, workDipW - 4), Math.Max(1, workDipW - 4));
-                double h = Math.Clamp(targetH, Math.Min(MinH, workDipH - 4), Math.Max(1, workDipH - 4));
-                Width = w;
-                Height = h;
-
-                // Always restore design mins, never pin Min* to the applied size.
-                MinWidth = MinW;
-                MinHeight = MinH;
-
-                SyncLastSeenScreen(screen);
-                Log(
-                    $"{reason} pass={pass} retries={settleRetries} force={force} settled={scalingSettled} " +
-                    $"frac={_fracW:0.###}x{_fracH:0.###} " +
-                    $"workPx={work.Width}x{work.Height} scale={scaling:0.##} desk={desktopScale:0.##} " +
-                    $"→ {Width:0}x{Height:0}dip");
-            }
-            finally
-            {
-                _applying = false;
-            }
-        }
-
-        private void CaptureFractionFromCurrentSize(bool userInitiated)
-        {
-            Screen? screen = ResolveScreen();
+            Screen? screen = Screens?.ScreenFromWindow(this) ?? Screens?.Primary;
             if (screen is null)
             {
                 return;
             }
 
             double scaling = screen.Scaling > 0.1 ? screen.Scaling : 1.0;
-            PixelRect work = screen.WorkingArea;
-            double workDipW = Math.Max(1.0, work.Width / scaling);
-            double workDipH = Math.Max(1.0, work.Height / scaling);
-
-            double w = ClientSize.Width > 1 ? ClientSize.Width : Width;
-            double h = ClientSize.Height > 1 ? ClientSize.Height : Height;
-            if (double.IsNaN(w) || double.IsNaN(h) || w < 80 || h < 60)
+            double workW = screen.WorkingArea.Width / scaling;
+            double workH = screen.WorkingArea.Height / scaling;
+            double w = double.IsNaN(Width) ? ClientSize.Width : Width;
+            double h = double.IsNaN(Height) ? ClientSize.Height : Height;
+            if (!HostWindowFitPolicy.NeedsFit(w, h, workW, workH, MinWidth, MinHeight))
             {
                 return;
             }
 
-            double nextW = Math.Clamp(w / workDipW, 0.15, MaxRememberedFrac);
-            double nextH = Math.Clamp(h / workDipH, 0.15, MaxRememberedFrac);
-
-            // Startup / non-user: only accept a sane mid-range fraction; otherwise keep defaults.
-            if (!userInitiated && (nextW > 0.85 || nextH > 0.85))
+            (double fitW, double fitH) = HostWindowFitPolicy.Fit(w, h, workW, workH, MinWidth, MinHeight);
+            if (fitW < MinWidth || fitH < MinHeight)
             {
-                return;
+                // A work area smaller than the design minimum: let the window follow it down.
+                MinWidth = Math.Min(MinWidth, fitW);
+                MinHeight = Math.Min(MinHeight, fitH);
             }
 
-            _fracW = nextW;
-            _fracH = nextH;
-        }
-
-        private void SanitizeFraction()
-        {
-            if (_fracW is < 0.15 or > MaxRememberedFrac)
-            {
-                _fracW = DefaultFracW;
-            }
-
-            if (_fracH is < 0.15 or > MaxRememberedFrac)
-            {
-                _fracH = DefaultFracH;
-            }
-        }
-
-        private Screen? ResolveScreen()
-        {
-            try
-            {
-                double scale = RenderScaling > 0.1 ? RenderScaling : 1.0;
-                int cx = Position.X + (int)Math.Round(Math.Max(ClientSize.Width, Width) * scale / 2.0);
-                int cy = Position.Y + (int)Math.Round(Math.Max(ClientSize.Height, Height) * scale / 2.0);
-                Screen? fromPoint = Screens?.ScreenFromPoint(new PixelPoint(cx, cy));
-                if (fromPoint is not null)
-                {
-                    return fromPoint;
-                }
-            }
-            catch
-            {
-                // fall through
-            }
-
-            return Screens?.ScreenFromWindow(this) ?? Screens?.Primary;
-        }
-
-        private void SyncLastSeenScreen(Screen? screen)
-        {
-            if (screen is null)
-            {
-                return;
-            }
-
-            _lastSeenWorkArea = screen.WorkingArea;
-            _lastSeenScaling = screen.Scaling > 0.1 ? screen.Scaling : 1.0;
-        }
-
-        private static void Log(string message)
-        {
-            DiagnosticLog.Append("host-size.log", message);
+            Width = fitW;
+            Height = fitH;
+            DiagnosticLog.Append(
+                "host-size.log",
+                $"fit {w:0}x{h:0} -> {fitW:0}x{fitH:0}dip work={workW:0}x{workH:0}dip scale={scaling:0.##}");
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
