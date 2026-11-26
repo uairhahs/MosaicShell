@@ -150,7 +150,6 @@ namespace MosaicShell.Core.Settings
 
     public sealed class HubSettings
     {
-        public bool WelcomeCompleted { get; set; }
         public bool AutostartHost { get; set; }
         /// <summary>When true, window close hides to tray; when false, close exits the host.</summary>
         public bool CloseMinimizesToTray { get; set; } = true;

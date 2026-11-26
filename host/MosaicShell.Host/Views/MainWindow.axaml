@@ -11,6 +11,7 @@
         x:DataType="vm:MainViewModel"
         Width="1100" Height="750"
         MinWidth="780" MinHeight="560"
+        CanMaximize="False"
         Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
         ExtendClientAreaToDecorationsHint="True"
         Icon="avares://MosaicShell.Host/Assets/mosaicshell.ico"
@@ -86,31 +87,20 @@
     <Style Selector="Button.card:pressed /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
     </Style>
-    <Style Selector="Border.row">
+    <!-- A library row: one Button the size of the card, behind the row's content (see the row template). -->
+    <Style Selector="Button.libraryRow">
       <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
-      <Setter Property="CornerRadius" Value="10" />
-      <Setter Property="Padding" Value="12" />
-      <Setter Property="Margin" Value="0,0,0,8" />
-    </Style>
-    <Style Selector="Border.row:pointerover">
-      <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
-    </Style>
-    <Style Selector="Button.libraryHit">
-      <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="CornerRadius" Value="6" />
-      <Setter Property="Padding" Value="6,4" />
-      <Setter Property="Margin" Value="0,0,6,0" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="0" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="VerticalAlignment" Value="Stretch" />
-      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-      <Setter Property="VerticalContentAlignment" Value="Center" />
       <Setter Property="Cursor" Value="Hand" />
     </Style>
-    <Style Selector="Button.libraryHit:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Style Selector="Button.libraryRow:pointerover /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
     </Style>
-    <Style Selector="Button.libraryHit:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Style Selector="Button.libraryRow:pressed /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
     </Style>
     <Style Selector="Border.section">
@@ -227,16 +217,21 @@
             HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
           <!-- Home -->
           <DockPanel IsVisible="{Binding IsHome}">
-            <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
+            <!-- What the Welcome page used to say, said once here instead of on a page of its own. -->
+            <StackPanel DockPanel.Dock="Top" Spacing="12" Margin="0,0,0,20" MaxWidth="720" HorizontalAlignment="Left">
               <StackPanel Orientation="Horizontal" Spacing="14">
                 <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="48" Height="48"
                        RenderOptions.BitmapInterpolationMode="HighQuality" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock Text="Home" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
-                  <TextBlock Text="Compose your desktop from modules and widgets." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13" />
+                  <TextBlock Text="Your desktop, composed." Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" FontSize="14" />
                 </StackPanel>
               </StackPanel>
-            </Grid>
+              <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14" LineHeight="22"
+                         Text="Add the modules you want from Tiles. Some run in the tray, like Tessera's volume and media pop-ups or the Mixdeck mixer: turn them on and they work in the background. Others are widgets on the desktop that open when you start them." />
+              <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="13" LineHeight="20"
+                         Text="Closing this window keeps MosaicShell running in the tray. Settings can change that." />
+            </StackPanel>
             <ItemsControl ItemsSource="{Binding HomeCards}"
                           HorizontalAlignment="Stretch" VerticalAlignment="Top">
               <ItemsControl.ItemsPanel>
@@ -293,29 +288,53 @@
                       Command="{Binding NavigateCommand}" CommandParameter="Tiles" />
             </StackPanel>
           </Grid>
+          <TextBox DockPanel.Dock="Bottom" x:Name="LibrarySearchBox" Margin="0,16,0,0" MaxWidth="420" HorizontalAlignment="Left"
+                   Width="420" Text="{Binding LibrarySearch}" PlaceholderText="{Binding LibrarySearchPlaceholder}"
+                   AutomationProperties.Name="{Binding LibrarySearchPlaceholder}">
+            <TextBox.InnerLeftContent>
+              <icons:MaterialIcon Kind="Magnify" Width="16" Height="16" Margin="10,0,0,0"
+                                  Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+            </TextBox.InnerLeftContent>
+            <TextBox.InnerRightContent>
+              <Button Classes="icon" Margin="0,0,4,0" Padding="4" IsVisible="{Binding HasLibrarySearch}"
+                      Command="{Binding ClearLibrarySearchCommand}" AutomationProperties.Name="Clear search" ToolTip.Tip="Clear search">
+                <icons:MaterialIcon Kind="Close" Width="14" Height="14" />
+              </Button>
+            </TextBox.InnerRightContent>
+            <TextBox.KeyBindings>
+              <KeyBinding Gesture="Escape" Command="{Binding ClearLibrarySearchCommand}" />
+            </TextBox.KeyBindings>
+          </TextBox>
           <Grid ColumnDefinitions="*,24,*">
             <DockPanel Grid.Column="0">
               <TextBlock DockPanel.Dock="Top" Text="Modules" FontSize="16" FontWeight="SemiBold"
                          Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,8" />
+              <TextBlock DockPanel.Dock="Top" Text="{Binding LibraryNoResultsText}" IsVisible="{Binding HasNoModuleMatches}"
+                         Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="13" Margin="0,4,0,8" />
               <ScrollViewer>
                 <ItemsControl ItemsSource="{Binding Modules}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:LibraryItemViewModel">
-                      <Border Classes="row">
-                        <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
-                          <CheckBox Grid.Column="0" IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center" Margin="0,0,6,0" />
-                          <Border Grid.Column="1" Width="36" Height="36" CornerRadius="8" Margin="0,0,8,0"
+                      <!-- The row button spans the whole card behind its content, so a press lights the card, not one
+                           column. Glyph and text let presses through to it; the checkbox and the row's own buttons sit on top. -->
+                      <Grid Margin="0,0,0,8" ColumnDefinitions="12,Auto,Auto,*,Auto,Auto,12" RowDefinitions="12,Auto,12"
+                            IsVisible="{Binding IsShownBySearch}">
+                        <Button Classes="libraryRow" Grid.ColumnSpan="7" Grid.RowSpan="3"
+                                Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
+                                CommandParameter="{Binding}"
+                                AutomationProperties.Name="{Binding SettingsAutomationName}"
+                                AutomationProperties.HelpText="{Binding Description}"
+                                ToolTip.Tip="Settings" />
+                          <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center"
+                                    MinWidth="0" Margin="0,0,6,0" />
+                          <Border Grid.Row="1" Grid.Column="2" Width="36" Height="36" CornerRadius="8" Margin="0,0,8,0"
+                                  IsHitTestVisible="False"
                                   Background="{DynamicResource SubtleFillColorSecondaryBrush}" VerticalAlignment="Center">
                             <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="20" Height="20"
                                                 HorizontalAlignment="Center" VerticalAlignment="Center"
                                                 Foreground="{Binding GlyphBrush}" />
                           </Border>
-                          <Button Grid.Column="2" Classes="libraryHit"
-                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
-                                  CommandParameter="{Binding}"
-                                  AutomationProperties.Name="{Binding SettingsAutomationName}"
-                                  ToolTip.Tip="Settings">
-                            <StackPanel VerticalAlignment="Center">
+                            <StackPanel Grid.Row="1" Grid.Column="3" VerticalAlignment="Center" Margin="0,0,6,0" IsHitTestVisible="False">
                               <StackPanel Orientation="Horizontal" Spacing="4">
                                 <icons:MaterialIcon Kind="Cog" Width="16" Height="16" Margin="0,0,4,0"
                                                     Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
@@ -328,8 +347,7 @@
                               <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                          TextWrapping="Wrap" Margin="0,4,0,0" />
                             </StackPanel>
-                          </Button>
-                          <Button Grid.Column="3" Classes="icon" Margin="0,0,6,0"
+                          <Button Grid.Row="1" Grid.Column="4" Classes="icon" Margin="0,0,6,0"
                                   IsVisible="{Binding IsInstalled}"
                                   Command="{Binding #Root.((vm:MainViewModel)DataContext).RemoveModuleCommand}"
                                   CommandParameter="{Binding}"
@@ -337,15 +355,14 @@
                                   ToolTip.Tip="Remove">
                             <icons:MaterialIcon Kind="Minus" Width="18" Height="18" />
                           </Button>
-                          <Button Grid.Column="4" Classes="icon accent"
+                          <Button Grid.Row="1" Grid.Column="5" Classes="icon accent"
                                   IsEnabled="{Binding !IsInstalling}"
                                   Command="{Binding #Root.((vm:MainViewModel)DataContext).InstallModuleCommand}"
                                   CommandParameter="{Binding}"
                                   ToolTip.Tip="{Binding ActionToolTip}">
                             <icons:MaterialIcon Kind="{Binding ActionIcon}" Width="18" Height="18" />
                           </Button>
-                        </Grid>
-                      </Border>
+                      </Grid>
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -354,25 +371,32 @@
             <DockPanel Grid.Column="2">
               <TextBlock DockPanel.Dock="Top" Text="Widgets" FontSize="16" FontWeight="SemiBold"
                          Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,8" />
+              <TextBlock DockPanel.Dock="Top" Text="{Binding LibraryNoResultsText}" IsVisible="{Binding HasNoWidgetMatches}"
+                         Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="13" Margin="0,4,0,8" />
               <ScrollViewer>
                 <ItemsControl ItemsSource="{Binding Widgets}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:LibraryItemViewModel">
-                      <Border Classes="row">
-                        <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
-                          <CheckBox Grid.Column="0" IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center" Margin="0,0,6,0" />
-                          <Border Grid.Column="1" Width="36" Height="36" CornerRadius="8" Margin="0,0,8,0"
+                      <!-- The row button spans the whole card behind its content, so a press lights the card, not one
+                           column. Glyph and text let presses through to it; the checkbox and the row's own buttons sit on top. -->
+                      <Grid Margin="0,0,0,8" ColumnDefinitions="12,Auto,Auto,*,Auto,Auto,12" RowDefinitions="12,Auto,12"
+                            IsVisible="{Binding IsShownBySearch}">
+                        <Button Classes="libraryRow" Grid.ColumnSpan="7" Grid.RowSpan="3"
+                                Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
+                                CommandParameter="{Binding}"
+                                AutomationProperties.Name="{Binding SettingsAutomationName}"
+                                AutomationProperties.HelpText="{Binding Description}"
+                                ToolTip.Tip="Settings" />
+                          <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center"
+                                    MinWidth="0" Margin="0,0,6,0" />
+                          <Border Grid.Row="1" Grid.Column="2" Width="36" Height="36" CornerRadius="8" Margin="0,0,8,0"
+                                  IsHitTestVisible="False"
                                   Background="{DynamicResource SubtleFillColorSecondaryBrush}" VerticalAlignment="Center">
                             <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="20" Height="20"
                                                 HorizontalAlignment="Center" VerticalAlignment="Center"
                                                 Foreground="{Binding GlyphBrush}" />
                           </Border>
-                          <Button Grid.Column="2" Classes="libraryHit"
-                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
-                                  CommandParameter="{Binding}"
-                                  AutomationProperties.Name="{Binding SettingsAutomationName}"
-                                  ToolTip.Tip="Settings">
-                            <StackPanel VerticalAlignment="Center">
+                            <StackPanel Grid.Row="1" Grid.Column="3" VerticalAlignment="Center" Margin="0,0,6,0" IsHitTestVisible="False">
                               <StackPanel Orientation="Horizontal" Spacing="4">
                                 <icons:MaterialIcon Kind="Cog" Width="16" Height="16" Margin="0,0,4,0"
                                                     Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
@@ -385,8 +409,7 @@
                               <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                          TextWrapping="Wrap" Margin="0,4,0,0" />
                             </StackPanel>
-                          </Button>
-                          <Button Grid.Column="3" Classes="icon" Margin="0,0,6,0"
+                          <Button Grid.Row="1" Grid.Column="4" Classes="icon" Margin="0,0,6,0"
                                   IsVisible="{Binding IsInstalled}"
                                   Command="{Binding #Root.((vm:MainViewModel)DataContext).RemoveModuleCommand}"
                                   CommandParameter="{Binding}"
@@ -394,15 +417,14 @@
                                   ToolTip.Tip="Remove">
                             <icons:MaterialIcon Kind="Minus" Width="18" Height="18" />
                           </Button>
-                          <Button Grid.Column="4" Classes="icon accent"
+                          <Button Grid.Row="1" Grid.Column="5" Classes="icon accent"
                                   IsEnabled="{Binding !IsInstalling}"
                                   Command="{Binding #Root.((vm:MainViewModel)DataContext).InstallModuleCommand}"
                                   CommandParameter="{Binding}"
                                   ToolTip.Tip="{Binding ActionToolTip}">
                             <icons:MaterialIcon Kind="{Binding ActionIcon}" Width="18" Height="18" />
                           </Button>
-                        </Grid>
-                      </Border>
+                      </Grid>
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -910,29 +932,6 @@
           </Grid>
         </DockPanel>
 
-        <!-- Welcome -->
-        <StackPanel IsVisible="{Binding IsWelcome}" Spacing="14" MaxWidth="640" HorizontalAlignment="Left">
-          <Button Command="{Binding GoBackCommand}"
-                  HorizontalAlignment="Left" IsVisible="{Binding ShowBackButton}" Padding="10,8">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <icons:MaterialIcon Kind="ArrowLeft" Width="18" Height="18" />
-              <TextBlock Text="Back" VerticalAlignment="Center" />
-            </StackPanel>
-          </Button>
-          <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" MaxWidth="280" HorizontalAlignment="Left"
-                 RenderOptions.BitmapInterpolationMode="HighQuality" />
-          <TextBlock Text="Welcome" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
-          <TextBlock Text="Your desktop, composed." Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" FontSize="14" />
-          <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14" LineHeight="22"
-                     Text="Install the tiles you want, then arm capabilities like Tessera or Mixdeck so they run from the tray Host. Widgets open as overlays when you launch them from Tiles." />
-          <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="13" LineHeight="20"
-                     Text="Open Tiles to pick modules (use the checkboxes, then Batch install). When you are ready, finish welcome to land on Home. Closing the hub can keep the Host in the tray; settings control that." />
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Classes="accent" Content="Finish welcome" Command="{Binding CompleteWelcomeCommand}" />
-            <Button Content="Open Tiles" Command="{Binding NavigateCommand}" CommandParameter="Tiles" />
-          </StackPanel>
-        </StackPanel>
-
         <!-- About -->
         <StackPanel IsVisible="{Binding IsAbout}" Spacing="14" MaxWidth="640" HorizontalAlignment="Left">
           <Button Command="{Binding GoBackCommand}"
@@ -973,21 +972,13 @@
       <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                     VerticalScrollBarVisibility="Auto"
                     HorizontalAlignment="Stretch">
-        <StackPanel Spacing="0" HorizontalAlignment="Stretch">
+        <!-- One box for every setting, grouped by headings and dividers, scrolled by this page's ScrollViewer. -->
+        <Border Classes="section" Margin="40,0,40,16">
+          <StackPanel Spacing="16">
 
-          <Border Classes="section" Margin="40,0,40,0">
-            <StackPanel Spacing="8">
-              <TextBlock Classes="sectionTitle" Text="Services" />
-              <TextBlock Classes="sectionHint"
-                         Text="Live probe of audio, metrics, media, and armed capabilities." />
-              <TextBlock Text="{Binding ServiceProbe}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
-            </StackPanel>
-          </Border>
-
-          <Border Classes="section" Margin="40,0,40,0">
             <StackPanel Spacing="10">
               <TextBlock Classes="sectionTitle" Text="Window close" />
-              <TextBlock Classes="sectionHint"
+              <TextBlock Classes="sectionHint" Margin="0"
                          Text="What the window close button does. Tray menu Exit always quits and stops tiles." />
               <StackPanel Orientation="Horizontal" Spacing="8">
                 <Button Content="Minimize to tray"
@@ -1002,23 +993,23 @@
               <TextBlock IsVisible="{Binding !CloseMinimizesToTray}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"
                          Text="Close exits MosaicShell and stops armed tiles." />
             </StackPanel>
-          </Border>
 
-          <Border Classes="section" Margin="40,0,40,0">
+            <Separator />
+
             <StackPanel Spacing="10">
               <TextBlock Classes="sectionTitle" Text="Startup" />
-              <TextBlock Classes="sectionHint"
+              <TextBlock Classes="sectionHint" Margin="0"
                          Text="{x:Static vm:PlatformTexts.Autostart}" />
               <ToggleSwitch Content="Start MosaicShell when I sign in"
                             IsChecked="{Binding AutostartEnabled, Mode=OneWay}"
                             Command="{Binding ToggleAutostartCommand}" />
             </StackPanel>
-          </Border>
 
-          <Border Classes="section" Margin="40,0,40,0">
+            <Separator />
+
             <StackPanel Spacing="10">
               <TextBlock Classes="sectionTitle" Text="Updates" />
-              <TextBlock Classes="sectionHint"
+              <TextBlock Classes="sectionHint" Margin="0"
                          Text="Compare the installed host build against the latest GitHub release (date+build tags)." />
               <TextBlock Text="{Binding HostBuildLabel, StringFormat=Installed build: {0}}"
                          Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
@@ -1028,12 +1019,12 @@
                            TextWrapping="Wrap" />
               </StackPanel>
             </StackPanel>
-          </Border>
 
-          <Border Classes="section" Margin="40,0,40,16">
+            <Separator />
+
             <StackPanel Spacing="8">
               <TextBlock Classes="sectionTitle" Text="Data location" />
-              <TextBlock Classes="sectionHint"
+              <TextBlock Classes="sectionHint" Margin="0"
                          Text="Settings, modules and saved window positions live here." />
               <Grid ColumnDefinitions="*,Auto">
                 <SelectableTextBlock Text="{Binding DataFolderPath}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13"
@@ -1041,9 +1032,18 @@
                 <Button Grid.Column="1" Content="Open folder" Margin="12,0,0,0" Click="OnOpenDataFolderClicked" />
               </Grid>
             </StackPanel>
-          </Border>
 
-        </StackPanel>
+            <Separator />
+
+            <StackPanel Spacing="8">
+              <TextBlock Classes="sectionTitle" Text="Services" />
+              <TextBlock Classes="sectionHint" Margin="0"
+                         Text="Live probe of audio, metrics, media, and armed capabilities." />
+              <TextBlock Text="{Binding ServiceProbe}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+            </StackPanel>
+
+          </StackPanel>
+        </Border>
       </ScrollViewer>
       </DockPanel>
 

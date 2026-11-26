@@ -58,7 +58,6 @@ namespace MosaicShell.Host.ViewModels
 
             HomeCards =
             [
-                HomeCard("Welcome", "First run: install tiles, then finish to open Home.", "Welcome"),
                 HomeCard("Tiles", "Install widgets or set tiles (Tessera flyouts, launchers).", "Tiles"),
                 HomeCard("About", "What MosaicShell is, where it came from, and how to follow the project.", "About"),
             ];
@@ -75,7 +74,7 @@ namespace MosaicShell.Host.ViewModels
 
             RefreshLibrary();
             HostBuildLabel = HostBuildVersion.ReadCurrent();
-            Navigate(Hub.WelcomeCompleted ? "Home" : "Welcome");
+            Navigate("Home");
         }
 
         public MainViewModel() : this(
@@ -113,7 +112,6 @@ namespace MosaicShell.Host.ViewModels
         [ObservableProperty] private bool _isTiles;
         [ObservableProperty] private bool _isSettings;
         [ObservableProperty] private bool _isAbout;
-        [ObservableProperty] private bool _isWelcome;
         [ObservableProperty] private bool _isModuleConfig;
         [ObservableProperty] private bool _showBackButton;
         [ObservableProperty] private string _statusMessage = "Ready";
@@ -230,9 +228,8 @@ namespace MosaicShell.Host.ViewModels
             IsTiles = page == "Tiles";
             IsSettings = page == "Settings";
             IsAbout = page == "About";
-            IsWelcome = page == "Welcome";
             IsModuleConfig = page == "ModuleConfig";
-            ShowBackButton = IsTiles || IsWelcome || IsAbout || IsModuleConfig;
+            ShowBackButton = IsTiles || IsAbout || IsModuleConfig;
             if (!IsModuleConfig)
             {
                 TesseraConfigPreviewReady = false;
@@ -1139,24 +1136,6 @@ namespace MosaicShell.Host.ViewModels
         private static extern int NativeMessageBox(IntPtr hWnd, string text, string caption, uint type);
 
         [RelayCommand]
-        private async Task CompleteWelcomeAsync()
-        {
-            Hub.WelcomeCompleted = true;
-            ModuleSettingsStore.Save("Hub", Hub);
-            List<string> selected = [.. Modules.Concat(Widgets).Where(m => m.IsSelectedForBatch).Select(m => m.Id)];
-            foreach (string id in selected)
-            {
-                if (!ModuleCatalog.IsInstalled(id))
-                {
-                    await _installer.InstallAsync(id);
-                }
-            }
-            RefreshLibrary();
-            Navigate("Home");
-            StatusMessage = selected.Count == 0 ? "Welcome completed." : $"Installed {selected.Count} module(s).";
-        }
-
-        [RelayCommand]
         private async Task BatchInstallAsync()
         {
             List<LibraryItemViewModel> selected = [.. Modules.Concat(Widgets).Where(m => m.IsSelectedForBatch && !m.IsInstalled)];
@@ -1310,6 +1289,8 @@ namespace MosaicShell.Host.ViewModels
             {
                 Widgets.Add(LibraryItemViewModel.From(w, running: _runtime.IsRunning(w.Id), armed: false));
             }
+
+            ApplyLibrarySearch();
         }
 
         private sealed class NullTileHost : ITileSurfaceHost
@@ -1340,6 +1321,7 @@ namespace MosaicShell.Host.ViewModels
         [ObservableProperty] private bool _isRunning;
         [ObservableProperty] private bool _isArmed;
         [ObservableProperty] private bool _isSelectedForBatch;
+        [ObservableProperty] private bool _isShownBySearch = true;
         [ObservableProperty] private string _statusText = "(Not Installed)";
         [ObservableProperty] private IBrush _statusBrush = HubGlyphUi.StatusBrush(HubTileStatusKind.NotInstalled);
         [ObservableProperty] private MaterialIconKind _actionIcon = MaterialIconKind.Download;

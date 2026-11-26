@@ -37,7 +37,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Home_cards_have_material_glyphs()
         {
-            _ = HubGlyphCatalog.ForHomeCard("Welcome").Kind.Should().Be("PartyPopper");
+            _ = HubGlyphCatalog.ForHomeCard("Welcome").Kind.Should().Be("Apps", "Home has no Welcome card; Home itself says what Welcome did");
             _ = HubGlyphCatalog.ForHomeCard("Tiles").Kind.Should().Be("Widgets");
             _ = HubGlyphCatalog.ForHomeCard("About").Kind.Should().Be("InformationOutline");
         }
