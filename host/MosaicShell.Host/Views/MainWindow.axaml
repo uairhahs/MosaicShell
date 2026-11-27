@@ -290,7 +290,7 @@
                       Command="{Binding NavigateCommand}" CommandParameter="Tiles" />
             </StackPanel>
           </Grid>
-          <TextBox DockPanel.Dock="Bottom" x:Name="LibrarySearchBox" Margin="0,16,0,0" MaxWidth="420" HorizontalAlignment="Left"
+          <TextBox DockPanel.Dock="Bottom" x:Name="LibrarySearchBox" Margin="0,16,0,0" MaxWidth="420" HorizontalAlignment="Center"
                    Width="420" Text="{Binding LibrarySearch}" PlaceholderText="{Binding LibrarySearchPlaceholder}"
                    AutomationProperties.Name="{Binding LibrarySearchPlaceholder}">
             <TextBox.InnerLeftContent>
