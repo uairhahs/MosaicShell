@@ -266,13 +266,13 @@ namespace MosaicShell.Core.Services
 
             return CreateInert(
                 media,
-                new Linux.KGlobalAccelShellFlyoutTriggers(),
+                CreateLinuxShellFlyoutTriggers(desktop),
                 CreateLinuxOsdSuppressor(desktop),
                 new Linux.PulseAudioService(),
                 brightness,
                 brightness,
                 companions,
-                new Linux.KGlobalAccelHotkeyService(),
+                CreateLinuxHotkeys(desktop),
                 CreateLinuxLockKeys(desktop),
                 streams,
                 new Linux.ParecAudioLevelService(),
@@ -280,10 +280,30 @@ namespace MosaicShell.Core.Services
                 new Linux.ProcSystemMetricsService(),
                 Linux.XdgAutostartService.ForCurrentProcess(),
                 CreateLinuxIdle(desktop),
-                new Linux.KWinFullscreenProbe(),
+                CreateLinuxFullscreenProbe(desktop),
                 CreateLinuxAirplane(desktop),
                 HostPlatform.DesktopFeatures.Resolve(isWindows: false, desktop),
                 CreateLinuxVolumeKeyStep(desktop));
+        }
+
+        /// <summary>Capability shortcuts through KDE's KGlobalAccel on Plasma; elsewhere none (GNOME has no route yet).</summary>
+        public static IHotkeyService CreateLinuxHotkeys(string? xdgCurrentDesktop)
+        {
+            return Xdg.XdgCurrentDesktop.IsPlasma(xdgCurrentDesktop) ? new Linux.KGlobalAccelHotkeyService() : new NullHotkeyService();
+        }
+
+        /// <summary>Media and volume key triggers through KGlobalAccel on Plasma; elsewhere none.</summary>
+        public static IShellFlyoutTriggerSource CreateLinuxShellFlyoutTriggers(string? xdgCurrentDesktop)
+        {
+            return Xdg.XdgCurrentDesktop.IsPlasma(xdgCurrentDesktop)
+                ? new Linux.KGlobalAccelShellFlyoutTriggers()
+                : new NullShellFlyoutTriggerSource();
+        }
+
+        /// <summary>The full-screen check through a KWin script on Plasma; elsewhere none.</summary>
+        public static IFullscreenProbe CreateLinuxFullscreenProbe(string? xdgCurrentDesktop)
+        {
+            return Xdg.XdgCurrentDesktop.IsPlasma(xdgCurrentDesktop) ? new Linux.KWinFullscreenProbe() : new NullFullscreenProbe();
         }
 
         /// <summary>

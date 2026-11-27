@@ -14,6 +14,7 @@ using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.HostPlatform;
 using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
+using MosaicShell.Core.Modules.Settings;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
@@ -175,6 +176,11 @@ namespace MosaicShell.Host.ViewModels
         [ObservableProperty] private decimal _tesseraFlyoutScalePercent = 100;
         [ObservableProperty] private string _tesseraAccentHex = "";
         [ObservableProperty] private decimal _tesseraLegacyStepPercent = 2;
+
+        [ObservableProperty] private bool _hotkeyAvailable = true;
+        [ObservableProperty] private string _hotkeyUnavailableReason = "";
+        [ObservableProperty] private bool _fullscreenProbeAvailable = true;
+        [ObservableProperty] private string _fullscreenProbeUnavailableReason = "";
 
         /// <summary>Who owns the volume key step on this desktop (<see cref="VolumeKeyStepPolicy"/>).</summary>
         public VolumeKeyStepSource VolumeStepSource => _services.VolumeKeyStep.Source;
@@ -355,8 +361,14 @@ namespace MosaicShell.Host.ViewModels
                 ShowChordActions = info.Id.Equals("Chord", StringComparison.OrdinalIgnoreCase);
                 ShowSubstrateMute = info.Id.Equals("Substrate", StringComparison.OrdinalIgnoreCase);
                 ConfigCanTryOverlay = ShowHotkeyCapExtras || ShowSlateExtras || ShowTesseraExtras;
+                SettingAvailability hotkey = RowAvailability(info.Id, "HotkeyGesture");
+                HotkeyAvailable = hotkey.IsAvailable;
+                HotkeyUnavailableReason = hotkey.Reason ?? "";
+                SettingAvailability fullscreen = RowAvailability(info.Id, "HideOnFullscreen");
+                FullscreenProbeAvailable = fullscreen.IsAvailable;
+                FullscreenProbeUnavailableReason = fullscreen.Reason ?? "";
                 ConfigUsageSummary = ModuleUsageGuide.Summary(info.Id);
-                ConfigHowToTrigger = ModuleUsageGuide.HowToTrigger(info.Id);
+                ConfigHowToTrigger = ModuleUsageGuide.HowToTrigger(info.Id, _services.Features);
                 ConfigHotkeyGesture = ModuleUsageGuide.CurrentHotkey(info.Id);
                 IsCapturingHotkey = false;
                 HotkeyCaptureHint = "Click Capture, then press the shortcut";
@@ -387,6 +399,15 @@ namespace MosaicShell.Host.ViewModels
                         DispatcherPriority.Background);
                 }
             }
+        }
+
+        /// <summary>Whether a schema row works on this desktop; a module or row without a schema always does.</summary>
+        private SettingAvailability RowAvailability(string moduleId, string key)
+        {
+            return ModuleSettingsSchemas.TryGet(moduleId, out ModuleSettingsSchema? schema)
+                && schema!.Rows.FirstOrDefault(r => r.Key == key) is SettingRow row
+                ? SettingAvailability.Of(row, _services.Features)
+                : new SettingAvailability(true, null);
         }
 
         private void LoadModuleConfigFields(ModuleInfo info)
@@ -833,7 +854,7 @@ namespace MosaicShell.Host.ViewModels
                     return;
             }
 
-            ConfigHowToTrigger = ModuleUsageGuide.HowToTrigger(id);
+            ConfigHowToTrigger = ModuleUsageGuide.HowToTrigger(id, _services.Features);
             RefreshLibrary();
         }
 
@@ -842,6 +863,11 @@ namespace MosaicShell.Host.ViewModels
             if (_capabilityHost is null)
             {
                 return $"{id} saved.";
+            }
+
+            if (!HotkeyAvailable)
+            {
+                return $"{id} saved. {HotkeyUnavailableReason}";
             }
 
             if (!_capabilityHost.IsArmed(id))
@@ -1254,7 +1280,7 @@ namespace MosaicShell.Host.ViewModels
                         {
                             string? err = _capabilityHost.GetHotkeyError(item.Id);
                             StatusMessage = string.IsNullOrWhiteSpace(err)
-                                ? $"{ModuleUsageGuide.ArmedStatus(item.Id)}. {ModuleUsageGuide.HowToTrigger(item.Id)}"
+                                ? $"{ModuleUsageGuide.ArmedStatus(item.Id)}. {ModuleUsageGuide.HowToTrigger(item.Id, _services.Features)}"
                                 : err;
                         }
                     }

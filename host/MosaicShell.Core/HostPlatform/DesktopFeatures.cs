@@ -14,28 +14,65 @@ namespace MosaicShell.Core.HostPlatform
 
         private readonly HashSet<DesktopFeature> _available;
 
-        private DesktopFeatures(IEnumerable<DesktopFeature> available)
+        private DesktopFeatures(string desktopName, IEnumerable<DesktopFeature> available)
         {
+            DesktopName = desktopName;
             _available = [.. available];
         }
 
         /// <summary>Every feature: Windows, Plasma, and the fakes tests build services from.</summary>
-        public static DesktopFeatures All { get; } = new(Every);
+        public static DesktopFeatures All { get; } = new("Windows", Every);
 
         /// <summary>No feature: a desktop MosaicShell has no routes for yet.</summary>
-        public static DesktopFeatures None { get; } = new([]);
+        public static DesktopFeatures None { get; } = new("this desktop", []);
 
         /// <summary>This process's desktop, read once.</summary>
         public static DesktopFeatures Current => CurrentLazy.Value;
 
+        /// <summary>The desktop as people know it, for texts such as "not available on GNOME yet".</summary>
+        public string DesktopName { get; }
+
         public static DesktopFeatures Resolve(bool isWindows, string? xdgCurrentDesktop)
         {
-            return isWindows || XdgCurrentDesktop.IsPlasma(xdgCurrentDesktop) ? All : None;
+            return isWindows
+                ? All
+                : XdgCurrentDesktop.IsPlasma(xdgCurrentDesktop)
+                    ? new("Plasma", Every)
+                    : new(Name(xdgCurrentDesktop), []);
         }
 
         public bool Has(DesktopFeature feature)
         {
             return _available.Contains(feature);
+        }
+
+        /// <summary>What to show where <paramref name="feature"/> would be; null when the desktop has it.</summary>
+        public string? MissingText(DesktopFeature feature)
+        {
+            if (Has(feature))
+            {
+                return null;
+            }
+
+            string what = feature switch
+            {
+                DesktopFeature.GlobalHotkeys => "Shortcuts",
+                DesktopFeature.MediaKeys => "Media keys",
+                DesktopFeature.FullscreenProbe => "Telling when an app is full screen",
+                _ => feature.ToString(),
+            };
+            return $"{what} {(feature == DesktopFeature.FullscreenProbe ? "is" : "are")} not available on {DesktopName} yet.";
+        }
+
+        private static string Name(string? xdgCurrentDesktop)
+        {
+            if (XdgCurrentDesktop.IsGnome(xdgCurrentDesktop))
+            {
+                return "GNOME";
+            }
+
+            string? first = xdgCurrentDesktop?.Split(':', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault();
+            return string.IsNullOrEmpty(first) ? "this desktop" : first;
         }
     }
 }

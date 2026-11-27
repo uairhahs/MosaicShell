@@ -36,6 +36,18 @@ namespace MosaicShell.Core.Modules
             }
         }
 
+        /// <summary>
+        /// The how-to line for this desktop: where a shortcut module's shortcut cannot work, the line says so instead
+        /// of naming a key.
+        /// </summary>
+        public static string HowToTrigger(string moduleId, HostPlatform.DesktopFeatures features)
+        {
+            return moduleId.ToLowerInvariant() is "inlay" or "chord" or "substrate" or "mixdeck"
+                && features.MissingText(HostPlatform.DesktopFeature.GlobalHotkeys) is string missing
+                ? missing
+                : HowToTrigger(moduleId);
+        }
+
         public static string HowToTrigger(string moduleId)
         {
             string id = moduleId.ToLowerInvariant();

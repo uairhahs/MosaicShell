@@ -160,5 +160,19 @@ namespace MosaicShell.Core.Tests
 
             _ = ModuleUsageGuide.HowToTrigger("Acme").Should().Be("Double-tap the logo.");
         }
+
+        [Fact]
+        public void Without_shortcuts_a_hotkey_module_says_so_instead_of_naming_a_key()
+        {
+            _ = ModuleUsageGuide.HowToTrigger("Mixdeck", HostPlatform.DesktopFeatures.Resolve(false, "GNOME"))
+                .Should().Be("Shortcuts are not available on GNOME yet.");
+        }
+
+        [Fact]
+        public void With_shortcuts_the_desktop_aware_text_is_the_usual_one()
+        {
+            _ = ModuleUsageGuide.HowToTrigger("Mixdeck", HostPlatform.DesktopFeatures.Resolve(false, "KDE"))
+                .Should().Be(ModuleUsageGuide.HowToTrigger("Mixdeck"));
+        }
     }
 }

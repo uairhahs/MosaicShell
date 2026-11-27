@@ -169,8 +169,16 @@ namespace MosaicShell.Core.Services
 
         public IReadOnlyCollection<string> RegisteredIds => [.. _callbacks.Keys];
 
+        /// <summary>When true, every registration fails, as when another app holds the gesture.</summary>
+        public bool FailRegistrations { get; set; }
+
         public bool Register(string id, ModifierKeys modifiers, int virtualKey, Action callback)
         {
+            if (FailRegistrations)
+            {
+                return false;
+            }
+
             _callbacks[id] = callback;
             return true;
         }
@@ -241,10 +249,12 @@ namespace MosaicShell.Core.Services
 
     public static class HostServicesFakes
     {
-        public static HostServices Create()
+        /// <param name="features">What the pretend desktop can do; every feature when omitted.</param>
+        public static HostServices Create(HostPlatform.DesktopFeatures? features = null)
         {
             return new()
             {
+                Features = features ?? HostPlatform.DesktopFeatures.All,
                 Audio = new FakeAudioService(),
                 AppAudio = new FakeAppAudioService(),
                 Brightness = new FakeBrightnessService(),
