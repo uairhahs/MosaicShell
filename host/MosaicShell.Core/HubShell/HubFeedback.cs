@@ -69,7 +69,9 @@ namespace MosaicShell.Core.HubShell
                     true,
                     "Keep running in the background",
                     $"Closing hides this window. {noTray[..^1]}, so open MosaicShell again from your apps to bring it back.")
-                : new CloseChoice(true, "Keep running in the tray", "Closing hides this window. Open it again from the tray icon.");
+                : features.TrayIsTopBar
+                    ? new CloseChoice(true, "Keep running in the top bar", "Closing hides this window. Open it again from the MosaicShell icon in the top bar.")
+                    : new CloseChoice(true, "Keep running in the tray", "Closing hides this window. Open it again from the tray icon.");
             return [keep, new CloseChoice(false, "Quit MosaicShell", "Closing this window stops every module.")];
         }
 

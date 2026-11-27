@@ -57,6 +57,7 @@ namespace MosaicShell.Host
         private CapabilityDaemonCoordinator? _daemonCoordinator;
 
         private CapabilityIpcFlyoutServer? _ipcFlyoutServer;
+        private IDisposable? _hubPresence;
 
         private MainViewModel? _vm;
 
@@ -195,10 +196,16 @@ namespace MosaicShell.Host
 
 
 
+                // GNOME has no tray: MosaicShell's icon in its top bar opens the Hub or quits instead.
+                _hubPresence = HostServices.StartHubPresence(
+                    () => Dispatcher.UIThread.Post(ShowHubOnRequest),
+                    () => Dispatcher.UIThread.Post(() => _ = ExitApplicationAsync()));
+
                 desktop.Exit += async (_, _) =>
 
                 {
 
+                    _hubPresence?.Dispose();
                     await TeardownCapabilitiesAsync();
 
                 };

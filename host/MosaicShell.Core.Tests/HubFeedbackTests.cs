@@ -67,22 +67,32 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void On_GNOME_keeping_running_says_there_is_no_tray_and_how_to_come_back()
+        public void On_GNOME_keeping_running_points_at_the_icon_in_the_top_bar()
         {
             CloseChoice keep = HubSettingsLayout.CloseChoices(Gnome)[0];
 
-            _ = keep.Label.Should().Be("Keep running in the background");
-            _ = keep.Consequence.Should().Be(
-                "Closing hides this window. A tray icon is not available on GNOME yet, so open MosaicShell again from your apps to bring it back.");
+            _ = keep.Label.Should().Be("Keep running in the top bar");
+            _ = keep.Consequence.Should().Be("Closing hides this window. Open it again from the MosaicShell icon in the top bar.");
         }
 
         [Fact]
-        public void A_tray_is_a_desktop_feature_GNOME_lacks()
+        public void Without_a_tray_keeping_running_says_how_to_come_back()
         {
-            _ = Gnome.Has(DesktopFeature.Tray).Should().BeFalse();
+            CloseChoice keep = HubSettingsLayout.CloseChoices(DesktopFeatures.Resolve(false, "Hyprland"))[0];
+
+            _ = keep.Label.Should().Be("Keep running in the background");
+            _ = keep.Consequence.Should().Be(
+                "Closing hides this window. A tray icon is not available on Hyprland yet, so open MosaicShell again from your apps to bring it back.");
+        }
+
+        [Fact]
+        public void GNOMEs_tray_is_MosaicShells_icon_in_the_top_bar()
+        {
+            _ = Gnome.Has(DesktopFeature.Tray).Should().BeTrue();
             _ = Windows.Has(DesktopFeature.Tray).Should().BeTrue();
             _ = DesktopFeatures.Resolve(false, "KDE").Has(DesktopFeature.Tray).Should().BeTrue();
-            _ = Gnome.MissingText(DesktopFeature.Tray).Should().Be("A tray icon is not available on GNOME yet.");
+            _ = DesktopFeatures.Resolve(false, "Hyprland").MissingText(DesktopFeature.Tray)
+                .Should().Be("A tray icon is not available on Hyprland yet.");
         }
 
         [Theory]

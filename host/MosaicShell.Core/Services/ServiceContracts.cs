@@ -214,6 +214,28 @@ namespace MosaicShell.Core.Services
         }
 
         /// <summary>
+        /// On GNOME, starts the Host's presence (<see cref="Gnome.GnomeHubPresencePolicy"/>): MosaicShell's icon in the
+        /// top bar, whose menu opens the Hub or quits. Null everywhere else, where the system tray does that.
+        /// </summary>
+        /// <param name="showHub">Brings the Hub forward; called on a bus thread.</param>
+        /// <param name="quit">Quits MosaicShell; called on a bus thread.</param>
+        public static IDisposable? StartHubPresence(Action showHub, Action quit)
+        {
+#if WINDOWS
+            return null;
+#else
+            if (!OperatingSystem.IsLinux() || !Xdg.XdgCurrentDesktop.IsGnome(Xdg.XdgCurrentDesktop.Current))
+            {
+                return null;
+            }
+
+            Linux.GnomeHubPresence presence = new(showHub, quit);
+            presence.Start();
+            return presence;
+#endif
+        }
+
+        /// <summary>
         /// Every service present and inert: features report themselves unavailable rather than showing invented data.
         /// For a platform with no implementations yet, so the Host can start and draw.
         /// </summary>

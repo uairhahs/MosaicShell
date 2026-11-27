@@ -108,7 +108,9 @@ namespace MosaicShell.Core.Tests
         {
             DesktopFeatures gnome = DesktopFeatures.Resolve(false, "GNOME");
 
-            _ = Enum.GetValues<DesktopFeature>().Should().OnlyContain(f => !gnome.Has(f));
+            // Its one feature is the tray: MosaicShell's own Shell extension puts an icon in the top bar.
+            _ = Enum.GetValues<DesktopFeature>().Where(f => f != DesktopFeature.Tray).Should().OnlyContain(f => !gnome.Has(f));
+            _ = gnome.Has(DesktopFeature.Tray).Should().BeTrue();
         }
 
         private static (FakeMediaSessionService, List<MediaSessionSignal>, MediaSessionPlatform) Start(MediaSessionInfo? initial)
