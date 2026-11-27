@@ -184,6 +184,20 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public void A_manifest_with_styles_but_no_settings_gets_a_page_with_its_style()
+        {
+            string path = ModuleManifest.PathInModule("Styled");
+            _ = Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, """{ "Id": "Styled", "Kind": "Widget", "Styles": [ "Plain", "Bold" ], "DefaultStyle": "Bold" }""");
+
+            ModuleSettingsSchema schema = Schema("Styled");
+
+            _ = schema.Rows.Select(r => (r.Key, r.Kind)).Should().Equal(("Style", SettingKind.Style));
+            _ = schema.Sections.Single().Title.Should().Be("Look");
+            _ = schema.Open().Get<string>("Style").Should().Be("Bold");
+        }
+
+        [Fact]
         public void A_page_with_no_drawable_row_is_no_page()
         {
             Install(Id, "Capability", """[ { "Section": "S", "Rows": [ { "Key": "X", "Kind": "Knob" } ] } ]""");

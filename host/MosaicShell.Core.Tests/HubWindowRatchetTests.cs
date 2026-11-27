@@ -12,6 +12,9 @@ namespace MosaicShell.Core.Tests
         private static readonly string MainWindowXaml = File.ReadAllText(
             Path.Combine(SourceTree.HostRoot, "MosaicShell.Host", "Views", "MainWindow.axaml"));
 
+        private static readonly string ModulePageXaml = File.ReadAllText(
+            Path.Combine(SourceTree.HostRoot, "MosaicShell.Host", "Views", "ModulePageView.axaml"));
+
         [Fact]
         public void Data_location_is_read_from_AppPaths_not_written_as_a_Windows_literal()
         {
@@ -114,20 +117,22 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void Tessera_motion_settings_grey_out_and_say_why_while_reduced_motion_is_in_effect()
         {
-            // User, 2026-11-26: with Reduce motion on (Settings) the motion settings change nothing, so they are disabled
-            // and dimmed, with a notice and a way to Settings. Play on screen stays outside, to show the fade that plays.
-            Match panel = Regex.Match(MainWindowXaml, "<StackPanel[^>]*x:Name=\"TesseraMotionSettings\"[^>]*>", RegexOptions.Singleline);
+            // With Reduce motion on (Settings) the motion settings change nothing, so they are disabled and dimmed, with
+            // a notice and a way to Settings. Show it on screen stays outside, to show the fade that plays. The motion
+            // settings are Tessera's Motion slot on the module page; the button is in the page's pinned header.
+            Match slot = Regex.Match(ModulePageXaml, "<DataTemplate DataType=\"mp:TesseraMotionSlotViewModel\">.*?</DataTemplate>\\s*\\n\\s*<DataTemplate DataType=\"mp:TesseraPositionSlotViewModel\">", RegexOptions.Singleline);
+            _ = slot.Success.Should().BeTrue();
+            Match panel = Regex.Match(slot.Value, "<StackPanel[^>]*x:Name=\"TesseraMotionSettings\"[^>]*>", RegexOptions.Singleline);
             _ = panel.Success.Should().BeTrue();
             _ = panel.Value.Should().Contain("IsEnabled=\"{Binding !IsReducedMotionInEffect}\"");
             _ = panel.Value.Should().Contain("Opacity=\"{Binding TesseraMotionSettingsOpacity}\"");
-            _ = MainWindowXaml.Should().Contain("Text=\"{Binding ReducedMotionNotice}\"");
 
-            int notice = MainWindowXaml.IndexOf("ReducedMotionNotice", StringComparison.Ordinal);
-            int looks = MainWindowXaml.IndexOf("TesseraMotionPresetItems", StringComparison.Ordinal);
-            int play = MainWindowXaml.IndexOf("PreviewTesseraFlyoutCommand", StringComparison.Ordinal);
+            int notice = slot.Value.IndexOf("ReducedMotionNotice", StringComparison.Ordinal);
+            int looks = slot.Value.IndexOf("TesseraMotionPresetItems", StringComparison.Ordinal);
+            _ = notice.Should().BePositive().And.BeLessThan(panel.Index);
             _ = panel.Index.Should().BeLessThan(looks);
-            _ = play.Should().BeLessThan(panel.Index, "Play on screen is not greyed out");
-            _ = notice.Should().BeLessThan(panel.Index);
+            _ = slot.Value.Should().NotContain("PreviewCommand", "Show it on screen is not greyed out with the motion settings");
+            _ = ModulePageXaml.Should().Contain("Command=\"{Binding PreviewCommand}\"");
         }
 
         [Fact]

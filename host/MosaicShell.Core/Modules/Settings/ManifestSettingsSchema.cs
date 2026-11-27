@@ -63,7 +63,18 @@ namespace MosaicShell.Core.Modules.Settings
     {
         public static ModuleSettingsSchema? From(ModuleManifest manifest)
         {
-            if (manifest.Settings is not { Count: > 0 } || string.IsNullOrWhiteSpace(manifest.Id))
+            if (string.IsNullOrWhiteSpace(manifest.Id))
+            {
+                return null;
+            }
+
+            // A manifest that lists styles but no page still gets one: its style choice.
+            List<ManifestSettingSection>? sections = manifest.Settings is { Count: > 0 }
+                ? manifest.Settings
+                : manifest.Styles is { Count: > 0 }
+                    ? [new ManifestSettingSection { Section = "Look", Rows = [new ManifestSettingRow { Kind = nameof(SettingKind.Style) }] }]
+                    : null;
+            if (sections is null)
             {
                 return null;
             }
@@ -77,7 +88,7 @@ namespace MosaicShell.Core.Modules.Settings
             List<(string Key, string Toggle)> shownWhen = [];
             bool any = false;
 
-            foreach (ManifestSettingSection section in manifest.Settings)
+            foreach (ManifestSettingSection section in sections)
             {
                 // One row at a time, so a key taken earlier in the same section is seen.
                 List<ManifestSettingRow> drawable = [];

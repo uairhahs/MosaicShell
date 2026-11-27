@@ -76,10 +76,9 @@ namespace MosaicShell.Host.ViewModels
                 return;
             }
 
-            // The style preview draws the media strip from the Hub's copy; keep it in step with the switch.
+            // The header preview draws the media strip from the Hub's copy; keep it in step with the switch.
             TesseraSettings saved = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
             TesseraMediaStrip = saved.ShowMediaStripOnVolume;
-            TesseraFlyoutScalePercent = saved.FlyoutScalePercent;
         }
 
         /// <summary>Called once Tessera's fields are loaded into the Hub for its page.</summary>

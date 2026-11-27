@@ -19,7 +19,6 @@ using MosaicShell.Core.Settings;
 using MosaicShell.Core.Shp;
 using MosaicShell.Core.Styles;
 using MosaicShell.Core.Update;
-using MosaicShell.Host.Capabilities;
 using MosaicShell.Host.Tiles;
 using MosaicShell.Host.Tiles.Tessera;
 
@@ -133,9 +132,6 @@ namespace MosaicShell.Host.ViewModels
         [ObservableProperty] private TesseraNamedChoice? _selectedTesseraPosition;
         [ObservableProperty] private string _tesseraPosition = "TL";
         [ObservableProperty] private decimal _tesseraMonitorIndex = 1;
-        [ObservableProperty] private decimal _tesseraXPad = 20;
-        [ObservableProperty] private decimal _tesseraYPad = 20;
-        [ObservableProperty] private decimal _tesseraAutoDismissSeconds = 2.00m;
         [ObservableProperty] private int _tesseraAni = 2;
         [ObservableProperty] private string _tesseraAniDir = "Left";
         [ObservableProperty] private string _tesseraAniEase = TesseraFlyoutAnimationPolicy.DefaultEase;
@@ -145,12 +141,7 @@ namespace MosaicShell.Host.ViewModels
         [ObservableProperty] private int _tesseraAniSteps = TesseraFlyoutAnimationPolicy.DefaultAniSteps;
         [ObservableProperty] private int _tesseraAnimationDisplacement = TesseraFlyoutAnimationPolicy.DefaultDisplacementPx;
         private bool _syncingEaseParts;
-        [ObservableProperty] private bool _tesseraMediaFlyouts = true;
-        [ObservableProperty] private bool _tesseraLockFlyouts = true;
-        [ObservableProperty] private bool _tesseraFlightFlyouts = true;
         [ObservableProperty] private bool _tesseraMediaStrip = true;
-        [ObservableProperty] private bool _tesseraFocusDim = true;
-        [ObservableProperty] private decimal _tesseraFlyoutScalePercent = 100;
         [ObservableProperty] private string _tesseraAccentHex = "";
         [ObservableProperty] private decimal _tesseraLegacyStepPercent = 2;
 
@@ -365,9 +356,6 @@ namespace MosaicShell.Host.ViewModels
                 SelectedTesseraPosition = TesseraPositionChoices.FirstOrDefault(c => c.Code == TesseraPosition)
                                           ?? TesseraPositionChoices[0];
                 TesseraMonitorIndex = Math.Clamp(s.MonitorIndex, 1, 8);
-                TesseraXPad = Math.Clamp(s.XPad, 0, 200);
-                TesseraYPad = Math.Clamp(s.YPad, 0, 200);
-                TesseraAutoDismissSeconds = Math.Clamp(s.AutoDismissMs / 1000m, 0.5m, 20m);
                 TesseraAni = s.Ani;
                 TesseraAniDir = s.AniDir;
                 TesseraAniEase = TesseraFlyoutAnimationPolicy.NormalizeEase(s.AniEase);
@@ -376,13 +364,8 @@ namespace MosaicShell.Host.ViewModels
                 TesseraAnimationDisplacement =
                     TesseraFlyoutAnimationPolicy.NormalizeDisplacementPx(s.AnimationDisplacement);
                 RefreshTesseraMotion();
-                TesseraMediaFlyouts = s.EnableMediaFlyouts;
-                TesseraLockFlyouts = s.EnableLockFlyouts;
-                TesseraFlightFlyouts = s.EnableFlightFlyouts;
                 TesseraMediaStrip = s.ShowMediaStripOnVolume;
                 LoadTesseraMaterial(s);
-                TesseraFocusDim = s.UseFocusDim;
-                TesseraFlyoutScalePercent = Math.Clamp(s.FlyoutScalePercent, 50, 150);
                 TesseraAccentHex = s.AccentColor ?? "";
                 decimal stepPct = s.LegacyVolumeStep <= 1.0
                     ? (decimal)Math.Round(s.LegacyVolumeStep * 100)
@@ -444,14 +427,10 @@ namespace MosaicShell.Host.ViewModels
         [RelayCommand]
         private void PreviewTesseraFlyout()
         {
+            // Every change is already saved; write any that is still waiting out its pause.
             if (ModulePage is not null)
             {
-                // Every change is already saved; write any that is still waiting out its pause.
                 _ = ModulePage.FlushAsync();
-            }
-            else if (ShowTesseraExtras)
-            {
-                PersistTesseraFromUi();
             }
 
             TesseraSettings settings = TesseraFlyoutRequestBuilder.LoadSettings();
@@ -489,55 +468,6 @@ namespace MosaicShell.Host.ViewModels
             {
                 return Math.Clamp(fallback, 1, 8);
             }
-        }
-
-        private void PersistTesseraFromUi()
-        {
-            TesseraSettings s = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
-            string priorStyle = s.Style;
-            s.Style = StyleIds.Normalize(ModuleStyle);
-            s.Position = SelectedTesseraPosition?.Code ?? TesseraPosition;
-            s.MonitorIndex = Math.Clamp((int)TesseraMonitorIndex, 1, 8);
-            s.XPad = Math.Clamp((int)TesseraXPad, 0, 200);
-            s.YPad = Math.Clamp((int)TesseraYPad, 0, 200);
-            TesseraMonitorIndex = s.MonitorIndex;
-            TesseraXPad = s.XPad;
-            TesseraYPad = s.YPad;
-            s.AutoDismissMs = (int)Math.Round(Math.Clamp((double)TesseraAutoDismissSeconds, 0.5, 20) * 1000);
-            s.Ani = TesseraAni;
-            s.AniDir = TesseraAniDir;
-            s.AniEase = TesseraFlyoutAnimationPolicy.NormalizeEase(TesseraAniEase);
-            s.AniSteps = TesseraFlyoutAnimationPolicy.NormalizeAniSteps(TesseraAniSteps);
-            s.AnimationDisplacement =
-                TesseraFlyoutAnimationPolicy.NormalizeDisplacementPx(TesseraAnimationDisplacement);
-            s.EnableMediaFlyouts = TesseraMediaFlyouts;
-            s.EnableLockFlyouts = TesseraLockFlyouts;
-            s.EnableFlightFlyouts = TesseraFlightFlyouts;
-            s.ShowMediaStripOnVolume = TesseraMediaStrip;
-            PersistTesseraMaterial(s);
-            s.UseFocusDim = TesseraFocusDim;
-            s.FlyoutScalePercent = (int)Math.Clamp(TesseraFlyoutScalePercent, 50, 150);
-            s.AccentColor = TesseraAccentColor.NormalizeOrEmpty(TesseraAccentHex);
-            TesseraAccentHex = s.AccentColor;
-            s.UseLegacyVolumeHooks = TesseraLegacyVol;
-            if (VolumeKeyStepPolicy.HasHookSwitch(VolumeStepSource))
-            {
-                s.LegacyVolumeStep = Math.Clamp((double)TesseraLegacyStepPercent, 1, 25) / 100.0;
-            }
-            else if (VolumeStepSource != VolumeKeyStepSource.None)
-            {
-                // The desktop owns the step here; Tessera's own copy stays as it was for Windows.
-                _ = _services.VolumeKeyStep.Write((int)TesseraLegacyStepPercent);
-            }
-            ModuleSettingsStore.Save(ModuleIds.Tessera, s);
-            string path = ModuleSettingsStore.PathFor(ModuleIds.Tessera);
-            DateTime mtime = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
-            TesseraFlyoutDiagnostics.Log(
-                $"[Hub] PersistTesseraFromUi: style {priorStyle} -> {s.Style} "
-                + $"(UI ModuleStyle={ModuleStyle}), autoDismissMs={s.AutoDismissMs}, "
-                + $"wroteMtimeUtc={mtime:O}");
-            TesseraPosition = s.Position;
-            TesseraAni = s.Ani;
         }
 
         partial void OnSelectedTesseraPositionChanged(TesseraNamedChoice? value)
@@ -578,64 +508,6 @@ namespace MosaicShell.Host.ViewModels
         private void SyncAniEaseFromParts()
         {
             TesseraAniEase = TesseraFlyoutAnimationPolicy.ComposeEase(TesseraEaseFamily, TesseraEaseVariant);
-        }
-
-        [RelayCommand]
-        private async Task SaveModuleConfigAsync()
-        {
-            TesseraFlyoutDiagnostics.Log(
-                $"[Hub] SaveModuleConfigCommand invoked: ConfigModuleId='{ConfigModuleId}', "
-                + $"IsRunning={SaveModuleConfigCommand.IsRunning}");
-            if (string.IsNullOrWhiteSpace(ConfigModuleId))
-            {
-                TesseraFlyoutDiagnostics.Log("[Hub] SaveModuleConfigCommand: ConfigModuleId empty, returning early.");
-                return;
-            }
-
-            string id = ConfigModuleId;
-            // Case-insensitive by construction (ModuleIds.Is), not by convention - ids arrive from
-            // user-authored manifests/settings, and hand-lowercasing each case label independently
-            // (the previous pattern) silently breaks the moment one case is written differently,
-            // which is exactly what happened to Tessera when it was swapped for the ModuleIds
-            // constant but the case label kept its canonical capitalization.
-            switch (id)
-            {
-                case string when ModuleIds.IsTessera(id):
-                    {
-                        TesseraSettings prior = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
-                        bool priorNativeTranslucency = prior.UseNativeTranslucency;
-                        PersistTesseraFromUi();
-                        TesseraSettings saved = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
-                        bool wasArmed = _capabilityHost?.IsArmed(ModuleIds.Tessera) == true;
-                        TesseraFlyoutDiagnostics.Log(
-                            $"[Hub] Save clicked: style={saved.Style}, armed={wasArmed}");
-                        if (wasArmed)
-                        {
-                            bool ok = await _capabilityHost!.ReArmAsync(ModuleIds.Tessera);
-                            StatusMessage = ok
-                                ? "Tessera settings saved and re-armed."
-                                : "Tessera settings saved but re-arm failed.";
-                            TesseraFlyoutDiagnostics.Log($"[Hub] ReArmAsync(Tessera) -> {ok}");
-                        }
-                        else
-                        {
-                            StatusMessage = "Tessera settings saved. Arm from Tiles to apply flyout hooks.";
-                        }
-
-                        if (saved.UseNativeTranslucency != priorNativeTranslucency)
-                        {
-                            StatusMessage += " Restart Host after changing native translucency (process-wide corner radius).";
-                        }
-
-                        break;
-                    }
-                default:
-                    StatusMessage = $"No settings store for {id}.";
-                    return;
-            }
-
-            ConfigHowToTrigger = ModuleUsageGuide.HowToTrigger(id, _services.Features);
-            RefreshLibrary();
         }
 
         private void EnsureLaunchTargetsLoaded()

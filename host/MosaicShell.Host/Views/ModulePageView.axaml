@@ -277,7 +277,8 @@
                     Command="{Binding NavigateCommand}" CommandParameter="Settings" />
           </Grid>
         </Border>
-        <StackPanel Spacing="14" IsEnabled="{Binding !IsReducedMotionInEffect}" Opacity="{Binding TesseraMotionSettingsOpacity}">
+        <StackPanel x:Name="TesseraMotionSettings" Spacing="14"
+                    IsEnabled="{Binding !IsReducedMotionInEffect}" Opacity="{Binding TesseraMotionSettingsOpacity}">
           <Border Background="{DynamicResource SolidBackgroundFillColorBaseBrush}" CornerRadius="10" Padding="12">
             <Grid ColumnDefinitions="260,*">
               <tessera:TesseraMotionPreview Width="260" VerticalAlignment="Center"
