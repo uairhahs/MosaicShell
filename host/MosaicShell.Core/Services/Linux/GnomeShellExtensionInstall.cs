@@ -19,6 +19,7 @@ namespace MosaicShell.Core.Services.Linux
                 _ = Directory.CreateDirectory(dir);
                 WriteIfChanged(Path.Combine(dir, "metadata.json"), GnomeOsdGuardExtension.MetadataJson);
                 WriteIfChanged(Path.Combine(dir, "extension.js"), GnomeOsdGuardExtension.ExtensionJs);
+                WriteIfChanged(Path.Combine(dir, GnomeOsdGuardExtension.PanelIconFile), GnomeOsdGuardExtension.PanelIconSvg);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {

@@ -54,6 +54,7 @@ namespace MosaicShell.Core.Services.Gnome
             const HUB_IFACE = {{JsonSerializer.Serialize(GnomeHubPresencePolicy.Interface)}};
             const SHOW_HUB = {{JsonSerializer.Serialize(GnomeHubPresencePolicy.ShowHubMethod)}};
             const QUIT = {{JsonSerializer.Serialize(GnomeHubPresencePolicy.QuitMethod)}};
+            const ICON = {{JsonSerializer.Serialize(PanelIconFile)}};
 
             function callHub(method) {
                 Gio.DBus.session.call(HUB, HUB_PATH, HUB_IFACE, method, null, null, Gio.DBusCallFlags.NONE, -1, null, null);
@@ -62,10 +63,10 @@ namespace MosaicShell.Core.Services.Gnome
             // MosaicShell in the top bar: GNOME has no tray of its own, so this is how a closed Hub comes back.
             const HubIndicator = GObject.registerClass(
             class HubIndicator extends PanelMenu.Button {
-                _init() {
+                _init(dir) {
                     super._init(0.0, 'MosaicShell');
                     this.add_child(new St.Icon({
-                        gicon: Gio.ThemedIcon.new_from_names(['mosaicshell-symbolic', 'mosaicshell', 'view-grid-symbolic']),
+                        gicon: new Gio.FileIcon({file: dir.get_child(ICON)}),
                         style_class: 'system-status-icon',
                     }));
                     const open = new PopupMenu.PopupMenuItem('Open MosaicShell');
@@ -89,7 +90,7 @@ namespace MosaicShell.Core.Services.Gnome
                     this._hubWatch = Gio.bus_watch_name(Gio.BusType.SESSION, HUB, Gio.BusNameWatcherFlags.NONE,
                         () => {
                             if (!this._indicator) {
-                                this._indicator = new HubIndicator();
+                                this._indicator = new HubIndicator(this.dir);
                                 Main.panel.addToStatusArea(this.uuid, this._indicator);
                             }
                         },

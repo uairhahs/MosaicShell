@@ -102,6 +102,21 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public void The_top_bar_icon_ships_with_the_extension_and_recolours_like_Shells_own()
+        {
+            // A themed icon name needs MosaicShell's icons installed, so without them Shell drew a generic grid. The
+            // logo travels in the extension's folder instead, as a symbolic SVG so Shell tints it like every panel icon.
+            _ = GnomeOsdGuardExtension.PanelIconFile.Should().EndWith("-symbolic.svg");
+            _ = GnomeOsdGuardExtension.ExtensionJs.Should().Contain("Gio.FileIcon")
+                .And.Contain(JsonSerializer.Serialize(GnomeOsdGuardExtension.PanelIconFile))
+                .And.NotContain("view-grid-symbolic");
+
+            System.Xml.Linq.XElement svg = System.Xml.Linq.XElement.Parse(GnomeOsdGuardExtension.PanelIconSvg);
+            _ = svg.Name.LocalName.Should().Be("svg");
+            _ = svg.Attribute("viewBox")!.Value.Should().Be("0 0 16 16");
+        }
+
+        [Fact]
         public void The_metadata_says_it_also_shows_MosaicShell_in_the_top_bar()
         {
             using JsonDocument doc = JsonDocument.Parse(GnomeOsdGuardExtension.MetadataJson);
