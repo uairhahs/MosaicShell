@@ -1,6 +1,7 @@
 using FluentAssertions;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Capabilities.BuiltIn;
+using MosaicShell.Core.HostPlatform;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
@@ -197,6 +198,27 @@ namespace MosaicShell.Core.Tests
             await cap.DisarmAsync();
         }
 
+        [Theory]
+        [InlineData(false, 1)]
+        [InlineData(true, 0)]
+        public async Task Pause_after_transient_dismiss_presents_only_where_the_key_cannot_be_seen(bool mediaKeyRoute, int shows)
+        {
+            FakeMediaSessionService media = new();
+            DesktopFeatures features = DesktopFeatures.Resolve(isWindows: false, mediaKeyRoute ? "KDE" : "GNOME");
+            HostServices services = TesseraServices(media: media, features: features);
+            TesseraCapability cap = new(TestCapabilityContext.Create(services, _ui));
+            await cap.ArmAsync();
+
+            media.Current = new MediaSessionInfo("Track A", "Artist", "app", true, null, 10, 180);
+            _flyouts.RaiseTransientDismiss();
+
+            _flyouts.ResetCounts();
+            media.Current = new MediaSessionInfo("Track A", "Artist", "app", false, null, 10, 180);
+
+            _ = _flyouts.ShowCount.Should().Be(shows);
+            await cap.DisarmAsync();
+        }
+
         [Fact]
         public async Task Late_art_after_transient_dismiss_does_not_present()
         {
@@ -312,10 +334,12 @@ namespace MosaicShell.Core.Tests
 
         private static HostServices TesseraServices(
             ILockKeysService? lockKeys = null,
-            IMediaSessionService? media = null)
+            IMediaSessionService? media = null,
+            DesktopFeatures? features = null)
         {
             return new()
             {
+                Features = features ?? DesktopFeatures.All,
                 Audio = new FakeAudioService(),
                 AppAudio = new FakeAppAudioService(),
                 Brightness = new FakeBrightnessService(),

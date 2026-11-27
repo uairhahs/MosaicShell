@@ -196,17 +196,15 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                         Flyouts.SoftRefresh(BuildRequest(Flyouts.OpenKind, null));
                         break;
                     case MediaFlyoutAction.PresentMediaFlyout:
-                        if (!Flyouts.ShouldColdPresentMedia(
-                                FlyoutSyncTrigger.MediaSession,
-                                signal.IsTrackBoundary))
+                        FlyoutSyncTrigger trigger = MediaKeyStandInPolicy.Trigger(
+                            signal,
+                            Services.Features.Has(HostPlatform.DesktopFeature.MediaKeys));
+                        if (!Flyouts.ShouldColdPresentMedia(trigger, signal.IsTrackBoundary))
                         {
                             break;
                         }
 
-                        PresentMediaFlyout(
-                                                pumpFirst: false,
-                                                FlyoutSyncTrigger.MediaSession,
-                                                signal.IsTrackBoundary);
+                        PresentMediaFlyout(pumpFirst: false, trigger, signal.IsTrackBoundary);
                         break;
                     case MediaFlyoutAction.Ignore:
                         break;

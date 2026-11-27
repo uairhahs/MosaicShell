@@ -8,5 +8,8 @@ namespace MosaicShell.Core.HostPlatform
 
         /// <summary>Telling whether the app in front is full screen.</summary>
         FullscreenProbe,
+
+        /// <summary>Seeing the play, pause and track keys as they are pressed.</summary>
+        MediaKeys,
     }
 }

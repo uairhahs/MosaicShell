@@ -138,6 +138,9 @@ namespace MosaicShell.Core.Services
         public required IAudioDeviceService AudioDevices { get; init; }
         public required IShellFlyoutTriggerSource ShellFlyoutTriggers { get; init; }
 
+        /// <summary>What this desktop lets MosaicShell do; every feature unless a platform factory says otherwise.</summary>
+        public HostPlatform.DesktopFeatures Features { get; init; } = HostPlatform.DesktopFeatures.All;
+
         /// <summary>Platform parts that serve no interface of their own but live as long as the services (Linux: the MPRIS export).</summary>
         public IReadOnlyList<IDisposable> Companions { get; init; } = [];
 
@@ -275,7 +278,8 @@ namespace MosaicShell.Core.Services
                 Linux.XdgAutostartService.ForCurrentProcess(),
                 CreateLinuxIdle(desktop),
                 new Linux.KWinFullscreenProbe(),
-                CreateLinuxAirplane(desktop));
+                CreateLinuxAirplane(desktop),
+                HostPlatform.DesktopFeatures.Resolve(isWindows: false, desktop));
         }
 
         /// <summary>
@@ -364,10 +368,12 @@ namespace MosaicShell.Core.Services
             IAutostartService? autostart = null,
             IIdleService? idle = null,
             IFullscreenProbe? fullscreen = null,
-            IAirplaneModeService? airplane = null)
+            IAirplaneModeService? airplane = null,
+            HostPlatform.DesktopFeatures? features = null)
         {
             return new HostServices
             {
+                Features = features ?? HostPlatform.DesktopFeatures.None,
                 Audio = audio ?? new NullAudioService(),
                 AppAudio = appAudio ?? new NullAppAudioService(),
                 Brightness = brightness ?? new NullBrightnessService(),
