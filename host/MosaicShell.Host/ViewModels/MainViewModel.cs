@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using Avalonia;
-using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Threading;
@@ -9,12 +8,10 @@ using CommunityToolkit.Mvvm.Input;
 using Material.Icons;
 using MosaicShell.Core;
 using MosaicShell.Core.Capabilities;
-using MosaicShell.Core.Capabilities.BuiltIn;
 using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.HostPlatform;
 using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
-using MosaicShell.Core.Modules.Settings;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
@@ -23,7 +20,6 @@ using MosaicShell.Core.Shp;
 using MosaicShell.Core.Styles;
 using MosaicShell.Core.Update;
 using MosaicShell.Host.Capabilities;
-using MosaicShell.Host.Input;
 using MosaicShell.Host.Tiles;
 using MosaicShell.Host.Tiles.Tessera;
 
@@ -125,32 +121,12 @@ namespace MosaicShell.Host.ViewModels
         [NotifyPropertyChangedFor(nameof(TesseraMaterialFixedNote))]
         private string _moduleStyle = "DEFAULT";
         [ObservableProperty] private StyleDescriptor? _selectedModuleStyle;
-        [ObservableProperty] private bool _chronoSeconds = true;
-        [ObservableProperty] private bool _showChronoExtras;
         [ObservableProperty] private bool _tesseraLegacyVol = true;
         [ObservableProperty] private bool _showTesseraExtras;
-        [ObservableProperty] private bool _showHotkeyCapExtras;
-        [ObservableProperty] private bool _showSlateExtras;
-        [ObservableProperty] private bool _showInlayPins;
-        [ObservableProperty] private bool _showChordActions;
-        [ObservableProperty] private bool _showSubstrateMute;
         [ObservableProperty] private string _configUsageSummary = "";
         [ObservableProperty] private string _configHowToTrigger = "";
-        [ObservableProperty] private string _configHotkeyGesture = "";
-        [ObservableProperty] private bool _isCapturingHotkey;
-        [ObservableProperty] private string _hotkeyCaptureHint = "Click Capture, then press the shortcut";
-        [ObservableProperty] private string _launchTargetQuery = "";
-        [ObservableProperty] private string _chordActionName = "";
-        [ObservableProperty] private string _configPinsText = "";
-        [ObservableProperty] private string _configActionsText = "";
-        [ObservableProperty] private bool _configShowMute = true;
-        [ObservableProperty] private decimal _configIdleSeconds = 300;
-        [ObservableProperty] private bool _configHideOnFullscreen = true;
-        [ObservableProperty] private bool _configCanTryOverlay;
         [ObservableProperty] private bool _tesseraConfigPreviewReady;
 
-        public ObservableCollection<string> ConfigPins { get; } = [];
-        public ObservableCollection<ChordActionRow> ConfigChordActions { get; } = [];
         public ObservableCollection<string> LaunchTargetChoices { get; } = [];
 
         [ObservableProperty] private TesseraNamedChoice? _selectedTesseraPosition;
@@ -176,11 +152,6 @@ namespace MosaicShell.Host.ViewModels
         [ObservableProperty] private decimal _tesseraFlyoutScalePercent = 100;
         [ObservableProperty] private string _tesseraAccentHex = "";
         [ObservableProperty] private decimal _tesseraLegacyStepPercent = 2;
-
-        [ObservableProperty] private bool _hotkeyAvailable = true;
-        [ObservableProperty] private string _hotkeyUnavailableReason = "";
-        [ObservableProperty] private bool _fullscreenProbeAvailable = true;
-        [ObservableProperty] private string _fullscreenProbeUnavailableReason = "";
 
         /// <summary>Who owns the volume key step on this desktop (<see cref="VolumeKeyStepPolicy"/>).</summary>
         public VolumeKeyStepSource VolumeStepSource => _services.VolumeKeyStep.Source;
@@ -356,35 +327,9 @@ namespace MosaicShell.Host.ViewModels
                     ModuleStyleOptions.Add(style);
                 }
 
-                ShowChronoExtras = info.Id.Equals("Chrono", StringComparison.OrdinalIgnoreCase);
                 ShowTesseraExtras = ModuleIds.IsTessera(info.Id);
-                ShowHotkeyCapExtras = info.Id is "Inlay" or "Chord" or "Substrate" or "Mixdeck";
-                ShowSlateExtras = info.Id.Equals("Slate", StringComparison.OrdinalIgnoreCase);
-                ShowInlayPins = info.Id.Equals("Inlay", StringComparison.OrdinalIgnoreCase);
-                ShowChordActions = info.Id.Equals("Chord", StringComparison.OrdinalIgnoreCase);
-                ShowSubstrateMute = info.Id.Equals("Substrate", StringComparison.OrdinalIgnoreCase);
-                ConfigCanTryOverlay = ShowHotkeyCapExtras || ShowSlateExtras || ShowTesseraExtras;
-                SettingAvailability hotkey = RowAvailability(info.Id, "HotkeyGesture");
-                HotkeyAvailable = hotkey.IsAvailable;
-                HotkeyUnavailableReason = hotkey.Reason ?? "";
-                SettingAvailability fullscreen = RowAvailability(info.Id, "HideOnFullscreen");
-                FullscreenProbeAvailable = fullscreen.IsAvailable;
-                FullscreenProbeUnavailableReason = fullscreen.Reason ?? "";
                 ConfigUsageSummary = ModuleUsageGuide.Summary(info.Id);
                 ConfigHowToTrigger = ModuleUsageGuide.HowToTrigger(info.Id, _services.Features);
-                ConfigHotkeyGesture = ModuleUsageGuide.CurrentHotkey(info.Id);
-                IsCapturingHotkey = false;
-                HotkeyCaptureHint = "Click Capture, then press the shortcut";
-                LaunchTargetQuery = "";
-                ChordActionName = "";
-                ConfigPins.Clear();
-                ConfigChordActions.Clear();
-                EnsureLaunchTargetsLoaded();
-                ConfigPinsText = "";
-                ConfigActionsText = "";
-                ConfigShowMute = true;
-                ConfigIdleSeconds = 300;
-                ConfigHideOnFullscreen = true;
 
                 using (TesseraStylePreview.EnterSuspendRebuild())
                 {
@@ -404,24 +349,9 @@ namespace MosaicShell.Host.ViewModels
             }
         }
 
-        /// <summary>Whether a schema row works on this desktop; a module or row without a schema always does.</summary>
-        private SettingAvailability RowAvailability(string moduleId, string key)
-        {
-            return ModuleSettingsSchemas.TryGet(moduleId, out ModuleSettingsSchema? schema)
-                && schema!.Rows.FirstOrDefault(r => r.Key == key) is SettingRow row
-                ? SettingAvailability.Of(row, _services.Features)
-                : new SettingAvailability(true, null);
-        }
-
         private void LoadModuleConfigFields(ModuleInfo info)
         {
-            if (ShowChronoExtras)
-            {
-                ChronoSettings s = ModuleSettingsStore.Load("Chrono", () => new ChronoSettings());
-                ModuleStyle = StyleIds.Normalize(s.Style);
-                ChronoSeconds = s.ShowSeconds;
-            }
-            else if (ShowTesseraExtras)
+            if (ShowTesseraExtras)
             {
                 TesseraSettings s = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
                 ModuleStyle = StyleIds.Normalize(s.Style);
@@ -458,50 +388,9 @@ namespace MosaicShell.Host.ViewModels
                     TesseraLegacyStepPercent = VolumeKeyStepPolicy.Clamp(VolumeStepSource, desktopStep);
                 }
             }
-            else if (info.Id.Equals("Inlay", StringComparison.OrdinalIgnoreCase))
-            {
-                InlaySettings s = ModuleSettingsStore.Load("Inlay", () => new InlaySettings());
-                ModuleStyle = StyleIds.Normalize(s.Style);
-                ConfigHotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Inlay", s.HotkeyGesture);
-                foreach (string pin in s.Pins)
-                {
-                    ConfigPins.Add(pin);
-                }
-            }
-            else if (info.Id.Equals("Chord", StringComparison.OrdinalIgnoreCase))
-            {
-                ChordSettings s = ModuleSettingsStore.Load("Chord", () => new ChordSettings());
-                ModuleStyle = StyleIds.Normalize(s.Style);
-                ConfigHotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Chord", s.HotkeyGesture);
-                foreach (ChordAction a in s.Actions)
-                {
-                    ConfigChordActions.Add(new ChordActionRow(a.Name, a.Target));
-                }
-            }
-            else if (info.Id.Equals("Substrate", StringComparison.OrdinalIgnoreCase))
-            {
-                SubstrateSettings s = ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings());
-                ModuleStyle = StyleIds.Normalize(s.Style);
-                ConfigHotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Substrate", s.HotkeyGesture);
-                ConfigShowMute = s.ShowMute;
-            }
-            else if (info.Id.Equals("Mixdeck", StringComparison.OrdinalIgnoreCase))
-            {
-                MixdeckSettings s = ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings());
-                ModuleStyle = StyleIds.Normalize(s.Style);
-                ConfigHotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Mixdeck", s.HotkeyGesture);
-            }
-            else if (ShowSlateExtras)
-            {
-                SlateSettings s = ModuleSettingsStore.Load("Slate", () => new SlateSettings());
-                ModuleStyle = StyleIds.Normalize(s.Style);
-                ConfigIdleSeconds = Math.Clamp(s.IdleSeconds, 30, 3600);
-                ConfigHideOnFullscreen = s.HideOnFullscreen;
-            }
             else
             {
-                ModuleStyle = StyleIds.Normalize(
-                    LoadStylePreference(info.Id, ModuleStyleOptions.FirstOrDefault()?.StyleId ?? StyleCatalog.DefaultFor(info.Id)));
+                ModuleStyle = StyleIds.Normalize(StyleCatalog.DefaultFor(info.Id));
             }
 
             if (ModuleStyleOptions.Count > 0
@@ -546,25 +435,6 @@ namespace MosaicShell.Host.ViewModels
                 SelectedModuleStyle = match;
         }
 
-        private static string LoadStylePreference(string moduleId, string fallback)
-        {
-            try
-            {
-                return StyleIds.Normalize(moduleId.ToLowerInvariant() switch
-                {
-                    "phono" => ModuleSettingsStore.Load("Phono", () => new PhonoSettings()).Style,
-                    "pulse" => ModuleSettingsStore.Load("Pulse", () => new PulseSettings()).Style,
-                    "canvas" => ModuleSettingsStore.Load("Canvas", () => new CanvasSettings()).Style,
-                    "mixdeck" => ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings()).Style,
-                    "inlay" => ModuleSettingsStore.Load("Inlay", () => new InlaySettings()).Style,
-                    "chord" => ModuleSettingsStore.Load("Chord", () => new ChordSettings()).Style,
-                    "slate" => ModuleSettingsStore.Load("Slate", () => new SlateSettings()).Style,
-                    "substrate" => ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings()).Style,
-                    _ => fallback
-                });
-            }
-            catch { return fallback; }
-        }
 
         [RelayCommand]
         private void PreviewTesseraFlyout()
@@ -713,7 +583,6 @@ namespace MosaicShell.Host.ViewModels
             }
 
             string id = ConfigModuleId;
-            IsCapturingHotkey = false;
             // Case-insensitive by construction (ModuleIds.Is), not by convention - ids arrive from
             // user-authored manifests/settings, and hand-lowercasing each case label independently
             // (the previous pattern) silently breaks the moment one case is written differently,
@@ -721,15 +590,6 @@ namespace MosaicShell.Host.ViewModels
             // constant but the case label kept its canonical capitalization.
             switch (id)
             {
-                case string when ModuleIds.Is(id, ModuleIds.Chrono):
-                    {
-                        ChronoSettings s = ModuleSettingsStore.Load("Chrono", () => new ChronoSettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        s.ShowSeconds = ChronoSeconds;
-                        ModuleSettingsStore.Save("Chrono", s);
-                        StatusMessage = "Chrono settings saved! Relaunch widget to apply.";
-                        break;
-                    }
                 case string when ModuleIds.IsTessera(id):
                     {
                         TesseraSettings prior = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
@@ -759,99 +619,6 @@ namespace MosaicShell.Host.ViewModels
 
                         break;
                     }
-                case string when ModuleIds.Is(id, ModuleIds.Phono):
-                    {
-                        PhonoSettings s = ModuleSettingsStore.Load("Phono", () => new PhonoSettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        ModuleSettingsStore.Save("Phono", s);
-                        StatusMessage = "Phono style saved.";
-                        break;
-                    }
-                case string when ModuleIds.Is(id, ModuleIds.Pulse):
-                    {
-                        PulseSettings s = ModuleSettingsStore.Load("Pulse", () => new PulseSettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        ModuleSettingsStore.Save("Pulse", s);
-                        StatusMessage = "Pulse style saved.";
-                        break;
-                    }
-                case string when ModuleIds.Is(id, ModuleIds.Canvas):
-                    {
-                        CanvasSettings s = ModuleSettingsStore.Load("Canvas", () => new CanvasSettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        ModuleSettingsStore.Save("Canvas", s);
-                        StatusMessage = "Canvas style saved.";
-                        break;
-                    }
-                case string when ModuleIds.Is(id, ModuleIds.Mixdeck):
-                    {
-                        MixdeckSettings s = ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        s.HotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Mixdeck", ConfigHotkeyGesture);
-                        ConfigHotkeyGesture = s.HotkeyGesture;
-                        ModuleSettingsStore.Save("Mixdeck", s);
-                        StatusMessage = await PersistHotkeyArmAsync(id);
-                        break;
-                    }
-                case string when ModuleIds.Is(id, ModuleIds.Inlay):
-                    {
-                        InlaySettings s = ModuleSettingsStore.Load("Inlay", () => new InlaySettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        s.HotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Inlay", ConfigHotkeyGesture);
-                        ConfigHotkeyGesture = s.HotkeyGesture;
-                        s.Pins = [.. ConfigPins.Where(p => !string.IsNullOrWhiteSpace(p)).Distinct(StringComparer.OrdinalIgnoreCase)];
-                        if (s.Pins.Count == 0)
-                        {
-                            s.Pins = ["notepad", "calc"];
-                        }
-
-                        ModuleSettingsStore.Save("Inlay", s);
-                        StatusMessage = await PersistHotkeyArmAsync(id);
-                        break;
-                    }
-                case string when ModuleIds.Is(id, ModuleIds.Chord):
-                    {
-                        ChordSettings s = ModuleSettingsStore.Load("Chord", () => new ChordSettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        s.HotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Chord", ConfigHotkeyGesture);
-                        ConfigHotkeyGesture = s.HotkeyGesture;
-                        s.Actions = [.. ConfigChordActions
-                            .Where(a => !string.IsNullOrWhiteSpace(a.Target))
-                            .Select(a => new ChordAction
-                            {
-                                Name = string.IsNullOrWhiteSpace(a.Name) ? a.Target : a.Name,
-                                Target = a.Target
-                            })];
-                        ModuleSettingsStore.Save("Chord", s);
-                        StatusMessage = await PersistHotkeyArmAsync(id);
-                        break;
-                    }
-                case string when ModuleIds.Is(id, ModuleIds.Slate):
-                    {
-                        SlateSettings s = ModuleSettingsStore.Load("Slate", () => new SlateSettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        s.IdleSeconds = Math.Clamp((int)ConfigIdleSeconds, 30, 3600);
-                        s.HideOnFullscreen = ConfigHideOnFullscreen;
-                        ModuleSettingsStore.Save("Slate", s);
-                        if (_capabilityHost?.IsArmed(id) == true)
-                        {
-                            _ = await _capabilityHost.ReArmAsync(id);
-                        }
-
-                        StatusMessage = "Slate saved" + (_capabilityHost?.IsArmed(id) == true ? " and re-armed." : ".");
-                        break;
-                    }
-                case string when ModuleIds.Is(id, ModuleIds.Substrate):
-                    {
-                        SubstrateSettings s = ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        s.HotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Substrate", ConfigHotkeyGesture);
-                        ConfigHotkeyGesture = s.HotkeyGesture;
-                        s.ShowMute = ConfigShowMute;
-                        ModuleSettingsStore.Save("Substrate", s);
-                        StatusMessage = await PersistHotkeyArmAsync(id);
-                        break;
-                    }
                 default:
                     StatusMessage = $"No settings store for {id}.";
                     return;
@@ -859,35 +626,6 @@ namespace MosaicShell.Host.ViewModels
 
             ConfigHowToTrigger = ModuleUsageGuide.HowToTrigger(id, _services.Features);
             RefreshLibrary();
-        }
-
-        private async Task<string> PersistHotkeyArmAsync(string id)
-        {
-            if (_capabilityHost is null)
-            {
-                return $"{id} saved.";
-            }
-
-            if (!HotkeyAvailable)
-            {
-                return $"{id} saved. {HotkeyUnavailableReason}";
-            }
-
-            if (!_capabilityHost.IsArmed(id))
-            {
-                return $"{id} saved. Arm from Tiles, then press {ConfigHotkeyGesture}.";
-            }
-
-            bool ok = await _capabilityHost.ReArmAsync(id);
-            if (!ok)
-            {
-                return $"{id} saved but could not re-arm.";
-            }
-
-            string? err = _capabilityHost.GetHotkeyError(id);
-            return string.IsNullOrWhiteSpace(err)
-                ? $"{id} saved. Hotkey active: {ConfigHotkeyGesture}."
-                : $"{id} saved but hotkey failed: {err}";
         }
 
         private void EnsureLaunchTargetsLoaded()
@@ -901,122 +639,6 @@ namespace MosaicShell.Host.ViewModels
             {
                 LaunchTargetChoices.Add(label);
             }
-        }
-
-        [RelayCommand]
-        private void BeginHotkeyCapture()
-        {
-            IsCapturingHotkey = true;
-            HotkeyCaptureHint = "Press the shortcut now (Esc cancels)…";
-            StatusMessage = "Listening for hotkey…";
-        }
-
-        [RelayCommand]
-        private void CancelHotkeyCapture()
-        {
-            IsCapturingHotkey = false;
-            HotkeyCaptureHint = "Click Capture, then press the shortcut";
-        }
-
-        /// <summary>Called from MainWindow while capturing.</summary>
-        public bool TryCaptureHotkey(KeyEventArgs e)
-        {
-            if (!IsCapturingHotkey)
-            {
-                return false;
-            }
-
-            if (e.Key == Key.Escape)
-            {
-                CancelHotkeyCapture();
-                e.Handled = true;
-                return true;
-            }
-
-            if (!HotkeyCapture.TryFormat(e, out string? gesture))
-            {
-                return false;
-            }
-
-            if (HotkeyGestureParser.IsLikelyOsReserved(gesture))
-            {
-                StatusMessage = HostPlatformText.Current.ReservedShortcut(gesture);
-                e.Handled = true;
-                return true;
-            }
-
-            ConfigHotkeyGesture = gesture;
-            IsCapturingHotkey = false;
-            HotkeyCaptureHint = "Click Capture, then press the shortcut";
-            StatusMessage = $"Hotkey set to {gesture}. Save to apply.";
-            e.Handled = true;
-            return true;
-        }
-
-        [RelayCommand]
-        private void AddLaunchTargetPin()
-        {
-            if (!LaunchTargetCatalog.TryResolveLabel(LaunchTargetQuery, out string? target, out _))
-            {
-                return;
-            }
-
-            if (ConfigPins.Any(p => p.Equals(target, StringComparison.OrdinalIgnoreCase)))
-            {
-                StatusMessage = "Already pinned.";
-                return;
-            }
-            ConfigPins.Add(target);
-            LaunchTargetQuery = "";
-        }
-
-        [RelayCommand]
-        private void RemoveConfigPin(string? pin)
-        {
-            if (pin is null)
-            {
-                return;
-            }
-
-            _ = ConfigPins.Remove(pin);
-        }
-
-        [RelayCommand]
-        private void AddChordActionFromPicker()
-        {
-            if (!LaunchTargetCatalog.TryResolveLabel(LaunchTargetQuery, out string? target, out string? display))
-            {
-                return;
-            }
-
-            string name = string.IsNullOrWhiteSpace(ChordActionName) ? display : ChordActionName.Trim();
-            ConfigChordActions.Add(new ChordActionRow(name, target));
-            LaunchTargetQuery = "";
-            ChordActionName = "";
-        }
-
-        [RelayCommand]
-        private void RemoveChordAction(ChordActionRow? row)
-        {
-            if (row is null)
-            {
-                return;
-            }
-
-            _ = ConfigChordActions.Remove(row);
-        }
-
-        [RelayCommand]
-        private async Task TryCapabilityOverlayAsync()
-        {
-            if (string.IsNullOrWhiteSpace(ConfigModuleId) || _capabilityHost is null)
-            {
-                return;
-            }
-
-            string id = ConfigModuleId;
-            await SaveModuleConfigAsync();
-            await OpenOverlayPreviewAsync(id);
         }
 
         /// <summary>Arms the capability if needed and opens its overlay so its effect can be seen.</summary>
@@ -1035,11 +657,7 @@ namespace MosaicShell.Host.ViewModels
             }
 
             string? err = _capabilityHost.GetHotkeyError(id);
-            if (!string.IsNullOrWhiteSpace(err) && ShowHotkeyCapExtras)
-            {
-                StatusMessage = err;
-            }
-            else if (!string.IsNullOrWhiteSpace(err) && HasModulePage)
+            if (!string.IsNullOrWhiteSpace(err))
             {
                 StatusMessage = err;
             }
@@ -1532,14 +1150,6 @@ namespace MosaicShell.Host.ViewModels
         }
     }
 
-    public sealed record ChordActionRow(string Name, string Target)
-    {
-        public string Label => string.IsNullOrWhiteSpace(Name) ? Target : $"{Name} → {Target}";
-        public override string ToString()
-        {
-            return Label;
-        }
-    }
 
     public sealed record TesseraNamedChoice(string Code, string Label)
     {

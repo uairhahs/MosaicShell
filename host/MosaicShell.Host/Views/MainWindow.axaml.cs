@@ -105,11 +105,6 @@ namespace MosaicShell.Host.Views
                 return;
             }
 
-            if (DataContext is MainViewModel vm && vm.IsCapturingHotkey && vm.TryCaptureHotkey(e))
-            {
-                return;
-            }
-
             base.OnKeyDown(e);
         }
 
