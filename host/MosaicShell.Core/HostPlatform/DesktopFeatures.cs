@@ -56,12 +56,13 @@ namespace MosaicShell.Core.HostPlatform
 
             string what = feature switch
             {
-                DesktopFeature.GlobalHotkeys => "Shortcuts",
-                DesktopFeature.MediaKeys => "Media keys",
-                DesktopFeature.FullscreenProbe => "Telling when an app is full screen",
-                _ => feature.ToString(),
+                DesktopFeature.GlobalHotkeys => "Shortcuts are",
+                DesktopFeature.MediaKeys => "Media keys are",
+                DesktopFeature.FullscreenProbe => "Telling when an app is full screen is",
+                DesktopFeature.Tray => "A tray icon is",
+                _ => feature + " is",
             };
-            return $"{what} {(feature == DesktopFeature.FullscreenProbe ? "is" : "are")} not available on {DesktopName} yet.";
+            return $"{what} not available on {DesktopName} yet.";
         }
 
         private static string Name(string? xdgCurrentDesktop)

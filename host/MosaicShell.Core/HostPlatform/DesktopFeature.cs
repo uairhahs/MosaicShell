@@ -11,5 +11,8 @@ namespace MosaicShell.Core.HostPlatform
 
         /// <summary>Seeing the play, pause and track keys as they are pressed.</summary>
         MediaKeys,
+
+        /// <summary>An icon in the system tray that keeps MosaicShell reachable while its window is closed.</summary>
+        Tray,
     }
 }
