@@ -8,8 +8,8 @@ using MosaicShell.Core.Settings;
 namespace MosaicShell.Core.Tests
 {
     /// <summary>
-    /// The Hub's left rail and the one line each module shows on Home: installed modules are the navigation, grouped by
-    /// where they run, and each says in plain words what it is doing now.
+    /// The Hub's left rail and the one line each module shows on Home and in its list: each says in plain words what it
+    /// is doing now.
     /// </summary>
     public sealed class HubShellTests : IDisposable
     {
@@ -36,33 +36,6 @@ namespace MosaicShell.Core.Tests
             return info!;
         }
 
-        [Fact]
-        public void The_rail_lists_installed_modules_grouped_by_where_they_run_in_catalog_order()
-        {
-            IReadOnlyList<RailEntry> entries = HubRail.Entries([Info("Chrono"), Info("Mixdeck"), Info("Tessera"), Info("Canvas")], query: null);
-
-            _ = entries.Select(e => (e.Id, e.Group)).Should().Equal(
-                ("Tessera", RailGroup.Background),
-                ("Mixdeck", RailGroup.Background),
-                ("Chrono", RailGroup.Desktop),
-                ("Canvas", RailGroup.Desktop));
-        }
-
-        [Fact]
-        public void The_rail_search_filters_by_name_and_description()
-        {
-            IReadOnlyList<RailEntry> entries = HubRail.Entries([Info("Tessera"), Info("Mixdeck"), Info("Chrono")], query: "mixer");
-
-            _ = entries.Select(e => e.Id).Should().Equal("Mixdeck");
-        }
-
-        [Fact]
-        public void Group_titles_never_promise_a_tray()
-        {
-            _ = HubRail.GroupTitle(RailGroup.Background).Should().Be("Running in the background");
-            _ = HubRail.GroupTitle(RailGroup.Desktop).Should().Be("On the desktop");
-        }
-
         [Theory]
         [InlineData(1100, false)]
         [InlineData(900, false)]
@@ -70,16 +43,6 @@ namespace MosaicShell.Core.Tests
         public void The_rail_folds_to_icons_on_a_narrow_window(double width, bool collapsed)
         {
             _ = HubRail.IsCollapsed(width).Should().Be(collapsed);
-        }
-
-        [Fact]
-        public void Add_modules_lists_only_what_is_not_installed()
-        {
-            HashSet<string> installed = ["Tessera", "Chrono"];
-
-            IReadOnlyList<ModuleInfo> addable = HubRail.Addable(ModuleCatalog.BuiltIns, installed.Contains);
-
-            _ = addable.Select(m => m.Id).Should().NotContain(installed).And.Contain(["Mixdeck", "Canvas"]);
         }
 
         [Fact]

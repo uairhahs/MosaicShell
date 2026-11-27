@@ -10,6 +10,7 @@ using MosaicShell.Core;
 using MosaicShell.Core.Capabilities;
 using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.HostPlatform;
+using MosaicShell.Core.HubShell;
 using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Modules.Tessera;
@@ -106,11 +107,9 @@ namespace MosaicShell.Host.ViewModels
 
         [ObservableProperty] private string _selectedPage = "Home";
         [ObservableProperty] private bool _isHome = true;
-        [ObservableProperty] private bool _isTiles;
         [ObservableProperty] private bool _isSettings;
         [ObservableProperty] private bool _isAbout;
         [ObservableProperty] private bool _isModuleConfig;
-        [ObservableProperty] private bool _showBackButton;
         [ObservableProperty] private string _statusMessage = "Ready";
         [ObservableProperty] private bool _isBusy;
         [ObservableProperty] private string _serviceProbe = "";
@@ -202,27 +201,32 @@ namespace MosaicShell.Host.ViewModels
                 page = "Home";
             }
 
-            if (page == "Library")
+            // The Tiles library became two lists: Modules (capabilities) and Widgets.
+            if (page is "Library" or "Tiles" or "AddModules")
             {
-                page = "Tiles";
+                page = "Modules";
             }
 
             SelectedPage = page;
             IsHome = page == "Home";
-            IsTiles = page == "Tiles";
+            IsModulesList = page == "Modules";
+            IsWidgetsList = page == "Widgets";
             IsSettings = page == "Settings";
             IsAbout = page == "About";
             IsModuleConfig = page == "ModuleConfig";
-            ShowBackButton = IsTiles || IsAbout || IsModuleConfig;
             if (!IsModuleConfig)
             {
                 TesseraConfigPreviewReady = false;
                 CloseModulePage();
             }
 
-            if (IsTiles)
+            if (IsHome || IsModulesList || IsWidgetsList)
             {
                 RefreshLibrary();
+            }
+            else
+            {
+                RefreshShell();
             }
 
             if (IsSettings)
@@ -641,6 +645,8 @@ namespace MosaicShell.Host.ViewModels
 
         partial void OnCloseMinimizesToTrayChanged(bool value)
         {
+            OnPropertyChanged(nameof(CloseHint));
+
             // Keep Hub in sync when bound ToggleButton/CheckBox flips the property
             if (Hub.CloseMinimizesToTray == value) return;
             Hub.CloseMinimizesToTray = value;
@@ -665,6 +671,7 @@ namespace MosaicShell.Host.ViewModels
 
                 UpdateStatus = $"Update available: {result.LatestVersion} (you have {result.CurrentVersion})";
                 StatusMessage = UpdateStatus;
+                UpdateBanner = HubBanner.UpdateReady(result.LatestVersion ?? "");
 
                 if (string.IsNullOrWhiteSpace(result.SetupDownloadUrl))
                 {
@@ -884,17 +891,24 @@ namespace MosaicShell.Host.ViewModels
         {
             Modules.Clear();
             Widgets.Clear();
-            foreach (ModuleInfo m in ModuleCatalog.Modules)
+            List<LibraryItemViewModel> modules = [.. ModuleCatalog.Modules.Select(m =>
+                LibraryItemViewModel.From(m, running: false, armed: _capabilityHost?.IsArmed(m.Id) == true))];
+            List<LibraryItemViewModel> widgets = [.. ModuleCatalog.Widgets.Select(w =>
+                LibraryItemViewModel.From(w, running: _runtime.IsRunning(w.Id), armed: false))];
+
+            // Every one of the kind, sorted by state: on, then installed and off, then not added.
+            foreach (LibraryItemViewModel item in ModuleListOrder.Sort(modules, static i => i.ListState, static i => i.Id))
             {
-                bool armed = _capabilityHost?.IsArmed(m.Id) == true;
-                Modules.Add(LibraryItemViewModel.From(m, running: false, armed: armed));
+                Modules.Add(item);
             }
-            foreach (ModuleInfo w in ModuleCatalog.Widgets)
+
+            foreach (LibraryItemViewModel item in ModuleListOrder.Sort(widgets, static i => i.ListState, static i => i.Id))
             {
-                Widgets.Add(LibraryItemViewModel.From(w, running: _runtime.IsRunning(w.Id), armed: false));
+                Widgets.Add(item);
             }
 
             ApplyLibrarySearch();
+            RefreshShell();
         }
 
         private sealed class NullTileHost : ITileSurfaceHost

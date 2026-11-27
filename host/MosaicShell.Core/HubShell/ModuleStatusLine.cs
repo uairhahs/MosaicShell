@@ -42,19 +42,16 @@ namespace MosaicShell.Core.HubShell
                 "substrate" => "the quick settings",
                 _ => null,
             };
-            if (opens is not null)
-            {
-                return features.MissingText(DesktopFeature.GlobalHotkeys) is string missing
+            return opens is not null
+                ? features.MissingText(DesktopFeature.GlobalHotkeys) is string missing
                     ? new ModuleStatus(missing, false)
-                    : new ModuleStatus($"{HotkeyGestureParser.EnsureRegisterable(info.Id, ModuleUsageGuide.CurrentHotkey(info.Id))} opens {opens}", false);
-            }
-
-            return info.Id.ToLowerInvariant() switch
-            {
-                "tessera" => new ModuleStatus("Replacing the volume, brightness and media pop-ups", false),
-                "slate" => new ModuleStatus($"Shows after {Idle()} without input", false),
-                _ => new ModuleStatus("On", false),
-            };
+                    : new ModuleStatus($"{HotkeyGestureParser.EnsureRegisterable(info.Id, ModuleUsageGuide.CurrentHotkey(info.Id))} opens {opens}", false)
+                : info.Id.ToLowerInvariant() switch
+                {
+                    "tessera" => new ModuleStatus("Replacing the volume, brightness and media pop-ups", false),
+                    "slate" => new ModuleStatus($"Shows after {Idle()} without input", false),
+                    _ => new ModuleStatus("On", false),
+                };
         }
 
         private static string Idle()

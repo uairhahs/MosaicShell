@@ -107,6 +107,7 @@ namespace MosaicShell.Host.ViewModels
             _lastRemoval = removal.IsBundled ? removal : null;
             _lastRemovalName = item.Name;
             CanUndoRemove = _lastRemoval is not null;
+            ShowToast(StatusMessage);
             RefreshLibrary();
         }
 
@@ -116,13 +117,19 @@ namespace MosaicShell.Host.ViewModels
             CanUndoRemove = false;
         }
 
-        /// <summary>Undo belongs to the removal message: any later message takes it away.</summary>
+        /// <summary>
+        /// Every status line is a toast. Undo belongs to the removal message: any later message takes it away. The
+        /// removal shows its own toast once its Undo is ready.
+        /// </summary>
         partial void OnStatusMessageChanged(string value)
         {
-            if (!_settingRemovalStatus)
+            if (_settingRemovalStatus)
             {
-                ClearUndo();
+                return;
             }
+
+            ClearUndo();
+            ShowToast(value);
         }
     }
 }

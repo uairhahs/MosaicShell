@@ -32,10 +32,12 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void The_update_check_has_one_name_and_one_button()
         {
+            // Settings has the one "Check for updates"; Home's banner offers Install, which runs the same command.
             _ = MainWindowXaml.Should().NotContain("Check catalog");
             _ = MainWindowXaml.Should().NotContain("Check GitHub releases");
-            _ = Regex.Matches(MainWindowXaml, "Command=\"\\{Binding CheckUpdatesCommand\\}\"").Count.Should().Be(1);
-            _ = MainWindowXaml.Should().Contain("Content=\"Check for updates\"");
+            _ = Regex.Matches(MainWindowXaml, "Content=\"Check for updates\"").Count.Should().Be(1);
+            _ = Regex.Matches(MainWindowXaml, "Command=\"\\{Binding CheckUpdatesCommand\\}\"").Count.Should().Be(2);
+            _ = MainWindowXaml.Should().MatchRegex("<Button[^>]*Content=\"Install\"[^>]*CheckUpdatesCommand");
         }
 
         [Fact]
@@ -45,26 +47,35 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void A_library_row_opens_settings_through_one_focusable_named_button()
+        public void The_rail_has_one_entry_per_page_and_no_module_list()
         {
-            // The 16 px unfocusable cog duplicated the row body; the row body is now the one target.
+            // The rail is Home, Modules, Widgets, Settings and About; modules live on their own pages, not scattered
+            // down the rail as well.
+            int rail = MainWindowXaml.IndexOf("<!-- The rail:", StringComparison.Ordinal);
+            int pages = MainWindowXaml.IndexOf("<!-- Pages -->", StringComparison.Ordinal);
+            string railXaml = MainWindowXaml[rail..pages];
+            foreach (string page in new[] { "Home", "Modules", "Widgets", "Settings", "About" })
+            {
+                _ = railXaml.Should().Contain($"CommandParameter=\"{page}\"");
+            }
+
+            _ = railXaml.Should().NotContain("ItemsControl");
+            _ = railXaml.Should().NotContain("TextBox");
             _ = MainWindowXaml.Should().NotContain("tileCog");
             _ = MainWindowXaml.Should().NotMatchRegex("\"Focusable\" Value=\"False\"");
-            _ = Regex.Matches(MainWindowXaml, "<Button[^>]*Classes=\"libraryRow\"[^>]*OpenModuleConfigCommand[^>]*SettingsAutomationName", RegexOptions.Singleline)
-                .Count.Should().Be(2);
         }
 
         [Fact]
-        public void A_press_on_a_library_row_lights_the_whole_card()
+        public void Each_row_opens_its_page_through_one_named_button()
         {
-            // The press lit only the text column, the one control that was a button (user, 2026-11-26). The row
-            // button now spans the card behind its content; the checkbox and the row's own buttons sit on top.
+            // Home's running rows and the two lists' rows: one Button across the row, named for the module's page.
             MatchCollection rows = Regex.Matches(
                 MainWindowXaml,
-                "<Button[^>]*Classes=\"libraryRow\"[^>]*Grid.ColumnSpan=\"7\"[^>]*Grid.RowSpan=\"3\"[^>]*OpenModuleConfigCommand",
+                "<Button Classes=\"listRow\"[^>]*OpenModuleCommand[^>]*SettingsAutomationName",
                 RegexOptions.Singleline);
-            _ = rows.Count.Should().Be(2);
+            _ = rows.Count.Should().Be(4, "two running groups on Home, one row template per list");
             _ = MainWindowXaml.Should().NotContain("libraryHit");
+            _ = MainWindowXaml.Should().NotContain("Classes=\"libraryRow\"");
         }
 
         [Fact]
@@ -94,13 +105,14 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void The_library_has_one_search_box_docked_under_the_lists()
+        public void Each_list_has_a_full_width_search_box_that_filters_through_the_Core_rule()
         {
-            // User, 2026-11-26: add a search box, docked to the bottom. Rows hide through the Core rule, never a view filter.
-            Match box = Regex.Match(MainWindowXaml, "<TextBox[^>]*x:Name=\"LibrarySearchBox\"[^>]*>", RegexOptions.Singleline);
-            _ = box.Success.Should().BeTrue();
-            _ = box.Value.Should().Contain("DockPanel.Dock=\"Bottom\"");
-            _ = box.Value.Should().Contain("{Binding LibrarySearchPlaceholder}");
+            // The search box sits at the top of the Modules and Widgets pages, wide enough for its placeholder. Rows hide
+            // through the Core rule (IsShownBySearch), never a view filter.
+            int pages = MainWindowXaml.IndexOf("<!-- Pages -->", StringComparison.Ordinal);
+            MatchCollection boxes = Regex.Matches(MainWindowXaml, "<TextBox Text=\"\\{Binding LibrarySearch\\}\"[^>]*>", RegexOptions.Singleline);
+            _ = boxes.Count.Should().Be(2);
+            _ = boxes.Should().OnlyContain(b => b.Index > pages && b.Value.Contains("{Binding LibrarySearchPlaceholder}"));
             _ = Regex.Matches(MainWindowXaml, "IsVisible=\"\\{Binding IsShownBySearch\\}\"").Count.Should().Be(2);
         }
 
@@ -136,12 +148,11 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void Remove_is_hidden_on_modules_that_are_not_installed()
+        public void Remove_is_on_the_module_page_only_never_on_a_list_of_modules_not_installed()
         {
-            Match remove = Regex.Match(MainWindowXaml, "<Button[^>]*RemoveModuleCommand[^>]*>", RegexOptions.Singleline);
-            _ = remove.Success.Should().BeTrue();
-            _ = remove.Value.Should().Contain("IsVisible=\"{Binding IsInstalled}\"");
+            _ = MainWindowXaml.Should().NotContain("RemoveModuleCommand");
             _ = MainWindowXaml.Should().NotContain("UninstallModuleCommand");
+            _ = ModulePageXaml.Should().Contain("Command=\"{Binding RemoveCommand}\"");
         }
     }
 }

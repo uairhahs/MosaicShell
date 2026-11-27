@@ -157,17 +157,13 @@ namespace MosaicShell.Core.Modules.Settings
             }
 
             string? key = kind == SettingKind.Style ? "Style" : row.Key?.Trim();
-            if (string.IsNullOrEmpty(key) || taken.Contains(key) || (kind != SettingKind.Style && key == "Style"))
-            {
-                return false;
-            }
-
-            return kind switch
-            {
-                SettingKind.Choice => row.Options is { Count: > 0 } && row.Options.All(o => !string.IsNullOrEmpty(o.Value)),
-                SettingKind.Number => row.Min is double min && row.Max is double max && min < max,
-                _ => true,
-            };
+            return !string.IsNullOrEmpty(key) && !taken.Contains(key) && (kind == SettingKind.Style || key != "Style")
+                && kind switch
+                {
+                    SettingKind.Choice => row.Options is { Count: > 0 } && row.Options.All(o => !string.IsNullOrEmpty(o.Value)),
+                    SettingKind.Number => row.Min is double min && row.Max is double max && min < max,
+                    _ => true,
+                };
         }
 
         private static void AddRow(

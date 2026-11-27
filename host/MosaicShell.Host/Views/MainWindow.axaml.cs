@@ -22,6 +22,8 @@ namespace MosaicShell.Host.Views
         public MainWindow()
         {
             InitializeComponent();
+            // The rail folds to icons on a narrow window (HubRail.CollapseBelowDip).
+            SizeChanged += (_, e) => (DataContext as MainViewModel)?.SetWindowWidth(e.NewSize.Width);
         }
 
         protected override void OnOpened(EventArgs e)

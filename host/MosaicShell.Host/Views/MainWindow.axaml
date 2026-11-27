@@ -41,6 +41,60 @@
       <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
+    <!-- Left rail: one button per destination, the open one highlighted. -->
+    <Style Selector="Button.rail">
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Padding" Value="10,7" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    </Style>
+    <Style Selector="Button.rail:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+    </Style>
+    <Style Selector="Button.rail.selected /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
+    </Style>
+    <Style Selector="Button.rail.selected">
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <!-- A list row: one Button across the row, a quiet card that lights on hover and press. -->
+    <Style Selector="Button.listRow">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Padding" Value="16,12" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+      <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+    </Style>
+    <Style Selector="Button.listRow:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorSecondaryBrush}" />
+    </Style>
+    <!-- On, Off or Not added beside each row; On in the accent colour so it reads at a glance. -->
+    <Style Selector="Border.stateChip">
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="10,2" />
+      <Setter Property="Margin" Value="0,0,12,0" />
+      <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+    </Style>
+    <Style Selector="Border.stateChip > TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+    </Style>
+    <Style Selector="Border.stateChip.on">
+      <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+    </Style>
+    <Style Selector="Border.stateChip.on > TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+    </Style>
+    <Style Selector="TextBlock.groupHeading">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}" />
+      <Setter Property="Margin" Value="2,6,0,0" />
+    </Style>
     <Style Selector="Button.icon">
       <Setter Property="Width" Value="36" />
       <Setter Property="Height" Value="36" />
@@ -180,48 +234,68 @@
     </Style>
   </Window.Styles>
 
-  <DockPanel Margin="0,28,0,0">
-    <Border DockPanel.Dock="Bottom" Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}" Padding="24,8"
-            BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
-      <Grid ColumnDefinitions="*,Auto">
-        <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12"
-                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-        <Button Grid.Column="1" Content="{Binding UndoLabel}" Padding="10,2" FontSize="12" Margin="12,0,0,0"
-                IsVisible="{Binding CanUndoRemove}"
-                Command="{Binding UndoRemoveCommand}" />
-      </Grid>
-    </Border>
-
-    <Border DockPanel.Dock="Bottom" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Padding="24,12"
-            BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
-      <Grid ColumnDefinitions="Auto,*,Auto">
-        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-          <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="28" Height="28"
+  <Grid Margin="0,28,0,0" ColumnDefinitions="Auto,*">
+    <!-- The rail: Home, Modules, Widgets, then Settings and About. -->
+    <Border Grid.Column="0" Width="{Binding RailWidth}" Padding="8,8,8,12"
+            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,1,0">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="8,4,0,14">
+          <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="26" Height="26"
                  RenderOptions.BitmapInterpolationMode="HighQuality" />
-          <TextBlock Text="MosaicShell" FontWeight="SemiBold" FontSize="14"
-                     Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
+          <TextBlock Text="MosaicShell" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"
+                     Foreground="{DynamicResource TextFillColorPrimaryBrush}" IsVisible="{Binding !IsRailCollapsed}" />
         </StackPanel>
-        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
-          <Button Classes="nav" Content="Home"
-                  Classes.active="{Binding IsHome}"
-                  Command="{Binding NavigateCommand}" CommandParameter="Home" />
-          <Button Classes="nav" Content="Settings"
-                  Classes.active="{Binding IsSettings}"
-                  Command="{Binding NavigateCommand}" CommandParameter="Settings" />
+        <StackPanel DockPanel.Dock="Bottom" Spacing="2">
+          <Border Height="1" Background="{DynamicResource DividerStrokeColorDefaultBrush}" Margin="4,8" />
+          <Button Classes="rail" Classes.selected="{Binding IsSettings}" Command="{Binding NavigateCommand}" CommandParameter="Settings"
+                  AutomationProperties.Name="Settings" ToolTip.Tip="Settings">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <icons:MaterialIcon Kind="CogOutline" Width="20" Height="20" />
+              <TextBlock Text="Settings" VerticalAlignment="Center" IsVisible="{Binding !IsRailCollapsed}" />
+            </StackPanel>
+          </Button>
+          <Button Classes="rail" Classes.selected="{Binding IsAbout}" Command="{Binding NavigateCommand}" CommandParameter="About"
+                  AutomationProperties.Name="About" ToolTip.Tip="About">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <icons:MaterialIcon Kind="InformationOutline" Width="20" Height="20" />
+              <TextBlock Text="About" VerticalAlignment="Center" IsVisible="{Binding !IsRailCollapsed}" />
+            </StackPanel>
+          </Button>
         </StackPanel>
-        <Button Grid.Column="2" Content="GitHub"
-                Command="{Binding OpenGitHubCommand}" VerticalAlignment="Center" />
-      </Grid>
+        <StackPanel Spacing="2">
+          <Button Classes="rail" Classes.selected="{Binding IsHome}" Command="{Binding NavigateCommand}" CommandParameter="Home"
+                  AutomationProperties.Name="Home" ToolTip.Tip="Home">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <icons:MaterialIcon Kind="HomeOutline" Width="20" Height="20" />
+              <TextBlock Text="Home" VerticalAlignment="Center" IsVisible="{Binding !IsRailCollapsed}" />
+            </StackPanel>
+          </Button>
+          <Button Classes="rail" Classes.selected="{Binding IsModulesRailSelected}" Command="{Binding NavigateCommand}" CommandParameter="Modules"
+                  AutomationProperties.Name="Modules" ToolTip.Tip="Modules">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <icons:MaterialIcon Kind="PuzzleOutline" Width="20" Height="20" />
+              <TextBlock Text="Modules" VerticalAlignment="Center" IsVisible="{Binding !IsRailCollapsed}" />
+            </StackPanel>
+          </Button>
+          <Button Classes="rail" Classes.selected="{Binding IsWidgetsRailSelected}" Command="{Binding NavigateCommand}" CommandParameter="Widgets"
+                  AutomationProperties.Name="Widgets" ToolTip.Tip="Widgets">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <icons:MaterialIcon Kind="ViewDashboardOutline" Width="20" Height="20" />
+              <TextBlock Text="Widgets" VerticalAlignment="Center" IsVisible="{Binding !IsRailCollapsed}" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </DockPanel>
     </Border>
 
-    <!-- Page body: Home/Tiles/… vs unscaled full-width Settings -->
-    <Grid ClipToBounds="True">
+    <!-- Pages -->
+    <Grid Grid.Column="1" ClipToBounds="True">
       <Grid IsVisible="{Binding !IsSettings}" Margin="40,20"
             HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-          <!-- Home -->
-          <DockPanel IsVisible="{Binding IsHome}">
-            <!-- What the Welcome page used to say, said once here instead of on a page of its own. -->
-            <StackPanel DockPanel.Dock="Top" Spacing="12" Margin="0,0,0,20" MaxWidth="720" HorizontalAlignment="Left">
+          <!-- Home: the welcome, then what is running now -->
+          <ScrollViewer IsVisible="{Binding IsHome}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="12" MaxWidth="820" HorizontalAlignment="Left" Margin="0,0,8,8">
               <StackPanel Orientation="Horizontal" Spacing="14">
                 <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="48" Height="48"
                        RenderOptions.BitmapInterpolationMode="HighQuality" />
@@ -230,233 +304,207 @@
                   <TextBlock Text="Your desktop, composed." Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" FontSize="14" />
                 </StackPanel>
               </StackPanel>
-              <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14" LineHeight="22"
-                         Text="Add the modules you want from Tiles. Some run in the tray, like Tessera's volume and media pop-ups or the Mixdeck mixer: turn them on and they work in the background. Others are widgets on the desktop that open when you start them." />
-              <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="13" LineHeight="20"
-                         Text="Closing this window keeps MosaicShell running in the tray. Settings can change that." />
+              <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14" LineHeight="22" MaxWidth="720" HorizontalAlignment="Left"
+                         Text="Pick what you want from Modules and Widgets. Modules run in the background, like Tessera's volume and media pop-ups or the Mixdeck mixer: turn them on and they work by themselves. Widgets sit on the desktop." />
+              <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="13" LineHeight="20" MaxWidth="720" HorizontalAlignment="Left"
+                         Text="{Binding CloseHint}" />
+
+              <Border Classes="section" Padding="16,12" IsVisible="{Binding HasUpdateBanner}" Margin="0,8,0,0">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <icons:MaterialIcon Kind="Download" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0" />
+                  <TextBlock Grid.Column="1" Text="{Binding UpdateBanner}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                  <Button Grid.Column="2" Classes="accent" Content="Install" Command="{Binding CheckUpdatesCommand}" />
+                </Grid>
+              </Border>
+
+              <TextBlock Classes="sectionTitle" Text="Running now" Margin="0,16,0,0" />
+              <TextBlock Text="Nothing is on. Turn something on from Modules or Widgets." IsVisible="{Binding HasNothingRunning}"
+                         Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+              <TextBlock Classes="groupHeading" Text="Modules" IsVisible="{Binding HasRunningBackground}" />
+              <ItemsControl ItemsSource="{Binding Modules}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Spacing="6" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:LibraryItemViewModel">
+                    <Button Classes="listRow" IsVisible="{Binding IsRunningNow}"
+                            Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleCommand}" CommandParameter="{Binding}"
+                            AutomationProperties.Name="{Binding SettingsAutomationName}">
+                      <Grid ColumnDefinitions="Auto,*,Auto">
+                        <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="22" Height="22" Foreground="{Binding GlyphBrush}"
+                                            VerticalAlignment="Center" Margin="0,0,14,0" />
+                        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                          <TextBlock Text="{Binding StatusLine}" FontSize="12" TextWrapping="Wrap"
+                                     Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                        <icons:MaterialIcon Grid.Column="2" Kind="AlertCircle" Width="16" Height="16" VerticalAlignment="Center"
+                                            Foreground="{DynamicResource SystemFillColorCautionBrush}" IsVisible="{Binding IsProblem}" />
+                      </Grid>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <TextBlock Classes="groupHeading" Text="Widgets" IsVisible="{Binding HasRunningDesktop}" />
+              <ItemsControl ItemsSource="{Binding Widgets}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Spacing="6" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:LibraryItemViewModel">
+                    <Button Classes="listRow" IsVisible="{Binding IsRunningNow}"
+                            Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleCommand}" CommandParameter="{Binding}"
+                            AutomationProperties.Name="{Binding SettingsAutomationName}">
+                      <Grid ColumnDefinitions="Auto,*,Auto">
+                        <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="22" Height="22" Foreground="{Binding GlyphBrush}"
+                                            VerticalAlignment="Center" Margin="0,0,14,0" />
+                        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                          <TextBlock Text="{Binding StatusLine}" FontSize="12" TextWrapping="Wrap"
+                                     Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                        <icons:MaterialIcon Grid.Column="2" Kind="AlertCircle" Width="16" Height="16" VerticalAlignment="Center"
+                                            Foreground="{DynamicResource SystemFillColorCautionBrush}" IsVisible="{Binding IsProblem}" />
+                      </Grid>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
             </StackPanel>
-            <ItemsControl ItemsSource="{Binding HomeCards}"
-                          HorizontalAlignment="Stretch" VerticalAlignment="Top">
-              <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <StackPanel Spacing="12" />
-                </ItemsPanelTemplate>
-              </ItemsControl.ItemsPanel>
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="vm:DiscoverCard">
-                  <!-- Content-sized cards, do not stretch to fill a tall window -->
-                  <Button Classes="card" VerticalAlignment="Top"
-                          Padding="20,18"
-                          Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenCardCommand}"
-                          CommandParameter="{Binding}"
-                          AutomationProperties.Name="{Binding Title}"
-                          AutomationProperties.HelpText="{Binding Body}">
-                    <Grid ColumnDefinitions="Auto,*">
-                      <Border Width="48" Height="48" CornerRadius="12" Margin="0,0,20,0"
-                              Background="{DynamicResource SubtleFillColorSecondaryBrush}" VerticalAlignment="Center">
-                        <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="26" Height="26"
-                                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                                            Foreground="{Binding GlyphBrush}" />
-                      </Border>
-                      <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
-                        <TextBlock Text="{Binding Body}" FontSize="14" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
-                      </StackPanel>
-                    </Grid>
+          </ScrollViewer>
+
+          <!-- Modules: every one, sorted by state -->
+          <DockPanel IsVisible="{Binding IsModulesList}">
+            <StackPanel DockPanel.Dock="Top" Spacing="10" Margin="0,0,0,14" MaxWidth="820" HorizontalAlignment="Stretch">
+              <TextBlock Text="Modules" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+              <TextBlock Text="Modules run in the background. Every module is here, the ones on first." TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+              <TextBox Text="{Binding LibrarySearch}" PlaceholderText="{Binding LibrarySearchPlaceholder}"
+                       AutomationProperties.Name="{Binding LibrarySearchPlaceholder}" Classes="librarySearch">
+                <TextBox.InnerLeftContent>
+                  <icons:MaterialIcon Kind="Magnify" Width="16" Height="16" Margin="10,0,0,0"
+                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                </TextBox.InnerLeftContent>
+                <TextBox.InnerRightContent>
+                  <Button Classes="icon" Margin="0,0,4,0" Padding="4" IsVisible="{Binding HasLibrarySearch}"
+                          Command="{Binding ClearLibrarySearchCommand}" AutomationProperties.Name="Clear search" ToolTip.Tip="Clear search">
+                    <icons:MaterialIcon Kind="Close" Width="14" Height="14" />
                   </Button>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                </TextBox.InnerRightContent>
+                <TextBox.KeyBindings>
+                  <KeyBinding Gesture="Escape" Command="{Binding ClearLibrarySearchCommand}" />
+                </TextBox.KeyBindings>
+              </TextBox>
+            </StackPanel>
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+              <ItemsControl ItemsSource="{Binding Modules}" MaxWidth="820" HorizontalAlignment="Stretch" Margin="0,0,8,8">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Spacing="6" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:LibraryItemViewModel">
+                    <Grid IsVisible="{Binding IsShownBySearch}">
+                      <!-- The row opens the page (for one not added, its page offers the switch that adds it). -->
+                      <Button Classes="listRow"
+                              Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleCommand}" CommandParameter="{Binding}"
+                              AutomationProperties.Name="{Binding SettingsAutomationName}">
+                        <Grid ColumnDefinitions="Auto,*,Auto,140">
+                          <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="22" Height="22" Foreground="{Binding GlyphBrush}"
+                                              VerticalAlignment="Center" Margin="0,0,14,0" />
+                          <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center" Margin="0,0,12,0">
+                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                            <TextBlock Text="{Binding ListLine}" FontSize="12" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                          </StackPanel>
+                          <Border Grid.Column="2" Classes="stateChip" Classes.on="{Binding IsStateOn}" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding StateLabel}" FontSize="12" />
+                          </Border>
+                        </Grid>
+                      </Button>
+                      <!-- One action, above the row button so it takes its own click. -->
+                      <Button HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0" MinWidth="110"
+                              HorizontalContentAlignment="Center"
+                              Classes.accent="{Binding !IsInstalled}" IsEnabled="{Binding !IsInstalling}"
+                              Content="{Binding RowActionLabel}"
+                              Command="{Binding #Root.((vm:MainViewModel)DataContext).RowActionCommand}" CommandParameter="{Binding}" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
           </DockPanel>
 
-        <!-- Tiles -->
-        <DockPanel IsVisible="{Binding IsTiles}">
-          <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,16">
-            <Button Command="{Binding GoBackCommand}"
-                    VerticalAlignment="Center" Margin="0,0,16,0" Padding="10,8"
-                    ToolTip.Tip="Back">
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <icons:MaterialIcon Kind="ArrowLeft" Width="18" Height="18" />
-                <TextBlock Text="Back" VerticalAlignment="Center" />
-              </StackPanel>
-            </Button>
-            <StackPanel Grid.Column="1">
-              <TextBlock Text="Tiles" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
-              <TextBlock Text="Capabilities: install, arm/disarm background hosts. Widgets: play/stop overlays. Cog opens tile settings."
-                         Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0" />
+          <!-- Widgets: every one, sorted by state -->
+          <DockPanel IsVisible="{Binding IsWidgetsList}">
+            <StackPanel DockPanel.Dock="Top" Spacing="10" Margin="0,0,0,14" MaxWidth="820" HorizontalAlignment="Stretch">
+              <TextBlock Text="Widgets" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+              <TextBlock Text="Widgets sit on the desktop. Every widget is here, the ones on first." TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+              <TextBox Text="{Binding LibrarySearch}" PlaceholderText="{Binding LibrarySearchPlaceholder}"
+                       AutomationProperties.Name="{Binding LibrarySearchPlaceholder}" Classes="librarySearch">
+                <TextBox.InnerLeftContent>
+                  <icons:MaterialIcon Kind="Magnify" Width="16" Height="16" Margin="10,0,0,0"
+                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                </TextBox.InnerLeftContent>
+                <TextBox.InnerRightContent>
+                  <Button Classes="icon" Margin="0,0,4,0" Padding="4" IsVisible="{Binding HasLibrarySearch}"
+                          Command="{Binding ClearLibrarySearchCommand}" AutomationProperties.Name="Clear search" ToolTip.Tip="Clear search">
+                    <icons:MaterialIcon Kind="Close" Width="14" Height="14" />
+                  </Button>
+                </TextBox.InnerRightContent>
+                <TextBox.KeyBindings>
+                  <KeyBinding Gesture="Escape" Command="{Binding ClearLibrarySearchCommand}" />
+                </TextBox.KeyBindings>
+              </TextBox>
             </StackPanel>
-            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-              <Button Content="Batch install" Command="{Binding BatchInstallCommand}" />
-              <Button Content="Refresh"
-                      Command="{Binding NavigateCommand}" CommandParameter="Tiles" />
-            </StackPanel>
-          </Grid>
-          <TextBox DockPanel.Dock="Bottom" x:Name="LibrarySearchBox" Margin="0,16,0,0" MaxWidth="420" HorizontalAlignment="Center"
-                   Width="420" Text="{Binding LibrarySearch}" PlaceholderText="{Binding LibrarySearchPlaceholder}"
-                   AutomationProperties.Name="{Binding LibrarySearchPlaceholder}">
-            <TextBox.InnerLeftContent>
-              <icons:MaterialIcon Kind="Magnify" Width="16" Height="16" Margin="10,0,0,0"
-                                  Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-            </TextBox.InnerLeftContent>
-            <TextBox.InnerRightContent>
-              <Button Classes="icon" Margin="0,0,4,0" Padding="4" IsVisible="{Binding HasLibrarySearch}"
-                      Command="{Binding ClearLibrarySearchCommand}" AutomationProperties.Name="Clear search" ToolTip.Tip="Clear search">
-                <icons:MaterialIcon Kind="Close" Width="14" Height="14" />
-              </Button>
-            </TextBox.InnerRightContent>
-            <TextBox.KeyBindings>
-              <KeyBinding Gesture="Escape" Command="{Binding ClearLibrarySearchCommand}" />
-            </TextBox.KeyBindings>
-          </TextBox>
-          <Grid ColumnDefinitions="*,24,*">
-            <DockPanel Grid.Column="0">
-              <TextBlock DockPanel.Dock="Top" Text="Modules" FontSize="16" FontWeight="SemiBold"
-                         Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,8" />
-              <TextBlock DockPanel.Dock="Top" Text="{Binding LibraryNoResultsText}" IsVisible="{Binding HasNoModuleMatches}"
-                         Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="13" Margin="0,4,0,8" />
-              <ScrollViewer>
-                <ItemsControl ItemsSource="{Binding Modules}">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:LibraryItemViewModel">
-                      <!-- The row button spans the whole card behind its content, so a press lights the card, not one
-                           column. Glyph and text let presses through to it; the checkbox and the row's own buttons sit on top. -->
-                      <Grid Margin="0,0,0,8" ColumnDefinitions="12,Auto,Auto,*,Auto,Auto,12" RowDefinitions="12,Auto,12"
-                            IsVisible="{Binding IsShownBySearch}">
-                        <Button Classes="libraryRow" Grid.ColumnSpan="7" Grid.RowSpan="3"
-                                Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
-                                CommandParameter="{Binding}"
-                                AutomationProperties.Name="{Binding SettingsAutomationName}"
-                                AutomationProperties.HelpText="{Binding Description}"
-                                ToolTip.Tip="Settings" />
-                          <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center"
-                                    MinWidth="0" Margin="0,0,6,0" />
-                          <Border Grid.Row="1" Grid.Column="2" Width="36" Height="36" CornerRadius="8" Margin="0,0,8,0"
-                                  IsHitTestVisible="False"
-                                  Background="{DynamicResource SubtleFillColorSecondaryBrush}" VerticalAlignment="Center">
-                            <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="20" Height="20"
-                                                HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                Foreground="{Binding GlyphBrush}" />
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+              <ItemsControl ItemsSource="{Binding Widgets}" MaxWidth="820" HorizontalAlignment="Stretch" Margin="0,0,8,8">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Spacing="6" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:LibraryItemViewModel">
+                    <Grid IsVisible="{Binding IsShownBySearch}">
+                      <!-- The row opens the page (for one not added, its page offers the switch that adds it). -->
+                      <Button Classes="listRow"
+                              Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleCommand}" CommandParameter="{Binding}"
+                              AutomationProperties.Name="{Binding SettingsAutomationName}">
+                        <Grid ColumnDefinitions="Auto,*,Auto,140">
+                          <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="22" Height="22" Foreground="{Binding GlyphBrush}"
+                                              VerticalAlignment="Center" Margin="0,0,14,0" />
+                          <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center" Margin="0,0,12,0">
+                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                            <TextBlock Text="{Binding ListLine}" FontSize="12" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                          </StackPanel>
+                          <Border Grid.Column="2" Classes="stateChip" Classes.on="{Binding IsStateOn}" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding StateLabel}" FontSize="12" />
                           </Border>
-                            <StackPanel Grid.Row="1" Grid.Column="3" VerticalAlignment="Center" Margin="0,0,6,0" IsHitTestVisible="False">
-                              <StackPanel Orientation="Horizontal" Spacing="4">
-                                <icons:MaterialIcon Kind="Cog" Width="16" Height="16" Margin="0,0,4,0"
-                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                                <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
-                                <TextBlock Text="{Binding StatusText}" FontSize="12"
-                                           Foreground="{Binding StatusBrush}"
-                                           VerticalAlignment="Center" />
-                              </StackPanel>
-                              <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                         TextWrapping="Wrap" Margin="0,4,0,0" />
-                            </StackPanel>
-                          <Button Grid.Row="1" Grid.Column="4" Classes="icon" Margin="0,0,6,0"
-                                  IsVisible="{Binding IsInstalled}"
-                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).RemoveModuleCommand}"
-                                  CommandParameter="{Binding}"
-                                  AutomationProperties.Name="{Binding RemoveAutomationName}"
-                                  ToolTip.Tip="Remove">
-                            <icons:MaterialIcon Kind="Minus" Width="18" Height="18" />
-                          </Button>
-                          <Button Grid.Row="1" Grid.Column="5" Classes="icon accent"
-                                  IsEnabled="{Binding !IsInstalling}"
-                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).InstallModuleCommand}"
-                                  CommandParameter="{Binding}"
-                                  ToolTip.Tip="{Binding ActionToolTip}">
-                            <icons:MaterialIcon Kind="{Binding ActionIcon}" Width="18" Height="18" />
-                          </Button>
-                      </Grid>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-              </ScrollViewer>
-            </DockPanel>
-            <DockPanel Grid.Column="2">
-              <TextBlock DockPanel.Dock="Top" Text="Widgets" FontSize="16" FontWeight="SemiBold"
-                         Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,8" />
-              <TextBlock DockPanel.Dock="Top" Text="{Binding LibraryNoResultsText}" IsVisible="{Binding HasNoWidgetMatches}"
-                         Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="13" Margin="0,4,0,8" />
-              <ScrollViewer>
-                <ItemsControl ItemsSource="{Binding Widgets}">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:LibraryItemViewModel">
-                      <!-- The row button spans the whole card behind its content, so a press lights the card, not one
-                           column. Glyph and text let presses through to it; the checkbox and the row's own buttons sit on top. -->
-                      <Grid Margin="0,0,0,8" ColumnDefinitions="12,Auto,Auto,*,Auto,Auto,12" RowDefinitions="12,Auto,12"
-                            IsVisible="{Binding IsShownBySearch}">
-                        <Button Classes="libraryRow" Grid.ColumnSpan="7" Grid.RowSpan="3"
-                                Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleConfigCommand}"
-                                CommandParameter="{Binding}"
-                                AutomationProperties.Name="{Binding SettingsAutomationName}"
-                                AutomationProperties.HelpText="{Binding Description}"
-                                ToolTip.Tip="Settings" />
-                          <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding IsSelectedForBatch}" VerticalAlignment="Center"
-                                    MinWidth="0" Margin="0,0,6,0" />
-                          <Border Grid.Row="1" Grid.Column="2" Width="36" Height="36" CornerRadius="8" Margin="0,0,8,0"
-                                  IsHitTestVisible="False"
-                                  Background="{DynamicResource SubtleFillColorSecondaryBrush}" VerticalAlignment="Center">
-                            <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="20" Height="20"
-                                                HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                Foreground="{Binding GlyphBrush}" />
-                          </Border>
-                            <StackPanel Grid.Row="1" Grid.Column="3" VerticalAlignment="Center" Margin="0,0,6,0" IsHitTestVisible="False">
-                              <StackPanel Orientation="Horizontal" Spacing="4">
-                                <icons:MaterialIcon Kind="Cog" Width="16" Height="16" Margin="0,0,4,0"
-                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                                <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
-                                <TextBlock Text="{Binding StatusText}" FontSize="12"
-                                           Foreground="{Binding StatusBrush}"
-                                           VerticalAlignment="Center" />
-                              </StackPanel>
-                              <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                         TextWrapping="Wrap" Margin="0,4,0,0" />
-                            </StackPanel>
-                          <Button Grid.Row="1" Grid.Column="4" Classes="icon" Margin="0,0,6,0"
-                                  IsVisible="{Binding IsInstalled}"
-                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).RemoveModuleCommand}"
-                                  CommandParameter="{Binding}"
-                                  AutomationProperties.Name="{Binding RemoveAutomationName}"
-                                  ToolTip.Tip="Remove">
-                            <icons:MaterialIcon Kind="Minus" Width="18" Height="18" />
-                          </Button>
-                          <Button Grid.Row="1" Grid.Column="5" Classes="icon accent"
-                                  IsEnabled="{Binding !IsInstalling}"
-                                  Command="{Binding #Root.((vm:MainViewModel)DataContext).InstallModuleCommand}"
-                                  CommandParameter="{Binding}"
-                                  ToolTip.Tip="{Binding ActionToolTip}">
-                            <icons:MaterialIcon Kind="{Binding ActionIcon}" Width="18" Height="18" />
-                          </Button>
-                      </Grid>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-              </ScrollViewer>
-            </DockPanel>
-          </Grid>
-        </DockPanel>
+                        </Grid>
+                      </Button>
+                      <!-- One action, above the row button so it takes its own click. -->
+                      <Button HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0" MinWidth="110"
+                              HorizontalContentAlignment="Center"
+                              Classes.accent="{Binding !IsInstalled}" IsEnabled="{Binding !IsInstalling}"
+                              Content="{Binding RowActionLabel}"
+                              Command="{Binding #Root.((vm:MainViewModel)DataContext).RowActionCommand}" CommandParameter="{Binding}" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </DockPanel>
 
         <!-- Module config (from tile cog) -->
         <DockPanel IsVisible="{Binding IsModuleConfig}">
-          <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" Margin="0,0,0,16">
-            <Button Command="{Binding GoBackCommand}"
-                    VerticalAlignment="Center" Margin="0,0,16,0" Padding="10,8"
-                    ToolTip.Tip="Back to Tiles">
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <icons:MaterialIcon Kind="ArrowLeft" Width="18" Height="18" />
-                <TextBlock Text="Back" VerticalAlignment="Center" />
-              </StackPanel>
-            </Button>
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-              <TextBlock FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
-                <TextBlock.Text>
-                  <MultiBinding StringFormat="{}{0} settings">
-                    <Binding Path="ConfigModuleTitle" />
-                  </MultiBinding>
-                </TextBlock.Text>
-              </TextBlock>
-            </StackPanel>
-          </Grid>
+          <TextBlock DockPanel.Dock="Top" Margin="0,0,0,16" FontSize="28" FontWeight="SemiBold"
+                     Text="{Binding ConfigModuleTitle}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
 
           <!-- Tessera vs other modules (single fill slot, avoids DockPanel starving Tessera) -->
           <Grid>
@@ -491,13 +539,6 @@
 
         <!-- About -->
         <StackPanel IsVisible="{Binding IsAbout}" Spacing="14" MaxWidth="640" HorizontalAlignment="Left">
-          <Button Command="{Binding GoBackCommand}"
-                  HorizontalAlignment="Left" Padding="10,8">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <icons:MaterialIcon Kind="ArrowLeft" Width="18" Height="18" />
-              <TextBlock Text="Back" VerticalAlignment="Center" />
-            </StackPanel>
-          </Button>
           <StackPanel Orientation="Horizontal" Spacing="16">
             <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="72" Height="72"
                    RenderOptions.BitmapInterpolationMode="HighQuality" />
@@ -631,6 +672,23 @@
           </StackPanel>
         </Border>
       </Border>
+
+      <!-- Toast: what just happened, with Undo when it can be undone. -->
+      <Border IsVisible="{Binding IsToastVisible}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="24,0,24,20"
+              MaxWidth="640" Padding="16,10" CornerRadius="8" BorderThickness="1"
+              Background="{DynamicResource SolidBackgroundFillColorTertiaryBrush}"
+              BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BoxShadow="0 4 16 0 #40000000">
+        <Grid ColumnDefinitions="*,Auto,Auto">
+          <TextBlock Text="{Binding ToastMessage}" TextWrapping="Wrap" VerticalAlignment="Center"
+                     Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+          <Button Grid.Column="1" Content="{Binding UndoLabel}" Margin="12,0,0,0" IsVisible="{Binding ToastHasUndo}"
+                  Command="{Binding UndoRemoveCommand}" />
+          <Button Grid.Column="2" Classes="icon" Margin="8,0,0,0" Command="{Binding DismissToastCommand}"
+                  AutomationProperties.Name="Dismiss" ToolTip.Tip="Dismiss">
+            <icons:MaterialIcon Kind="Close" Width="14" Height="14" />
+          </Button>
+        </Grid>
+      </Border>
     </Grid>
-  </DockPanel>
+  </Grid>
 </Window>
