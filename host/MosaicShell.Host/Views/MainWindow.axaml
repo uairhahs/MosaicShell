@@ -329,21 +329,29 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:LibraryItemViewModel">
-                    <Button Classes="listRow" IsVisible="{Binding IsRunningNow}"
-                            Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleCommand}" CommandParameter="{Binding}"
-                            AutomationProperties.Name="{Binding SettingsAutomationName}">
-                      <Grid ColumnDefinitions="Auto,*,Auto">
-                        <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="22" Height="22" Foreground="{Binding GlyphBrush}"
-                                            VerticalAlignment="Center" Margin="0,0,14,0" />
-                        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                          <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
-                          <TextBlock Text="{Binding StatusLine}" FontSize="12" TextWrapping="Wrap"
-                                     Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                        </StackPanel>
-                        <icons:MaterialIcon Grid.Column="2" Kind="AlertCircle" Width="16" Height="16" VerticalAlignment="Center"
-                                            Foreground="{DynamicResource SystemFillColorCautionBrush}" IsVisible="{Binding IsProblem}" />
-                      </Grid>
-                    </Button>
+                    <Grid IsVisible="{Binding IsOnHome}">
+                      <Button Classes="listRow"
+                              Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleCommand}" CommandParameter="{Binding}"
+                              AutomationProperties.Name="{Binding SettingsAutomationName}">
+                        <Grid ColumnDefinitions="Auto,*,Auto,72">
+                          <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="22" Height="22" Foreground="{Binding GlyphBrush}"
+                                              VerticalAlignment="Center" Margin="0,0,14,0" />
+                          <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                            <TextBlock Text="{Binding StatusLine}" FontSize="12" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                          </StackPanel>
+                          <icons:MaterialIcon Grid.Column="2" Kind="AlertCircle" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"
+                                              Foreground="{DynamicResource SystemFillColorCautionBrush}" IsVisible="{Binding IsProblem}" />
+                        </Grid>
+                      </Button>
+                      <!-- A quick switch above the row button, so it takes its own click. Off keeps the row where it is;
+                           the switch itself shows the state. -->
+                      <ToggleSwitch HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"
+                                    OnContent="" OffContent="" IsChecked="{Binding IsOn, Mode=OneWay}"
+                                    Command="{Binding #Root.((vm:MainViewModel)DataContext).ToggleOnHomeCommand}" CommandParameter="{Binding}"
+                                    AutomationProperties.Name="{Binding Name, StringFormat=Turn on {0}}" />
+                    </Grid>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
@@ -356,21 +364,29 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:LibraryItemViewModel">
-                    <Button Classes="listRow" IsVisible="{Binding IsRunningNow}"
-                            Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleCommand}" CommandParameter="{Binding}"
-                            AutomationProperties.Name="{Binding SettingsAutomationName}">
-                      <Grid ColumnDefinitions="Auto,*,Auto">
-                        <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="22" Height="22" Foreground="{Binding GlyphBrush}"
-                                            VerticalAlignment="Center" Margin="0,0,14,0" />
-                        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                          <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
-                          <TextBlock Text="{Binding StatusLine}" FontSize="12" TextWrapping="Wrap"
-                                     Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                        </StackPanel>
-                        <icons:MaterialIcon Grid.Column="2" Kind="AlertCircle" Width="16" Height="16" VerticalAlignment="Center"
-                                            Foreground="{DynamicResource SystemFillColorCautionBrush}" IsVisible="{Binding IsProblem}" />
-                      </Grid>
-                    </Button>
+                    <Grid IsVisible="{Binding IsOnHome}">
+                      <Button Classes="listRow"
+                              Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenModuleCommand}" CommandParameter="{Binding}"
+                              AutomationProperties.Name="{Binding SettingsAutomationName}">
+                        <Grid ColumnDefinitions="Auto,*,Auto,72">
+                          <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="22" Height="22" Foreground="{Binding GlyphBrush}"
+                                              VerticalAlignment="Center" Margin="0,0,14,0" />
+                          <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                            <TextBlock Text="{Binding StatusLine}" FontSize="12" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                          </StackPanel>
+                          <icons:MaterialIcon Grid.Column="2" Kind="AlertCircle" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"
+                                              Foreground="{DynamicResource SystemFillColorCautionBrush}" IsVisible="{Binding IsProblem}" />
+                        </Grid>
+                      </Button>
+                      <!-- A quick switch above the row button, so it takes its own click. Off keeps the row where it is;
+                           the switch itself shows the state. -->
+                      <ToggleSwitch HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"
+                                    OnContent="" OffContent="" IsChecked="{Binding IsOn, Mode=OneWay}"
+                                    Command="{Binding #Root.((vm:MainViewModel)DataContext).ToggleOnHomeCommand}" CommandParameter="{Binding}"
+                                    AutomationProperties.Name="{Binding Name, StringFormat=Turn on {0}}" />
+                    </Grid>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>

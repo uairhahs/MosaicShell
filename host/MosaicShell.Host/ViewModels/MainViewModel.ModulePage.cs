@@ -98,7 +98,8 @@ namespace MosaicShell.Host.ViewModels
                     break;
             }
 
-            RefreshLibrary();
+            // Update the one row in place: re-sorting now would move the row under the pointer that just toggled it.
+            RefreshModuleInPlace(moduleId);
             return ok;
         }
 

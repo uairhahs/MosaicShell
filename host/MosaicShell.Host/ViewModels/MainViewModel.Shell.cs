@@ -15,6 +15,12 @@ namespace MosaicShell.Host.ViewModels
     {
         private DispatcherTimer? _toastTimer;
 
+        /// <summary>
+        /// Modules turned off from Home while the Hub is open: their rows stay (shown off) so they can be turned straight
+        /// back on, instead of vanishing from "Running now" the moment they stop.
+        /// </summary>
+        private readonly HashSet<string> _keptOnHome = [with(StringComparer.OrdinalIgnoreCase)];
+
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsModulesRailSelected))]
         private bool _isModulesList;
@@ -49,12 +55,49 @@ namespace MosaicShell.Host.ViewModels
 
         public bool HasUpdateBanner => UpdateBanner.Length > 0;
 
-        public bool HasRunningBackground => Modules.Any(static m => m.IsRunningNow);
+        public bool HasRunningBackground => Modules.Any(static m => m.IsOnHome);
 
-        public bool HasRunningDesktop => Widgets.Any(static m => m.IsRunningNow);
+        public bool HasRunningDesktop => Widgets.Any(static m => m.IsOnHome);
 
         /// <summary>Nothing on: Home says so and points at Modules and Widgets.</summary>
         public bool HasNothingRunning => !HasRunningBackground && !HasRunningDesktop;
+
+        /// <summary>
+        /// Brings one module's row up to date without rebuilding the lists, so it keeps its place; the lists sort by state
+        /// again the next time a page is opened.
+        /// </summary>
+        private void RefreshModuleInPlace(string moduleId)
+        {
+            LibraryItemViewModel? item = Modules.Concat(Widgets).FirstOrDefault(m => m.Id.Equals(moduleId, StringComparison.OrdinalIgnoreCase));
+            if (item is null)
+            {
+                RefreshLibrary();
+                return;
+            }
+
+            if (!ModuleCatalog.IsInstalled(moduleId))
+            {
+                item.ApplyNotInstalled();
+            }
+            else
+            {
+                if (!item.IsInstalled)
+                {
+                    item.ApplyInstalled();
+                }
+
+                if (item.IsCapability)
+                {
+                    item.ApplyArmed(_capabilityHost?.IsArmed(moduleId) == true);
+                }
+                else
+                {
+                    item.ApplyRunning(_runtime.IsRunning(moduleId));
+                }
+            }
+
+            RefreshShell();
+        }
 
         /// <summary>Called by the window as it resizes.</summary>
         public void SetWindowWidth(double widthDip)
@@ -80,6 +123,8 @@ namespace MosaicShell.Host.ViewModels
                     item.IsProblem = status.IsProblem;
                 }
 
+                item.IsOnHome = item.IsRunningNow || (item.IsInstalled && _keptOnHome.Contains(item.Id));
+
             }
 
             OnPropertyChanged(nameof(HasRunningBackground));
@@ -100,7 +145,19 @@ namespace MosaicShell.Host.ViewModels
             }
         }
 
-        /// <summary>Home's switch on a module row: the same steps as the switch on its page.</summary>
+        /// <summary>Home's switch: like the list's action, but the row stays on Home while it is off.</summary>
+        [RelayCommand]
+        private Task ToggleOnHomeAsync(LibraryItemViewModel? item)
+        {
+            if (item is not null && item.IsOn)
+            {
+                _ = _keptOnHome.Add(item.Id);
+            }
+
+            return ToggleModuleOnAsync(item);
+        }
+
+        /// <summary>The same steps as the switch on the module's page.</summary>
         [RelayCommand]
         private async Task ToggleModuleOnAsync(LibraryItemViewModel? item)
         {
@@ -192,8 +249,11 @@ namespace MosaicShell.Host.ViewModels
         /// <summary>A capability is on while armed, a widget while it is on the desktop.</summary>
         public bool IsOn => IsCapability ? IsArmed : IsRunning;
 
-        /// <summary>On Home's "Running now".</summary>
+        /// <summary>Installed and on.</summary>
         public bool IsRunningNow => IsInstalled && IsOn;
+
+        /// <summary>On Home's "Running now": on, or turned off from Home while the Hub is open.</summary>
+        [ObservableProperty] private bool _isOnHome;
 
         public ModuleListState ListState => ModuleListOrder.StateOf(IsInstalled, IsOn);
 
