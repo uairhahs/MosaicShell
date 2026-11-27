@@ -57,6 +57,25 @@ namespace MosaicShell.Core.Modules.Tessera
             return !TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).RequiresMatteChrome;
         }
 
+        /// <summary>
+        /// The choices the Hub lists: Native Translucency wherever this platform is signed off, drawable or not, so a
+        /// system without a backend sees it greyed out with <see cref="NativeUnavailableText"/> instead of not at all.
+        /// </summary>
+        public static IReadOnlyList<TesseraMaterialChoice> Listed(bool nativeSignedOff)
+        {
+            return Offered(nativeSignedOff);
+        }
+
+        /// <summary>Why Native Translucency cannot be drawn here: what is missing, in the words of the system.</summary>
+        public static string NativeUnavailableText(bool isWindows, string? xdgCurrentDesktop)
+        {
+            return isWindows
+                ? "Native Translucency needs Windows 11."
+                : Services.Xdg.XdgCurrentDesktop.IsPlasma(xdgCurrentDesktop)
+                    ? "Native Translucency needs Plasma's Blur desktop effect."
+                    : $"Native Translucency is not available on {HostPlatform.DesktopFeatures.Resolve(false, xdgCurrentDesktop).DesktopName} yet.";
+        }
+
         public static IReadOnlyList<TesseraMaterialChoice> Offered(bool nativeOffered)
         {
             return nativeOffered

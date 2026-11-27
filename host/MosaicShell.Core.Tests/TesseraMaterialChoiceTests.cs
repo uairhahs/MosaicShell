@@ -134,5 +134,24 @@ namespace MosaicShell.Core.Tests
                 && a.ShouldLockClientSize == b.ShouldLockClientSize
                 && a.TransparencyHints.SequenceEqual(b.TransparencyHints);
         }
+
+        [Theory]
+        [InlineData(true, null, "Native Translucency needs Windows 11.")]
+        [InlineData(false, "KDE", "Native Translucency needs Plasma's Blur desktop effect.")]
+        [InlineData(false, "GNOME", "Native Translucency is not available on GNOME yet.")]
+        [InlineData(false, "Hyprland", "Native Translucency is not available on Hyprland yet.")]
+        public void Where_Native_Translucency_cannot_be_drawn_the_Hub_says_why(bool windows, string? desktop, string text)
+        {
+            _ = TesseraMaterialChoicePolicy.NativeUnavailableText(windows, desktop).Should().Be(text);
+        }
+
+        [Fact]
+        public void A_signed_off_platform_lists_Native_Translucency_even_without_a_backend()
+        {
+            _ = TesseraMaterialChoicePolicy.Listed(nativeSignedOff: true)
+                .Should().Equal(TesseraMaterialChoice.Solid, TesseraMaterialChoice.Frosted, TesseraMaterialChoice.NativeTranslucency);
+            _ = TesseraMaterialChoicePolicy.Listed(nativeSignedOff: false)
+                .Should().Equal(TesseraMaterialChoice.Solid, TesseraMaterialChoice.Frosted);
+        }
     }
 }

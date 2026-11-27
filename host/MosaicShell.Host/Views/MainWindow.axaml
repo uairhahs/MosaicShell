@@ -778,10 +778,19 @@
                                 ItemsSource="{Binding TesseraMaterialOptions}"
                                 SelectedItem="{Binding SelectedTesseraMaterial}"
                                 IsEnabled="{Binding TesseraMaterialSelectable}"
-                                ToolTip.Tip="Solid: a dense panel. Frosted: Tessera's own translucent frost, drawn by the app. Native Translucency: the operating system blurs the desktop behind the card (acrylic on Windows 11, KWin blur on KDE Plasma); listed only where the system can draw it. After switching Native Translucency on Windows, restart Host so the corner radius applies." />
+                                ToolTip.Tip="Solid: a dense panel. Frosted: Tessera's own translucent frost, drawn by the app. Native Translucency: the operating system blurs the desktop behind the card (acrylic on Windows 11, KWin blur on KDE Plasma); greyed out where the system cannot draw it. After switching Native Translucency on Windows, restart Host so the corner radius applies.">
+                        <ComboBox.Styles>
+                          <Style Selector="ComboBoxItem" x:DataType="vm:TesseraMaterialOption">
+                            <Setter Property="IsEnabled" Value="{Binding IsAvailable}" />
+                          </Style>
+                        </ComboBox.Styles>
+                      </ComboBox>
                       <TextBlock Text="{Binding TesseraMaterialFixedNote}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11"
                                  TextWrapping="Wrap" MaxWidth="320" HorizontalAlignment="Left"
                                  IsVisible="{Binding !TesseraMaterialSelectable}" />
+                      <TextBlock Text="{Binding TesseraNativeUnavailableNote}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11"
+                                 TextWrapping="Wrap" MaxWidth="320" HorizontalAlignment="Left"
+                                 IsVisible="{Binding TesseraNativeUnavailableNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                     </StackPanel>
                     <CheckBox Content="Subtle desktop dim (Focus)" IsChecked="{Binding TesseraFocusDim}"
                               ToolTip.Tip="Very light dim behind the flyout on its screen." />
