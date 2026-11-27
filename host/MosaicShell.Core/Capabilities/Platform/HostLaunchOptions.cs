@@ -24,7 +24,19 @@ namespace MosaicShell.Core.Capabilities.Platform
         /// <summary>H2 eval: force Software-only rendering (NativeTranslucency ineligible; frost fallback).</summary>
         public const string TesseraForceSoftwareRenderFlag = "--tessera-software-render";
 
+        /// <summary>
+        /// Installs a third-party module from a folder or .zip and exits, without starting the Hub (developers, scripts,
+        /// CI). Takes the path after it.
+        /// </summary>
+        public const string InstallPackageFlag = "--install-package";
+
         public static HostLaunchMode Mode { get; private set; } = HostLaunchMode.FullHub;
+
+        /// <summary>The package <see cref="InstallPackageFlag"/> names, or null.</summary>
+        public static string? InstallPackagePath { get; private set; }
+
+        /// <summary>True when <see cref="InstallPackageFlag"/> came with no path after it.</summary>
+        public static bool InstallPackageMissingPath { get; private set; }
 
         public static bool IsTrayOnly => Mode == HostLaunchMode.TrayOnly;
 
@@ -39,10 +51,23 @@ namespace MosaicShell.Core.Capabilities.Platform
             Mode = HostLaunchMode.FullHub;
             TesseraNativeTranslucencyTrial = false;
             TesseraForceSoftwareRender = false;
+            InstallPackagePath = null;
+            InstallPackageMissingPath = false;
             for (int i = 0; i < args.Count; i++)
             {
                 string arg = args[i];
-                if (arg.Equals(TrayOnlyFlag, StringComparison.OrdinalIgnoreCase))
+                if (arg.Equals(InstallPackageFlag, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i + 1 < args.Count && !args[i + 1].StartsWith("--", StringComparison.Ordinal))
+                    {
+                        InstallPackagePath = args[++i];
+                    }
+                    else
+                    {
+                        InstallPackageMissingPath = true;
+                    }
+                }
+                else if (arg.Equals(TrayOnlyFlag, StringComparison.OrdinalIgnoreCase))
                 {
                     Mode = HostLaunchMode.TrayOnly;
                 }
@@ -61,6 +86,8 @@ namespace MosaicShell.Core.Capabilities.Platform
         internal static void ResetForTests()
         {
             Mode = HostLaunchMode.FullHub;
+            InstallPackagePath = null;
+            InstallPackageMissingPath = false;
             TesseraNativeTranslucencyTrial = false;
             TesseraForceSoftwareRender = false;
         }

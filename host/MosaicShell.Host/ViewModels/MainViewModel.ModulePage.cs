@@ -26,8 +26,16 @@ namespace MosaicShell.Host.ViewModels
             return ModuleIds.IsTessera(info.Id)
                 ? new ModulePageViewModel(info, ModuleSettingsSchemas.Tessera, this) { HeaderPreview = new TesseraHeaderPreviewViewModel(this) }
                 : ModuleSettingsSchemas.TryGet(info.Id, out ModuleSettingsSchema? schema)
-                    ? new ModulePageViewModel(info, schema!, this)
+                    ? new ModulePageViewModel(info, schema!, this) { DeveloperNotes = ManifestNotes(info.Id) }
                     : null;
+        }
+
+        /// <summary>What a third-party manifest got wrong, for its developer; nothing for built-ins.</summary>
+        private static IReadOnlyList<string> ManifestNotes(string moduleId)
+        {
+            return ModuleCatalog.IsBundled(moduleId) || ModuleManifest.TryLoad(moduleId) is not ModuleManifest manifest
+                ? []
+                : ManifestSettingsSchema.Problems(manifest);
         }
 
         /// <summary>Saves whatever the open page still holds before it goes.</summary>

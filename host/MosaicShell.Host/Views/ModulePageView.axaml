@@ -488,6 +488,21 @@
 
       <Button Classes="link" HorizontalAlignment="Left" Margin="0,4,0,0"
               Content="{Binding RemoveLabel}" Command="{Binding RemoveCommand}" />
+
+      <!-- For a third-party module's developer: rows of its manifest the Hub left out, and why. -->
+      <Border Classes="section" IsVisible="{Binding HasDeveloperNotes}" Margin="0,8,0,0">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="sectionTitle" Text="For the module's developer" Margin="0" />
+          <TextBlock Classes="rowHint" Text="These rows in module.manifest.json were left out of this page:" />
+          <ItemsControl ItemsSource="{Binding DeveloperNotes}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="x:String">
+                <TextBlock Classes="rowNote" Text="{Binding}" Margin="0,2" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
     </StackPanel>
   </ScrollViewer>
   </DockPanel>

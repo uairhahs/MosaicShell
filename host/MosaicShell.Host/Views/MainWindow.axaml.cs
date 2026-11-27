@@ -100,6 +100,33 @@ namespace MosaicShell.Host.Views
                 $"fit {w:0}x{h:0} -> {fitW:0}x{fitH:0}dip work={workW:0}x{workH:0}dip scale={scaling:0.##}");
         }
 
+        private async void OnAddPackageZipClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            IReadOnlyList<Avalonia.Platform.Storage.IStorageFile> files = await StorageProvider.OpenFilePickerAsync(new()
+            {
+                Title = "Add a module from a .zip package",
+                AllowMultiple = false,
+                FileTypeFilter = [new("Module package") { Patterns = ["*.zip"] }],
+            });
+            if (files.Count == 1 && files[0].TryGetLocalPath() is string path && DataContext is MainViewModel vm)
+            {
+                await vm.AddFromPackageAsync(path);
+            }
+        }
+
+        private async void OnAddPackageFolderClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            IReadOnlyList<Avalonia.Platform.Storage.IStorageFolder> folders = await StorageProvider.OpenFolderPickerAsync(new()
+            {
+                Title = "Add a module from a folder with module.manifest.json",
+                AllowMultiple = false,
+            });
+            if (folders.Count == 1 && folders[0].TryGetLocalPath() is string path && DataContext is MainViewModel vm)
+            {
+                await vm.AddFromPackageAsync(path);
+            }
+        }
+
         protected override void OnKeyDown(KeyEventArgs e)
         {
             if (DataContext is MainViewModel { ModulePage.CapturingHotkey: { } row } && row.TryCapture(e))

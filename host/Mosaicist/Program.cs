@@ -124,7 +124,7 @@ namespace Mosaicist
             AppPaths.EnsureLayout();
             string path = args[0];
             Console.WriteLine($"Installing package from {path}…");
-            await new ModuleInstaller().InstallFromPackageAsync(path);
+            _ = await new ModuleInstaller().InstallFromPackageAsync(path);
             Console.WriteLine($"Installed → {AppPaths.ModulesDirectory}");
             return 0;
         }

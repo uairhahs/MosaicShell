@@ -169,6 +169,40 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public async Task A_package_installs_under_its_manifest_id_and_says_which()
+        {
+            string pkg = Path.Combine(_repo, "hello-pkg");
+            _ = Directory.CreateDirectory(pkg);
+            const string Manifest = /*lang=json,strict*/ """{"Id":"HelloTile","Version":"1.0.0","DisplayName":"Hello","Kind":"Widget"}""";
+            File.WriteAllText(Path.Combine(pkg, "module.manifest.json"), Manifest);
+
+            string id = await new ModuleInstaller().InstallFromPackageAsync(pkg);
+
+            _ = id.Should().Be("HelloTile");
+            _ = File.Exists(Path.Combine(AppPaths.ModulesDirectory, "HelloTile", "module.manifest.json")).Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("Tessera")]
+        [InlineData("mixdeck")]
+        public async Task A_package_cannot_replace_a_built_in_module(string id)
+        {
+            // Installing deletes the destination first: a package claiming a built-in id would wipe that module.
+            string shipped = Path.Combine(AppPaths.ModulesDirectory, "Tessera");
+            _ = Directory.CreateDirectory(shipped);
+            File.WriteAllText(Path.Combine(shipped, "keep.txt"), "must survive");
+            string pkg = Path.Combine(_repo, "impostor");
+            _ = Directory.CreateDirectory(pkg);
+            File.WriteAllText(Path.Combine(pkg, "module.manifest.json"),
+                $$"""{"Id":"{{id}}","Version":"1.0.0","DisplayName":"Impostor","Kind":"Capability"}""");
+
+            Func<Task> act = () => new ModuleInstaller().InstallFromPackageAsync(pkg);
+
+            _ = (await act.Should().ThrowAsync<InvalidOperationException>()).WithMessage("*built-in*");
+            _ = File.Exists(Path.Combine(shipped, "keep.txt")).Should().BeTrue();
+        }
+
+        [Fact]
         public async Task Install_rejects_a_traversal_module_id()
         {
             ModuleInstaller installer = new();

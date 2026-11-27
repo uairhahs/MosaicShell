@@ -85,6 +85,14 @@ namespace MosaicShell.Host.ViewModels.ModulePage
         /// </summary>
         [ObservableProperty] private object? _headerPreview;
 
+        /// <summary>
+        /// For a third-party module's developer: why rows of its manifest were left out. Empty for built-ins and clean
+        /// manifests.
+        /// </summary>
+        public IReadOnlyList<string> DeveloperNotes { get; init; } = [];
+
+        public bool HasDeveloperNotes => DeveloperNotes.Count > 0;
+
         /// <summary>The shortcut row listening for a key press, if any; the window routes key presses to it.</summary>
         [ObservableProperty] private HotkeyRowViewModel? _capturingHotkey;
 

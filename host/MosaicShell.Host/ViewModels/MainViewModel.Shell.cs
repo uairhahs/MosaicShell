@@ -2,7 +2,9 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MosaicShell.Core.HubShell;
+using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
+using MosaicShell.Core.Runtime;
 using MosaicShell.Host.ViewModels.ModulePage;
 
 namespace MosaicShell.Host.ViewModels
@@ -209,6 +211,36 @@ namespace MosaicShell.Host.ViewModels
             }
         }
 
+        /// <summary>
+        /// Add from file: installs a third-party package (a folder or .zip with module.manifest.json) and opens its page.
+        /// The window picks the path; a failure is said in a toast.
+        /// </summary>
+        public async Task AddFromPackageAsync(string path)
+        {
+            if (IsBusy)
+            {
+                return;
+            }
+
+            IsBusy = true;
+            try
+            {
+                string id = await _installer.InstallFromPackageAsync(path);
+                StatusMessage = PackageInstallText.Installed(id, ModuleManifest.TryLoad(id)?.Kind);
+                RefreshLibrary();
+                OpenModuleConfigById(id);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or IOException or ArgumentException or UnauthorizedAccessException
+                or System.Text.Json.JsonException or InvalidDataException)
+            {
+                StatusMessage = PackageInstallText.Failed(ex.Message);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
         [RelayCommand]
         private void DismissToast()
         {
@@ -248,6 +280,9 @@ namespace MosaicShell.Host.ViewModels
 
         /// <summary>A capability is on while armed, a widget while it is on the desktop.</summary>
         public bool IsOn => IsCapability ? IsArmed : IsRunning;
+
+        /// <summary>Not shipped with MosaicShell: Remove asks first, since MosaicShell cannot bring it back.</summary>
+        public bool IsThirdParty => !ModuleCatalog.IsBundled(Id);
 
         /// <summary>Installed and on.</summary>
         public bool IsRunningNow => IsInstalled && IsOn;

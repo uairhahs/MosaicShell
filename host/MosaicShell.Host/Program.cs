@@ -12,6 +12,12 @@ namespace MosaicShell.Host
         public static int Main(string[] args)
         {
             Core.Capabilities.Platform.HostLaunchOptions.Apply(args);
+            if (Core.Capabilities.Platform.HostLaunchOptions.InstallPackageMissingPath
+                || Core.Capabilities.Platform.HostLaunchOptions.InstallPackagePath is not null)
+            {
+                return HostCommandLine.InstallPackage(Core.Capabilities.Platform.HostLaunchOptions.InstallPackagePath);
+            }
+
             _ = HostServices.DetectNativeTranslucencyAsync();
             SystemAccent.StartDesktopWatch();
             DiagnosticLog.Start(

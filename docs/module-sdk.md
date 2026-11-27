@@ -30,7 +30,8 @@ Modules/MyTile/
 }
 ```
 
-`Kind` is `Widget`, `Capability`, or `Hybrid`. Installed manifests appear in Hub/Library without editing Host source.
+`Kind` is `Widget`, `Capability`, or `Hybrid`. An installed module appears in the Hub without editing Host source: a
+`Widget` on the Widgets page, a `Capability` or `Hybrid` on the Modules page, marked Third-party.
 
 ## Settings page (`Settings` in the manifest)
 
@@ -104,18 +105,38 @@ Built-in factories always win on id collision. External DLLs load best-effort: a
 
 ## Install
 
-```bash
-# First-party stub from the repo
-Mosaicist install-module Canvas
+A package is a folder, or a `.zip` of one, with `module.manifest.json` at its root or one folder down. Installing
+copies it to `Modules/{Id}` under the data folder, replacing an earlier install of the same `Id`. A package cannot use
+the `Id` of a module MosaicShell ships (Tessera, Mixdeck and the rest); give it its own.
 
-# Third-party package (folder or .zip with module.manifest.json)
-Mosaicist install-package .\samples\ExternalSampleModule
-Mosaicist install-package .\HelloTile.zip
-```
+- **From the Hub.** On the Modules or Widgets page, choose **Add from file…**, then a `.zip` package or a folder. The
+  module's page opens when it is installed, wherever its `Kind` lists it.
+- **From the command line**, for scripts and CI. The Host installs the package and exits without opening the Hub:
+
+  ```bash
+  MosaicShell.Host --install-package ./samples/ExternalSampleModule
+  MosaicShell.Host --install-package ./HelloTile.zip
+  ```
+
+  It prints `Installed HelloTile. It is on the Widgets page.` and exits 0, or prints why it could not and exits 1
+  (2 when no path follows the flag). A Hub that is already open lists the module the next time its page is shown.
+
+- **By hand.** Copy the folder to `Modules/{Id}` under the data folder (`%LocalAppData%\MosaicShell` on Windows,
+  `~/.local/share/MosaicShell` on Linux, or `MOSAICSHELL_HOME`). It shows when the Hub next lists modules.
+
+To try a module without touching your own setup, point `MOSAICSHELL_HOME` at an empty folder for that run.
+
+## Checking a manifest
+
+If any `Settings` rows are left out of the module's page, the page says which and why under **For the module's
+developer**, in the manifest's own terms (for example `Dial: "Knob" is not a row kind.`). A manifest with no such
+notes is drawn in full.
 
 ## Sample
 
-See [`samples/ExternalSampleModule`](../samples/ExternalSampleModule) for a manifest-only widget. After `install-package`, it appears in Library; without a `module.dll` / `tile.dll` the Host shows `GenericTileView` placeholder chrome until you ship a view factory.
+See [`samples/ExternalSampleModule`](../samples/ExternalSampleModule) for a manifest-only widget. After installing it
+appears on the Widgets page; without a `module.dll` / `tile.dll` the Host shows `GenericTileView` placeholder chrome
+until you ship a view factory.
 
 ## Scale / DPI
 

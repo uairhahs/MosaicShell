@@ -150,20 +150,67 @@ namespace MosaicShell.Core.Modules.Settings
 
         private static bool CanDraw(ManifestSettingRow row, HashSet<string> taken)
         {
+            return WhyNot(row, taken) is null;
+        }
+
+        /// <summary>
+        /// Why the Hub leaves rows of this manifest out, one line per row, for the module's developer; empty when every row
+        /// is drawn. A ShownWhen that names no toggle is reported too: that row is drawn, but always shown.
+        /// </summary>
+        public static IReadOnlyList<string> Problems(ModuleManifest manifest)
+        {
+            List<string> problems = [];
+            HashSet<string> keys = [];
+            HashSet<string> toggles = [];
+            List<ManifestSettingRow> drawn = [];
+            foreach (ManifestSettingRow row in (manifest.Settings ?? []).SelectMany(s => s.Rows))
+            {
+                if (WhyNot(row, keys) is string why)
+                {
+                    problems.Add(why);
+                    continue;
+                }
+
+                string key = KeyOf(row);
+                _ = keys.Add(key);
+                drawn.Add(row);
+                if (Enum.Parse<SettingKind>(row.Kind!, ignoreCase: true) == SettingKind.Toggle)
+                {
+                    _ = toggles.Add(key);
+                }
+            }
+
+            foreach (ManifestSettingRow row in drawn.Where(r => !string.IsNullOrWhiteSpace(r.ShownWhen)))
+            {
+                if (!toggles.Contains(row.ShownWhen!) || row.ShownWhen == KeyOf(row))
+                {
+                    problems.Add($"{KeyOf(row)}: ShownWhen names \"{row.ShownWhen}\", which is not a Toggle on this page; the row is always shown.");
+                }
+            }
+
+            return problems;
+        }
+
+        /// <summary>Null when the Hub can draw <paramref name="row"/>; otherwise the reason, in the manifest's own terms.</summary>
+        private static string? WhyNot(ManifestSettingRow row, HashSet<string> taken)
+        {
+            string name = string.IsNullOrWhiteSpace(row.Key) ? "A row" : row.Key.Trim();
+
             // Custom slots are the Hub's own controls; a manifest cannot ask for one.
             if (!Enum.TryParse(row.Kind, ignoreCase: true, out SettingKind kind) || !Enum.IsDefined(kind) || kind == SettingKind.Custom)
             {
-                return false;
+                return $"{name}: \"{row.Kind}\" is not a row kind. Use Toggle, Choice, Number, Hotkey, Style, TextList or ActionList.";
             }
 
             string? key = kind == SettingKind.Style ? "Style" : row.Key?.Trim();
-            return !string.IsNullOrEmpty(key) && !taken.Contains(key) && (kind == SettingKind.Style || key != "Style")
-                && kind switch
-                {
-                    SettingKind.Choice => row.Options is { Count: > 0 } && row.Options.All(o => !string.IsNullOrEmpty(o.Value)),
-                    SettingKind.Number => row.Min is double min && row.Max is double max && min < max,
-                    _ => true,
-                };
+            return string.IsNullOrEmpty(key) ? $"A {kind} row has no Key."
+                : taken.Contains(key) ? $"{key}: the key is used by an earlier row."
+                : kind != SettingKind.Style && key == "Style" ? "Style: only the Style row can use the key Style."
+                : kind == SettingKind.Choice && (row.Options is not { Count: > 0 } || row.Options.Any(o => string.IsNullOrEmpty(o.Value)))
+                    ? $"{key}: a Choice needs Options."
+                : kind == SettingKind.Number && !(row.Min is double min && row.Max is double max && min < max)
+                    ? $"{key}: a Number needs a Min below its Max."
+                : null;
         }
 
         private static void AddRow(

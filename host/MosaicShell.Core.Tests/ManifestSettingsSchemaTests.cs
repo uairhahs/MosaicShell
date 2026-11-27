@@ -198,6 +198,46 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public void Each_skipped_row_is_reported_for_the_modules_developer()
+        {
+            Install(Id, "Capability", """
+                [
+                  { "Section": "Mixed", "Rows": [
+                    { "Key": "Ok", "Kind": "Toggle" },
+                    { "Key": "Dial", "Kind": "Knob" },
+                    { "Kind": "Toggle", "Label": "No key" },
+                    { "Key": "Ok", "Kind": "Toggle" },
+                    { "Key": "Pick", "Kind": "Choice" },
+                    { "Key": "Count", "Kind": "Number", "Min": 5, "Max": 1 },
+                    { "Key": "Style", "Kind": "Toggle" },
+                    { "Key": "Look", "Kind": "Custom" },
+                    { "Key": "Lost", "Kind": "Toggle", "ShownWhen": "Missing" }
+                  ] }
+                ]
+                """);
+
+            IReadOnlyList<string> problems = ManifestSettingsSchema.Problems(ModuleManifest.TryLoad(Id)!);
+
+            _ = problems.Should().Equal(
+                "Dial: \"Knob\" is not a row kind. Use Toggle, Choice, Number, Hotkey, Style, TextList or ActionList.",
+                "A Toggle row has no Key.",
+                "Ok: the key is used by an earlier row.",
+                "Pick: a Choice needs Options.",
+                "Count: a Number needs a Min below its Max.",
+                "Style: only the Style row can use the key Style.",
+                "Look: \"Custom\" is not a row kind. Use Toggle, Choice, Number, Hotkey, Style, TextList or ActionList.",
+                "Lost: ShownWhen names \"Missing\", which is not a Toggle on this page; the row is always shown.");
+        }
+
+        [Fact]
+        public void A_clean_manifest_has_no_problems()
+        {
+            Install(Id, "Capability", Page);
+
+            _ = ManifestSettingsSchema.Problems(ModuleManifest.TryLoad(Id)!).Should().BeEmpty();
+        }
+
+        [Fact]
         public void A_page_with_no_drawable_row_is_no_page()
         {
             Install(Id, "Capability", """[ { "Section": "S", "Rows": [ { "Key": "X", "Kind": "Knob" } ] } ]""");
