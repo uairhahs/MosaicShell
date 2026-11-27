@@ -138,6 +138,9 @@ namespace MosaicShell.Core.Services
         public required IAudioDeviceService AudioDevices { get; init; }
         public required IShellFlyoutTriggerSource ShellFlyoutTriggers { get; init; }
 
+        /// <summary>Where the volume key step lives; none unless a platform factory says otherwise.</summary>
+        public IVolumeKeyStep VolumeKeyStep { get; init; } = new NullVolumeKeyStep();
+
         /// <summary>What this desktop lets MosaicShell do; every feature unless a platform factory says otherwise.</summary>
         public HostPlatform.DesktopFeatures Features { get; init; } = HostPlatform.DesktopFeatures.All;
 
@@ -279,7 +282,21 @@ namespace MosaicShell.Core.Services
                 CreateLinuxIdle(desktop),
                 new Linux.KWinFullscreenProbe(),
                 CreateLinuxAirplane(desktop),
-                HostPlatform.DesktopFeatures.Resolve(isWindows: false, desktop));
+                HostPlatform.DesktopFeatures.Resolve(isWindows: false, desktop),
+                CreateLinuxVolumeKeyStep(desktop));
+        }
+
+        /// <summary>
+        /// The desktop's own volume key step: GNOME's media-keys setting, Plasma's plasmaparc, else none.
+        /// </summary>
+        private static IVolumeKeyStep CreateLinuxVolumeKeyStep(string? xdgCurrentDesktop)
+        {
+            return HostPlatform.VolumeKeyStepPolicy.Resolve(isWindows: false, xdgCurrentDesktop) switch
+            {
+                HostPlatform.VolumeKeyStepSource.Gnome => new Linux.GnomeVolumeKeyStep(),
+                HostPlatform.VolumeKeyStepSource.Plasma => new Linux.PlasmaVolumeKeyStep(),
+                _ => new NullVolumeKeyStep(),
+            };
         }
 
         /// <summary>
@@ -369,10 +386,12 @@ namespace MosaicShell.Core.Services
             IIdleService? idle = null,
             IFullscreenProbe? fullscreen = null,
             IAirplaneModeService? airplane = null,
-            HostPlatform.DesktopFeatures? features = null)
+            HostPlatform.DesktopFeatures? features = null,
+            IVolumeKeyStep? volumeKeyStep = null)
         {
             return new HostServices
             {
+                VolumeKeyStep = volumeKeyStep ?? new NullVolumeKeyStep(),
                 Features = features ?? HostPlatform.DesktopFeatures.None,
                 Audio = audio ?? new NullAudioService(),
                 AppAudio = appAudio ?? new NullAppAudioService(),
@@ -417,6 +436,7 @@ namespace MosaicShell.Core.Services
                 BrightnessChanges = new WindowsBrightnessChangeSource(brightness),
                 OsdSuppressor = new WindowsNativeOsdSuppressor(),
                 LegacyVolumeKeys = new WindowsLegacyMediaKeyHook(),
+                VolumeKeyStep = new OwnHookVolumeKeyStep(),
                 Idle = new WindowsIdleService(),
                 Fullscreen = new WindowsFullscreenProbe(),
                 LockKeys = new WindowsLockKeysService(),

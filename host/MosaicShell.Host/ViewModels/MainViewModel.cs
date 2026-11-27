@@ -175,6 +175,21 @@ namespace MosaicShell.Host.ViewModels
         [ObservableProperty] private decimal _tesseraFlyoutScalePercent = 100;
         [ObservableProperty] private string _tesseraAccentHex = "";
         [ObservableProperty] private decimal _tesseraLegacyStepPercent = 2;
+
+        /// <summary>Who owns the volume key step on this desktop (<see cref="VolumeKeyStepPolicy"/>).</summary>
+        public VolumeKeyStepSource VolumeStepSource => _services.VolumeKeyStep.Source;
+
+        /// <summary>The key hook switch exists only where Tessera steps the volume itself (Windows).</summary>
+        public bool ShowLegacyHookSwitch => VolumeKeyStepPolicy.HasHookSwitch(VolumeStepSource);
+
+        public bool VolumeStepEditable =>
+            VolumeStepSource != VolumeKeyStepSource.None && (!ShowLegacyHookSwitch || TesseraLegacyVol);
+
+        public int VolumeStepMax => VolumeKeyStepPolicy.Range(VolumeStepSource).Max;
+
+        public string VolumeStepHint => VolumeKeyStepPolicy.Hint(VolumeStepSource);
+
+        partial void OnTesseraLegacyVolChanged(bool value) => OnPropertyChanged(nameof(VolumeStepEditable));
         [ObservableProperty] private bool _autostartEnabled;
         [ObservableProperty] private bool _closeMinimizesToTray = true;
         [ObservableProperty] private string _updateStatus = "";
@@ -414,6 +429,10 @@ namespace MosaicShell.Host.ViewModels
                     ? (decimal)Math.Round(s.LegacyVolumeStep * 100)
                     : (decimal)Math.Round(s.LegacyVolumeStep);
                 TesseraLegacyStepPercent = Math.Clamp(stepPct < 1 ? 2 : stepPct, 1, 25);
+                if (!VolumeKeyStepPolicy.HasHookSwitch(VolumeStepSource) && _services.VolumeKeyStep.Read() is int desktopStep)
+                {
+                    TesseraLegacyStepPercent = VolumeKeyStepPolicy.Clamp(VolumeStepSource, desktopStep);
+                }
             }
             else if (info.Id.Equals("Inlay", StringComparison.OrdinalIgnoreCase))
             {
@@ -597,7 +616,15 @@ namespace MosaicShell.Host.ViewModels
             s.AccentColor = TesseraAccentColor.NormalizeOrEmpty(TesseraAccentHex);
             TesseraAccentHex = s.AccentColor;
             s.UseLegacyVolumeHooks = TesseraLegacyVol;
-            s.LegacyVolumeStep = Math.Clamp((double)TesseraLegacyStepPercent, 1, 25) / 100.0;
+            if (VolumeKeyStepPolicy.HasHookSwitch(VolumeStepSource))
+            {
+                s.LegacyVolumeStep = Math.Clamp((double)TesseraLegacyStepPercent, 1, 25) / 100.0;
+            }
+            else if (VolumeStepSource != VolumeKeyStepSource.None)
+            {
+                // The desktop owns the step here; Tessera's own copy stays as it was for Windows.
+                _ = _services.VolumeKeyStep.Write((int)TesseraLegacyStepPercent);
+            }
             ModuleSettingsStore.Save(ModuleIds.Tessera, s);
             string path = ModuleSettingsStore.PathFor(ModuleIds.Tessera);
             DateTime mtime = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;

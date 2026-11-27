@@ -696,14 +696,15 @@
                     <StackPanel Spacing="10">
                       <TextBlock Classes="sectionTitle" Text="Advanced" />
                       <CheckBox Content="Legacy volume key hooks" IsChecked="{Binding TesseraLegacyVol}"
+                                IsVisible="{Binding ShowLegacyHookSwitch}"
                                 ToolTip.Tip="Intercept volume keys so Tessera owns the gesture (recommended on Win11)" />
-                      <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding TesseraLegacyVol}">
-                        <TextBlock Text="Volume step" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                        <NumericUpDown Classes="config" Minimum="1" Maximum="25" Increment="1"
-                                       FormatString="0" Value="{Binding TesseraLegacyStepPercent}"
-                                       ToolTip.Tip="Percent points per legacy volume key press (e.g. 2 = ±2%)" />
-                        <TextBlock Text="/ 100" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="13" />
+                      <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding VolumeStepEditable}">
+                        <TextBlock Text="Volume key step" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <NumericUpDown Classes="config" Minimum="1" Maximum="{Binding VolumeStepMax}" Increment="1"
+                                       FormatString="0" Value="{Binding TesseraLegacyStepPercent}" />
+                        <TextBlock Text="%" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="13" />
                       </StackPanel>
+                      <TextBlock Classes="sectionHint" Margin="0" Text="{Binding VolumeStepHint}" />
                       <TextBlock Classes="sectionHint" Margin="0"
                                  Text="{x:Static vm:PlatformTexts.NativePopups}" />
                     </StackPanel>
