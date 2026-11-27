@@ -85,6 +85,7 @@ namespace MosaicShell.Core.Modules.Tessera
                 ? "1"
                 : "0";
             p["acrylic"] = settings.UseAcrylicBackdrop ? "1" : "0";
+            p["glass"] = settings.UseNativeTranslucency ? "native" : "frosted";
             p["focusDim"] = settings.UseFocusDim ? "1" : "0";
             p["flyoutScale"] = Math.Clamp(settings.FlyoutScalePercent, 50, 150).ToString();
             p["backdropBlur"] = settings.UseBackdropBlur ? "1" : "0";

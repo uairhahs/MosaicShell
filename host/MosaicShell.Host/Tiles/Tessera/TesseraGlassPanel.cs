@@ -111,6 +111,21 @@ namespace MosaicShell.Host.Tiles.Tessera
                 };
             }
 
+            if (TesseraGlass.UseNativeTranslucencyChrome
+                && !TesseraGlass.PreviewMode
+                && NativeTranslucencyAcrylicSpec.ShadowsContent(NativeTranslucencyPlatform.Backend))
+            {
+                // Thin glass: the text and icons carry their own shadow so they stay readable over a bright wallpaper.
+                content.Effect = new DropShadowEffect
+                {
+                    OffsetX = 0,
+                    OffsetY = NativeTranslucencyAcrylicSpec.ContentShadowOffsetY,
+                    BlurRadius = NativeTranslucencyAcrylicSpec.ContentShadowBlur,
+                    Color = Colors.Black,
+                    Opacity = NativeTranslucencyAcrylicSpec.ContentShadowOpacity
+                };
+            }
+
             TesseraGlassBackground glass = new()
             {
                 CornerRadius = cornerRadius,
@@ -436,12 +451,21 @@ namespace MosaicShell.Host.Tiles.Tessera
 
             if (nativeTranslucency)
             {
-                if (NativeTranslucencyAcrylicSpec.AppPaintsAcrylicLayers(NativeTranslucencyPlatform.Backend))
+                if (TesseraPalette.Material.FrostedGlass)
                 {
                     TesseraGlassDrawOperation.DrawAcrylicLayers(lc, round, w, h);
+                    TesseraGlassDrawOperation.DrawAcrylicEdge(lc, round);
                 }
+                else
+                {
+                    if (NativeTranslucencyAcrylicSpec.AppPaintsAcrylicLayers(NativeTranslucencyPlatform.Backend))
+                    {
+                        // Native Translucency over a blur-only compositor: the plain material, the blur under a flat tint.
+                        TesseraGlassDrawOperation.DrawPlainTint(lc, round);
+                    }
 
-                TesseraGlassDrawOperation.DrawGlassChrome(lc, round);
+                    TesseraGlassDrawOperation.DrawGlassChrome(lc, round);
+                }
             }
             else
             {
@@ -683,6 +707,13 @@ namespace MosaicShell.Host.Tiles.Tessera
             };
             canvas.DrawRoundRect(round, tint);
 
+            using SKPaint frost = new()
+            {
+                Color = new SKColor(255, 255, 255, NativeTranslucencyAcrylicSpec.FrostAlpha),
+                IsAntialias = true
+            };
+            canvas.DrawRoundRect(round, frost);
+
             using SKPaint highlight = new()
             {
                 Shader = SKShader.CreateLinearGradient(
@@ -710,6 +741,36 @@ namespace MosaicShell.Host.Tiles.Tessera
             canvas.ClipRoundRect(round, antialias: true);
             canvas.DrawRect(0, 0, w, h, grain);
             canvas.Restore();
+        }
+
+        /// <summary>Native Translucency's flat veil over a blur-only backdrop.</summary>
+        internal static void DrawPlainTint(SKCanvas canvas, SKRoundRect round)
+        {
+            using SKPaint tint = new()
+            {
+                Color = new SKColor(
+                    NativeTranslucencyAcrylicSpec.PlainTintR,
+                    NativeTranslucencyAcrylicSpec.PlainTintG,
+                    NativeTranslucencyAcrylicSpec.PlainTintB,
+                    NativeTranslucencyAcrylicSpec.PlainTintAlpha),
+                IsAntialias = true
+            };
+            canvas.DrawRoundRect(round, tint);
+        }
+
+        /// <summary>The glass pane's edge: a crisp light line, inset half a pixel so it stays one pixel wide.</summary>
+        internal static void DrawAcrylicEdge(SKCanvas canvas, SKRoundRect round)
+        {
+            using SKPaint edge = new()
+            {
+                Color = new SKColor(255, 255, 255, NativeTranslucencyAcrylicSpec.EdgeAlpha),
+                IsAntialias = true,
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 1
+            };
+            using SKRoundRect inset = new(round);
+            inset.Inflate(-0.5f, -0.5f);
+            canvas.DrawRoundRect(inset, edge);
         }
 
         internal static void DrawGlassChrome(SKCanvas canvas, SKRoundRect round)

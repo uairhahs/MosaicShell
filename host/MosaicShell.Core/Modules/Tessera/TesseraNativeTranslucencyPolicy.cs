@@ -1,4 +1,5 @@
 using MosaicShell.Core.Capabilities.Platform;
+using MosaicShell.Core.Settings;
 
 namespace MosaicShell.Core.Modules.Tessera
 {
@@ -62,10 +63,22 @@ namespace MosaicShell.Core.Modules.Tessera
         /// <summary>Effective trial opt-in for this process (CLI flag or saved Tessera setting).</summary>
         public static bool IsTrialRequested()
         {
+            TesseraSettings settings = TesseraFlyoutRequestBuilder.LoadSettings();
             return ResolveTrialRequested(
                 HostLaunchOptions.TesseraNativeTranslucencyTrial,
-                TesseraFlyoutRequestBuilder.LoadSettings().UseNativeTranslucency,
+                WantsOsBlur(settings.UseNativeTranslucency, settings.UseAcrylicBackdrop, NativeTranslucencyPlatform.Backend),
                 TesseraNativeTranslucencySignOffPolicy.EvalCompleteForThisPlatform);
+        }
+
+        /// <summary>
+        /// Whether the saved material wants the OS blur behind the card: Native Translucency always, and Frosted where the
+        /// compositor draws only the blur (KWin), since the frosted glass is painted over it. Elsewhere Frosted keeps the
+        /// app's own frost.
+        /// </summary>
+        public static bool WantsOsBlur(bool useNativeTranslucency, bool useAcrylicBackdrop, NativeTranslucencyBackend backend)
+        {
+            return useNativeTranslucency
+                || (useAcrylicBackdrop && NativeTranslucencyAcrylicSpec.AppPaintsAcrylicLayers(backend));
         }
 
         public static bool IsEligibleFromPayload(

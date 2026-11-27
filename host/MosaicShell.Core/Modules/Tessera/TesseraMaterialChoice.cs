@@ -8,7 +8,10 @@ namespace MosaicShell.Core.Modules.Tessera
         /// <summary>A dense, nearly opaque panel.</summary>
         Solid,
 
-        /// <summary>Tessera's own frost: a translucent crust drawn by the app, no OS blur.</summary>
+        /// <summary>
+        /// Tessera's frosted glass. Where the compositor draws only a blur (KWin), the app paints the frosted layers over
+        /// it; elsewhere the app draws its own translucent frost with no OS blur.
+        /// </summary>
         Frosted,
 
         /// <summary>The OS blurs the desktop behind the card (Windows acrylic, KWin blur on KDE Plasma).</summary>
