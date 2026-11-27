@@ -100,6 +100,11 @@ namespace MosaicShell.Host.Views
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
+            if (DataContext is MainViewModel { ModulePage.CapturingHotkey: { } row } && row.TryCapture(e))
+            {
+                return;
+            }
+
             if (DataContext is MainViewModel vm && vm.IsCapturingHotkey && vm.TryCaptureHotkey(e))
             {
                 return;

@@ -254,6 +254,7 @@ namespace MosaicShell.Host.ViewModels
             if (!IsModuleConfig)
             {
                 TesseraConfigPreviewReady = false;
+                CloseModulePage();
             }
 
             if (IsTiles)
@@ -345,8 +346,10 @@ namespace MosaicShell.Host.ViewModels
             TesseraConfigPreviewReady = false;
             try
             {
+                CloseModulePage();
                 ConfigModuleId = info.Id;
                 ConfigModuleTitle = info.DisplayName;
+                ModulePage = CreateModulePage(info);
                 ModuleStyleOptions.Clear();
                 foreach (StyleDescriptor style in StyleCatalog.For(info.Id))
                 {
@@ -1013,6 +1016,17 @@ namespace MosaicShell.Host.ViewModels
 
             string id = ConfigModuleId;
             await SaveModuleConfigAsync();
+            await OpenOverlayPreviewAsync(id);
+        }
+
+        /// <summary>Arms the capability if needed and opens its overlay so its effect can be seen.</summary>
+        private async Task OpenOverlayPreviewAsync(string id)
+        {
+            if (_capabilityHost is null)
+            {
+                return;
+            }
+
             bool ok = _capabilityHost.IsArmed(id) || await _capabilityHost.ArmAsync(id);
             if (!ok)
             {
@@ -1022,6 +1036,10 @@ namespace MosaicShell.Host.ViewModels
 
             string? err = _capabilityHost.GetHotkeyError(id);
             if (!string.IsNullOrWhiteSpace(err) && ShowHotkeyCapExtras)
+            {
+                StatusMessage = err;
+            }
+            else if (!string.IsNullOrWhiteSpace(err) && HasModulePage)
             {
                 StatusMessage = err;
             }
