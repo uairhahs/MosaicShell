@@ -23,14 +23,17 @@ namespace MosaicShell.Host.ViewModels
         /// <summary>The page for <paramref name="info"/>, or null when Core has no schema for it.</summary>
         private ModulePageViewModel? CreateModulePage(ModuleInfo info)
         {
-            return ModuleSettingsSchemas.TryGet(info.Id, out ModuleSettingsSchema? schema)
-                ? new ModulePageViewModel(info, schema!, this)
-                : null;
+            return ModuleIds.IsTessera(info.Id)
+                ? new ModulePageViewModel(info, ModuleSettingsSchemas.Tessera, this) { HeaderPreview = new TesseraHeaderPreviewViewModel(this) }
+                : ModuleSettingsSchemas.TryGet(info.Id, out ModuleSettingsSchema? schema)
+                    ? new ModulePageViewModel(info, schema!, this)
+                    : null;
         }
 
         /// <summary>Saves whatever the open page still holds before it goes.</summary>
         private void CloseModulePage()
         {
+            StopTesseraSlots();
             if (ModulePage is ModulePageViewModel page)
             {
                 ModulePage = null;
@@ -132,6 +135,13 @@ namespace MosaicShell.Host.ViewModels
 
         Task IModulePageHost.PreviewAsync(string moduleId)
         {
+            if (ModuleIds.IsTessera(moduleId))
+            {
+                // A pure preview: it plays a volume flyout without turning Tessera on.
+                PreviewTesseraFlyout();
+                return Task.CompletedTask;
+            }
+
             return OpenOverlayPreviewAsync(moduleId);
         }
 

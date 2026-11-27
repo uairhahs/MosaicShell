@@ -98,7 +98,7 @@ namespace MosaicShell.Core.Modules.Settings
                     "Stays for",
                     min: 0.5,
                     max: 20,
-                    step: 0.25,
+                    step: 0.5,
                     unit: "s",
                     s => s.AutoDismissMs / 1000.0,
                     (s, v) => s.AutoDismissMs = (int)Math.Round(v * 1000),

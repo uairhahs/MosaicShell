@@ -40,7 +40,7 @@ namespace MosaicShell.Host.ViewModels.ModulePage
             };
 
             Sections = [.. schema.Sections.Select(s => new SettingSectionViewModel(s.Title, [.. s.Rows.Select(CreateRow)]))];
-            foreach (SettingRowViewModel row in Rows)
+            foreach (SettingRowViewModel row in Rows.Where(static r => r is not CustomRowViewModel))
             {
                 row.Load(_document.Get(row.Key));
             }
@@ -79,6 +79,12 @@ namespace MosaicShell.Host.ViewModels.ModulePage
         [ObservableProperty] private bool _isOn;
         [ObservableProperty] private bool _isSwitching;
 
+        /// <summary>
+        /// What the pinned header shows beside "Show it on screen", or null: Tessera's live preview, so it stays in view
+        /// while rows far down the page change.
+        /// </summary>
+        [ObservableProperty] private object? _headerPreview;
+
         /// <summary>The shortcut row listening for a key press, if any; the window routes key presses to it.</summary>
         [ObservableProperty] private HotkeyRowViewModel? _capturingHotkey;
 
@@ -95,7 +101,17 @@ namespace MosaicShell.Host.ViewModels.ModulePage
         /// <summary>Takes a row's change: saved at once for a click, after a pause for dragging and typing.</summary>
         internal void Commit(SettingRowViewModel row, object value)
         {
-            int debounce = ModuleSettingsApplyPolicy.DebounceMs(row.Row.Kind);
+            Schedule(row, value, ModuleSettingsApplyPolicy.DebounceMs(row.Row.Kind));
+        }
+
+        /// <summary>Takes a custom slot's change: the fields it owns, saved after the slot's own pause.</summary>
+        internal void CommitCustom(CustomRowViewModel row, Action<object> change, int debounceMs)
+        {
+            Schedule(row, change, debounceMs);
+        }
+
+        private void Schedule(SettingRowViewModel row, object value, int debounce)
+        {
             if (debounce == 0)
             {
                 Write(row, value);
@@ -138,7 +154,14 @@ namespace MosaicShell.Host.ViewModels.ModulePage
         {
             try
             {
-                _document.Set(row.Key, value);
+                if (row is CustomRowViewModel)
+                {
+                    _document.Update(row.Key, (Action<object>)value);
+                }
+                else
+                {
+                    _document.Set(row.Key, value);
+                }
             }
             catch (ArgumentException ex)
             {
@@ -146,8 +169,13 @@ namespace MosaicShell.Host.ViewModels.ModulePage
             }
 
             // Show the value as saved: a clamped number or a refused shortcut reads back as what was stored.
-            row.Load(_document.Get(row.Key));
+            if (row is not CustomRowViewModel)
+            {
+                row.Load(_document.Get(row.Key));
+            }
+
             RefreshVisibility();
+            _host.Saved(ModuleId, row.Key);
             SettingFollowUp next = ModuleSettingsApplyPolicy.FollowUp(row.Row.Apply, _host.IsArmed(ModuleId), _host.IsWidgetOpen(ModuleId));
             _pendingFollowUp = ModuleSettingsApplyPolicy.Combine(_pendingFollowUp, next);
             if (_pendingFollowUp != SettingFollowUp.None)
@@ -249,6 +277,7 @@ namespace MosaicShell.Host.ViewModels.ModulePage
                 SettingKind.Hotkey => new HotkeyRowViewModel(this, row, availability),
                 SettingKind.TextList => new TextListRowViewModel(this, row, availability),
                 SettingKind.ActionList => new ActionListRowViewModel(this, row, availability),
+                SettingKind.Custom => _host.CreateCustomRow(this, row, availability),
                 _ => throw new NotSupportedException($"No row for {row.Kind}."),
             };
         }

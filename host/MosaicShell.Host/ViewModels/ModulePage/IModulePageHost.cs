@@ -42,5 +42,11 @@ namespace MosaicShell.Host.ViewModels.ModulePage
 
         /// <summary>A line for the Hub's status area.</summary>
         void Report(string message);
+
+        /// <summary>The control for a custom slot (<see cref="SettingKind.Custom"/>), by its <c>CustomId</c>.</summary>
+        CustomRowViewModel CreateCustomRow(ModulePageViewModel page, SettingRow row, SettingAvailability availability);
+
+        /// <summary>A row was saved; the Hub refreshes anything it shows from that setting.</summary>
+        void Saved(string moduleId, string key);
     }
 }

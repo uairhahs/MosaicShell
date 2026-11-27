@@ -66,6 +66,7 @@ namespace MosaicShell.Host.ViewModels
             }
 
             SyncTesseraAccentSwatches();
+            PropertyChanged += OnTesseraSlotPropertyChanged;
 
             ModuleStyleOptions = [];
 
@@ -335,6 +336,10 @@ namespace MosaicShell.Host.ViewModels
                 {
                     Navigate("ModuleConfig");
                     LoadModuleConfigFields(info);
+                    if (ShowTesseraExtras && HasModulePage)
+                    {
+                        StartTesseraSlots();
+                    }
                 }
             }
             finally
@@ -439,7 +444,12 @@ namespace MosaicShell.Host.ViewModels
         [RelayCommand]
         private void PreviewTesseraFlyout()
         {
-            if (ShowTesseraExtras)
+            if (ModulePage is not null)
+            {
+                // Every change is already saved; write any that is still waiting out its pause.
+                _ = ModulePage.FlushAsync();
+            }
+            else if (ShowTesseraExtras)
             {
                 PersistTesseraFromUi();
             }

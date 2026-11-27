@@ -118,7 +118,8 @@ namespace MosaicShell.Host.ViewModels.ModulePage
 
         [ObservableProperty] private double _value;
 
-        public string ValueText => $"{Value:0} {Unit}".Trim();
+        /// <summary>The value as the slider shows it: decimals only when the step has them (3.5 s, but 90 s).</summary>
+        public string ValueText => $"{Value.ToString(Step % 1 == 0 ? "0" : "0.0#", System.Globalization.CultureInfo.CurrentCulture)} {Unit}".Trim();
 
         protected override void Apply(object value)
         {
@@ -306,6 +307,26 @@ namespace MosaicShell.Host.ViewModels.ModulePage
         {
             OnPropertyChanged(nameof(IsEmpty));
             Changed((IReadOnlyList<SettingPair>)[.. Items]);
+        }
+    }
+
+    /// <summary>
+    /// A custom slot: a control the Hub supplies for a <see cref="SettingKind.Custom"/> row. It has no value of its
+    /// own; its control saves through <see cref="Commit"/>, which changes only the fields it owns.
+    /// </summary>
+    public class CustomRowViewModel(ModulePageViewModel page, SettingRow row, SettingAvailability availability)
+        : SettingRowViewModel(page, row, availability)
+    {
+        public string CustomId => Row.CustomId ?? "";
+
+        protected override void Apply(object value)
+        {
+        }
+
+        /// <summary>Saves <paramref name="change"/> to the settings, after <paramref name="debounceMs"/> of quiet.</summary>
+        public void Commit(Action<object> change, int debounceMs)
+        {
+            Page.CommitCustom(this, change, debounceMs);
         }
     }
 }

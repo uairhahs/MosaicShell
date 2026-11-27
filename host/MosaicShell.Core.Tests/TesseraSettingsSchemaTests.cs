@@ -120,11 +120,13 @@ namespace MosaicShell.Core.Tests
             SettingRow staysFor = Schema.Row("StaysFor");
 
             _ = doc.Get<double>("StaysFor").Should().Be(2);
-            doc.Set("StaysFor", 3.25);
-            _ = Saved.AutoDismissMs.Should().Be(3250);
+            doc.Set("StaysFor", 3.5);
+            _ = Saved.AutoDismissMs.Should().Be(3500);
+            doc.Set("StaysFor", 3.3);
+            _ = Saved.AutoDismissMs.Should().Be(3500, "it moves in half-second steps");
             doc.Set("StaysFor", 99.0);
             _ = Saved.AutoDismissMs.Should().Be(20000);
-            _ = (staysFor.Min, staysFor.Step, staysFor.Unit).Should().Be((0.5, 0.25, "s"));
+            _ = (staysFor.Min, staysFor.Step, staysFor.Unit).Should().Be((0.5, 0.5, "s"));
         }
 
         [Theory]

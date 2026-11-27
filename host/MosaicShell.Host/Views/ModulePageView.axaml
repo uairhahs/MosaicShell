@@ -3,6 +3,8 @@
              xmlns:mp="using:MosaicShell.Host.ViewModels.ModulePage"
              xmlns:core="using:MosaicShell.Core.Modules.Settings"
              xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:vm="using:MosaicShell.Host.ViewModels"
+             xmlns:tessera="using:MosaicShell.Host.Tiles.Tessera"
              x:Class="MosaicShell.Host.Views.ModulePageView"
              x:DataType="mp:ModulePageViewModel">
 
@@ -182,18 +184,267 @@
         </ItemsControl>
       </StackPanel>
     </DataTemplate>
+
+    <!--
+      Tessera's custom slots. Each switches its data context to the Hub (x:DataType vm:MainViewModel) and reuses the
+      Hub's Tessera properties; a change saves only the fields that slot owns.
+    -->
+    <DataTemplate DataType="mp:TesseraLookSlotViewModel">
+      <StackPanel Spacing="12" DataContext="{Binding Hub}" x:DataType="vm:MainViewModel">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Spacing="2" VerticalAlignment="Center" Margin="0,0,16,0">
+            <TextBlock Classes="rowLabel" Text="Style" />
+            <TextBlock Classes="rowHint" Text="The preview at the top shows it as you pick." />
+          </StackPanel>
+          <ComboBox Grid.Column="1" MinWidth="220" VerticalAlignment="Center"
+                    ItemsSource="{Binding ModuleStyleOptions}" SelectedItem="{Binding SelectedModuleStyle}"
+                    AutomationProperties.Name="Style" />
+        </Grid>
+      </StackPanel>
+    </DataTemplate>
+
+    <!-- Small enough to sit in the pinned header: the preview scales its card down to fit. -->
+    <DataTemplate DataType="mp:TesseraHeaderPreviewViewModel">
+      <tessera:TesseraStylePreview DataContext="{Binding Hub}" x:DataType="vm:MainViewModel"
+                                   Height="104" MinHeight="0" Padding="8,6" HorizontalAlignment="Stretch"
+                                   IsVisible="{Binding TesseraConfigPreviewReady}"
+                                   StyleId="{Binding ModuleStyle}"
+                                   ShowMediaStrip="{Binding TesseraMediaStrip}"
+                                   AccentColor="{Binding TesseraAccentHex}" />
+    </DataTemplate>
+
+    <DataTemplate DataType="mp:TesseraAccentSlotViewModel">
+      <StackPanel Spacing="8" DataContext="{Binding Hub}" x:DataType="vm:MainViewModel">
+        <TextBlock Classes="rowLabel" Text="Accent colour" />
+        <ItemsControl ItemsSource="{Binding TesseraAccentSwatches}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel Orientation="Horizontal" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:TesseraAccentSwatchVm">
+              <Button Classes="accentSwatch" Classes.selected="{Binding IsSelected}"
+                      Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).SelectTesseraAccentCommand}"
+                      CommandParameter="{Binding Hex}" ToolTip.Tip="{Binding Name}" AutomationProperties.Name="{Binding Name}">
+                <Panel Width="20" Height="20">
+                  <Ellipse Width="20" Height="20" Fill="{Binding Fill}" />
+                  <icons:MaterialIcon Kind="Palette" Width="11" Height="11"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                      Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
+                                      IsVisible="{Binding IsSystem}" />
+                </Panel>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBox Width="200" HorizontalAlignment="Left" Text="{Binding TesseraAccentHex}"
+                 PlaceholderText="{x:Static vm:PlatformTexts.AccentPlaceholder}" AutomationProperties.Name="Custom accent colour" />
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate DataType="mp:TesseraMaterialSlotViewModel">
+      <Grid ColumnDefinitions="*,Auto" DataContext="{Binding Hub}" x:DataType="vm:MainViewModel">
+        <StackPanel Spacing="2" VerticalAlignment="Center" Margin="0,0,16,0">
+          <TextBlock Classes="rowLabel" Text="Material" />
+          <TextBlock Classes="rowHint" Text="Solid, Tessera's own frost, or the system's blur behind it." />
+          <TextBlock Classes="rowNote" Text="{Binding TesseraMaterialFixedNote}" IsVisible="{Binding !TesseraMaterialSelectable}" />
+          <TextBlock Classes="rowNote" Text="{Binding TesseraNativeUnavailableNote}"
+                     IsVisible="{Binding TesseraNativeUnavailableNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        </StackPanel>
+        <ComboBox Grid.Column="1" MinWidth="200" VerticalAlignment="Center"
+                  ItemsSource="{Binding TesseraMaterialOptions}" SelectedItem="{Binding SelectedTesseraMaterial}"
+                  IsEnabled="{Binding TesseraMaterialSelectable}" AutomationProperties.Name="Material">
+          <ComboBox.Styles>
+            <Style Selector="ComboBoxItem" x:DataType="vm:TesseraMaterialOption">
+              <Setter Property="IsEnabled" Value="{Binding IsAvailable}" />
+            </Style>
+          </ComboBox.Styles>
+        </ComboBox>
+      </Grid>
+    </DataTemplate>
+
+    <DataTemplate DataType="mp:TesseraMotionSlotViewModel">
+      <StackPanel Spacing="14" DataContext="{Binding Hub}" x:DataType="vm:MainViewModel">
+        <Border IsVisible="{Binding IsReducedMotionInEffect}" CornerRadius="8" Padding="12,10"
+                Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <icons:MaterialIcon Kind="InformationOutline" Width="18" Height="18" VerticalAlignment="Center"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+            <TextBlock Grid.Column="1" Margin="10,0,12,0" VerticalAlignment="Center" TextWrapping="Wrap" FontSize="13"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding ReducedMotionNotice}" />
+            <Button Grid.Column="2" Content="Open Settings" VerticalAlignment="Center"
+                    Command="{Binding NavigateCommand}" CommandParameter="Settings" />
+          </Grid>
+        </Border>
+        <StackPanel Spacing="14" IsEnabled="{Binding !IsReducedMotionInEffect}" Opacity="{Binding TesseraMotionSettingsOpacity}">
+          <Border Background="{DynamicResource SolidBackgroundFillColorBaseBrush}" CornerRadius="10" Padding="12">
+            <Grid ColumnDefinitions="260,*">
+              <tessera:TesseraMotionPreview Width="260" VerticalAlignment="Center"
+                                            Ani="{Binding TesseraMotionCurrent.Ani}"
+                                            AniSteps="{Binding TesseraMotionCurrent.AniSteps}"
+                                            AniEase="{Binding TesseraMotionCurrent.AniEase}"
+                                            AniDir="{Binding TesseraMotionCurrent.AniDir}"
+                                            DisplacementPx="{Binding TesseraMotionCurrent.DisplacementPx}" />
+              <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Spacing="4">
+                <TextBlock Text="{Binding TesseraMotionPresetName}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                <TextBlock Text="{Binding TesseraMotionSummary}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                <TextBlock FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" TextWrapping="Wrap" Margin="0,6,0,0">
+                  <Run Text="{Binding TesseraMotionDurationLabel}" />
+                  <Run Text="·" />
+                  <Run Text="{Binding TesseraMotionDistanceLabel}" />
+                </TextBlock>
+              </StackPanel>
+            </Grid>
+          </Border>
+          <ItemsControl ItemsSource="{Binding TesseraMotionPresetItems}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <UniformGrid Columns="3" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:TesseraMotionPresetItem">
+                <Button Classes="motionCard"
+                        Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).SelectTesseraMotionPresetCommand}"
+                        CommandParameter="{Binding}" ToolTip.Tip="{Binding Description}" AutomationProperties.Name="{Binding Name}">
+                  <Border Classes="motionFace" Classes.selected="{Binding IsSelected}">
+                    <StackPanel Spacing="6">
+                      <tessera:TesseraMotionPreview IsHitTestVisible="False"
+                                                    Ani="{Binding Ani}" AniSteps="{Binding AniSteps}" AniEase="{Binding AniEase}"
+                                                    AniDir="{Binding AniDir}" DisplacementPx="{Binding DisplacementPx}" />
+                      <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                 Foreground="{DynamicResource TextFillColorPrimaryBrush}" HorizontalAlignment="Center" />
+                    </StackPanel>
+                  </Border>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Expander Classes="motionFold" Header="Fine tune" HorizontalAlignment="Stretch" Background="Transparent">
+            <StackPanel Spacing="16" Margin="0,8,0,0">
+              <StackPanel Orientation="Horizontal" Spacing="24">
+                <ToggleSwitch OnContent="Slides in" OffContent="Fades only" IsChecked="{Binding TesseraMotionSlides}" />
+                <ToggleSwitch OnContent="Reveals the media strip" OffContent="No media reveal"
+                              IsChecked="{Binding TesseraMotionRevealsMedia}" IsEnabled="{Binding TesseraMotionRevealEnabled}" />
+              </StackPanel>
+              <StackPanel Spacing="4" IsEnabled="{Binding TesseraMotionSlides}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="Speed" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                  <TextBlock Grid.Column="1" Text="{Binding TesseraMotionDurationLabel}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="12" />
+                </Grid>
+                <Slider Minimum="160" Maximum="640" SmallChange="16" LargeChange="64" TickFrequency="16"
+                        IsSnapToTickEnabled="True" Value="{Binding TesseraMotionDurationMs}" AutomationProperties.Name="Speed" />
+              </StackPanel>
+              <StackPanel Spacing="4" IsEnabled="{Binding TesseraMotionSlides}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="Distance" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                  <TextBlock Grid.Column="1" Text="{Binding TesseraMotionDistanceLabel}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="12" />
+                </Grid>
+                <Slider Minimum="10" Maximum="200" SmallChange="5" LargeChange="20" TickFrequency="5"
+                        IsSnapToTickEnabled="True" Value="{Binding TesseraAnimationDisplacement}" AutomationProperties.Name="Distance" />
+              </StackPanel>
+              <StackPanel Spacing="6" IsEnabled="{Binding TesseraMotionSlides}">
+                <TextBlock Text="Slides in from" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                <StackPanel Orientation="Horizontal">
+                  <RadioButton Classes="motionDir" GroupName="TesseraPageMotionFrom" Content="← Left" IsChecked="{Binding TesseraMotionFromLeft}" />
+                  <RadioButton Classes="motionDir" GroupName="TesseraPageMotionFrom" Content="→ Right" IsChecked="{Binding TesseraMotionFromRight}" />
+                  <RadioButton Classes="motionDir" GroupName="TesseraPageMotionFrom" Content="↑ Top" IsChecked="{Binding TesseraMotionFromTop}" />
+                  <RadioButton Classes="motionDir" GroupName="TesseraPageMotionFrom" Content="↓ Bottom" IsChecked="{Binding TesseraMotionFromBottom}" />
+                </StackPanel>
+              </StackPanel>
+              <StackPanel Spacing="4">
+                <TextBlock Text="Feel" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                <ComboBox MinWidth="220" HorizontalAlignment="Left"
+                          ItemsSource="{Binding TesseraMotionCurves}" SelectedItem="{Binding SelectedTesseraMotionCurve}" />
+              </StackPanel>
+            </StackPanel>
+          </Expander>
+        </StackPanel>
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate DataType="mp:TesseraPositionSlotViewModel">
+      <Grid ColumnDefinitions="Auto,*" DataContext="{Binding Hub}" x:DataType="vm:MainViewModel">
+        <!-- A picture of the monitor: pick one of nine places for the pop-up. -->
+        <Border Width="240" Height="150" CornerRadius="8" BorderThickness="2" Padding="8"
+                BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                Background="{DynamicResource SolidBackgroundFillColorBaseBrush}">
+          <ListBox ItemsSource="{Binding TesseraPositionChoices}" SelectedItem="{Binding SelectedTesseraPosition}"
+                   Background="Transparent" AutomationProperties.Name="Where it shows">
+            <ListBox.ItemsPanel>
+              <ItemsPanelTemplate>
+                <UniformGrid Columns="3" Rows="3" />
+              </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.Styles>
+              <Style Selector="ListBoxItem">
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="CornerRadius" Value="6" />
+              </Style>
+            </ListBox.Styles>
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:TesseraNamedChoice">
+                <Border Width="26" Height="16" CornerRadius="3" ToolTip.Tip="{Binding Label}"
+                        AutomationProperties.Name="{Binding Label}"
+                        Background="{DynamicResource ControlStrongFillColorDefaultBrush}" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </Border>
+        <StackPanel Grid.Column="1" Spacing="8" Margin="20,0,0,0" VerticalAlignment="Center">
+          <TextBlock Classes="rowLabel" Text="{Binding SelectedTesseraPosition.Label}" FontWeight="SemiBold" />
+          <TextBlock Classes="rowHint" Text="Pick a place on the screen." />
+          <TextBlock Classes="rowLabel" Text="Monitor" Margin="0,8,0,0" />
+          <ComboBox MinWidth="220" ItemsSource="{Binding TesseraMonitorChoices}" SelectedItem="{Binding SelectedTesseraMonitor}"
+                    AutomationProperties.Name="Monitor" />
+        </StackPanel>
+      </Grid>
+    </DataTemplate>
+
+    <DataTemplate DataType="mp:TesseraVolumeKeysSlotViewModel">
+      <StackPanel Spacing="8" DataContext="{Binding Hub}" x:DataType="vm:MainViewModel">
+        <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding ShowLegacyHookSwitch}">
+          <StackPanel Spacing="2" VerticalAlignment="Center" Margin="0,0,16,0">
+            <TextBlock Classes="rowLabel" Text="Handle the volume keys itself" />
+            <TextBlock Classes="rowHint" Text="Tessera steps the volume, so it owns the whole gesture." />
+          </StackPanel>
+          <ToggleSwitch Grid.Column="1" OnContent="" OffContent="" IsChecked="{Binding TesseraLegacyVol}"
+                        AutomationProperties.Name="Handle the volume keys itself" />
+        </Grid>
+        <Grid ColumnDefinitions="*,Auto" IsEnabled="{Binding VolumeStepEditable}">
+          <StackPanel Spacing="2" VerticalAlignment="Center" Margin="0,0,16,0">
+            <TextBlock Classes="rowLabel" Text="Volume key step" />
+            <TextBlock Classes="rowHint" Text="{Binding VolumeStepHint}" />
+          </StackPanel>
+          <NumericUpDown Grid.Column="1" Width="120" Minimum="1" Maximum="{Binding VolumeStepMax}" Increment="1"
+                         FormatString="0" Value="{Binding TesseraLegacyStepPercent}" AutomationProperties.Name="Volume key step" />
+        </Grid>
+      </StackPanel>
+    </DataTemplate>
   </UserControl.DataTemplates>
+
+  <DockPanel>
+    <!-- Pinned above the rows: comparing two settings means changing one far down and showing it again at once. -->
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,280" MaxWidth="820" Margin="0,0,8,12">
+      <StackPanel Spacing="4" Margin="0,0,16,0" VerticalAlignment="Center">
+        <TextBlock Classes="rowHint" FontSize="14" Text="{Binding Summary}" />
+        <TextBlock Classes="rowNote" Text="{Binding HowTo}" IsVisible="{Binding HasHowTo}" />
+      </StackPanel>
+      <!-- The preview sits right above the button that plays it; both fill the column. -->
+      <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
+        <ContentControl HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Content="{Binding HeaderPreview}"
+                        IsVisible="{Binding HeaderPreview, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <Button Classes="accent" Content="Show it on screen" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                IsVisible="{Binding CanPreview}" Command="{Binding PreviewCommand}"
+                ToolTip.Tip="Shows the module as it is set now. Every change is already saved." />
+      </StackPanel>
+    </Grid>
 
   <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
     <StackPanel Spacing="12" Margin="0,0,8,16" MaxWidth="820" HorizontalAlignment="Stretch">
-      <Grid ColumnDefinitions="*,Auto">
-        <StackPanel Spacing="4" Margin="0,0,16,0">
-          <TextBlock Classes="rowHint" FontSize="14" Text="{Binding Summary}" />
-          <TextBlock Classes="rowNote" Text="{Binding HowTo}" IsVisible="{Binding HasHowTo}" />
-        </StackPanel>
-        <Button Grid.Column="1" Content="Show it on screen" VerticalAlignment="Top"
-                IsVisible="{Binding CanPreview}" Command="{Binding PreviewCommand}" />
-      </Grid>
 
       <Border Classes="section">
         <Grid ColumnDefinitions="*,Auto">
@@ -238,4 +489,5 @@
               Content="{Binding RemoveLabel}" Command="{Binding RemoveCommand}" />
     </StackPanel>
   </ScrollViewer>
+  </DockPanel>
 </UserControl>

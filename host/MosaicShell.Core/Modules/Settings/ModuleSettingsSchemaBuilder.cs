@@ -110,7 +110,10 @@ namespace MosaicShell.Core.Modules.Settings
                 });
         }
 
-        /// <summary>A number from <paramref name="min"/> to <paramref name="max"/>, stored as a <see cref="double"/>.</summary>
+        /// <summary>
+        /// A number from <paramref name="min"/> to <paramref name="max"/> in steps of <paramref name="step"/> from
+        /// <paramref name="min"/>, stored as a <see cref="double"/>.
+        /// </summary>
         public ModuleSettingsSchemaBuilder<TSettings> Number(
             string key,
             string label,
@@ -129,7 +132,7 @@ namespace MosaicShell.Core.Modules.Settings
                     SettingKind.Number,
                     label,
                     s => Math.Clamp(get((TSettings)s), min, max),
-                    (s, v) => set((TSettings)s, Math.Clamp((double)v, min, max)))
+                    (s, v) => set((TSettings)s, Snap((double)v, min, max, step)))
                 {
                     Apply = apply,
                     Description = description,
@@ -236,6 +239,14 @@ namespace MosaicShell.Core.Modules.Settings
         {
             Current()[^1].VisibleWhen = toggleKey;
             return this;
+        }
+
+        private static double Snap(double value, double min, double max, double step)
+        {
+            double clamped = Math.Clamp(value, min, max);
+            return step <= 0
+                ? clamped
+                : Math.Clamp(min + (Math.Round((clamped - min) / step, MidpointRounding.AwayFromZero) * step), min, max);
         }
 
         public ModuleSettingsSchema Build()

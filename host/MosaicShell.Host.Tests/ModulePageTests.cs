@@ -38,7 +38,53 @@ namespace MosaicShell.Host.Tests
             _ = vm.ModulePage!.Sections.Select(s => s.Title).Should().Equal("Look", "Opening and closing");
 
             vm.OpenModuleConfigById(ModuleIds.Tessera);
-            _ = vm.ModulePage.Should().BeNull("Tessera keeps its own page until step 4");
+            _ = vm.ModulePage.Should().NotBeNull("Tessera is on the same page now");
+        }
+
+        [AvaloniaFact]
+        public void Tessera_opens_with_its_look_first()
+        {
+            MainViewModel vm = new();
+
+            vm.OpenModuleConfigById(ModuleIds.Tessera);
+
+            _ = vm.ModulePage!.Sections.Select(s => s.Title).Should().Equal("Look", "Motion", "Position", "What to show", "Timing", "Advanced");
+            _ = vm.ModulePage.Rows.First().Should().BeOfType<TesseraLookSlotViewModel>();
+            _ = vm.ModulePage.Rows.OfType<TesseraSlotViewModel>().Should().HaveCount(6);
+        }
+
+        [AvaloniaFact]
+        public async Task Tessera_slots_save_their_own_fields_and_keep_the_plain_rows()
+        {
+            MainViewModel vm = new();
+            vm.OpenModuleConfigById(ModuleIds.Tessera);
+            ModulePageViewModel page = vm.ModulePage!;
+
+            ((NumberRowViewModel)page.Row("FlyoutScalePercent")).Value = 120;
+            await page.FlushAsync();
+            vm.ModuleStyle = "Windows11";
+            vm.SelectedTesseraPosition = vm.TesseraPositionChoices.Single(c => c.Code == "BR");
+            vm.TesseraAniDir = "Top";
+            await page.FlushAsync();
+
+            TesseraSettings saved = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
+            _ = saved.Style.Should().Be("Windows11");
+            _ = saved.Position.Should().Be("BR");
+            _ = saved.AniDir.Should().Be("Top");
+            _ = saved.FlyoutScalePercent.Should().Be(120, "a slot never writes the plain rows");
+        }
+
+        [AvaloniaFact]
+        public async Task Opening_Tessera_saves_nothing()
+        {
+            ModuleSettingsStore.Save(ModuleIds.Tessera, new TesseraSettings { Style = "Compact", Position = "TR" });
+            DateTime before = File.GetLastWriteTimeUtc(ModuleSettingsStore.PathFor(ModuleIds.Tessera));
+            MainViewModel vm = new();
+
+            vm.OpenModuleConfigById(ModuleIds.Tessera);
+            await vm.ModulePage!.FlushAsync();
+
+            _ = File.GetLastWriteTimeUtc(ModuleSettingsStore.PathFor(ModuleIds.Tessera)).Should().Be(before);
         }
 
         [AvaloniaFact]
@@ -86,6 +132,21 @@ namespace MosaicShell.Host.Tests
             scheme.Selected = scheme.Options.Single(o => o.Value == "Midnight");
 
             _ = ModuleSettingsStore.Load(ModuleIds.Mixdeck, () => new MixdeckSettings()).ColorScheme.Should().Be("Midnight");
+        }
+
+        [AvaloniaFact]
+        public void A_number_shows_decimals_only_when_its_step_has_them()
+        {
+            MainViewModel vm = new();
+            vm.OpenModuleConfigById(ModuleIds.Tessera);
+            NumberRowViewModel staysFor = (NumberRowViewModel)vm.ModulePage!.Row("StaysFor");
+            NumberRowViewModel idle = (NumberRowViewModel)Page(ModuleIds.Slate, new FakePageHost()).Row("IdleSeconds");
+
+            staysFor.Value = 3.5;
+            idle.Value = 90;
+
+            _ = staysFor.ValueText.Should().Be(3.5.ToString("0.0#", System.Globalization.CultureInfo.CurrentCulture) + " s");
+            _ = idle.ValueText.Should().Be("90 s");
         }
 
         [AvaloniaFact]
@@ -340,6 +401,13 @@ namespace MosaicShell.Host.Tests
             }
 
             public void Report(string message) { }
+
+            public CustomRowViewModel CreateCustomRow(ModulePageViewModel page, SettingRow row, SettingAvailability availability)
+            {
+                return new CustomRowViewModel(page, row, availability);
+            }
+
+            public void Saved(string moduleId, string key) { }
         }
     }
 }
