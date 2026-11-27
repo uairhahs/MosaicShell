@@ -1,4 +1,5 @@
 using MosaicShell.Core.HostPlatform;
+using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Settings;
 
 namespace MosaicShell.Core.Modules.Settings
@@ -29,9 +30,16 @@ namespace MosaicShell.Core.Modules.Settings
         /// <summary>The modules with a schema page, in catalog order.</summary>
         public static IReadOnlyList<string> GenericModuleIds { get; } = [.. All.Select(s => s.ModuleId)];
 
+        /// <summary>
+        /// The page for a module: a built-in's own, else the one an installed manifest declares. Built-ins win on an id
+        /// collision, as their factories do.
+        /// </summary>
         public static bool TryGet(string moduleId, out ModuleSettingsSchema? schema)
         {
-            schema = All.FirstOrDefault(s => s.ModuleId.Equals(moduleId, StringComparison.OrdinalIgnoreCase));
+            schema = All.FirstOrDefault(s => s.ModuleId.Equals(moduleId, StringComparison.OrdinalIgnoreCase))
+                ?? (ModuleCatalog.IsBundled(moduleId) || ModuleManifest.TryLoad(moduleId) is not ModuleManifest manifest
+                    ? null
+                    : ManifestSettingsSchema.From(manifest));
             return schema is not null;
         }
 

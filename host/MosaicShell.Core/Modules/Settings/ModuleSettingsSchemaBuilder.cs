@@ -110,6 +110,36 @@ namespace MosaicShell.Core.Modules.Settings
                 });
         }
 
+        /// <summary>A number from <paramref name="min"/> to <paramref name="max"/>, stored as a <see cref="double"/>.</summary>
+        public ModuleSettingsSchemaBuilder<TSettings> Number(
+            string key,
+            string label,
+            double min,
+            double max,
+            double step,
+            string? unit,
+            Func<TSettings, double> get,
+            Action<TSettings, double> set,
+            SettingApplyEffect apply,
+            string? description = null)
+        {
+            return Add(
+                new SettingRow(
+                    key,
+                    SettingKind.Number,
+                    label,
+                    s => Math.Clamp(get((TSettings)s), min, max),
+                    (s, v) => set((TSettings)s, Math.Clamp((double)v, min, max)))
+                {
+                    Apply = apply,
+                    Description = description,
+                    Min = min,
+                    Max = max,
+                    Step = step,
+                    Unit = unit,
+                });
+        }
+
         /// <summary>A shortcut; one the OS keeps for itself, or one that does not parse, is stored as the module's safe default.</summary>
         public ModuleSettingsSchemaBuilder<TSettings> Hotkey(
             string key,

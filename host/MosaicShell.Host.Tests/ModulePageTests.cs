@@ -42,6 +42,31 @@ namespace MosaicShell.Host.Tests
         }
 
         [AvaloniaFact]
+        public void A_third_party_module_with_settings_in_its_manifest_opens_on_the_same_page()
+        {
+            InstallManifest("Acme", """
+                { "Id": "Acme", "DisplayName": "Acme", "Kind": "Widget",
+                  "Settings": [ { "Section": "Behaviour", "Rows": [ { "Key": "Sound", "Kind": "Toggle", "Label": "Play a sound" } ] } ] }
+                """);
+            InstallManifest("Bare", """{ "Id": "Bare", "DisplayName": "Bare", "Kind": "Widget" }""");
+            MainViewModel vm = new();
+
+            vm.OpenModuleConfigById("Acme");
+            _ = vm.ModulePage.Should().NotBeNull();
+            _ = vm.ModulePage!.Row("Sound").Label.Should().Be("Play a sound");
+
+            vm.OpenModuleConfigById("Bare");
+            _ = vm.ModulePage.Should().BeNull("a manifest without Settings keeps the plain page");
+        }
+
+        private static void InstallManifest(string id, string json)
+        {
+            string path = ModuleManifest.PathInModule(id);
+            _ = Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, json);
+        }
+
+        [AvaloniaFact]
         public async Task A_switch_change_is_saved_at_once()
         {
             ModulePageViewModel page = Page(ModuleIds.Mixdeck, new FakePageHost());

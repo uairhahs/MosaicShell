@@ -179,6 +179,9 @@ namespace MosaicShell.Core.Runtime
         public List<string> Styles { get; set; } = [];
         public string? DefaultStyle { get; set; }
 
+        /// <summary>The module's settings page, as sections of rows (<see cref="Modules.Settings.ManifestSettingsSchema"/>).</summary>
+        public List<Modules.Settings.ManifestSettingSection>? Settings { get; set; }
+
         public static string PathInModule(string moduleId)
         {
             return Path.Combine(AppPaths.ModulesDirectory, moduleId, "module.manifest.json");
