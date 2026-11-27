@@ -557,7 +557,7 @@ namespace MosaicShell.Host.ViewModels
             request = request with { MonitorIndex = ResolveHostMonitorIndex(settings.MonitorIndex) };
             _hostUi.PreviewFlyout(request);
             StatusMessage =
-                $"Tessera preview → monitor {request.MonitorIndex}. If blank, check %LocalAppData%\\MosaicShell\\Cache\\flyout.log";
+                $"Tessera preview → monitor {request.MonitorIndex}. If blank, check {AppPaths.FlyoutLogPath}";
         }
 
         private static int ResolveHostMonitorIndex(int fallback)

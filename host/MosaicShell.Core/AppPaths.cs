@@ -31,6 +31,9 @@ namespace MosaicShell.Core
         public static string ModulesDirectory => Path.Combine(RootDirectory, "Modules");
         public static string CacheDirectory => Path.Combine(RootDirectory, "Cache");
 
+        /// <summary>The flyout log the Host and Worker write (<c>Cache/flyout.log</c> under the data folder).</summary>
+        public static string FlyoutLogPath => Path.Combine(CacheDirectory, "flyout.log");
+
         public static void EnsureLayout()
         {
             _ = Directory.CreateDirectory(ConfigDirectory);
