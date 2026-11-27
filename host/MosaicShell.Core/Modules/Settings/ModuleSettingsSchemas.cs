@@ -27,6 +27,12 @@ namespace MosaicShell.Core.Modules.Settings
             Canvas(),
         ];
 
+        /// <summary>
+        /// Tessera's page: Look, Motion, Position, What to show, Timing, Advanced. Its richer controls are custom slots
+        /// the Hub fills. Not on <see cref="GenericModuleIds"/> until the Hub draws those slots.
+        /// </summary>
+        public static ModuleSettingsSchema Tessera { get; } = BuildTessera();
+
         /// <summary>The modules with a schema page, in catalog order.</summary>
         public static IReadOnlyList<string> GenericModuleIds { get; } = [.. All.Select(s => s.ModuleId)];
 
@@ -41,6 +47,68 @@ namespace MosaicShell.Core.Modules.Settings
                     ? null
                     : ManifestSettingsSchema.From(manifest));
             return schema is not null;
+        }
+
+        private static ModuleSettingsSchema BuildTessera()
+        {
+            return ModuleSettingsSchema.For<TesseraSettings>(ModuleIds.Tessera)
+                .Section("Look")
+                .Custom("Style", "TesseraLook", "Style", Live)
+                .Custom("AccentColor", "TesseraAccent", "Accent colour", Live)
+                .Custom("Material", "TesseraMaterial", "Material", Live)
+                .WholeNumber(
+                    "FlyoutScalePercent",
+                    "Size",
+                    min: 50,
+                    max: 150,
+                    step: 5,
+                    unit: "%",
+                    s => s.FlyoutScalePercent,
+                    (s, v) => s.FlyoutScalePercent = v,
+                    Live)
+                .Section("Motion")
+                .Custom("Motion", "TesseraMotion", "How it arrives and leaves", Live)
+                .Section("Position")
+                .Custom("Position", "TesseraPosition", "Where it shows", Live)
+                .WholeNumber(
+                    "Inset",
+                    "Distance from the edge",
+                    min: 0,
+                    max: 200,
+                    step: 1,
+                    unit: "px",
+                    s => s.XPad,
+                    (s, v) =>
+                    {
+                        s.XPad = v;
+                        s.YPad = v;
+                    },
+                    Live)
+                .Section("What to show")
+                .Toggle("EnableMediaFlyouts", "Media", s => s.EnableMediaFlyouts, (s, v) => s.EnableMediaFlyouts = v, ReArm,
+                    "When a track starts, pauses or changes.")
+                .Toggle("ShowMediaStripOnVolume", "Media controls on the volume pop-up", s => s.ShowMediaStripOnVolume,
+                    (s, v) => s.ShowMediaStripOnVolume = v, ReArm)
+                .Toggle("EnableLockFlyouts", "Caps Lock, Num Lock and Scroll Lock", s => s.EnableLockFlyouts,
+                    (s, v) => s.EnableLockFlyouts = v, ReArm)
+                .Toggle("EnableFlightFlyouts", "Airplane mode", s => s.EnableFlightFlyouts, (s, v) => s.EnableFlightFlyouts = v, ReArm)
+                .Section("Timing")
+                .Number(
+                    "StaysFor",
+                    "Stays for",
+                    min: 0.5,
+                    max: 20,
+                    step: 0.25,
+                    unit: "s",
+                    s => s.AutoDismissMs / 1000.0,
+                    (s, v) => s.AutoDismissMs = (int)Math.Round(v * 1000),
+                    Live,
+                    "After the last change. It stays while the pointer is over it.")
+                .Section("Advanced")
+                .Toggle("UseFocusDim", "Dim the desktop behind it", s => s.UseFocusDim, (s, v) => s.UseFocusDim = v, Live,
+                    "A very light dim on its screen. Clicks still go through.")
+                .Custom("VolumeKeys", "TesseraVolumeKeys", "Volume keys", ReArm)
+                .Build();
         }
 
         private static ModuleSettingsSchema Mixdeck()

@@ -25,6 +25,13 @@ namespace MosaicShell.Core.Modules.Settings
 
         /// <summary>An ordered list of named targets; the value is an <see cref="IReadOnlyList{T}"/> of <see cref="SettingPair"/>.</summary>
         ActionList,
+
+        /// <summary>
+        /// A slot the Hub fills with its own control (<see cref="SettingRow.CustomId"/>), such as Tessera's style
+        /// cards. It has no value of its own: the control changes the settings through
+        /// <see cref="ModuleSettingsDocument.Update{T}"/>.
+        /// </summary>
+        Custom,
     }
 
     /// <summary>When a change to a row is seen: the page says so before the change, not after.</summary>
@@ -93,6 +100,9 @@ namespace MosaicShell.Core.Modules.Settings
 
         /// <summary>The unit a number is shown in (for example <c>s</c>), or null.</summary>
         public string? Unit { get; init; }
+
+        /// <summary>Which Hub control fills a <see cref="SettingKind.Custom"/> row; null for other kinds.</summary>
+        public string? CustomId { get; init; }
 
         internal Func<object, object> Read { get; }
 

@@ -163,6 +163,7 @@ namespace MosaicShell.Core.Tests
                   { "Section": "Mixed", "Rows": [
                     { "Key": "Ok", "Kind": "Toggle", "Label": "Fine" },
                     { "Key": "Dial", "Kind": "Knob", "Label": "Unknown kind" },
+                    { "Key": "Look", "Kind": "Custom", "Label": "A Hub control" },
                     { "Kind": "Toggle", "Label": "No key" },
                     { "Key": "Ok", "Kind": "Toggle", "Label": "Same key again" },
                     { "Key": "Pick", "Kind": "Choice", "Label": "No options" },

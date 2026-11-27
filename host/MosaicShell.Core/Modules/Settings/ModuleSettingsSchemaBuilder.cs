@@ -213,6 +213,24 @@ namespace MosaicShell.Core.Modules.Settings
                 });
         }
 
+        /// <summary>A slot the Hub fills with the control named <paramref name="customId"/>.</summary>
+        public ModuleSettingsSchemaBuilder<TSettings> Custom(
+            string key, string customId, string label, SettingApplyEffect apply, string? description = null)
+        {
+            return Add(
+                new SettingRow(
+                    key,
+                    SettingKind.Custom,
+                    label,
+                    _ => throw new InvalidOperationException($"{key} is a custom slot; its control reads the settings itself."),
+                    (_, _) => throw new InvalidOperationException($"{key} is a custom slot; change it with Update."))
+                {
+                    Apply = apply,
+                    Description = description,
+                    CustomId = customId,
+                });
+        }
+
         /// <summary>Shows the last row added only while the toggle <paramref name="toggleKey"/> is on.</summary>
         public ModuleSettingsSchemaBuilder<TSettings> ShownWhen(string toggleKey)
         {

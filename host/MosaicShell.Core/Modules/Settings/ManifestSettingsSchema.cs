@@ -139,7 +139,8 @@ namespace MosaicShell.Core.Modules.Settings
 
         private static bool CanDraw(ManifestSettingRow row, HashSet<string> taken)
         {
-            if (!Enum.TryParse(row.Kind, ignoreCase: true, out SettingKind kind) || !Enum.IsDefined(kind))
+            // Custom slots are the Hub's own controls; a manifest cannot ask for one.
+            if (!Enum.TryParse(row.Kind, ignoreCase: true, out SettingKind kind) || !Enum.IsDefined(kind) || kind == SettingKind.Custom)
             {
                 return false;
             }
