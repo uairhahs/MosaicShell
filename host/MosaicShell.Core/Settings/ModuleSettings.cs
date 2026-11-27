@@ -102,7 +102,7 @@ namespace MosaicShell.Core.Settings
         public string Style { get; set; } = "Fluent";
         /// <summary>YourMixer-inspired palette (Default, Dark, Light, Accent, Frost, Midnight, Sunset).</summary>
         public string ColorScheme { get; set; } = "Default";
-        public string HotkeyGesture { get; set; } = "Ctrl+Alt+M";
+        public string HotkeyGesture { get; set; } = "Ctrl+Alt+X";
         public bool CloseOnEscape { get; set; } = true;
     }
 

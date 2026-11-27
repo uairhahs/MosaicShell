@@ -45,7 +45,7 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                 "inlay" => "Ctrl+Alt+I",
                 "chord" => "Ctrl+Alt+K",
                 "substrate" => "Ctrl+Alt+Q",
-                "mixdeck" => "Ctrl+Alt+M",
+                "mixdeck" => "Ctrl+Alt+X",
                 _ => "Ctrl+Alt+O"
             };
         }

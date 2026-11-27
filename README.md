@@ -66,7 +66,7 @@ What to expect on Linux:
 - **GNOME (Wayland, checked on 51):** Tessera's volume, media, lock key and airplane mode flyouts, Slate's idle clock
   and the system accent colour work. MosaicShell installs a small GNOME Shell extension that hides GNOME's own
   volume and brightness pop-ups while Tessera is armed; GNOME loads it after you log out and back in once. Not yet
-  on GNOME: media keys and global hotkeys (including Mixdeck's Ctrl+Alt+M), the brightness flyout, Slate's
+  on GNOME: media keys and global hotkeys (including Mixdeck's Ctrl+Alt+X), the brightness flyout, Slate's
   fullscreen check and a tray icon. Open the Hub from the application menu instead; a second launch brings the
   running MosaicShell forward.
 - **Other tiles and desktops:** the other tiles, and desktops other than Plasma and GNOME, have not been checked on

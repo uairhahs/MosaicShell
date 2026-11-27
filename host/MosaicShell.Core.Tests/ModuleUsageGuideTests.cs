@@ -94,7 +94,7 @@ namespace MosaicShell.Core.Tests
         {
             ModuleSettingsStore.Save("Mixdeck", new MixdeckSettings { HotkeyGesture = "not a gesture" });
 
-            _ = ModuleUsageGuide.CurrentHotkey("Mixdeck").Should().Be("Ctrl+Alt+M");
+            _ = ModuleUsageGuide.CurrentHotkey("Mixdeck").Should().Be("Ctrl+Alt+X");
         }
 
         [Fact]
