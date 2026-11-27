@@ -329,7 +329,21 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
             }
         }
 
+        /// <summary>
+        /// The settle refresh after a media present. Its timer fires on a pool thread; the presenter's windows belong to
+        /// the host thread, so the work goes there, as every other handler's does.
+        /// </summary>
         private void OnMediaPresentSettle()
+        {
+            if (!IsArmed)
+            {
+                return;
+            }
+
+            _ctx.Ui.RunOnHostThread(RefreshAfterMediaSettle);
+        }
+
+        private void RefreshAfterMediaSettle()
         {
             if (!IsArmed)
             {
