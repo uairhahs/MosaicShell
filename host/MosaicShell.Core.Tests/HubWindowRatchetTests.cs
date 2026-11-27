@@ -96,6 +96,25 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
+        public void Settings_runs_General_Updates_Browser_media_then_Diagnostics_folded()
+        {
+            int start = MainWindowXaml.IndexOf("IsVisible=\"{Binding IsSettings}\"", StringComparison.Ordinal);
+            int end = MainWindowXaml.IndexOf("<!-- Remove confirmation", StringComparison.Ordinal);
+            string settings = MainWindowXaml[start..end];
+
+            int[] order = [.. new[] { "Text=\"General\"", "Text=\"Updates\"", "Text=\"Browser media\"", "Header=\"Diagnostics\"" }
+                .Select(t => settings.IndexOf(t, StringComparison.Ordinal))];
+            _ = order.Should().OnlyContain(i => i > 0).And.BeInAscendingOrder();
+            _ = Regex.Match(settings, "<Expander Header=\"Diagnostics\"[^>]*>").Value.Should().Contain("IsExpanded=\"False\"");
+            _ = settings.IndexOf("ServiceProbe", StringComparison.Ordinal).Should().BeGreaterThan(order[3], "the probe is diagnostics");
+
+            // Closing is a real choice of two, each with what happens under it, in words from Core.
+            _ = Regex.Matches(settings, "<RadioButton GroupName=\"HubClose\"").Count.Should().Be(2);
+            _ = settings.Should().Contain("{Binding KeepRunningChoice.Consequence}").And.Contain("{Binding QuitChoice.Consequence}");
+            _ = settings.Should().NotContain("Minimize to tray").And.NotContain("Exit application");
+        }
+
+        [Fact]
         public void There_is_no_separate_welcome_page()
         {
             // Welcome repeated what Setup had done and what Home could say itself (user, 2026-11-26; audit U03, U25).

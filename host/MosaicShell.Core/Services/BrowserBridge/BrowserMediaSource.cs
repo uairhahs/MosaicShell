@@ -4,7 +4,7 @@ namespace MosaicShell.Core.Services.BrowserBridge
     /// The browser source fed by the MosaicShell extension: presents the tab the extension reports as the player the
     /// flyout shows, fetches its cover in the background, and turns like and dislike into commands for the extension.
     /// </summary>
-    public sealed class BrowserMediaSource : IBrowserMediaSource, IBrowserPlayerList
+    public sealed class BrowserMediaSource : IBrowserMediaSource, IBrowserPlayerList, IBrowserConnectionStatus
     {
         private readonly BrowserSessionHub _hub;
         private readonly BrowserArtworkFetcher _fetcher;
@@ -44,6 +44,8 @@ namespace MosaicShell.Core.Services.BrowserBridge
         }
 
         public event EventHandler? Changed;
+
+        public int BrowserConnections => _hub.ConnectionCount;
 
         /// <summary>Every tab worth showing, each keyed by its connection and tab (<see cref="PlayerKey"/>).</summary>
         public IReadOnlyList<BrowserTabPlayer> Players =>

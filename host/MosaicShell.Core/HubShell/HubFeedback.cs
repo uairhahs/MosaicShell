@@ -36,6 +36,14 @@ namespace MosaicShell.Core.HubShell
         }
     }
 
+    /// <summary>Browser media's status light: green while Grout is connected, red while not, none without a bridge.</summary>
+    public enum GroutLight
+    {
+        None,
+        Connected,
+        Disconnected,
+    }
+
     /// <summary>One choice for what closing the Hub window does.</summary>
     public sealed record CloseChoice(bool KeepsRunning, string Label, string Consequence);
 
@@ -63,6 +71,40 @@ namespace MosaicShell.Core.HubShell
                     $"Closing hides this window. {noTray[..^1]}, so open MosaicShell again from your apps to bring it back.")
                 : new CloseChoice(true, "Keep running in the tray", "Closing hides this window. Open it again from the tray icon.");
             return [keep, new CloseChoice(false, "Quit MosaicShell", "Closing this window stops every module.")];
+        }
+
+        /// <summary>Where to get Grout, MosaicShell's browser extension (the README links the same listing).</summary>
+        public const string GroutStoreUrl = "https://chromewebstore.google.com/detail/grout/pcjkacalabdgejinbmfdejicfhlonnpf";
+
+        /// <summary>
+        /// Browser media's line: whether Grout is connected now. <paramref name="connections"/> is null when this build
+        /// has no browser bridge.
+        /// </summary>
+        public static string BrowserMediaStatus(int? connections)
+        {
+            return connections switch
+            {
+                null => "This build does not read browser media.",
+                0 => "Grout is not connected. Install it in your browser, then open YouTube Music, YouTube, Spotify or SoundCloud.",
+                1 => "Grout is connected.",
+                _ => $"Grout is connected in {connections} browsers.",
+            };
+        }
+
+        public static GroutLight GroutLightFor(int? connections)
+        {
+            return connections switch
+            {
+                null => GroutLight.None,
+                0 => GroutLight.Disconnected,
+                _ => GroutLight.Connected,
+            };
+        }
+
+        /// <summary>Whether Browser media offers the Get Grout link: only while it is not connected.</summary>
+        public static bool OffersGroutInstall(int? connections)
+        {
+            return connections == 0;
         }
 
         public static string UpdateHint(bool isWindows)

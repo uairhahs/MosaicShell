@@ -140,14 +140,25 @@ namespace MosaicShell.Host.Views
         /// <summary>Opens the data folder in the OS file manager (Explorer, Dolphin, Files) through Avalonia's launcher.</summary>
         private async void OnOpenDataFolderClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            if (DataContext is not MainViewModel vm)
+            if (DataContext is MainViewModel vm)
             {
-                return;
+                await OpenFolderAsync(vm, vm.DataFolderPath, "the data folder");
             }
+        }
 
+        private async void OnOpenLogFolderClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm)
+            {
+                await OpenFolderAsync(vm, vm.LogFolderPath, "the log folder");
+            }
+        }
+
+        private async Task OpenFolderAsync(MainViewModel vm, string path, string what)
+        {
             try
             {
-                DirectoryInfo folder = new(vm.DataFolderPath);
+                DirectoryInfo folder = new(path);
                 folder.Create();
                 bool opened = await Launcher.LaunchDirectoryInfoAsync(folder);
                 if (!opened)
@@ -157,7 +168,7 @@ namespace MosaicShell.Host.Views
             }
             catch (Exception ex)
             {
-                vm.StatusMessage = $"Could not open the data folder: {ex.Message}";
+                vm.StatusMessage = $"Could not open {what}: {ex.Message}";
             }
         }
     }

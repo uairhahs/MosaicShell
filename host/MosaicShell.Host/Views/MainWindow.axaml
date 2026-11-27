@@ -620,57 +620,60 @@
       <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                     VerticalScrollBarVisibility="Auto"
                     HorizontalAlignment="Stretch">
-        <!-- One box for every setting, grouped by headings and dividers, scrolled by this page's ScrollViewer. -->
-        <Border Classes="section" Margin="40,0,40,16">
+        <!--
+          One box for every setting, grouped by headings and dividers, scrolled by this page's ScrollViewer. Sections in
+          the order people need them (HubSettingsLayout): General, Updates, Browser media, then Diagnostics folded.
+        -->
+        <Border Classes="section" Margin="40,0,40,16" MaxWidth="820" HorizontalAlignment="Left">
           <StackPanel Spacing="16">
 
-            <StackPanel Spacing="10">
-              <TextBlock Classes="sectionTitle" Text="Window close" />
-              <TextBlock Classes="sectionHint" Margin="0"
-                         Text="What the window close button does. Tray menu Exit always quits and stops tiles." />
-              <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="Minimize to tray"
-                        Command="{Binding SetCloseMinimizesToTrayCommand}" CommandParameter="tray"
-                        Classes.active="{Binding CloseMinimizesToTray}" />
-                <Button Content="Exit application"
-                        Command="{Binding SetCloseMinimizesToTrayCommand}" CommandParameter="exit"
-                        Classes.active="{Binding !CloseMinimizesToTray}" />
+            <!-- General -->
+            <StackPanel Spacing="12">
+              <TextBlock Classes="sectionTitle" Text="General" />
+
+              <StackPanel Spacing="6">
+                <TextBlock Text="When I close this window" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                <RadioButton GroupName="HubClose" IsChecked="{Binding CloseMinimizesToTray, Mode=OneWay}"
+                             Command="{Binding SetCloseMinimizesToTrayCommand}" CommandParameter="tray">
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="{Binding KeepRunningChoice.Label}" />
+                    <TextBlock Text="{Binding KeepRunningChoice.Consequence}" FontSize="12" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                  </StackPanel>
+                </RadioButton>
+                <RadioButton GroupName="HubClose" IsChecked="{Binding !CloseMinimizesToTray, Mode=OneWay}"
+                             Command="{Binding SetCloseMinimizesToTrayCommand}" CommandParameter="exit">
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="{Binding QuitChoice.Label}" />
+                    <TextBlock Text="{Binding QuitChoice.Consequence}" FontSize="12" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                  </StackPanel>
+                </RadioButton>
               </StackPanel>
-              <TextBlock IsVisible="{Binding CloseMinimizesToTray}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"
-                         Text="Close hides the hub; capabilities keep running in the tray." />
-              <TextBlock IsVisible="{Binding !CloseMinimizesToTray}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"
-                         Text="Close exits MosaicShell and stops armed tiles." />
+
+              <StackPanel Spacing="4">
+                <ToggleSwitch Content="Start MosaicShell when I sign in"
+                              IsChecked="{Binding AutostartEnabled, Mode=OneWay}"
+                              Command="{Binding ToggleAutostartCommand}" />
+                <TextBlock Classes="sectionHint" Margin="0" Text="{x:Static vm:PlatformTexts.Autostart}" />
+              </StackPanel>
+
+              <StackPanel Spacing="4">
+                <ToggleSwitch Content="Reduce motion when my system does"
+                              IsChecked="{Binding FollowSystemReducedMotion}" />
+                <TextBlock Classes="sectionHint" Margin="0" TextWrapping="Wrap"
+                           Text="When on, and your system's animation effects are off, pop-ups fade in place instead of sliding, motion previews hold still, and buttons do not move when pressed." />
+                <TextBlock Classes="sectionHint" Margin="0" TextWrapping="Wrap" Text="{Binding ReducedMotionStatus}" />
+              </StackPanel>
             </StackPanel>
 
             <Separator />
 
-            <StackPanel Spacing="10">
-              <TextBlock Classes="sectionTitle" Text="Startup" />
-              <TextBlock Classes="sectionHint" Margin="0"
-                         Text="{x:Static vm:PlatformTexts.Autostart}" />
-              <ToggleSwitch Content="Start MosaicShell when I sign in"
-                            IsChecked="{Binding AutostartEnabled, Mode=OneWay}"
-                            Command="{Binding ToggleAutostartCommand}" />
-            </StackPanel>
-
-            <Separator />
-
-            <StackPanel Spacing="10">
-              <TextBlock Classes="sectionTitle" Text="Motion" />
-              <TextBlock Classes="sectionHint" Margin="0" TextWrapping="Wrap"
-                         Text="When on, and your system's animation effects are off, pop-ups fade in place instead of sliding, motion previews hold still, and buttons do not move when pressed." />
-              <ToggleSwitch Content="Reduce motion when my system does"
-                            IsChecked="{Binding FollowSystemReducedMotion}" />
-              <TextBlock Classes="sectionHint" Margin="0" TextWrapping="Wrap" Text="{Binding ReducedMotionStatus}" />
-            </StackPanel>
-
-            <Separator />
-
+            <!-- Updates -->
             <StackPanel Spacing="10">
               <TextBlock Classes="sectionTitle" Text="Updates" />
-              <TextBlock Classes="sectionHint" Margin="0"
-                         Text="Compare the installed host build against the latest GitHub release (date+build tags)." />
-              <TextBlock Text="{Binding HostBuildLabel, StringFormat=Installed build: {0}}"
+              <TextBlock Classes="sectionHint" Margin="0" TextWrapping="Wrap" Text="{Binding UpdateHint}" />
+              <TextBlock Text="{Binding HostBuildLabel, StringFormat=Installed: {0}}"
                          Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
               <StackPanel Orientation="Horizontal" Spacing="8">
                 <Button Content="Check for updates" Command="{Binding CheckUpdatesCommand}" />
@@ -681,25 +684,59 @@
 
             <Separator />
 
-            <StackPanel Spacing="8">
-              <TextBlock Classes="sectionTitle" Text="Data location" />
-              <TextBlock Classes="sectionHint" Margin="0"
-                         Text="Settings, modules and saved window positions live here." />
-              <Grid ColumnDefinitions="*,Auto">
-                <SelectableTextBlock Text="{Binding DataFolderPath}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13"
-                                     FontFamily="Cascadia Mono, Consolas, monospace" TextWrapping="Wrap" VerticalAlignment="Center" />
-                <Button Grid.Column="1" Content="Open folder" Margin="12,0,0,0" Click="OnOpenDataFolderClicked" />
+            <!-- Browser media -->
+            <StackPanel Spacing="10">
+              <TextBlock Classes="sectionTitle" Text="Browser media" />
+              <TextBlock Classes="sectionHint" Margin="0" TextWrapping="Wrap"
+                         Text="Grout, MosaicShell's browser extension, gives the media pop-up the real title, artist and cover from YouTube Music, YouTube, Spotify and SoundCloud, and lets the heart and thumbs-down work." />
+              <Grid ColumnDefinitions="Auto,*,Auto">
+                <!-- A status light: green and glowing while Grout is connected, red while it is not. -->
+                <Panel Width="12" Height="12" Margin="2,0,12,0" VerticalAlignment="Center">
+                  <Border Width="12" Height="12" CornerRadius="6" IsVisible="{Binding IsGroutConnected}"
+                          Background="#22C55E" BoxShadow="0 0 8 2 #8022C55E"
+                          AutomationProperties.Name="Grout connected" />
+                  <Border Width="12" Height="12" CornerRadius="6" IsVisible="{Binding IsGroutDisconnected}"
+                          Background="#EF4444" BoxShadow="0 0 8 2 #80EF4444"
+                          AutomationProperties.Name="Grout not connected" />
+                </Panel>
+                <TextBlock Grid.Column="1" Text="{Binding BrowserMediaStatus}" TextWrapping="Wrap" VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                <Button Grid.Column="2" Content="Get Grout" Margin="12,0,0,0" IsVisible="{Binding OffersGroutInstall}"
+                        Command="{Binding OpenGroutCommand}" />
               </Grid>
             </StackPanel>
 
             <Separator />
 
-            <StackPanel Spacing="8">
-              <TextBlock Classes="sectionTitle" Text="Services" />
-              <TextBlock Classes="sectionHint" Margin="0"
-                         Text="Live probe of audio, metrics, media, and armed capabilities." />
-              <TextBlock Text="{Binding ServiceProbe}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
-            </StackPanel>
+            <!-- Diagnostics: for reporting a problem, folded until wanted -->
+            <Expander Header="Diagnostics" HorizontalAlignment="Stretch" Background="Transparent" IsExpanded="False">
+              <StackPanel Spacing="14" Margin="0,8,0,0">
+                <StackPanel Spacing="6">
+                  <TextBlock Text="Data folder" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                  <TextBlock Classes="sectionHint" Margin="0" Text="Settings, modules and saved window positions." />
+                  <Grid ColumnDefinitions="*,Auto">
+                    <SelectableTextBlock Text="{Binding DataFolderPath}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13"
+                                         FontFamily="Cascadia Mono, Consolas, monospace" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Content="Open folder" Margin="12,0,0,0" Click="OnOpenDataFolderClicked" />
+                  </Grid>
+                </StackPanel>
+                <StackPanel Spacing="6">
+                  <TextBlock Text="Logs" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                  <TextBlock Classes="sectionHint" Margin="0" Text="Attach these to a bug report." />
+                  <Grid ColumnDefinitions="*,Auto">
+                    <SelectableTextBlock Text="{Binding LogFolderPath}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13"
+                                         FontFamily="Cascadia Mono, Consolas, monospace" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Content="Open folder" Margin="12,0,0,0" Click="OnOpenLogFolderClicked" />
+                  </Grid>
+                </StackPanel>
+                <StackPanel Spacing="6">
+                  <TextBlock Text="Services" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                  <TextBlock Classes="sectionHint" Margin="0" Text="What MosaicShell reads from the system right now." />
+                  <SelectableTextBlock Text="{Binding ServiceProbe}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
+                                       FontFamily="Cascadia Mono, Consolas, monospace" FontSize="12" />
+                </StackPanel>
+              </StackPanel>
+            </Expander>
 
           </StackPanel>
         </Border>

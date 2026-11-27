@@ -231,6 +231,7 @@ namespace MosaicShell.Host.ViewModels
 
             if (IsSettings)
             {
+                RefreshSettingsPage();
                 SyncServiceProbe();
                 AutostartEnabled = _services.Autostart.IsEnabled;
             }

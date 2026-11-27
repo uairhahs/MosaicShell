@@ -65,6 +65,12 @@ namespace MosaicShell.Core.Services
         Task ToggleRepeatAsync();
     }
 
+    /// <summary>How many browsers the Grout extension is connected from now, for Settings.</summary>
+    public interface IBrowserConnectionStatus
+    {
+        int BrowserConnections { get; }
+    }
+
     /// <summary>One browser tab's player, with a key that stays the same for that tab.</summary>
     public sealed record BrowserTabPlayer(string Key, BrowserPlayerSnapshot Snapshot);
 

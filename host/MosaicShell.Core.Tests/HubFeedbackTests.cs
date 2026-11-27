@@ -1,6 +1,7 @@
 using FluentAssertions;
 using MosaicShell.Core.HostPlatform;
 using MosaicShell.Core.HubShell;
+using MosaicShell.Core.Services;
 
 namespace MosaicShell.Core.Tests
 {
@@ -98,6 +99,76 @@ namespace MosaicShell.Core.Tests
         {
             _ = HubSettingsLayout.UpdateHint(isWindows: false)
                 .Should().Be("Checks GitHub for a newer release. On Linux, install it the way you installed MosaicShell.");
+        }
+
+        [Fact]
+        public void Browser_media_says_whether_Grout_is_connected()
+        {
+            _ = HubSettingsLayout.BrowserMediaStatus(1).Should().Be("Grout is connected.");
+            _ = HubSettingsLayout.BrowserMediaStatus(2).Should().Be("Grout is connected in 2 browsers.");
+            _ = HubSettingsLayout.BrowserMediaStatus(0).Should().Be(
+                "Grout is not connected. Install it in your browser, then open YouTube Music, YouTube, Spotify or SoundCloud.");
+            _ = HubSettingsLayout.BrowserMediaStatus(null).Should().Be("This build does not read browser media.");
+        }
+
+        [Theory]
+        [InlineData(2, GroutLight.Connected)]
+        [InlineData(1, GroutLight.Connected)]
+        [InlineData(0, GroutLight.Disconnected)]
+        [InlineData(null, GroutLight.None)]
+        public void Grouts_light_is_green_when_connected_and_red_when_not(int? connections, GroutLight light)
+        {
+            _ = HubSettingsLayout.GroutLightFor(connections).Should().Be(light);
+        }
+
+        [Fact]
+        public void Grout_has_one_place_to_get_it()
+        {
+            _ = HubSettingsLayout.GroutStoreUrl.Should().StartWith("https://chromewebstore.google.com/detail/grout/");
+            _ = HubSettingsLayout.OffersGroutInstall(0).Should().BeTrue();
+            _ = HubSettingsLayout.OffersGroutInstall(1).Should().BeFalse();
+            _ = HubSettingsLayout.OffersGroutInstall(null).Should().BeFalse();
+        }
+
+        [Fact]
+        public void The_media_stack_counts_the_browsers_Grout_is_connected_in()
+        {
+            using CompositeMediaSessionService media = new(new FakeMediaSessionService(), new CountedSource(2), new CountedSource(1));
+
+            _ = media.BrowserConnections.Should().Be(3);
+        }
+
+        private sealed class CountedSource(int connections) : IBrowserMediaSource, IBrowserConnectionStatus
+        {
+            public int BrowserConnections => connections;
+
+            public BrowserPlayerSnapshot? Active => null;
+
+            public event EventHandler? Changed { add { } remove { } }
+
+            public Task SetLikedAsync(bool liked)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task SetDislikedAsync(bool disliked)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task ToggleShuffleAsync()
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task ToggleRepeatAsync()
+            {
+                return Task.CompletedTask;
+            }
+
+            public void Dispose()
+            {
+            }
         }
     }
 }
