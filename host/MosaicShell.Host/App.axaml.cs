@@ -187,8 +187,10 @@ namespace MosaicShell.Host
                     _vm.RestoreSessions();
 
                     _vm.RefreshArmedState();
+                    await _vm.RunFirstRunIfDueAsync(Program.SettingsSavedAtStart);
 
-                    if (HostLaunchOptions.IsTrayOnly)
+                    // The first run screen shows even when started for the tray: it is how a new install says it is ready.
+                    if (HostLaunchOptions.IsTrayOnly && !_vm.IsFirstRunPage)
                     {
                         _mainWindow.Hide();
                     }

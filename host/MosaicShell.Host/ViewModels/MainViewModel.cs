@@ -207,6 +207,7 @@ namespace MosaicShell.Host.ViewModels
             IsSettings = page == "Settings";
             IsAbout = page == "About";
             IsModuleConfig = page == "ModuleConfig";
+            IsFirstRunPage = page == "FirstRun";
             if (!IsModuleConfig)
             {
                 TesseraConfigPreviewReady = false;

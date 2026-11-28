@@ -1,3 +1,4 @@
+using MosaicShell.Core.Install;
 using Avalonia;
 using Avalonia.Threading;
 using MosaicShell.Core;
@@ -8,10 +9,17 @@ namespace MosaicShell.Host
 {
     internal sealed class Program
     {
+        /// <summary>
+        /// Whether the data folder held saved settings when this process started, read before anything here writes one
+        /// (detecting the native blur saves Tessera's settings at once). First run hangs on it (<see cref="FirstRunPolicy"/>).
+        /// </summary>
+        internal static bool SettingsSavedAtStart { get; private set; } = true;
+
         [STAThread]
         public static int Main(string[] args)
         {
             Core.Capabilities.Platform.HostLaunchOptions.Apply(args);
+            SettingsSavedAtStart = FirstRunPolicy.AnySettingsSaved(AppPaths.ConfigDirectory);
             if (Core.Capabilities.Platform.HostLaunchOptions.InstallPackageMissingPath
                 || Core.Capabilities.Platform.HostLaunchOptions.InstallPackagePath is not null)
             {
