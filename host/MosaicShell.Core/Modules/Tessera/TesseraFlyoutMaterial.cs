@@ -45,8 +45,8 @@ namespace MosaicShell.Core.Modules.Tessera
         /// <param name="useAcrylic">Legacy setting name - means soft frost tint, not native translucency.</param>
         /// <param name="nativeTranslucencyEligible">When true, ask the backend for the OS material.</param>
         /// <param name="frostedChoice">
-        /// The Hub's choice is Frosted, not Native Translucency. Over a blur-only backend (KWin) the app paints the frosted
-        /// glass on the blur; Native Translucency there is the plain blur under a flat tint.
+        /// The Hub's choice is Frosted, not Native Translucency. Over the OS blur the app paints the frosted glass; Native
+        /// Translucency is the plain blur under a flat veil.
         /// </param>
         /// <param name="backend">
         /// Which OS draws it; null for this process's <see cref="NativeTranslucencyPlatform.Backend"/>. Windows asks for

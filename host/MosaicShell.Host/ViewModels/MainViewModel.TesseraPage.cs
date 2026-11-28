@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.HostPlatform;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Modules.Settings;
@@ -119,8 +120,15 @@ namespace MosaicShell.Host.ViewModels
                     break;
                 case "Material":
                     bool wasNative = s.UseNativeTranslucency;
+                    bool wasGlass = s.UseAcrylicBackdrop;
                     PersistTesseraMaterial(s);
-                    if (OperatingSystem.IsWindows() && s.UseNativeTranslucency != wasNative)
+                    if (TesseraNativeTranslucencyPolicy.MaterialChangeNeedsRestart(
+                            OperatingSystem.IsWindows(),
+                            wasNative,
+                            wasGlass,
+                            s.UseNativeTranslucency,
+                            s.UseAcrylicBackdrop,
+                            NativeTranslucencyPlatform.Backend))
                     {
                         StatusMessage = "Saved. Restart MosaicShell so the new corners apply.";
                     }

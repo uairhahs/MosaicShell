@@ -9,12 +9,12 @@ namespace MosaicShell.Core.Modules.Tessera
         Solid,
 
         /// <summary>
-        /// Tessera's frosted glass. Where the compositor draws only a blur (KWin), the app paints the frosted layers over
-        /// it; elsewhere the app draws its own translucent frost with no OS blur.
+        /// Tessera's frosted glass. Where the OS blurs behind the card (KWin, Windows), the app paints the frosted layers over
+        /// the blur; without one the app draws its own translucent frost.
         /// </summary>
         Frosted,
 
-        /// <summary>The OS blurs the desktop behind the card (Windows acrylic, KWin blur on KDE Plasma).</summary>
+        /// <summary>The OS blurs the desktop behind the card (Windows, KWin on KDE Plasma) under a plain veil.</summary>
         NativeTranslucency,
     }
 

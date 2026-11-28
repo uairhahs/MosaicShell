@@ -7,10 +7,11 @@ using MosaicShell.Core.Settings;
 namespace MosaicShell.Core.Tests
 {
     /// <summary>
-    /// Frosted and Native Translucency on a desktop whose compositor blurs (KWin): both ask for the OS blur, and differ
-    /// in what the app paints over it. Frosted paints the frosted glass (light shade and frost, highlight, crisp edge,
-    /// faint grain, shadowed content); Native Translucency is the plain OS material, the blur under a flat tint. Where
-    /// the OS draws the whole material itself (Windows acrylic) or there is no blur, Frosted keeps the app's own frost.
+    /// Frosted and Native Translucency where the OS blurs behind the card (KWin's blur effect; on Windows, the blur
+    /// Avalonia's AcrylicBlur level asks the compositor for, which carries no tint, luminosity or noise): both ask for
+    /// the blur and differ in what the app paints over it. Frosted paints the frosted glass (light shade and frost,
+    /// highlight, crisp edge, faint grain, shadowed content); Native Translucency is the plain material, the blur under a
+    /// flat veil. Without a blur, Frosted keeps the app's own frost.
     /// </summary>
     public sealed class TesseraFrostedGlassTests
     {
@@ -18,42 +19,58 @@ namespace MosaicShell.Core.Tests
         [InlineData(false, true, NativeTranslucencyBackend.KWinBlur, true)]
         [InlineData(true, true, NativeTranslucencyBackend.KWinBlur, true)]
         [InlineData(false, false, NativeTranslucencyBackend.KWinBlur, false)]
-        [InlineData(false, true, NativeTranslucencyBackend.WindowsAcrylic, false)]
+        [InlineData(false, true, NativeTranslucencyBackend.WindowsAcrylic, true)]
         [InlineData(true, true, NativeTranslucencyBackend.WindowsAcrylic, true)]
+        [InlineData(false, false, NativeTranslucencyBackend.WindowsAcrylic, false)]
         [InlineData(false, true, NativeTranslucencyBackend.None, false)]
-        public void Frosted_asks_for_the_OS_blur_only_where_the_compositor_draws_just_the_blur(
+        public void Frosted_asks_for_the_OS_blur_wherever_there_is_one(
             bool useNative, bool useAcrylic, NativeTranslucencyBackend backend, bool wantsBlur)
         {
             _ = TesseraNativeTranslucencyPolicy.WantsOsBlur(useNative, useAcrylic, backend).Should().Be(wantsBlur);
         }
 
-        [Fact]
-        public void On_KWin_Frosted_is_the_blur_with_the_frosted_glass_over_it()
+        [Theory]
+        [InlineData(NativeTranslucencyBackend.KWinBlur)]
+        [InlineData(NativeTranslucencyBackend.WindowsAcrylic)]
+        public void Frosted_is_the_blur_with_the_frosted_glass_over_it(NativeTranslucencyBackend backend)
         {
             TesseraFlyoutMaterial frosted = TesseraFlyoutMaterialFactory.Create(
-                useAcrylic: true, nativeTranslucencyEligible: true, NativeTranslucencyBackend.KWinBlur, frostedChoice: true);
+                useAcrylic: true, nativeTranslucencyEligible: true, backend, frostedChoice: true);
 
             _ = frosted.UseNativeTranslucency.Should().BeTrue();
             _ = frosted.FrostedGlass.Should().BeTrue();
         }
 
-        [Fact]
-        public void On_KWin_Native_Translucency_is_the_plain_blur()
+        [Theory]
+        [InlineData(NativeTranslucencyBackend.KWinBlur)]
+        [InlineData(NativeTranslucencyBackend.WindowsAcrylic)]
+        public void Native_Translucency_is_the_plain_blur(NativeTranslucencyBackend backend)
         {
             TesseraFlyoutMaterial native = TesseraFlyoutMaterialFactory.Create(
-                useAcrylic: true, nativeTranslucencyEligible: true, NativeTranslucencyBackend.KWinBlur, frostedChoice: false);
+                useAcrylic: true, nativeTranslucencyEligible: true, backend, frostedChoice: false);
 
             _ = native.UseNativeTranslucency.Should().BeTrue();
             _ = native.FrostedGlass.Should().BeFalse();
         }
 
         [Fact]
-        public void Windows_acrylic_is_drawn_whole_by_the_OS_so_no_frosted_glass_over_it()
+        public void Windows_still_asks_for_its_blur_through_AcrylicBlur()
         {
-            TesseraFlyoutMaterial material = TesseraFlyoutMaterialFactory.Create(
+            TesseraFlyoutMaterial frosted = TesseraFlyoutMaterialFactory.Create(
                 useAcrylic: true, nativeTranslucencyEligible: true, NativeTranslucencyBackend.WindowsAcrylic, frostedChoice: true);
 
-            _ = material.FrostedGlass.Should().BeFalse();
+            _ = frosted.TransparencyHints.Should().Equal("AcrylicBlur", "Transparent");
+        }
+
+        [Fact]
+        public void Without_a_blur_Frosted_keeps_the_apps_own_frost()
+        {
+            TesseraFlyoutMaterial frosted = TesseraFlyoutMaterialFactory.Create(
+                useAcrylic: true, nativeTranslucencyEligible: true, NativeTranslucencyBackend.None, frostedChoice: true);
+
+            _ = frosted.UseNativeTranslucency.Should().BeFalse();
+            _ = frosted.FrostedGlass.Should().BeFalse();
+            _ = frosted.UseSoftFrost.Should().BeTrue();
         }
 
         [Fact]
@@ -94,10 +111,43 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void Both_glass_finishes_over_KWin_shadow_their_content()
+        public void The_plain_material_has_a_soft_edge_and_Frosted_a_crisp_one()
+        {
+            // The two finishes must read apart at a glance: Frosted catches the light on its edge, the plain pane barely.
+            _ = NativeTranslucencyAcrylicSpec.PlainEdgeAlpha.Should().BeGreaterThan(0);
+            _ = ((int)NativeTranslucencyAcrylicSpec.PlainEdgeAlpha).Should().BeLessThan(NativeTranslucencyAcrylicSpec.EdgeAlpha / 2);
+        }
+
+        [Fact]
+        public void Both_glass_finishes_over_a_blur_shadow_their_content()
         {
             _ = NativeTranslucencyAcrylicSpec.ShadowsContent(NativeTranslucencyBackend.KWinBlur).Should().BeTrue();
-            _ = NativeTranslucencyAcrylicSpec.ShadowsContent(NativeTranslucencyBackend.WindowsAcrylic).Should().BeFalse();
+            _ = NativeTranslucencyAcrylicSpec.ShadowsContent(NativeTranslucencyBackend.WindowsAcrylic).Should().BeTrue();
+            _ = NativeTranslucencyAcrylicSpec.ShadowsContent(NativeTranslucencyBackend.None).Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData(false, false, true, false, true)]
+        [InlineData(false, true, true, false, false)]
+        [InlineData(true, true, true, false, false)]
+        [InlineData(true, true, false, false, true)]
+        [InlineData(false, true, false, false, true)]
+        public void Windows_needs_a_restart_only_when_the_OS_blur_comes_or_goes(
+            bool wasNative, bool wasGlass, bool isGlass, bool isNative, bool restart)
+        {
+            // The rounded blur's corner radius is a Win32 option read once at start. Frosted and Native both use the blur
+            // on Windows now, so moving between them needs none; Solid to either, or back, does.
+            _ = TesseraNativeTranslucencyPolicy.MaterialChangeNeedsRestart(
+                    isWindows: true, wasNative, wasGlass, isNative, isGlass, NativeTranslucencyBackend.WindowsAcrylic)
+                .Should().Be(restart);
+        }
+
+        [Fact]
+        public void KWin_never_needs_a_restart_for_the_material()
+        {
+            _ = TesseraNativeTranslucencyPolicy.MaterialChangeNeedsRestart(
+                    isWindows: false, wasNative: false, wasGlass: false, isNative: true, isGlass: true, NativeTranslucencyBackend.KWinBlur)
+                .Should().BeFalse();
         }
     }
 }

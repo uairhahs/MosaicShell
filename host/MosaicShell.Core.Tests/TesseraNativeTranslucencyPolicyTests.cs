@@ -31,15 +31,28 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void Trial_is_available_but_default_off()
+        public void Solid_never_asks_for_the_OS_blur()
         {
+            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseAcrylicBackdrop = false });
+
             _ = TesseraNativeTranslucencyPolicy.Available.Should().BeTrue(
                 "compile kill-switch stays on so --tessera-native-translucency works without a rebuild");
             _ = HostLaunchOptions.TesseraNativeTranslucencyTrial.Should().BeFalse();
             _ = TesseraNativeTranslucencyPolicy.IsTrialRequested().Should().BeFalse();
             _ = Win32HostCompositionPolicy.NativeTranslucencyTrialRequested.Should().BeFalse();
             _ = Win32HostCompositionPolicy.WinUiCompositionBackdropCornerRadius.Should().BeNull(
-                "process-wide radius is unset while the trial is off so alpha keeps Skia frost");
+                "process-wide radius is unset without the blur, so a Solid card keeps square HWND corners");
+        }
+
+        // Frosted is the blur with the frosted glass over it wherever there is a blur; Windows has one.
+        [WindowsFact]
+        public void Frosted_asks_for_the_blur_on_Windows()
+        {
+            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseAcrylicBackdrop = true, UseNativeTranslucency = false });
+
+            _ = TesseraNativeTranslucencyPolicy.IsTrialRequested().Should().BeTrue();
+            _ = Win32HostCompositionPolicy.WinUiCompositionBackdropCornerRadius
+                .Should().Be(TesseraNativeTranslucencyPolicy.SpikeCornerRadius);
         }
 
         // Windows' sign-off governs only on Windows; KDE's is pending (see the sign-off tests).
@@ -68,13 +81,14 @@ namespace MosaicShell.Core.Tests
         [WindowsFact]
         public void Launch_flag_is_ignored_after_win11_sign_off_until_hub_setting_is_on()
         {
+            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseAcrylicBackdrop = false });
             HostLaunchOptions.Apply([HostLaunchOptions.TesseraNativeTranslucencyTrialFlag]);
             _ = HostLaunchOptions.TesseraNativeTranslucencyTrial.Should().BeTrue();
             _ = TesseraNativeTranslucencyPolicy.IsTrialRequested().Should().BeFalse(
                 "post sign-off the hub setting is authoritative; CLI flag alone must not enable acrylic");
             _ = Win32HostCompositionPolicy.NativeTranslucencyTrialRequested.Should().BeFalse();
 
-            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseNativeTranslucency = true });
+            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseAcrylicBackdrop = true, UseNativeTranslucency = true });
             _ = TesseraNativeTranslucencyPolicy.IsTrialRequested().Should().BeTrue();
             _ = Win32HostCompositionPolicy.NativeTranslucencyTrialRequested.Should().BeTrue();
             _ = Win32HostCompositionPolicy.WinUiCompositionBackdropCornerRadius
@@ -83,9 +97,9 @@ namespace MosaicShell.Core.Tests
 
         // Windows' sign-off governs only on Windows; KDE's is pending (see the sign-off tests).
         [WindowsFact]
-        public void Hub_setting_off_disables_acrylic_even_when_launch_flag_is_on()
+        public void Solid_disables_the_blur_even_when_launch_flag_is_on()
         {
-            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseNativeTranslucency = false });
+            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseAcrylicBackdrop = false, UseNativeTranslucency = false });
             HostLaunchOptions.Apply([HostLaunchOptions.TesseraNativeTranslucencyTrialFlag]);
             _ = TesseraNativeTranslucencyPolicy.IsTrialRequested().Should().BeFalse();
             _ = Win32HostCompositionPolicy.NativeTranslucencyTrialRequested.Should().BeFalse();

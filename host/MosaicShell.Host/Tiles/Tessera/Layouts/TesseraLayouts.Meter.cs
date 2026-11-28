@@ -111,15 +111,17 @@ namespace MosaicShell.Host.Tiles.Tessera
             const double r = 14;
 
             return TesseraStackedBuildContext.IsActive && TesseraGlass.UseNativeTranslucencyChrome
-                ? new Border
-                {
-                    Width = w,
-                    Height = h,
-                    CornerRadius = new CornerRadius(TesseraStackedPlacementSpec.MeterVolumeCornerRadiusDip),
-                    Background = Brushes.Transparent,
-                    ClipToBounds = true,
-                    Child = inner
-                }
+                ? TesseraGlassFinish.Over(
+                    new Border
+                    {
+                        Width = w,
+                        Height = h,
+                        CornerRadius = new CornerRadius(TesseraStackedPlacementSpec.MeterVolumeCornerRadiusDip),
+                        Background = Brushes.Transparent,
+                        ClipToBounds = true,
+                        Child = inner
+                    },
+                    TesseraStackedPlacementSpec.MeterVolumeCornerRadiusDip)
                 : TesseraGlass.SuppressInnerSkiaGlass
                 ? TesseraChrome.SolidPill(inner, TesseraChrome.TileFace, r, w, h)
                 : TesseraChrome.Glass(inner, r, w: w, h: h);

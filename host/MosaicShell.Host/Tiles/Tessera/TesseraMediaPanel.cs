@@ -218,16 +218,18 @@ namespace MosaicShell.Host.Tiles.Tessera
             StackPanel body = new() { Spacing = 4, Children = { top, scrub, transport } };
 
             return TesseraStackedBuildContext.IsActive && TesseraGlass.UseNativeTranslucencyChrome
-                ? new Border
-                {
-                    Width = TesseraStackedPlacementSpec.ModernFlyoutsMediaWidthDip,
-                    Height = TesseraStackedPlacementSpec.ModernFlyoutsMediaHeightDip,
-                    CornerRadius = new CornerRadius(12),
-                    Background = Brushes.Transparent,
-                    Padding = new Thickness(12),
-                    ClipToBounds = true,
-                    Child = body
-                }
+                ? TesseraGlassFinish.Over(
+                    new Border
+                    {
+                        Width = TesseraStackedPlacementSpec.ModernFlyoutsMediaWidthDip,
+                        Height = TesseraStackedPlacementSpec.ModernFlyoutsMediaHeightDip,
+                        CornerRadius = new CornerRadius(12),
+                        Background = Brushes.Transparent,
+                        Padding = new Thickness(12),
+                        ClipToBounds = true,
+                        Child = body
+                    },
+                    12)
                 : TesseraChrome.Glass(body, 12, new Thickness(12), w: 320, h: 190);
         }
 
@@ -254,16 +256,18 @@ namespace MosaicShell.Host.Tiles.Tessera
             };
 
             return stackedNativeTranslucency
-                ? new Border
-                {
-                    Width = TesseraStackedPlacementSpec.CompactMediaWidthDip,
-                    Height = TesseraStackedPlacementSpec.CompactMediaHeightDip,
-                    CornerRadius = new CornerRadius(14),
-                    Background = Brushes.Transparent,
-                    Padding = new Thickness(12),
-                    ClipToBounds = true,
-                    Child = body
-                }
+                ? TesseraGlassFinish.Over(
+                    new Border
+                    {
+                        Width = TesseraStackedPlacementSpec.CompactMediaWidthDip,
+                        Height = TesseraStackedPlacementSpec.CompactMediaHeightDip,
+                        CornerRadius = new CornerRadius(14),
+                        Background = Brushes.Transparent,
+                        Padding = new Thickness(12),
+                        ClipToBounds = true,
+                        Child = body
+                    },
+                    14)
                 : TesseraChrome.Glass(body, 14, new Thickness(12), w: 320);
         }
 
@@ -295,16 +299,18 @@ namespace MosaicShell.Host.Tiles.Tessera
             };
 
             return stackedNativeTranslucency
-                ? new Border
-                {
-                    Width = TesseraStackedPlacementSpec.GnomeMediaWidthDip,
-                    Height = TesseraStackedPlacementSpec.GnomeMediaHeightDip,
-                    CornerRadius = new CornerRadius(TesseraStackedPlacementSpec.GnomePillCornerRadiusDip),
-                    Background = Brushes.Transparent,
-                    Padding = new Thickness(10, 8),
-                    ClipToBounds = true,
-                    Child = body
-                }
+                ? TesseraGlassFinish.Over(
+                    new Border
+                    {
+                        Width = TesseraStackedPlacementSpec.GnomeMediaWidthDip,
+                        Height = TesseraStackedPlacementSpec.GnomeMediaHeightDip,
+                        CornerRadius = new CornerRadius(TesseraStackedPlacementSpec.GnomePillCornerRadiusDip),
+                        Background = Brushes.Transparent,
+                        Padding = new Thickness(10, 8),
+                        ClipToBounds = true,
+                        Child = body
+                    },
+                    TesseraStackedPlacementSpec.GnomePillCornerRadiusDip)
                 : TesseraChrome.Glass(body, 28, new Thickness(10, 8), w: 340);
         }
 
@@ -396,7 +402,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                     border.Height = TesseraStackedPlacementSpec.MeterMediaHeightDip;
                 }
 
-                return border;
+                return stackedNativeTranslucency ? TesseraGlassFinish.Over(border, 16) : border;
             }
 
             return TesseraChrome.Glass(body, 16, new Thickness(14, 10));

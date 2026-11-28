@@ -120,9 +120,9 @@ namespace MosaicShell.Host.Tiles.Tessera
                 {
                     OffsetX = 0,
                     OffsetY = NativeTranslucencyAcrylicSpec.ContentShadowOffsetY,
-                    BlurRadius = NativeTranslucencyAcrylicSpec.ContentShadowBlur,
+                    BlurRadius = NativeTranslucencyAcrylicSpec.ContentShadowBlurFor(TesseraPalette.Material.FrostedGlass),
                     Color = Colors.Black,
-                    Opacity = NativeTranslucencyAcrylicSpec.ContentShadowOpacity
+                    Opacity = NativeTranslucencyAcrylicSpec.ContentShadowOpacityFor(TesseraPalette.Material.FrostedGlass)
                 };
             }
 
@@ -454,17 +454,26 @@ namespace MosaicShell.Host.Tiles.Tessera
                 if (TesseraPalette.Material.FrostedGlass)
                 {
                     TesseraGlassDrawOperation.DrawAcrylicLayers(lc, round, w, h);
-                    TesseraGlassDrawOperation.DrawAcrylicEdge(lc, round);
+                    if (NativeTranslucencyAcrylicSpec.FrostedHasEdge(NativeTranslucencyPlatform.Backend))
+                    {
+                        TesseraGlassDrawOperation.DrawAcrylicEdge(lc, round);
+                    }
                 }
                 else
                 {
-                    if (NativeTranslucencyAcrylicSpec.AppPaintsAcrylicLayers(NativeTranslucencyPlatform.Backend))
+                    NativeTranslucencyBackend backend = NativeTranslucencyPlatform.Backend;
+                    if (NativeTranslucencyAcrylicSpec.PaintsPlainVeil(backend))
                     {
-                        // Native Translucency over a blur-only compositor: the plain material, the blur under a flat tint.
+                        // Native Translucency over KWin's blur: the plain material, the blur under a flat tint.
                         TesseraGlassDrawOperation.DrawPlainTint(lc, round);
                     }
 
-                    TesseraGlassDrawOperation.DrawGlassChrome(lc, round);
+                    // Windows shows its acrylic bare: no veil and no edge over it.
+                    if (NativeTranslucencyAcrylicSpec.PaintsPlainVeil(backend)
+                        || !NativeTranslucencyAcrylicSpec.AppPaintsAcrylicLayers(backend))
+                    {
+                        TesseraGlassDrawOperation.DrawGlassChrome(lc, round);
+                    }
                 }
             }
             else
@@ -691,7 +700,7 @@ namespace MosaicShell.Host.Tiles.Tessera
         }
 
         /// <summary>
-        /// Tint, highlight and grain over a blur-only backdrop (KWin), so it reads as acrylic as it does on Windows.
+        /// Shade, frost, highlight and grain over the OS blur (KWin, Windows), which carries none of them.
         /// Values from <see cref="NativeTranslucencyAcrylicSpec"/>.
         /// </summary>
         internal static void DrawAcrylicLayers(SKCanvas canvas, SKRoundRect round, int w, int h)
