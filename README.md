@@ -21,6 +21,32 @@ It continues the JaxCore idea of a modular desktop (forked from [Jax-Core/JaxCor
 
 ---
 
+## The Hub
+
+The Hub is MosaicShell's window. A rail on the left holds Home, Modules and Widgets, then Settings and About. It works
+from the keyboard too: Tab moves through a page, the arrow keys move between cards, and Left and Right cross between
+the rail and the page.
+
+| | |
+| --- | --- |
+| ![Home: the welcome, what closing the window does, and the modules running now, each with a quick switch.](.github/res/hub/home.png) | ![Modules: every module, the ones on first, each with its state and one action: Turn on, Turn off or Add.](.github/res/hub/modules.png) |
+| **Home** shows what is running now, each with a quick switch. | **Modules** and **Widgets** list everything, on first, with one action per row. |
+| ![Tessera's page: a live preview of the flyout, its on switch, then its look, colours, material and size.](.github/res/hub/tessera.png) | ![Settings: what closing the window does, start at sign-in, reduce motion, updates and browser media.](.github/res/hub/settings.png) |
+| **A module's page**: its on switch, then settings that apply as you change them. Tessera's shows its flyout as you pick. | **Settings**: what closing the window does, start at sign-in, updates and Grout's connection. |
+
+On its first start MosaicShell turns on the default modules, Tessera and Mixdeck, and shows them on one screen, with
+Show it on screen to try each. Done takes you to Home.
+
+![First start: "MosaicShell is ready", with Tessera and Mixdeck on, each with Show it on screen, and Done.](.github/res/hub/first-run.png)
+
+With the window closed, MosaicShell keeps running in the tray. Its menu has a switch for each module. On Windows,
+left-click the icon instead for a panel of switches that stays open while you turn several on and off. On GNOME the
+switches are in MosaicShell's top bar menu.
+
+![The tray panel: a switch for Tessera and Mixdeck, then Open MosaicShell and Quit MosaicShell.](.github/res/hub/tray-panel.png)
+
+---
+
 ## Prerequisites
 
 | Requirement  | Minimum                                                                                                                                  |
@@ -36,7 +62,8 @@ It continues the JaxCore idea of a modular desktop (forked from [Jax-Core/JaxCor
 
 1. Download `MosaicShell-Setup-*.exe` from [Releases](https://github.com/uairhahs/MosaicShell/releases).
 2. Run the installer (per-user under `%LocalAppData%\Programs\MosaicShell`).
-3. Launch MosaicShell from the Start Menu. Default modules (Tessera, Mixdeck) are offered during setup.
+3. Launch MosaicShell from the Start Menu. Its first start turns on the default modules (Tessera, Mixdeck) and shows
+   them on one screen; see [The Hub](#the-hub).
 
 **Check for updates** (Settings, Updates) downloads the latest Setup and runs a silent upgrade.
 
@@ -66,8 +93,9 @@ What to expect on Linux:
 - **GNOME (Wayland, checked on 51):** Tessera's volume, media, lock key and airplane mode flyouts, Slate's idle clock
   and the system accent colour work. MosaicShell installs a small GNOME Shell extension that hides GNOME's own
   volume and brightness pop-ups while Tessera is on, and shows MosaicShell's icon in the top bar while it runs, with
-  Open MosaicShell and Quit MosaicShell. GNOME loads the extension after you log out and back in once; until then,
-  open the Hub from the application menu, and a second launch brings the running MosaicShell forward. Not yet on
+  a switch for each module, Open MosaicShell and Quit MosaicShell. GNOME loads the extension after you log out and
+  back in once; until then, open the Hub from the application menu, and a second launch brings the running
+  MosaicShell forward. Not yet on
   GNOME: media keys and global shortcuts (including Mixdeck's Ctrl+Alt+X), the brightness flyout and Slate's
   fullscreen check.
 - **Other modules and desktops:** the other modules, and desktops other than Plasma and GNOME, have not been checked
@@ -78,7 +106,7 @@ What to expect on Linux:
 
 ### Portable zip (advanced)
 
-Download `MosaicShell-Portable-*.zip` (Windows), extract, and run `Host\MosaicShell.Host.exe`. Use `Mosaicist\` next to Host to install modules from the bundled `Tiles\` folder.
+Download `MosaicShell-Portable-*.zip` (Windows), extract, and run `Host\MosaicShell.Host.exe`. Its first start adds the default modules (Tessera, Mixdeck) from the bundled `Tiles\` folder; add others from the Hub's Modules page.
 
 ### From source (developers)
 
@@ -170,18 +198,18 @@ Every catalog module ships as a thin `Tiles/{Id}` install stub (`module.native.j
 
 ![The ten MosaicShell modules: Tessera, Mixdeck, Inlay, Slate, Chord, Substrate, Pulse, Chrono, Phono and Canvas.](.github/res/promo/tiles.png)
 
-| Module    | Description                                            | License |
-| --------- | ------------------------------------------------------ | ------- |
-| Tessera   | Volume / brightness / media flyouts                    | MPL-2.0 |
-| Mixdeck   | Per-app audio mixer overlay                            | MPL-2.0 |
-| Inlay     | Start-menu launcher (pins + search)                    | MPL-2.0 |
-| Slate     | Idle clock overlay                                     | MPL-2.0 |
-| Chord     | Macro app launcher                                     | MPL-2.0 |
-| Substrate | Quick-settings shade                                   | MPL-2.0 |
-| Pulse     | Audio visualizer widget                                | MIT     |
-| Chrono    | Clock widget                                           | MIT     |
-| Phono     | SMTC media widget                                      | MIT     |
-| Canvas    | System-metrics text widget                             | MIT     |
+| Module    | Description                                                       | License |
+| --------- | ----------------------------------------------------------------- | ------- |
+| Tessera   | Volume, brightness and media pop-ups in place of the system's own | MPL-2.0 |
+| Mixdeck   | A volume mixer with a slider for each app                         | MPL-2.0 |
+| Inlay     | A start-menu launcher with pinned apps and search                 | MPL-2.0 |
+| Slate     | A clock that covers the screen when you step away                 | MPL-2.0 |
+| Chord     | A launcher for named actions and apps                             | MPL-2.0 |
+| Substrate | Quick settings for mute, volume and brightness                    | MPL-2.0 |
+| Pulse     | Audio visualizer widget                                           | MIT     |
+| Chrono    | Clock widget with several styles                                  | MIT     |
+| Phono     | Media player widget                                               | MIT     |
+| Canvas    | Plain-text system information widget                              | MIT     |
 
 ### Tessera styles
 

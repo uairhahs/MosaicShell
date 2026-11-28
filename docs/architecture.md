@@ -86,6 +86,15 @@ Widgets, then Settings and About, and folds to icons on a narrow window. There i
   (`ModuleRemovalPolicy`).
 - **Settings**: General (what closing the window does, as a radio group; start at sign-in; reduce motion), Updates,
   Browser media (Grout's status light, `GroutLight`) and Diagnostics, folded.
+- **First run** (`Install/FirstRunPolicy`, `MainViewModel.FirstRun`): on a new install the Host adds the default
+  modules (`Install/DefaultModulesPolicy`), turns them on, and shows one screen with them, each with its switch and,
+  for background modules, Show it on screen; Done lands on Home. A new install is one whose data folder held no saved
+  settings when the process started (`Program.SettingsSavedAtStart`, read before anything writes), so an update never
+  sees it.
+- **Tray menu** (`HubShell/TrayMenu`): a checkable item per installed module, then Open MosaicShell and Quit
+  MosaicShell, rebuilt whenever a module turns on or off. On GNOME the top bar icon's menu shows the same switches:
+  the Shell extension asks the Host (`GnomeHubPresence`, `Modules` and `SetModuleOn` on `org.mosaicshell.Hub`) each
+  time the menu opens.
 - **Feedback** (`HubShell/HubFeedback`): inline for a control, a toast at the bottom for a finished action (with Undo
   where it applies, `HubToast`), and Home's banner for a problem that lasts (`HubBanner`).
 
