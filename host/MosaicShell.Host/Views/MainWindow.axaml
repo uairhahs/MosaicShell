@@ -239,31 +239,15 @@
     <Border Grid.Column="0" Width="{Binding RailWidth}" Padding="8,8,8,12"
             Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
             BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,1,0">
-      <DockPanel>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="8,4,0,14">
+      <!-- Rows in reading order, so Tab goes Home, Modules, Widgets, Settings, About. -->
+      <Grid x:Name="Rail" RowDefinitions="Auto,*,Auto">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="8,4,0,14">
           <Image Source="avares://MosaicShell.Host/Assets/MosaicShell.png" Width="26" Height="26"
                  RenderOptions.BitmapInterpolationMode="HighQuality" />
           <TextBlock Text="MosaicShell" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"
                      Foreground="{DynamicResource TextFillColorPrimaryBrush}" IsVisible="{Binding !IsRailCollapsed}" />
         </StackPanel>
-        <StackPanel DockPanel.Dock="Bottom" Spacing="2">
-          <Border Height="1" Background="{DynamicResource DividerStrokeColorDefaultBrush}" Margin="4,8" />
-          <Button Classes="rail" Classes.selected="{Binding IsSettings}" Command="{Binding NavigateCommand}" CommandParameter="Settings"
-                  AutomationProperties.Name="Settings" ToolTip.Tip="Settings">
-            <StackPanel Orientation="Horizontal" Spacing="10">
-              <icons:MaterialIcon Kind="CogOutline" Width="20" Height="20" />
-              <TextBlock Text="Settings" VerticalAlignment="Center" IsVisible="{Binding !IsRailCollapsed}" />
-            </StackPanel>
-          </Button>
-          <Button Classes="rail" Classes.selected="{Binding IsAbout}" Command="{Binding NavigateCommand}" CommandParameter="About"
-                  AutomationProperties.Name="About" ToolTip.Tip="About">
-            <StackPanel Orientation="Horizontal" Spacing="10">
-              <icons:MaterialIcon Kind="InformationOutline" Width="20" Height="20" />
-              <TextBlock Text="About" VerticalAlignment="Center" IsVisible="{Binding !IsRailCollapsed}" />
-            </StackPanel>
-          </Button>
-        </StackPanel>
-        <StackPanel Spacing="2">
+        <StackPanel Grid.Row="1" Spacing="2">
           <Button Classes="rail" Classes.selected="{Binding IsHome}" Command="{Binding NavigateCommand}" CommandParameter="Home"
                   AutomationProperties.Name="Home" ToolTip.Tip="Home">
             <StackPanel Orientation="Horizontal" Spacing="10">
@@ -286,11 +270,29 @@
             </StackPanel>
           </Button>
         </StackPanel>
-      </DockPanel>
+        <StackPanel Grid.Row="2" Spacing="2">
+          <Border Height="1" Background="{DynamicResource DividerStrokeColorDefaultBrush}" Margin="4,8" />
+          <Button Classes="rail" Classes.selected="{Binding IsSettings}" Command="{Binding NavigateCommand}" CommandParameter="Settings"
+                  AutomationProperties.Name="Settings" ToolTip.Tip="Settings">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <icons:MaterialIcon Kind="CogOutline" Width="20" Height="20" />
+              <TextBlock Text="Settings" VerticalAlignment="Center" IsVisible="{Binding !IsRailCollapsed}" />
+            </StackPanel>
+          </Button>
+          <Button Classes="rail" Classes.selected="{Binding IsAbout}" Command="{Binding NavigateCommand}" CommandParameter="About"
+                  AutomationProperties.Name="About" ToolTip.Tip="About">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <icons:MaterialIcon Kind="InformationOutline" Width="20" Height="20" />
+              <TextBlock Text="About" VerticalAlignment="Center" IsVisible="{Binding !IsRailCollapsed}" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </Grid>
     </Border>
 
     <!-- Pages -->
-    <Grid Grid.Column="1" ClipToBounds="True">
+    <!-- Arrow keys move between the cards and controls on a page by where they sit (XY focus). -->
+    <Grid x:Name="Pages" Grid.Column="1" ClipToBounds="True" XYFocus.NavigationModes="Keyboard">
       <Grid IsVisible="{Binding !IsSettings}" Margin="40,20"
             HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
           <!-- Home: the welcome, then what is running now -->
