@@ -1,9 +1,9 @@
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Runtime;
 using MosaicShell.Core.Services;
 using MosaicShell.Core.Settings;
 using MosaicShell.Core.Styles;
-using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Core.Modules.Tessera
 {
@@ -51,7 +51,7 @@ namespace MosaicShell.Core.Modules.Tessera
         {
             Dictionary<string, string> p = extraPayload is null
                 ? []
-                : new Dictionary<string, string>(extraPayload);
+                : [with(extraPayload)];
 
             p["volume"] = services.Audio.MasterVolume.ToString("0.###");
             p["muted"] = services.Audio.IsMuted ? "1" : "0";
@@ -84,7 +84,10 @@ namespace MosaicShell.Core.Modules.Tessera
                                       && TesseraFlyoutTweenTargetCatalog.StyleRequestsVolumeMediaChrome(settings.Style))
                 ? "1"
                 : "0";
-            p["acrylic"] = settings.UseAcrylicBackdrop ? "1" : "0";
+            // The desktop's transparency switch outranks the choice: off, Frosted and Native draw as Solid, as the
+            // desktop's own pop-ups turn opaque.
+            p["acrylic"] = settings.UseAcrylicBackdrop && services.TransparencyEffects.Enabled ? "1" : "0";
+            p["glass"] = settings.UseNativeTranslucency ? "native" : "frosted";
             p["focusDim"] = settings.UseFocusDim ? "1" : "0";
             p["flyoutScale"] = Math.Clamp(settings.FlyoutScalePercent, 50, 150).ToString();
             p["backdropBlur"] = settings.UseBackdropBlur ? "1" : "0";
@@ -115,7 +118,7 @@ namespace MosaicShell.Core.Modules.Tessera
         {
             Dictionary<string, string> p = existing is null
                 ? []
-                : new Dictionary<string, string>(existing);
+                : [with(existing)];
 
             if (FlyoutKinds.Is(kind, FlyoutKinds.Locks))
             {

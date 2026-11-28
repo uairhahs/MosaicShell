@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text;
 using MosaicShell.Core.Services.Gnome;
 using MosaicShell.Core.Services.Kde;
 using Tmds.DBus.Protocol;
@@ -153,7 +152,7 @@ namespace MosaicShell.Core.Services.Linux
 
         private async Task RunAsync(int generation)
         {
-            EnsureExtension();
+            GnomeShellExtensionInstall.Ensure(_dataHome, _settings);
             DBusConnection? connection;
             lock (_gate)
             {
@@ -181,42 +180,5 @@ namespace MosaicShell.Core.Services.Linux
             }
         }
 
-        /// <summary>Writes the extension where it differs and switches it on, unless the user turned extensions off.</summary>
-        private void EnsureExtension()
-        {
-            try
-            {
-                string dir = GnomeOsdGuardExtension.InstallDirectory(_dataHome);
-                _ = Directory.CreateDirectory(dir);
-                WriteIfChanged(Path.Combine(dir, "metadata.json"), GnomeOsdGuardExtension.MetadataJson);
-                WriteIfChanged(Path.Combine(dir, "extension.js"), GnomeOsdGuardExtension.ExtensionJs);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                Debug.WriteLine($"[GnomeOsd] install: {ex.Message}");
-                return;
-            }
-
-            if (_settings.Get(GnomeOsdGuardExtension.ShellSchema, GnomeOsdGuardExtension.DisableUserExtensionsKey) == "true")
-            {
-                Debug.WriteLine("[GnomeOsd] user extensions are turned off; leaving them off");
-                return;
-            }
-
-            string? enabled = GnomeOsdGuardExtension.EnabledListWithUuid(
-                _settings.Get(GnomeOsdGuardExtension.ShellSchema, GnomeOsdGuardExtension.EnabledKey));
-            if (enabled is not null)
-            {
-                _ = _settings.Set(GnomeOsdGuardExtension.ShellSchema, GnomeOsdGuardExtension.EnabledKey, enabled);
-            }
-        }
-
-        private static void WriteIfChanged(string path, string content)
-        {
-            if (!File.Exists(path) || File.ReadAllText(path) != content)
-            {
-                File.WriteAllText(path, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-            }
-        }
     }
 }

@@ -5,14 +5,14 @@
   </PropertyGroup>
   <!--
     Target framework. Windows builds keep the Windows TFM (the WINDOWS symbol is defined there).
-    Any other OS builds the portable net10.0 TFM so Core and its tests compile on Linux.
+    Any other OS builds the portable net11.0 TFM so Core and its tests compile on Linux.
     Force either one with /p:MosaicPortable=true or /p:MosaicPortable=false.
   -->
   <PropertyGroup>
     <MosaicPortable Condition="'$(MosaicPortable)' == '' and '$(OS)' != 'Windows_NT'">true</MosaicPortable>
     <MosaicPortable Condition="'$(MosaicPortable)' == ''">false</MosaicPortable>
-    <MosaicTargetFramework Condition="'$(MosaicPortable)' == 'true'">net10.0</MosaicTargetFramework>
-    <MosaicTargetFramework Condition="'$(MosaicPortable)' != 'true'">net10.0-windows10.0.19041.0</MosaicTargetFramework>
+    <MosaicTargetFramework Condition="'$(MosaicPortable)' == 'true'">net11.0</MosaicTargetFramework>
+    <MosaicTargetFramework Condition="'$(MosaicPortable)' != 'true'">net11.0-windows10.0.19041.0</MosaicTargetFramework>
   </PropertyGroup>
   <PropertyGroup>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
@@ -20,5 +20,11 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591;CS1570;CS1574;CS1587;CS0419</NoWarn>
+    <!--
+      WFO2000 is a Windows Forms analyzer that the .NET 11 Windows SDK loads for every Windows TFM, even with
+      UseWindowsForms off. It flags getters that return a new object, which here is deliberate: brush getters such as
+      TesseraPalette.FontBrush hand each caller its own mutable brush. Nothing in this repo uses Windows Forms.
+    -->
+    <NoWarn>$(NoWarn);WFO2000</NoWarn>
   </PropertyGroup>
 </Project>

@@ -46,8 +46,9 @@ namespace MosaicShell.Core.Tests
             _ = TesseraNativeTranslucencySignOffPolicy.H3StackedVolumeMediaSignedOff.Should().BeTrue();
             _ = TesseraNativeTranslucencySignOffPolicy.AllH3StackedStylesSignedOff().Should().BeTrue();
             _ = HostLaunchOptions.TesseraNativeTranslucencyTrial.Should().BeFalse(
-                "sign-off does not flip alpha default; frost stays unless flag or setting is on");
-            _ = TesseraNativeTranslucencyPolicy.IsTrialRequested().Should().BeFalse();
+                "sign-off does not set the launch flag; the saved material decides");
+            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseAcrylicBackdrop = false });
+            _ = TesseraNativeTranslucencyPolicy.IsTrialRequested().Should().BeFalse("Solid never asks for the blur");
         }
 
         [Theory]

@@ -33,7 +33,7 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot ".")
 $hostProj = Join-Path $repoRoot "host\MosaicShell.Host\MosaicShell.Host.csproj"
 # version pinned to match the target framework of the Host project
-$tfm = "net10.0-windows10.0.19041.0"
+$tfm = "net11.0-windows10.0.19041.0"
 $tesseraSettingsPath = Join-Path $env:LOCALAPPDATA "MosaicShell\Config\modules\Tessera.json"
 
 function Get-TesseraNativeTranslucencyEnabled {

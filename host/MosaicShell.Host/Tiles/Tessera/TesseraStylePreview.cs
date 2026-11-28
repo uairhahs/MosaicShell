@@ -8,17 +8,8 @@ using MosaicShell.Core.Modules.Tessera;
 namespace MosaicShell.Host.Tiles.Tessera
 {
     /// <summary>Scaled live Tessera flyout template for the module config panel.</summary>
-    public sealed class TesseraStylePreview : Border
+    public sealed partial class TesseraStylePreview : Border
     {
-        public static readonly StyledProperty<string?> StyleIdProperty =
-            AvaloniaProperty.Register<TesseraStylePreview, string?>(nameof(StyleId), "Fluent");
-
-        public static readonly StyledProperty<bool> ShowMediaStripProperty =
-            AvaloniaProperty.Register<TesseraStylePreview, bool>(nameof(ShowMediaStrip), true);
-
-        public static readonly StyledProperty<string?> AccentColorProperty =
-            AvaloniaProperty.Register<TesseraStylePreview, string?>(nameof(AccentColor));
-
         private static int _suspendDepth;
         private static event Action? RebuildFlushRequested;
 
@@ -52,23 +43,14 @@ namespace MosaicShell.Host.Tiles.Tessera
             };
         }
 
-        public string? StyleId
-        {
-            get => GetValue(StyleIdProperty);
-            set => SetValue(StyleIdProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = "Fluent")]
+        public partial string? StyleId { get; set; }
 
-        public bool ShowMediaStrip
-        {
-            get => GetValue(ShowMediaStripProperty);
-            set => SetValue(ShowMediaStripProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = true)]
+        public partial bool ShowMediaStrip { get; set; }
 
-        public string? AccentColor
-        {
-            get => GetValue(AccentColorProperty);
-            set => SetValue(AccentColorProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial string? AccentColor { get; set; }
 
         public static IDisposable EnterSuspendRebuild()
         {

@@ -4,7 +4,7 @@ namespace MosaicShell.Core.Services
     /// Merges Windows SMTC with browser media sources. SMTC drives transport when present; a browser source
     /// supplies artist, album and cover for browser players (YouTube Music) where SMTC has only the page title.
     /// </summary>
-    public sealed class CompositeMediaSessionService : IMediaSessionService, IMediaSourceDiagnostics
+    public sealed class CompositeMediaSessionService : IMediaSessionService, IMediaSourceDiagnostics, IBrowserConnectionStatus
     {
         private readonly IMediaSessionService _smtc;
         private readonly IBrowserMediaSource[] _browser;
@@ -18,6 +18,9 @@ namespace MosaicShell.Core.Services
         private long _browserTitleAt;
 
         /// <summary>Browser sources are listed in order of preference; the first with an active player is used.</summary>
+        /// <summary>The browsers Grout is connected from, across every browser source.</summary>
+        public int BrowserConnections => _browser.OfType<IBrowserConnectionStatus>().Sum(static b => b.BrowserConnections);
+
         public CompositeMediaSessionService(IMediaSessionService smtc, params IBrowserMediaSource[] browserSources)
         {
             _smtc = smtc;

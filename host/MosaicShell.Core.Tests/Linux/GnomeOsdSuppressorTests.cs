@@ -75,6 +75,8 @@ namespace MosaicShell.Core.Tests.Linux
             _ = (await EventuallyAsync(() => Task.FromResult(File.Exists(Path.Combine(dir, "extension.js"))))).Should().BeTrue();
             _ = (await File.ReadAllTextAsync(Path.Combine(dir, "extension.js"))).Should().Be(GnomeOsdGuardExtension.ExtensionJs);
             _ = (await File.ReadAllTextAsync(Path.Combine(dir, "metadata.json"))).Should().Be(GnomeOsdGuardExtension.MetadataJson);
+            _ = (await File.ReadAllTextAsync(Path.Combine(dir, GnomeOsdGuardExtension.PanelIconFile)))
+                .Should().Be(GnomeOsdGuardExtension.PanelIconSvg);
         }
 
         [LinuxBusFact]

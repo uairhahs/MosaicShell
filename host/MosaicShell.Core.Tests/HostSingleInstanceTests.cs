@@ -135,15 +135,6 @@ namespace MosaicShell.Core.Tests
 
         [Theory]
         [InlineData(HostLaunchMode.FullHub, true)]
-        [InlineData(HostLaunchMode.TrayOnly, true)]
-        [InlineData(HostLaunchMode.GlintCapture, false)]
-        public void Only_the_normal_launch_modes_take_part(HostLaunchMode mode, bool expected)
-        {
-            _ = HostSingleInstance.AppliesTo(mode).Should().Be(expected, "a capture run writes images and exits beside a running Host");
-        }
-
-        [Theory]
-        [InlineData(HostLaunchMode.FullHub, true)]
         [InlineData(HostLaunchMode.TrayOnly, false)]
         public void A_second_launch_shows_the_Hub_unless_it_was_started_for_the_tray(HostLaunchMode mode, bool expected)
         {

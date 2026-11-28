@@ -22,7 +22,7 @@ namespace MosaicShell.Core.Install
 
         public static ReleaseAssetChecksums Parse(string? body)
         {
-            Dictionary<string, string> map = new(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, string> map = [with(StringComparer.OrdinalIgnoreCase)];
             if (string.IsNullOrWhiteSpace(body))
             {
                 return new ReleaseAssetChecksums(map);

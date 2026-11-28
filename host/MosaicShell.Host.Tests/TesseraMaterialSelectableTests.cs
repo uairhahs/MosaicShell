@@ -1,5 +1,7 @@
 using Avalonia.Headless.XUnit;
 using FluentAssertions;
+using MosaicShell.Core.Capabilities.Platform;
+using MosaicShell.Core.Services.Xdg;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Runtime;
@@ -46,6 +48,47 @@ namespace MosaicShell.Host.Tests
             _ = vm.TesseraMaterialFixedNote.Should().BeEmpty();
             _ = changed.Should().Contain(nameof(MainViewModel.TesseraMaterialSelectable));
             _ = vm.SelectedTesseraMaterial!.Choice.Should().Be(TesseraMaterialChoice.Frosted);
+        }
+
+        [AvaloniaFact]
+        public void Without_a_backend_Native_Translucency_is_listed_greyed_out_with_the_reason()
+        {
+            NativeTranslucencyBackend original = NativeTranslucencyPlatform.Backend;
+            try
+            {
+                NativeTranslucencyPlatform.Set(NativeTranslucencyBackend.None);
+                MainViewModel vm = OpenTesseraSettings("Fluent");
+
+                TesseraMaterialOption native = vm.TesseraMaterialOptions.Single(o => o.Choice == TesseraMaterialChoice.NativeTranslucency);
+                _ = native.IsAvailable.Should().BeFalse();
+                _ = vm.TesseraMaterialOptions.Where(o => o.Choice != TesseraMaterialChoice.NativeTranslucency)
+                    .Should().OnlyContain(o => o.IsAvailable);
+                _ = vm.SelectedTesseraMaterial!.Choice.Should().NotBe(TesseraMaterialChoice.NativeTranslucency);
+                _ = vm.TesseraNativeUnavailableNote.Should().Be(
+                    TesseraMaterialChoicePolicy.NativeUnavailableText(OperatingSystem.IsWindows(), XdgCurrentDesktop.Current));
+            }
+            finally
+            {
+                NativeTranslucencyPlatform.Set(original);
+            }
+        }
+
+        [AvaloniaFact]
+        public void With_a_backend_Native_Translucency_is_a_normal_choice_with_no_note()
+        {
+            NativeTranslucencyBackend original = NativeTranslucencyPlatform.Backend;
+            try
+            {
+                NativeTranslucencyPlatform.Set(OperatingSystem.IsWindows() ? NativeTranslucencyBackend.WindowsAcrylic : NativeTranslucencyBackend.KWinBlur);
+                MainViewModel vm = OpenTesseraSettings("Fluent");
+
+                _ = vm.TesseraMaterialOptions.Should().OnlyContain(o => o.IsAvailable);
+                _ = vm.TesseraNativeUnavailableNote.Should().BeEmpty();
+            }
+            finally
+            {
+                NativeTranslucencyPlatform.Set(original);
+            }
         }
     }
 }

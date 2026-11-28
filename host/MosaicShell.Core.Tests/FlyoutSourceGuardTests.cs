@@ -53,7 +53,7 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void No_new_blocking_marshaling_or_sync_over_async()
         {
-            Dictionary<string, int> found = new(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, int> found = [with(StringComparer.OrdinalIgnoreCase)];
             foreach (string file in SourceTree.EnumerateSources("MosaicShell.Core", "MosaicShell.Host"))
             {
                 int count = CodeLines(file).Count(static l => BlockingCall().IsMatch(l));
@@ -91,7 +91,7 @@ namespace MosaicShell.Core.Tests
             List<string> production = [.. SourceTree.EnumerateSources(ProductionProjects)];
             Dictionary<string, string[]> codeByFile = production.ToDictionary(static f => f, static f => CodeLines(f).ToArray());
 
-            HashSet<string> offenders = new(StringComparer.Ordinal);
+            HashSet<string> offenders = [with(StringComparer.Ordinal)];
             foreach (string dir in PolicyDirectories)
             {
                 foreach (string file in SourceTree.EnumerateSources(dir))

@@ -4,8 +4,8 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Material.Icons;
 using Material.Icons.Avalonia;
-using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Capabilities.Platform;
+using MosaicShell.Core.Modules.Tessera;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {
@@ -40,15 +40,17 @@ namespace MosaicShell.Host.Tiles.Tessera
 
             // Native translucency: HWND is the material; nested Skia Glass left a square black plate on first paint.
             return TesseraStatusFlyoutPolicy.PreferNativeTranslucencyEdgeOnlyChrome && TesseraGlass.UseNativeTranslucencyChrome
-                ? new Border
-                {
-                    Background = Brushes.Transparent,
-                    CornerRadius = new CornerRadius(radius),
-                    Padding = new Thickness(12, 10),
-                    Height = h ?? TesseraStatusFlyoutPolicy.ChipHeightDip,
-                    ClipToBounds = true,
-                    Child = body
-                }
+                ? TesseraGlassFinish.Over(
+                    new Border
+                    {
+                        Background = Brushes.Transparent,
+                        CornerRadius = new CornerRadius(radius),
+                        Padding = new Thickness(12, 10),
+                        Height = h ?? TesseraStatusFlyoutPolicy.ChipHeightDip,
+                        ClipToBounds = true,
+                        Child = body
+                    },
+                    radius)
                 : TesseraChrome.Glass(body, radius, new Thickness(12, 10), w, h ?? TesseraStatusFlyoutPolicy.ChipHeightDip);
         }
 
@@ -82,7 +84,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             };
         }
 
-        private static Border MaterialYouIconTile(MaterialIconKind kind, double iconSize, double tile)
+        private static Border MaterialYouIconTile(MaterialIconKind kind, double iconSize, double tile, Action act)
         {
             Border tileBorder = new()
             {
@@ -100,8 +102,8 @@ namespace MosaicShell.Host.Tiles.Tessera
                     Foreground = TesseraStylePalette.MaterialYou.AccentBrush
                 }
             };
-            TesseraChrome.ApplyHoverHighlight(tileBorder, TesseraStylePalette.MaterialYou.ShellBrush,
-                new SolidColorBrush(Color.FromRgb(40, 40, 44)));
+            TesseraChrome.WirePress(tileBorder, TesseraStylePalette.MaterialYou.ShellBrush,
+                new SolidColorBrush(Color.FromRgb(40, 40, 44)), act);
             return tileBorder;
         }
 
@@ -142,8 +144,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 ClipToBounds = true,
                 Child = icon
             };
-            TesseraChrome.ApplyHoverHighlight(pill, normal, hover);
-            pill.PointerPressed += (_, e) => { _ = vm.PlayPauseAsync(); e.Handled = true; };
+            TesseraChrome.WirePress(pill, normal, hover, () => _ = vm.PlayPauseAsync(icon));
             return pill;
         }
 

@@ -41,7 +41,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 {
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     VerticalAlignment = VerticalAlignment.Center,
-                    ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
+                    ColumnDefinitions = [with("Auto,*,Auto")],
                     Children = { left, media }
                 };
                 Grid.SetColumn(left, 0);

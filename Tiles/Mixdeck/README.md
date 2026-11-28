@@ -4,7 +4,7 @@ Mixdeck runs as an **Avalonia capability** inside `MosaicShell.Host`.
 
 | Path                                                                     | Role                              |
 | ------------------------------------------------------------------------ | --------------------------------- |
-| `host/MosaicShell.Core/Capabilities/BuiltIn/`                            | Arm / hotkey (default Ctrl+Alt+M) |
+| `host/MosaicShell.Core/Capabilities/BuiltIn/`                            | Arm / hotkey (default Ctrl+Alt+X) |
 | `host/MosaicShell.Host/Tiles/Surfaces/LiveTilesB.cs` (`MixdeckTileView`) | Per-app mixer overlay             |
 
 ## Install / arm

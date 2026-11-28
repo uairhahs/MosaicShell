@@ -6,12 +6,13 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
     public static class HotkeyGestureParser
     {
         /// <summary>Gestures Windows usually owns; RegisterHotKey fails or steals shell UX.</summary>
-        private static readonly HashSet<string> OsReserved = new(StringComparer.OrdinalIgnoreCase)
-        {
+        private static readonly HashSet<string> OsReserved =
+        [
+            with(StringComparer.OrdinalIgnoreCase),
             "Win+A", "Win+S", "Win+Q", "Win+E", "Win+I", "Win+L", "Win+D", "Win+R", "Win+X",
             "Win+Tab", "Win+Space", "Win+V", "Win+N", "Win+W", "Win+H", "Win+K", "Win+P",
             "Win+U", "Win+G", "Win+Z", "Ctrl+Esc"
-        };
+        ];
 
         public static bool IsLikelyOsReserved(string gesture)
         {
@@ -44,7 +45,7 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                 "inlay" => "Ctrl+Alt+I",
                 "chord" => "Ctrl+Alt+K",
                 "substrate" => "Ctrl+Alt+Q",
-                "mixdeck" => "Ctrl+Alt+M",
+                "mixdeck" => "Ctrl+Alt+X",
                 _ => "Ctrl+Alt+O"
             };
         }

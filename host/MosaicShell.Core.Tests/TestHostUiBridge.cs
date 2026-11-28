@@ -40,14 +40,19 @@ namespace MosaicShell.Core.Tests
         public IFlyoutPresenter Flyouts { get; } = flyouts;
         public IHostUiBridge HostUi { get; } = hostUi ?? NullHostUiBridge.Instance;
 
-        /// <summary>True while a RunOnHostThread delegate is executing (test assertions).</summary>
-        public bool InHostThread { get; private set; }
+        private int _depth;
+
+        /// <summary>
+        /// True while a RunOnHostThread delegate is executing (test assertions). A depth, not a flag: capabilities nest
+        /// these calls, and an inner one ending must not mark the outer one as off the host thread.
+        /// </summary>
+        public bool InHostThread => _depth > 0;
 
         public void RunOnHostThread(Action action)
         {
-            InHostThread = true;
+            _depth++;
             try { action(); }
-            finally { InHostThread = false; }
+            finally { _depth--; }
         }
     }
 

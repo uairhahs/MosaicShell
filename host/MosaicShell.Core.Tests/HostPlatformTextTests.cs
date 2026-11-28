@@ -26,8 +26,8 @@ namespace MosaicShell.Core.Tests
             HostPlatformText windows = HostPlatformText.For(isWindows: true, xdgCurrentDesktop: null);
 
             _ = windows.About.Should().StartWith("MosaicShell is a native Windows desktop shell.");
-            _ = windows.Autostart.Should().Be("Launch MosaicShell Host when you sign in to Windows.");
-            _ = windows.AccentPlaceholder.Should().Be("#0273CD or leave blank for the Windows accent");
+            _ = windows.Autostart.Should().Be("Opens in the background when you sign in to Windows.");
+            _ = windows.AccentPlaceholder.Should().Be("Blank uses the system accent");
             _ = windows.ReservedShortcuts.Should().Be(
                 "Capture a shortcut (Ctrl/Alt/Shift/Win + key). Win+S / Win+A / Win+Q are reserved by Windows and will be replaced automatically.");
             _ = windows.ReservedShortcut("Win+S").Should().Be("Win+S is reserved by Windows. Pick Ctrl+Alt+Letter instead.");
@@ -40,8 +40,8 @@ namespace MosaicShell.Core.Tests
             HostPlatformText gnome = HostPlatformText.For(isWindows: false, xdgCurrentDesktop: "GNOME");
 
             _ = gnome.About.Should().StartWith("MosaicShell is a native GNOME desktop shell.");
-            _ = gnome.Autostart.Should().Be("Launch MosaicShell Host when you sign in to GNOME.");
-            _ = gnome.AccentPlaceholder.Should().Be("#0273CD or leave blank for the GNOME accent");
+            _ = gnome.Autostart.Should().Be("Opens in the background when you sign in to GNOME.");
+            _ = gnome.AccentPlaceholder.Should().Be("Blank uses the system accent");
             _ = gnome.ReservedShortcut("Win+S").Should().Be("Win+S is reserved by GNOME. Pick Ctrl+Alt+Letter instead.");
             _ = gnome.ReservedShortcuts.Should().Contain("Super").And.NotContain("Windows");
         }
@@ -53,6 +53,24 @@ namespace MosaicShell.Core.Tests
             _ = HostPlatformText.For(false, "GNOME").NativePopups
                 .Should().Contain("GNOME Shell extension").And.Contain("log out and back in");
             _ = HostPlatformText.For(false, null).NativePopups.Should().Contain("not hidden");
+        }
+
+        [Theory]
+        [InlineData(true, null)]
+        [InlineData(false, "KDE")]
+        [InlineData(false, "GNOME")]
+        public void The_texts_use_none_of_the_old_Hub_words_and_the_placeholder_fits_its_box(bool isWindows, string? desktop)
+        {
+            HostPlatformText text = HostPlatformText.For(isWindows, desktop);
+
+            // U07: About said "Install tiles" and "arm capabilities in the tray Host"; Settings said "Launch MosaicShell Host".
+            foreach (string s in new[] { text.About, text.Autostart })
+            {
+                _ = s.Should().NotMatchRegex(@"(?i)\barm\b|\btiles?\b|capabilit|\bHost\b");
+            }
+
+            // The accent box is 260 wide; "#0273CD or leave blank for the Windows accent" was cut at "for" in its old 200.
+            _ = text.AccentPlaceholder.Length.Should().BeLessThanOrEqualTo(30);
         }
 
         [Fact]

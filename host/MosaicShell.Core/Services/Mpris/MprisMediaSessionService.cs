@@ -17,8 +17,8 @@ namespace MosaicShell.Core.Services.Mpris
         private readonly IMprisArtSource _art;
         private readonly TimeProvider _clock;
         private readonly SemaphoreSlim _gate = new(1, 1);
-        private readonly Dictionary<string, MprisPlayerState> _players = new(StringComparer.Ordinal);
-        private readonly Dictionary<string, DateTimeOffset> _playingSince = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, MprisPlayerState> _players = [with(StringComparer.Ordinal)];
+        private readonly Dictionary<string, DateTimeOffset> _playingSince = [with(StringComparer.Ordinal)];
         private MprisPlayerState? _active;
         private ITimer? _timelinePoll;
         private ITimer? _nullSessionGrace;

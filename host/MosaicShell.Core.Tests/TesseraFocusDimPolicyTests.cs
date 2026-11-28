@@ -38,22 +38,16 @@ namespace MosaicShell.Core.Tests
         {
             // High-alpha Transparent FallbackBrush under RedirectionSurface paints a black fill.
             _ = TesseraFocusDimPolicy.UseConstantLayeredAlpha.Should().BeTrue();
-            _ = TesseraFocusDimPolicy.ResolveLayeredAlpha(dimEnabled: true, onFlyoutScreen: true)
-                .Should().Be(TesseraFocusDimPolicy.OverlayAlpha);
-            _ = TesseraFocusDimPolicy.ResolveLayeredAlpha(dimEnabled: true, onFlyoutScreen: true)
-                .Should().BeLessThan(100);
+            _ = TesseraFocusDimPolicy.OverlayAlpha.Should().BeLessThan(100);
         }
 
-        [Theory]
-        [InlineData(true, false)]
-        [InlineData(false, true)]
-        [InlineData(false, false)]
-        public void A_windows_layer_that_is_only_the_hitbox_is_one_step_above_invisible(bool dimEnabled, bool onFlyoutScreen)
+        [Fact]
+        public void The_layer_never_takes_a_click()
         {
-            // Not 0: the layer must still take the outside click, as the X11 layer does, without showing a wash.
-            _ = TesseraFocusDimPolicy.ResolveLayeredAlpha(dimEnabled, onFlyoutScreen)
-                .Should().Be(TesseraFocusDimPolicy.HitboxOnlyLayeredAlpha);
-            _ = TesseraFocusDimPolicy.HitboxOnlyLayeredAlpha.Should().Be(1);
+            // The layer used to be the outside-click hitbox: a click outside the flyout closed it and was swallowed,
+            // with nothing on screen to say so (UX audit U26). Clicks now always reach the window underneath, on every
+            // platform, and the flyout leaves on its timer, after the pointer leaves it, or from its Dismiss link.
+            _ = TesseraFocusDimPolicy.LayerPassesClicksThrough.Should().BeTrue();
         }
 
         [Fact]
@@ -136,55 +130,6 @@ namespace MosaicShell.Core.Tests
             _ = TesseraFocusDimPolicy.ShouldCloseOrphanedDim(dimOpen, anyTesseraFlyoutShowing).Should().Be(expected);
         }
 
-        [Theory]
-        [InlineData(FocusDimRoute.X11ArgbInputShape, "1", true)]
-        [InlineData(FocusDimRoute.X11ArgbInputShape, "0", true)]
-        [InlineData(FocusDimRoute.Win32LayeredAlpha, "1", true)]
-        [InlineData(FocusDimRoute.Win32LayeredAlpha, "0", true)]
-        [InlineData(FocusDimRoute.None, "1", false)]
-        public void The_layer_shows_with_the_dim_off_too_as_the_outside_click_hitbox(
-            FocusDimRoute route, string focusDim, bool expected)
-        {
-            // Wayland gives the Host no clicks on other windows, so on X11 the layer catches them (the click is not
-            // passed on, as with a popup menu). Windows does the same, so both platforms behave alike.
-            Dictionary<string, string> payload = new() { ["focusDim"] = focusDim };
-
-            _ = TesseraFocusDimPolicy.ShouldShowLayer(payload, route).Should().Be(expected);
-            _ = TesseraFocusDimPolicy.LayerIsOutsideClickHitbox(route).Should().Be(route != FocusDimRoute.None);
-        }
-
-        [Theory]
-        [InlineData(true, TesseraFocusDimPolicy.OverlayAlpha)]
-        [InlineData(false, 0)]
-        public void With_the_dim_off_the_hitbox_layer_is_fully_transparent(bool dimEnabled, byte expected)
-        {
-            _ = TesseraFocusDimPolicy.ResolveLayerAlpha(FocusDimRoute.X11ArgbInputShape, dimEnabled).Should().Be(expected);
-        }
-
-        [Theory]
-        [InlineData(FocusDimRoute.X11ArgbInputShape, true)]
-        [InlineData(FocusDimRoute.Win32LayeredAlpha, true)]
-        [InlineData(FocusDimRoute.None, false)]
-        public void The_hitbox_layer_covers_every_screen(FocusDimRoute route, bool expected)
-        {
-            // A layer on the flyout's screen alone let a click on another display reach the app there and leave the
-            // flyout up (KDE, two displays, 2026-11-23).
-            _ = TesseraFocusDimPolicy.LayerCoversEveryScreen(route).Should().Be(expected);
-        }
-
-        [Theory]
-        [InlineData(true, true, TesseraFocusDimPolicy.OverlayAlpha)]
-        [InlineData(true, false, 0)]
-        [InlineData(false, true, 0)]
-        [InlineData(false, false, 0)]
-        public void Only_the_flyouts_screen_is_dimmed_the_others_are_bare_hitbox(
-            bool dimEnabled, bool onFlyoutScreen, byte expected)
-        {
-            // Windows dims only the flyout's monitor; the extra X11 layers catch clicks without dimming other screens.
-            _ = TesseraFocusDimPolicy.ResolveLayerAlpha(FocusDimRoute.X11ArgbInputShape, dimEnabled, onFlyoutScreen)
-                .Should().Be(expected);
-        }
-
         [Fact]
         public void On_x11_the_window_itself_carries_the_dim_alpha()
         {
@@ -221,42 +166,9 @@ namespace MosaicShell.Core.Tests
         [InlineData(FocusDimRoute.None, FlyoutRestack.None)]
         public void Every_platform_with_a_layer_can_put_the_flyout_back_above_it(FocusDimRoute route, FlyoutRestack expected)
         {
-            // A layer shown after the flyout stacks on top of it, and on X11 it is the outside-click hitbox: every click
-            // on that flyout then dismissed it (KDE: a kind switch rebuilt the hidden window, showed it, then made the
-            // layer; 14 of 137 outside-click dismisses landed inside the flyout).
+            // A layer shown after the flyout stacks on top of it and dims the flyout too (KDE: a kind switch rebuilt the
+            // hidden window, showed it, then made the layer).
             _ = TesseraFocusDimPolicy.ResolveRestack(route).Should().Be(expected);
-        }
-
-        [Fact]
-        public void On_X11_the_click_is_where_the_server_says_the_pointer_is()
-        {
-            // GNOME keeps the layer below its top bar (asked for 0,0, placed at 0,58 on a 2x laptop screen), so converting
-            // through the layer's asked position put the glint 58 px above the click. The server's pointer is exact.
-            (int X, int Y) fromWindow = (1695, 1060);
-            (int X, int Y) fromServer = (1695, 1118);
-
-            _ = TesseraFocusDimPolicy.ResolveClickPoint(FocusDimRoute.X11ArgbInputShape, fromWindow, fromServer).Should().Be(fromServer);
-        }
-
-        [Fact]
-        public void Without_the_servers_pointer_the_window_conversion_stands()
-        {
-            _ = TesseraFocusDimPolicy.ResolveClickPoint(FocusDimRoute.X11ArgbInputShape, (10, 20), null).Should().Be((10, 20));
-        }
-
-        [Fact]
-        public void Windows_keeps_the_window_conversion_which_places_the_layer_where_it_asks()
-        {
-            _ = TesseraFocusDimPolicy.ResolveClickPoint(FocusDimRoute.Win32LayeredAlpha, (10, 20), (30, 40)).Should().Be((10, 20));
-        }
-
-        [Theory]
-        [InlineData(FocusDimRoute.X11ArgbInputShape, true)]
-        [InlineData(FocusDimRoute.Win32LayeredAlpha, false)]
-        [InlineData(FocusDimRoute.None, false)]
-        public void Only_the_X11_route_asks_the_server_for_the_pointer(FocusDimRoute route, bool expected)
-        {
-            _ = TesseraFocusDimPolicy.ClickPointFromServer(route).Should().Be(expected);
         }
     }
 }

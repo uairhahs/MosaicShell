@@ -1,3 +1,4 @@
+using MosaicShell.Core.Install;
 using Avalonia;
 using Avalonia.Threading;
 using MosaicShell.Core;
@@ -8,29 +9,38 @@ namespace MosaicShell.Host
 {
     internal sealed class Program
     {
+        /// <summary>
+        /// Whether the data folder held saved settings when this process started, read before anything here writes one
+        /// (detecting the native blur saves Tessera's settings at once). First run hangs on it (<see cref="FirstRunPolicy"/>).
+        /// </summary>
+        internal static bool SettingsSavedAtStart { get; private set; } = true;
+
         [STAThread]
         public static int Main(string[] args)
         {
             Core.Capabilities.Platform.HostLaunchOptions.Apply(args);
+            SettingsSavedAtStart = FirstRunPolicy.AnySettingsSaved(AppPaths.ConfigDirectory);
+            if (Core.Capabilities.Platform.HostLaunchOptions.InstallPackageMissingPath
+                || Core.Capabilities.Platform.HostLaunchOptions.InstallPackagePath is not null)
+            {
+                return HostCommandLine.InstallPackage(Core.Capabilities.Platform.HostLaunchOptions.InstallPackagePath);
+            }
+
             _ = HostServices.DetectNativeTranslucencyAsync();
             SystemAccent.StartDesktopWatch();
             DiagnosticLog.Start(
                 AppPaths.CacheDirectory,
                 DiagnosticLogLevels.Resolve(Environment.GetEnvironmentVariable(DiagnosticLogLevels.EnvironmentVariable), IsDebugBuild));
-            HostSingleInstance? instance = null;
-            if (HostSingleInstance.AppliesTo(Core.Capabilities.Platform.HostLaunchOptions.Mode))
+            HostSingleInstance? instance = HostSingleInstance.TryAcquire(AppPaths.RootDirectory);
+            if (instance is null)
             {
-                instance = HostSingleInstance.TryAcquire(AppPaths.RootDirectory);
-                if (instance is null)
-                {
-                    DeferToRunningHost();
-                    return 0;
-                }
-
-                instance.ActivationRequested += static (_, _) =>
-                    Dispatcher.UIThread.Post(static () => (Application.Current as App)?.ShowHubOnRequest());
-                instance.StartListening();
+                DeferToRunningHost();
+                return 0;
             }
+
+            instance.ActivationRequested += static (_, _) =>
+                Dispatcher.UIThread.Post(static () => (Application.Current as App)?.ShowHubOnRequest());
+            instance.StartListening();
 
             Capabilities.ProcessPowerThrottling.OptOutAndLog();
             try
@@ -39,7 +49,7 @@ namespace MosaicShell.Host
             }
             finally
             {
-                instance?.Dispose();
+                instance.Dispose();
                 DiagnosticLog.Stop();
             }
 

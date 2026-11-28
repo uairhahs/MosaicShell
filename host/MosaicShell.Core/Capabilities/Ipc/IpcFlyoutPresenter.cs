@@ -11,8 +11,8 @@ namespace MosaicShell.Core.Capabilities.Ipc
     {
         private readonly Lock _gate = new();
         private ClientConnection? _connection;
-        private readonly Dictionary<string, bool> _visible = new(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, TesseraFlyoutSessionSnapshot> _snapshots = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, bool> _visible = [with(StringComparer.OrdinalIgnoreCase)];
+        private readonly Dictionary<string, TesseraFlyoutSessionSnapshot> _snapshots = [with(StringComparer.OrdinalIgnoreCase)];
         private bool _disposed;
 
         public event Action<string>? TransientDismissed;

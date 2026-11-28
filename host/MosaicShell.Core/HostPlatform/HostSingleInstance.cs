@@ -78,12 +78,6 @@ namespace MosaicShell.Core.HostPlatform
             }
         }
 
-        /// <summary>A glint capture writes its images and exits, so it runs beside a Host instead of deferring to it.</summary>
-        public static bool AppliesTo(HostLaunchMode mode)
-        {
-            return mode is HostLaunchMode.FullHub or HostLaunchMode.TrayOnly;
-        }
-
         /// <summary>
         /// A second launch made for the Hub brings the running Hub forward; one made for the tray (a login entry) leaves the
         /// running Host as it is.

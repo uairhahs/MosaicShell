@@ -9,6 +9,20 @@ namespace MosaicShell.Core.Modules.Tessera
     /// </summary>
     public static class TesseraFlyoutDismissPolicy
     {
+        /// <summary>How long a flyout stays once the pointer has left it, at most (see <see cref="ResolvePointerLeaveDismissMs"/>).</summary>
+        public const int PointerLeaveDismissMs = 1000;
+
+        /// <summary>
+        /// The dismiss timer to restart when the pointer leaves the flyout: <see cref="PointerLeaveDismissMs"/>, or the
+        /// flyout's own timer when that is shorter. Zero (or less) means the flyout never leaves on its own, and that
+        /// still holds after a leave. Clicks outside pass through (<see cref="TesseraFocusDimPolicy.LayerPassesClicksThrough"/>),
+        /// so moving away is how most people send a flyout off once they have used it.
+        /// </summary>
+        public static int ResolvePointerLeaveDismissMs(int autoDismissMs)
+        {
+            return autoDismissMs <= 0 ? 0 : Math.Min(autoDismissMs, PointerLeaveDismissMs);
+        }
+
         public static bool ShouldFinishTransientDismiss(
             int dismissalGeneration,
             int currentGeneration,

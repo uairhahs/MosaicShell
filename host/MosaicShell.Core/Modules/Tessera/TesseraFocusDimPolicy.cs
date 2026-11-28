@@ -2,16 +2,16 @@ using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Core.Modules.Tessera
 {
-    /// <summary>The OS mechanism that draws the focus dim layer (translucent, and the outside-click hitbox).</summary>
+    /// <summary>The OS mechanism that draws the focus dim layer (a translucent, click-through wash).</summary>
     public enum FocusDimRoute
     {
         /// <summary>No mechanism on this system; the dim stays off.</summary>
         None,
 
-        /// <summary>Windows: opaque background and constant LWA_ALPHA; the layer takes the outside click.</summary>
+        /// <summary>Windows: opaque background, constant LWA_ALPHA and WS_EX_TRANSPARENT.</summary>
         Win32LayeredAlpha,
 
-        /// <summary>X11 or XWayland with a compositor: ARGB background alpha; the layer takes the outside click.</summary>
+        /// <summary>X11 or XWayland with a compositor: ARGB background alpha and an empty input shape.</summary>
         X11ArgbInputShape,
     }
 
@@ -28,9 +28,9 @@ namespace MosaicShell.Core.Modules.Tessera
     }
 
     /// <summary>
-    /// Subtle desktop dim behind Tessera (Focus-plugin analogue). Extremely light, not a modal scrim.
-    /// The layer behind the flyout is the outside-click hitbox on every platform: a click outside the flyout dismisses Tessera
-    /// instantly and is swallowed, popup-menu style.
+    /// Subtle desktop dim behind Tessera (Focus-plugin analogue). Extremely light, not a modal scrim, and never in the
+    /// way: clicks always pass through it to the window underneath (<see cref="LayerPassesClicksThrough"/>). It shows only
+    /// when the user has the dim on.
     /// </summary>
     public static class TesseraFocusDimPolicy
     {
@@ -79,23 +79,20 @@ namespace MosaicShell.Core.Modules.Tessera
             return dimOpen && !anyTesseraFlyoutShowing;
         }
 
-        /// <summary>
-        /// LWA_ALPHA of a Windows layer that is only the outside-click hitbox (the dim is off, or another screen's bare
-        /// layer): one step above invisible, since the layer must still take the click, as the X11 layer does.
-        /// </summary>
-        public const byte HitboxOnlyLayeredAlpha = 1;
 
         /// <summary>
-        /// The Windows layer's SetLayeredWindowAttributes alpha; Host must use this, never a parallel magic number. The
-        /// flyout's screen is dimmed when the dim is on; otherwise the layer is a hitbox only.
+        /// The layer never takes a click, on any platform. It used to be the outside-click hitbox, swallowing a click
+        /// outside the flyout to dismiss it; on Linux that was the only way to see such a click at all, since Wayland
+        /// gives no app a global click feed. Swallowing a click with nothing on screen to say so cost more than it gave
+        /// (UX audit U26), so the flyout instead leaves on its timer, soon after the pointer leaves it
+        /// (<see cref="TesseraFlyoutDismissPolicy.ResolvePointerLeaveDismissMs"/>), or from its Dismiss link
+        /// (<see cref="TesseraFlyoutDismissSpec"/>). Host applies it as WS_EX_TRANSPARENT on Windows and an empty input
+        /// shape on X11.
         /// </summary>
-        public static byte ResolveLayeredAlpha(bool dimEnabled, bool onFlyoutScreen)
-        {
-            return dimEnabled && onFlyoutScreen ? OverlayAlpha : HitboxOnlyLayeredAlpha;
-        }
+        public const bool LayerPassesClicksThrough = true;
 
         /// <summary>
-        /// How this system draws the layer: a translucent wash that is also the outside-click hitbox. Windows uses an
+        /// How this system draws the layer: a translucent, click-through wash. Windows uses an
         /// opaque window with constant LWA_ALPHA. Linux on X11 or XWayland uses a Transparent (ARGB) window whose
         /// background carries the alpha; that needs
         /// a running compositor, because without one the alpha is ignored and the dim is an opaque full-screen sheet
@@ -116,7 +113,7 @@ namespace MosaicShell.Core.Modules.Tessera
 
         /// <summary>
         /// Whether the window's own background carries the dim alpha (a Transparent window). On Windows it does not:
-        /// the background is opaque and LWA_ALPHA (<see cref="ResolveLayeredAlpha"/>) makes the window translucent.
+        /// the background is opaque and LWA_ALPHA (<see cref="OverlayAlpha"/>) makes the window translucent.
         /// </summary>
         public static bool PaintsAlphaInWindow(FocusDimRoute route)
         {
@@ -139,8 +136,8 @@ namespace MosaicShell.Core.Modules.Tessera
         }
 
         /// <summary>
-        /// How each platform restacks a flyout above the layer. A layer mapped after the flyout lands on top of it, and on
-        /// X11 the layer is the outside-click hitbox, so the flyout's own controls would dismiss it.
+        /// How each platform restacks a flyout above the layer. A layer mapped after the flyout lands on top of it and
+        /// would dim the flyout too.
         /// </summary>
         public static FlyoutRestack ResolveRestack(FocusDimRoute route)
         {
@@ -150,64 +147,6 @@ namespace MosaicShell.Core.Modules.Tessera
                 FocusDimRoute.X11ArgbInputShape => FlyoutRestack.X11RestackWindow,
                 _ => FlyoutRestack.None,
             };
-        }
-
-        /// <summary>
-        /// The layer catches outside clicks and swallows them, popup-menu style, so it shows with the dim off too. On X11
-        /// it must (Wayland gives the Host no clicks on other windows); Windows does the same, so both platforms behave
-        /// alike.
-        /// </summary>
-        public static bool LayerIsOutsideClickHitbox(FocusDimRoute route)
-        {
-            return route != FocusDimRoute.None;
-        }
-
-        public static bool ShouldShowLayer(IReadOnlyDictionary<string, string>? payload, FocusDimRoute route)
-        {
-            return LayerIsOutsideClickHitbox(route) || ShouldShow(payload, CanDim(route));
-        }
-
-        /// <summary>
-        /// Alpha of the layer's background brush: on X11 the dim's alpha, or fully transparent when the layer is only the
-        /// hitbox. On Windows the brush stays opaque and <see cref="ResolveLayeredAlpha"/> sets the window's alpha.
-        /// </summary>
-        public static byte ResolveLayerAlpha(FocusDimRoute route, bool dimEnabled)
-        {
-            return dimEnabled || !PaintsAlphaInWindow(route) ? ResolveBackgroundAlpha(route) : (byte)0;
-        }
-
-        /// <summary>
-        /// Whether the layer is shown on every screen, not only the flyout's. Where it is the outside-click hitbox, a
-        /// screen without it lets a click there reach the app under it and leave the flyout up.
-        /// </summary>
-        public static bool LayerCoversEveryScreen(FocusDimRoute route)
-        {
-            return LayerIsOutsideClickHitbox(route);
-        }
-
-        /// <summary>
-        /// The layer's alpha on one screen: only the flyout's screen is dimmed, as on Windows; the layers on the other
-        /// screens (see <see cref="LayerCoversEveryScreen"/>) are fully transparent hitboxes.
-        /// </summary>
-        public static byte ResolveLayerAlpha(FocusDimRoute route, bool dimEnabled, bool onFlyoutScreen)
-        {
-            return ResolveLayerAlpha(route, dimEnabled && onFlyoutScreen);
-        }
-
-        /// <summary>
-        /// Whether the outside click's screen point is read from the X server's pointer. A window manager may place the
-        /// layer away from where it asked (GNOME keeps it below its top bar), and converting through the asked position
-        /// then misplaces the click by that offset. Windows places the layer where it asks.
-        /// </summary>
-        public static bool ClickPointFromServer(FocusDimRoute route)
-        {
-            return route == FocusDimRoute.X11ArgbInputShape;
-        }
-
-        /// <summary>The outside click's screen point: the server's pointer where <see cref="ClickPointFromServer"/> and it was read.</summary>
-        public static (int X, int Y) ResolveClickPoint(FocusDimRoute route, (int X, int Y) fromWindow, (int X, int Y)? fromServer)
-        {
-            return ClickPointFromServer(route) && fromServer is { } server ? server : fromWindow;
         }
 
         /// <summary>Payload <c>focusDim</c>: "0" off; missing / other → on (default).</summary>

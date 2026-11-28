@@ -18,7 +18,8 @@ namespace MosaicShell.Core.Modules.Tessera
         byte ShellAlpha,
         bool ShouldLockClientSize,
         bool UseEdgeBlend,
-        bool UseNativeTranslucency = false)
+        bool UseNativeTranslucency = false,
+        bool FrostedGlass = false)
     {
         /// <summary>
         /// Whether a window built with <paramref name="other"/> already has this material. The transparency hints, the
@@ -31,6 +32,7 @@ namespace MosaicShell.Core.Modules.Tessera
                 && ShellAlpha == other.ShellAlpha
                 && UseEdgeBlend == other.UseEdgeBlend
                 && UseNativeTranslucency == other.UseNativeTranslucency
+                && FrostedGlass == other.FrostedGlass
                 && TransparencyHints.SequenceEqual(other.TransparencyHints, StringComparer.OrdinalIgnoreCase);
         }
     }
@@ -42,6 +44,10 @@ namespace MosaicShell.Core.Modules.Tessera
 
         /// <param name="useAcrylic">Legacy setting name - means soft frost tint, not native translucency.</param>
         /// <param name="nativeTranslucencyEligible">When true, ask the backend for the OS material.</param>
+        /// <param name="frostedChoice">
+        /// The Hub's choice is Frosted, not Native Translucency. Over the OS blur the app paints the frosted glass; Native
+        /// Translucency is the plain blur under a flat veil.
+        /// </param>
         /// <param name="backend">
         /// Which OS draws it; null for this process's <see cref="NativeTranslucencyPlatform.Backend"/>. Windows asks for
         /// AcrylicBlur with a Transparent fallback; KWin needs only Transparent.
@@ -49,7 +55,8 @@ namespace MosaicShell.Core.Modules.Tessera
         public static TesseraFlyoutMaterial Create(
             bool useAcrylic,
             bool nativeTranslucencyEligible = false,
-            NativeTranslucencyBackend? backend = null)
+            NativeTranslucencyBackend? backend = null,
+            bool frostedChoice = false)
         {
             if (!useAcrylic)
             {
@@ -74,7 +81,14 @@ namespace MosaicShell.Core.Modules.Tessera
                 ShellAlpha: SoftFrostShellAlpha,
                 ShouldLockClientSize: false,
                 UseEdgeBlend: true,
-                UseNativeTranslucency: native != NativeTranslucencyBackend.None);
+                UseNativeTranslucency: native != NativeTranslucencyBackend.None,
+                FrostedGlass: frostedChoice && NativeTranslucencyAcrylicSpec.AppPaintsAcrylicLayers(native));
+        }
+
+        /// <summary>Payload key <c>glass</c>: "frosted" when the Hub's choice is Frosted, "native" for Native Translucency.</summary>
+        public static bool FrostedChoiceFromPayload(IReadOnlyDictionary<string, string>? payload)
+        {
+            return payload is not null && payload.TryGetValue("glass", out string? raw) && raw == "frosted";
         }
 
         /// <summary>
@@ -109,7 +123,8 @@ namespace MosaicShell.Core.Modules.Tessera
                 ? Create(useAcrylic: false)
                 : Create(
                     UseAcrylicFromPayload(payload),
-                    nativeTranslucencyEligible: NativeTranslucencyEligibleFromPayload(payload, styleId, kind));
+                    nativeTranslucencyEligible: NativeTranslucencyEligibleFromPayload(payload, styleId, kind),
+                    frostedChoice: FrostedChoiceFromPayload(payload));
         }
 
         /// <summary>

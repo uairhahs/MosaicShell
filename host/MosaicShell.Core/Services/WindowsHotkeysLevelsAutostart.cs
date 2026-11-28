@@ -12,7 +12,7 @@ namespace MosaicShell.Core.Services
     public sealed class WindowsHotkeyService : IHotkeyService
     {
         private const uint WmHotkey = 0x0312;
-        private readonly Dictionary<string, int> _ids = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, int> _ids = [with(StringComparer.OrdinalIgnoreCase)];
         private readonly Dictionary<int, Action> _callbacks = [];
         private int _nextId = 1;
         private readonly WindowsMessageWindow _window;

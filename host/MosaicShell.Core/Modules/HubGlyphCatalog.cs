@@ -27,15 +27,5 @@ namespace MosaicShell.Core.Modules
             };
         }
 
-        public static HubGlyph ForHomeCard(string targetPage)
-        {
-            return targetPage?.Trim() switch
-            {
-                "Welcome" => new("PartyPopper", "#89DCEB"),
-                "Tiles" => new("Widgets", "#89B4FA"),
-                "About" => new("InformationOutline", "#A6E3A1"),
-                _ => new("Apps", "#A6ADC8"),
-            };
-        }
     }
 }

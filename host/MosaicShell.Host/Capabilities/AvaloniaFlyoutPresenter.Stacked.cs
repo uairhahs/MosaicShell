@@ -4,10 +4,10 @@ using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using MosaicShell.Core.Capabilities;
-using MosaicShell.Core.Modules.Tessera;
-using MosaicShell.Host.Tiles.Tessera;
 using MosaicShell.Core.Modules;
+using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
+using MosaicShell.Host.Tiles.Tessera;
 
 namespace MosaicShell.Host.Capabilities
 {
@@ -71,6 +71,28 @@ namespace MosaicShell.Host.Capabilities
             RebuildStackedSlots(request, panels);
         }
 
+        /// <summary>
+        /// Gives every stacked window the motion of <paramref name="request"/>. Patch and revive apply the request to the
+        /// Volume window only; each window animates from its own request, so without this the Media window kept the look
+        /// it was built with.
+        /// </summary>
+        private void AdoptStackedMotion(FlyoutRequest request)
+        {
+            int changed = 0;
+            foreach (FlyoutWindow window in GetStackedWindowsFromSession())
+            {
+                if (window.AdoptMotion(request))
+                {
+                    changed++;
+                }
+            }
+
+            if (changed > 0)
+            {
+                Log($"stacked motion adopted windows={changed} ani={request.Ani} steps={request.AniSteps} ease={request.AniEase}");
+            }
+        }
+
         private bool TryPatchStacked(FlyoutRequest request, bool resetDismiss)
         {
             if (_stackedSession is null || _stackedSession.SlotKeys.Count == 0)
@@ -99,6 +121,7 @@ namespace MosaicShell.Host.Capabilities
                 }
 
                 Log($"stacked patch kind={request.Kind} style={request.StyleId}");
+                AdoptStackedMotion(request);
                 volumeWin.EnsureLivePump();
                 ApplyStackedPlacement(request);
                 if (resetDismiss)
@@ -149,7 +172,14 @@ namespace MosaicShell.Host.Capabilities
                 // patch content, not replay PlayStackedShowAnimation - that restarts BeginMotion
                 // on every stacked window (resets Position/Opacity) before the previous run
                 // finishes, so a fast run of requests can perpetually restart and never complete.
-                return volumeWin.TryApplyLive(request, _services, resetDismiss);
+                if (!volumeWin.TryApplyLive(request, _services, resetDismiss))
+                {
+                    return false;
+                }
+
+                // Not mid-flight: each phase reads its window's motion when it starts, so the exit plays the new look.
+                AdoptStackedMotion(request);
+                return true;
             }
 
             if (!volumeWin.TryApplyLive(request, _services, resetDismiss))
@@ -158,6 +188,7 @@ namespace MosaicShell.Host.Capabilities
             }
 
             Log($"stacked revive kind={request.Kind} style={request.StyleId}");
+            AdoptStackedMotion(request);
             ApplyStackedPlacement(request);
             SyncFocusDim(request);
             FlyoutMotionSession.ArmEntranceStartPose(windows);
@@ -355,7 +386,14 @@ namespace MosaicShell.Host.Capabilities
 
         private void OnStackedPointerHoverChanged()
         {
+            bool wasHovered = _stackedClusterHovered;
             UpdateStackedClusterHover();
+            if (wasHovered && !_stackedClusterHovered && GetStackedWindowsFromSession().Any(static w => w.IsFlyoutSessionShowing))
+            {
+                // The pointer left the whole cluster: it goes soon after, not a full timer later. Crossing the gap
+                // between two panels restarts the clock too, but the tick sees the cluster hovered again and waits.
+                StartStackedAutoDismiss(TesseraFlyoutDismissPolicy.ResolvePointerLeaveDismissMs(_stackedDismissRequest?.AutoDismissMs ?? 0));
+            }
         }
 
         private void UpdateStackedClusterHover()
@@ -365,8 +403,12 @@ namespace MosaicShell.Host.Capabilities
 
         private void StartStackedAutoDismiss()
         {
+            StartStackedAutoDismiss(_stackedDismissRequest?.AutoDismissMs ?? 0);
+        }
+
+        private void StartStackedAutoDismiss(int ms)
+        {
             StopStackedAutoDismiss();
-            int ms = _stackedDismissRequest?.AutoDismissMs ?? 0;
             if (!TesseraFlyoutDismissCoordinator.ShouldArmSessionAutoDismiss(ms, _stackedSession is not null))
             {
                 return;
@@ -376,7 +418,7 @@ namespace MosaicShell.Host.Capabilities
             _stackedAutoDismiss.Tick += (_, _) =>
             {
                 UpdateStackedClusterHover();
-                if (_stackedClusterHovered)
+                if (_stackedClusterHovered || (_dismissLink?.IsHovered ?? false))
                 {
                     return;
                 }

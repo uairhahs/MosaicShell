@@ -121,11 +121,13 @@ namespace MosaicShell.Core.Tests
         public void Core_and_Host_do_not_write_to_the_console()
         {
             // Host is a windowed app: console output goes nowhere and is a synchronous write. Worker
-            // and Mosaicist are console tools and are excluded on purpose.
-            List<string> hits = ScanLines(["MosaicShell.Core", "MosaicShell.Host"], static line =>
+            // and Mosaicist are console tools and are excluded on purpose. HostCommandLine is the one
+            // Host file allowed: its commands run from a terminal and exit before any window exists.
+            List<string> hits = [.. ScanLines(["MosaicShell.Core", "MosaicShell.Host"], static line =>
                 line.Contains("Console.Write", StringComparison.Ordinal)
                 || line.Contains("Console.Out", StringComparison.Ordinal)
-                || line.Contains("Console.Error", StringComparison.Ordinal));
+                || line.Contains("Console.Error", StringComparison.Ordinal))
+                .Where(static hit => !hit.Contains("HostCommandLine.cs", StringComparison.Ordinal))];
 
             _ = hits.Should().BeEmpty("log through DiagnosticLog instead:\n" + string.Join('\n', hits));
         }

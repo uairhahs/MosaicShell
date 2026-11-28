@@ -11,10 +11,8 @@ namespace MosaicShell.Core.Tests
         {
             _root = Path.Combine(Path.GetTempPath(), "ms-bundle-" + Guid.NewGuid().ToString("N"));
             _ = Directory.CreateDirectory(Path.Combine(_root, "Host"));
-            _ = Directory.CreateDirectory(Path.Combine(_root, "Mosaicist"));
             _ = Directory.CreateDirectory(Path.Combine(_root, "Tiles", "Canvas"));
             File.WriteAllText(Path.Combine(_root, "Host", "MosaicShell.Host.exe"), "stub");
-            File.WriteAllText(Path.Combine(_root, "Mosaicist", "Mosaicist.exe"), "stub");
             File.WriteAllText(
                 Path.Combine(_root, "Tiles", "Canvas", "module.native.json"),
                                      /*lang=json,strict*/
@@ -27,7 +25,7 @@ namespace MosaicShell.Core.Tests
         }
 
         [Fact]
-        public void IsBundleRoot_true_when_Host_Mosaicist_and_Tiles_present()
+        public void IsBundleRoot_true_when_Host_and_Tiles_present()
         {
             _ = ReleaseBundleLayout.IsBundleRoot(_root).Should().BeTrue();
         }
@@ -43,17 +41,24 @@ namespace MosaicShell.Core.Tests
         public void IsBundleRoot_true_for_a_linux_bundle_whose_executables_have_no_suffix()
         {
             File.Move(Path.Combine(_root, "Host", "MosaicShell.Host.exe"), Path.Combine(_root, "Host", "MosaicShell.Host"));
-            File.Move(Path.Combine(_root, "Mosaicist", "Mosaicist.exe"), Path.Combine(_root, "Mosaicist", "Mosaicist"));
 
             _ = ReleaseBundleLayout.IsBundleRoot(_root).Should().BeTrue();
             _ = ReleaseBundleLayout.TryFindRoot(Path.Combine(_root, "Host")).Should().Be(_root);
         }
 
         [Fact]
-        public void IsBundleRoot_false_without_Mosaicist_under_either_name()
+        public void IsBundleRoot_false_without_Tiles()
         {
-            File.Delete(Path.Combine(_root, "Mosaicist", "Mosaicist.exe"));
+            Directory.Delete(Path.Combine(_root, "Tiles"), recursive: true);
             _ = ReleaseBundleLayout.IsBundleRoot(_root).Should().BeFalse();
+        }
+
+        [Fact]
+        public void A_bundle_needs_no_Mosaicist()
+        {
+            // Mosaicist was removed (2026-11-26); the Host installs the default modules itself.
+            _ = Directory.Exists(Path.Combine(_root, "Mosaicist")).Should().BeFalse();
+            _ = ReleaseBundleLayout.IsBundleRoot(_root).Should().BeTrue();
         }
 
         [Fact]
@@ -61,13 +66,6 @@ namespace MosaicShell.Core.Tests
         {
             string fromHost = Path.Combine(_root, "Host");
             _ = ReleaseBundleLayout.TryFindRoot(fromHost).Should().Be(_root);
-        }
-
-        [Fact]
-        public void TryFindRoot_walks_up_from_Mosaicist_subdirectory()
-        {
-            string fromMosaicist = Path.Combine(_root, "Mosaicist");
-            _ = ReleaseBundleLayout.TryFindRoot(fromMosaicist).Should().Be(_root);
         }
 
         [Fact]
@@ -90,7 +88,6 @@ namespace MosaicShell.Core.Tests
         {
             _ = HostInstallLayoutSpec.HostFolder.Should().Be("Host");
             _ = HostInstallLayoutSpec.HostExeName.Should().Be("MosaicShell.Host.exe");
-            _ = HostInstallLayoutSpec.MosaicistFolder.Should().Be("Mosaicist");
             _ = HostInstallLayoutSpec.TilesFolder.Should().Be("Tiles");
             _ = HostInstallLayoutSpec.SetupExeName.Should().Be("MosaicShell-Setup.exe");
         }

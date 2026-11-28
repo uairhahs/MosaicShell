@@ -11,17 +11,10 @@
 
     <TrayIcon.Icons>
         <TrayIcons>
+            <!-- The menu is built in code (App.RebuildTrayMenu): a switch per installed module, then Open and Quit. -->
             <TrayIcon Icon="avares://MosaicShell.Host/Assets/mosaicshell.ico"
                       ToolTipText="MosaicShell"
-                      Clicked="TrayIcon_OnClicked">
-                <TrayIcon.Menu>
-                    <NativeMenu>
-                        <NativeMenuItem Header="Open MosaicShell" Click="TrayOpen_OnClick" />
-                        <NativeMenuItemSeparator />
-                        <NativeMenuItem Header="Exit (stop tiles)" Click="TrayExit_OnClick" />
-                    </NativeMenu>
-                </TrayIcon.Menu>
-            </TrayIcon>
+                      Clicked="TrayIcon_OnClicked" />
         </TrayIcons>
     </TrayIcon.Icons>
 

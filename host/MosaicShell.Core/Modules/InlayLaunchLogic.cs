@@ -9,7 +9,7 @@ namespace MosaicShell.Core.Modules
             int maxResults = 28)
         {
             string q = filter?.Trim() ?? "";
-            HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> seen = [with(StringComparer.OrdinalIgnoreCase)];
             List<LaunchTarget> results = [];
 
             foreach (string pin in pins)

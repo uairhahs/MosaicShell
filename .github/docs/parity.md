@@ -23,7 +23,7 @@ Run: `dotnet test host/MosaicShell.Core.Tests --filter HubParity`
 | `*_layout_fidelity` | Screenshot-level layout sign-off vs reference art.                            |
 | `tessera_*`         | Tessera capability / flyout contracts.                                        |
 | `service_*`         | Core Windows service adapters.                                                |
-| `library_*`         | Mosaicist install + Hub Library.                                              |
+| `library_*`         | Module install + the Hub's Modules and Widgets lists.                         |
 
 **MVP is not “done”.** It means the tile or capability does its flagship job in native Host, with Core tests backing honesty.
 
@@ -42,7 +42,7 @@ Styles: Meter, Square, CoreUI, Fluent, Gnome, ModernFlyouts, MaterialYou, PlainT
 | Flag                          | Why false                                                                    |
 | ----------------------------- | ---------------------------------------------------------------------------- |
 | `native_tile_overlay_runtime` | Full historical StyleCatalog / DLC as a Rainmeter-style runtime interpreter. |
-| `tessera_media_smtc_only`     | Media flyouts without the browser rating source (SMTC only).      |
+| `tessera_media_smtc_only`     | Media flyouts without the browser rating source (SMTC only).                 |
 | `chrono_layout_fidelity`      | No in-repo screenshot proof pair yet.                                        |
 | `phono_layout_fidelity`       | Same.                                                                        |
 | `pulse_layout_fidelity`       | Same.                                                                        |
@@ -59,7 +59,7 @@ Styles: Meter, Square, CoreUI, Fluent, Gnome, ModernFlyouts, MaterialYou, PlainT
 | --------------- | -------------------------------------------------------------------------------------------------------------- |
 | Hub + installer | `library_*`, `capability_daemon`, `install_never_uses_iex_or_executionpolicy_bypass`, `product_cutover_no_iex` |
 | Tessera flyouts | `tessera_osd_flyout`, `tessera_locks_flight`, `tessera_live_update_multimonitor`, `tile_tessera_mvp`           |
-| Tessera media   | `tessera_media_browser` (SMTC + browser rating)                                                                         |
+| Tessera media   | `tessera_media_browser` (SMTC + browser rating)                                                                |
 | Tile MVPs       | `tile_*_mvp` for all ten catalog modules                                                                       |
 | Services        | `service_*`, `os_media_audio_brightness_services`                                                              |
 

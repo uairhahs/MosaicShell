@@ -82,15 +82,17 @@ namespace MosaicShell.Host.Tiles.Tessera
         private static Control ModernVolumeWrap(Control inner)
         {
             return TesseraStackedBuildContext.IsActive && TesseraGlass.UseNativeTranslucencyChrome
-                ? new Border
-                {
-                    Width = TesseraStackedPlacementSpec.ModernFlyoutsVolumeWidthDip,
-                    Height = TesseraStackedPlacementSpec.ModernFlyoutsVolumeHeightDip,
-                    Padding = new Thickness(14, 10),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    ClipToBounds = true,
-                    Child = inner
-                }
+                ? TesseraGlassFinish.Over(
+                    new Border
+                    {
+                        Width = TesseraStackedPlacementSpec.ModernFlyoutsVolumeWidthDip,
+                        Height = TesseraStackedPlacementSpec.ModernFlyoutsVolumeHeightDip,
+                        Padding = new Thickness(14, 10),
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        ClipToBounds = true,
+                        Child = inner
+                    },
+                    12)
                 : TesseraChrome.Glass(inner, 12, new Thickness(14, 10), w: 320);
         }
     }

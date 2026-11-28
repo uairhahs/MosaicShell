@@ -1,6 +1,6 @@
 # Tessera native translucency spike (H1 to H4)
 
-Alpha ships **Skia frost** (default). This spike proves Window-level `AcrylicBlur` + `WinUICompositionBackdropCornerRadius` on a **single-shell** flyout only.
+Before 2026-11-28 the default Frosted was **Skia frost** with no OS blur (see the section on the two finishes below for today). This spike proved Window-level `AcrylicBlur` + `WinUICompositionBackdropCornerRadius` on a **single-shell** flyout only.
 
 **Platform honesty:** Windows 11 is the supported target for evaluation and any future ship decision. Windows 10 may still hit the technical acrylic gate on some builds, but Microsoft no longer fully supports Win10; MosaicShell makes **no promises** for Win10 acrylic or glass (best-effort only, frost fallback expected).
 
@@ -116,6 +116,30 @@ Visual evaluation is complete on Win11, and H4 shipped as a persisted hub opt-in
 | **Ship** | Persisted hub opt-in (`UseNativeTranslucency`, default frost); document Win11 as supported; Win10 best-effort only |
 
 Do **not** flip `tessera_layout_fidelity` or any Hub `*_mvp` flag for acrylic. Glass authenticity is separate from layout sign-off.
+
+## What Windows draws, and the two finishes (2026-11-28)
+
+Avalonia's `AcrylicBlur` level on Windows (12.2, `WinUiCompositionUtils.CreateAcrylicBlurBackdropBrush`) is a Gaussian
+blur of the host backdrop and nothing else: no tint, luminosity or noise. So Windows gives Tessera the same blur-only base
+KWin gives it on Plasma, and the card paints the material over it from `NativeTranslucencyAcrylicSpec`, as on Plasma:
+
+- **Frosted**: the blur, then a light shade, white frost, a highlight from the top, a crisp light edge and faint grain.
+  On Windows there is no edge: the window's hard-edged region and the flyout scale left it smeared or harsh.
+- **Native Translucency**: on Plasma, the blur under a plain light veil and a faint edge. On Windows, Windows' blur
+  bare, with nothing painted over it.
+- **Both**: a shadow behind the text and icons, so thin glass stays readable over a bright backdrop. Frosted's is
+  lighter and tighter, since its shade already sits under the text.
+
+Frosted therefore asks for the blur on Windows too (it was the app's own frost with no OS blur). Moving between Frosted
+and Native needs no restart; Solid to either, or back, does, since the rounded blur's corner radius is read at start.
+
+Windows' own acrylic material (DWM, `DWMWA_SYSTEMBACKDROP_TYPE` = `DWMSBT_TRANSIENTWINDOW`) was tried first, as it
+carries the tint, luminosity and noise and follows the theme. On Windows 11 it drew only its flat fallback for a Tessera-
+like window: borderless, topmost, never activated, under WinUIComposition, DirectComposition or RedirectionSurface, with
+or without a frame, and even when brought to the foreground. It is not used.
+
+Windows' **Transparency effects** switch (Settings, Personalization, Colors) is followed: off, Frosted and Native draw as
+Solid, as Windows' own flyouts turn opaque (`ITransparencyEffects`, read at each flyout).
 
 ## Core contracts
 

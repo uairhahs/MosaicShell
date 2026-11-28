@@ -158,6 +158,25 @@ namespace MosaicShell.Core.Tests
             _ = TesseraMediaFlyoutPolicy.IsTrackBoundary(prev, next).Should().BeFalse();
         }
 
+        [Theory]
+        [InlineData(2500, 1000)]
+        [InlineData(4000, 1000)]
+        [InlineData(600, 600)]
+        [InlineData(0, 0)]
+        [InlineData(-1, 0)]
+        public void After_the_pointer_leaves_the_flyout_goes_soon_but_never_later_than_its_own_timer(int autoDismissMs, int expected)
+        {
+            // With clicks no longer swallowed, moving away is how most people send the flyout off. Waiting out the full
+            // timer after that felt slow; a flyout set never to leave on its own (0) still stays.
+            _ = TesseraFlyoutDismissPolicy.ResolvePointerLeaveDismissMs(autoDismissMs).Should().Be(expected);
+        }
+
+        [Fact]
+        public void The_leave_delay_is_short_but_forgives_a_brief_slip_off_the_edge()
+        {
+            _ = TesseraFlyoutDismissPolicy.PointerLeaveDismissMs.Should().BeInRange(600, 1500);
+        }
+
         [Fact]
         public void Position_restart_with_stale_title_is_boundary_and_resets_dismiss()
         {

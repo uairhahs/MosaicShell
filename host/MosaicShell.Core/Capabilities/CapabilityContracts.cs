@@ -82,7 +82,7 @@ namespace MosaicShell.Core.Capabilities
 
     public sealed class CapabilityRegistry
     {
-        private readonly Dictionary<string, ICapabilityFactory> _factories = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, ICapabilityFactory> _factories = [with(StringComparer.OrdinalIgnoreCase)];
 
         public void Register(ICapabilityFactory factory)
         {
