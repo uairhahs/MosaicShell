@@ -1,5 +1,6 @@
 using System.Text.Json;
 using FluentAssertions;
+using MosaicShell.Core.HubShell;
 using MosaicShell.Core.Services.Gnome;
 using MosaicShell.Core.Services.Kde;
 
@@ -123,6 +124,22 @@ namespace MosaicShell.Core.Tests
 
             _ = doc.RootElement.GetProperty("description").GetString().Should().Contain("top bar");
             _ = doc.RootElement.GetProperty("uuid").GetString().Should().Be("osd-guard@mosaicshell", "an update replaces the installed copy");
+        }
+
+        [Fact]
+        public void The_top_bar_menu_has_a_switch_per_module_read_from_the_Host_when_it_opens()
+        {
+            // U24: modules turn on and off from the top bar, GNOME's stand-in for a tray.
+            string js = GnomeOsdGuardExtension.ExtensionJs;
+
+            _ = js.Should().Contain("import GLib from 'gi://GLib';");
+            _ = js.Should().Contain($"const MODULES = \"{GnomeHubPresencePolicy.ModulesMethod}\";");
+            _ = js.Should().Contain($"const SET_MODULE_ON = \"{GnomeHubPresencePolicy.SetModuleOnMethod}\";");
+            _ = js.Should().Contain("'open-state-changed'").And.Contain("this._fillModules()");
+            _ = js.Should().Contain("new GLib.VariantType('(a(ssb))')");
+            _ = js.Should().Contain("new PopupMenu.PopupSwitchMenuItem(label, on)");
+            _ = js.Should().Contain("callHub(SET_MODULE_ON, new GLib.Variant('(sb)', [id, state]))");
+            _ = js.Should().Contain($"const OPEN_LABEL = \"{TrayMenu.OpenLabel}\";").And.Contain($"const QUIT_LABEL = \"{TrayMenu.QuitLabel}\";");
         }
 
         [Fact]

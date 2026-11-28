@@ -230,7 +230,13 @@ namespace MosaicShell.Core.Services
         /// </summary>
         /// <param name="showHub">Brings the Hub forward; called on a bus thread.</param>
         /// <param name="quit">Quits MosaicShell; called on a bus thread.</param>
-        public static IDisposable? StartHubPresence(Action showHub, Action quit)
+        /// <param name="modules">The top bar menu's module switches; called on a bus thread.</param>
+        /// <param name="setModuleOn">Turns a module on or off from the top bar menu; called on a bus thread.</param>
+        public static IDisposable? StartHubPresence(
+            Action showHub,
+            Action quit,
+            Func<IReadOnlyList<HubShell.TrayModule>>? modules = null,
+            Action<string, bool>? setModuleOn = null)
         {
 #if WINDOWS
             return null;
@@ -240,7 +246,7 @@ namespace MosaicShell.Core.Services
                 return null;
             }
 
-            Linux.GnomeHubPresence presence = new(showHub, quit);
+            Linux.GnomeHubPresence presence = new(showHub, quit, modules: modules, setModuleOn: setModuleOn);
             presence.Start();
             return presence;
 #endif

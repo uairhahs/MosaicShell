@@ -1,4 +1,5 @@
 using FluentAssertions;
+using MosaicShell.Core.HubShell;
 using MosaicShell.Core.Services.Gnome;
 using MosaicShell.Core.Services.Linux;
 using Tmds.DBus.Protocol;
@@ -19,6 +20,7 @@ namespace MosaicShell.Core.Tests.Linux
         private string? _dataHome;
         private int _shown;
         private int _quit;
+        private readonly List<(string Id, bool On)> _switched = [];
 
         public async Task InitializeAsync()
         {
@@ -31,7 +33,20 @@ namespace MosaicShell.Core.Tests.Linux
             _dbus = PrivateDBus.Start();
             _observer = new DBusConnection(_dbus.Address);
             await _observer.ConnectAsync();
-            _presence = new GnomeHubPresence(() => _shown++, () => _quit++, _dbus.Address, _dataHome, new QuietGnomeSettings());
+            _presence = new GnomeHubPresence(
+                () => _shown++,
+                () => _quit++,
+                _dbus.Address,
+                _dataHome,
+                new QuietGnomeSettings(),
+                () => [new TrayModule("Tessera", "Tessera", true), new TrayModule("Acme", "Acme Clock", false)],
+                (id, on) =>
+                {
+                    lock (_switched)
+                    {
+                        _switched.Add((id, on));
+                    }
+                });
         }
 
         public Task DisposeAsync()
@@ -79,6 +94,50 @@ namespace MosaicShell.Core.Tests.Linux
             await CallAsync(GnomeHubPresencePolicy.QuitMethod);
 
             _ = (await EventuallyAsync(() => Task.FromResult(_shown == 1 && _quit == 1))).Should().BeTrue();
+        }
+
+        [LinuxBusFact]
+        public async Task The_panel_menu_reads_the_modules_with_their_state()
+        {
+            _presence!.Start();
+            _ = (await EventuallyAsync(OwnedAsync)).Should().BeTrue();
+
+            List<TrayModule> modules = await DBusCalls.CallAsync(_observer!, GnomeHubPresencePolicy.BusName,
+                GnomeHubPresencePolicy.ObjectPath, GnomeHubPresencePolicy.Interface, GnomeHubPresencePolicy.ModulesMethod,
+                null, null, static (m, _) =>
+                {
+                    Reader r = m.GetBodyReader();
+                    List<TrayModule> list = [];
+                    ArrayEnd end = r.ReadArrayStart(DBusType.Struct);
+                    while (r.HasNext(end))
+                    {
+                        r.AlignStruct();
+                        list.Add(new TrayModule(r.ReadString(), r.ReadString(), r.ReadBool()));
+                    }
+
+                    return list;
+                });
+
+            _ = modules.Should().Equal(new TrayModule("Tessera", "Tessera", true), new TrayModule("Acme", "Acme Clock", false));
+        }
+
+        [LinuxBusFact]
+        public async Task A_panel_menu_switch_reaches_the_Host()
+        {
+            _presence!.Start();
+            _ = (await EventuallyAsync(OwnedAsync)).Should().BeTrue();
+
+            await DBusCalls.CallAsync(_observer!, GnomeHubPresencePolicy.BusName, GnomeHubPresencePolicy.ObjectPath,
+                GnomeHubPresencePolicy.Interface, GnomeHubPresencePolicy.SetModuleOnMethod, "sb", (ref w) =>
+                {
+                    w.WriteString("Acme");
+                    w.WriteBool(true);
+                });
+
+            lock (_switched)
+            {
+                _ = _switched.Should().Equal([("Acme", true)]);
+            }
         }
 
         [LinuxBusFact]

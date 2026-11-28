@@ -215,10 +215,20 @@ namespace MosaicShell.Host
 
 
 
-                // GNOME has no tray: MosaicShell's icon in its top bar opens the Hub or quits instead.
+                // GNOME has no tray: MosaicShell's icon in its top bar opens the Hub, switches modules or quits instead.
+                // The bus calls come on a bus thread: the module list is the snapshot RebuildTrayMenu keeps, and a switch is
+                // posted to the UI thread, where the Hub's rows live.
                 _hubPresence = HostServices.StartHubPresence(
                     () => Dispatcher.UIThread.Post(ShowHubOnRequest),
-                    () => Dispatcher.UIThread.Post(() => _ = ExitApplicationAsync()));
+                    () => Dispatcher.UIThread.Post(() => _ = ExitApplicationAsync()),
+                    () => Volatile.Read(ref _trayModules),
+                    (id, on) => Dispatcher.UIThread.Post(async () =>
+                    {
+                        if (_vm is not null)
+                        {
+                            await _vm.SetModuleOnAsync(id, on);
+                        }
+                    }));
 
                 desktop.Exit += async (_, _) =>
 
