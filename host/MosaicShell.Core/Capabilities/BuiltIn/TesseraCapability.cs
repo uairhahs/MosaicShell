@@ -196,17 +196,15 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                         Flyouts.SoftRefresh(BuildRequest(Flyouts.OpenKind, null));
                         break;
                     case MediaFlyoutAction.PresentMediaFlyout:
-                        if (!Flyouts.ShouldColdPresentMedia(
-                                FlyoutSyncTrigger.MediaSession,
-                                signal.IsTrackBoundary))
+                        FlyoutSyncTrigger trigger = MediaKeyStandInPolicy.Trigger(
+                            signal,
+                            Services.Features.Has(HostPlatform.DesktopFeature.MediaKeys));
+                        if (!Flyouts.ShouldColdPresentMedia(trigger, signal.IsTrackBoundary))
                         {
                             break;
                         }
 
-                        PresentMediaFlyout(
-                                                pumpFirst: false,
-                                                FlyoutSyncTrigger.MediaSession,
-                                                signal.IsTrackBoundary);
+                        PresentMediaFlyout(pumpFirst: false, trigger, signal.IsTrackBoundary);
                         break;
                     case MediaFlyoutAction.Ignore:
                         break;
@@ -331,7 +329,21 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
             }
         }
 
+        /// <summary>
+        /// The settle refresh after a media present. Its timer fires on a pool thread; the presenter's windows belong to
+        /// the host thread, so the work goes there, as every other handler's does.
+        /// </summary>
         private void OnMediaPresentSettle()
+        {
+            if (!IsArmed)
+            {
+                return;
+            }
+
+            _ctx.Ui.RunOnHostThread(RefreshAfterMediaSettle);
+        }
+
+        private void RefreshAfterMediaSettle()
         {
             if (!IsArmed)
             {

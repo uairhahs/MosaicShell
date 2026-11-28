@@ -111,6 +111,21 @@ namespace MosaicShell.Host.Tiles.Tessera
                 };
             }
 
+            if (TesseraGlass.UseNativeTranslucencyChrome
+                && !TesseraGlass.PreviewMode
+                && NativeTranslucencyAcrylicSpec.ShadowsContent(NativeTranslucencyPlatform.Backend))
+            {
+                // Thin glass: the text and icons carry their own shadow so they stay readable over a bright wallpaper.
+                content.Effect = new DropShadowEffect
+                {
+                    OffsetX = 0,
+                    OffsetY = NativeTranslucencyAcrylicSpec.ContentShadowOffsetY,
+                    BlurRadius = NativeTranslucencyAcrylicSpec.ContentShadowBlurFor(TesseraPalette.Material.FrostedGlass),
+                    Color = Colors.Black,
+                    Opacity = NativeTranslucencyAcrylicSpec.ContentShadowOpacityFor(TesseraPalette.Material.FrostedGlass)
+                };
+            }
+
             TesseraGlassBackground glass = new()
             {
                 CornerRadius = cornerRadius,
@@ -217,22 +232,10 @@ namespace MosaicShell.Host.Tiles.Tessera
         }
     }
 
-    internal sealed class TesseraGlassBackground : Control
+    internal sealed partial class TesseraGlassBackground : Control
     {
-        public static readonly StyledProperty<double> CornerRadiusProperty =
-            AvaloniaProperty.Register<TesseraGlassBackground, double>(nameof(CornerRadius), 14);
-
-        public static readonly StyledProperty<double> BlurRadiusProperty =
-            AvaloniaProperty.Register<TesseraGlassBackground, double>(nameof(BlurRadius), TesseraGlassPanel.DefaultBlurRadius);
-
         public static readonly StyledProperty<Color> TintProperty =
             AvaloniaProperty.Register<TesseraGlassBackground, Color>(nameof(Tint), TesseraPalette.Primary);
-
-        public static readonly StyledProperty<bool> UseSharedBackdropProperty =
-            AvaloniaProperty.Register<TesseraGlassBackground, bool>(nameof(UseSharedBackdrop));
-
-        public static readonly StyledProperty<bool> LightTintOnlyProperty =
-            AvaloniaProperty.Register<TesseraGlassBackground, bool>(nameof(LightTintOnly));
 
         private sealed class LayerCache : IDisposable
         {
@@ -273,17 +276,11 @@ namespace MosaicShell.Host.Tiles.Tessera
             IsHitTestVisible = false;
         }
 
-        public double CornerRadius
-        {
-            get => GetValue(CornerRadiusProperty);
-            set => SetValue(CornerRadiusProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = 14d)]
+        public partial double CornerRadius { get; set; }
 
-        public double BlurRadius
-        {
-            get => GetValue(BlurRadiusProperty);
-            set => SetValue(BlurRadiusProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = TesseraGlassPanel.DefaultBlurRadius)]
+        public partial double BlurRadius { get; set; }
 
         public Color Tint
         {
@@ -291,17 +288,11 @@ namespace MosaicShell.Host.Tiles.Tessera
             set => SetValue(TintProperty, value);
         }
 
-        public bool UseSharedBackdrop
-        {
-            get => GetValue(UseSharedBackdropProperty);
-            set => SetValue(UseSharedBackdropProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial bool UseSharedBackdrop { get; set; }
 
-        public bool LightTintOnly
-        {
-            get => GetValue(LightTintOnlyProperty);
-            set => SetValue(LightTintOnlyProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial bool LightTintOnly { get; set; }
 
         protected override Size MeasureOverride(Size availableSize)
         {
@@ -460,12 +451,30 @@ namespace MosaicShell.Host.Tiles.Tessera
 
             if (nativeTranslucency)
             {
-                if (NativeTranslucencyAcrylicSpec.AppPaintsAcrylicLayers(NativeTranslucencyPlatform.Backend))
+                if (TesseraPalette.Material.FrostedGlass)
                 {
                     TesseraGlassDrawOperation.DrawAcrylicLayers(lc, round, w, h);
+                    if (NativeTranslucencyAcrylicSpec.FrostedHasEdge(NativeTranslucencyPlatform.Backend))
+                    {
+                        TesseraGlassDrawOperation.DrawAcrylicEdge(lc, round);
+                    }
                 }
+                else
+                {
+                    NativeTranslucencyBackend backend = NativeTranslucencyPlatform.Backend;
+                    if (NativeTranslucencyAcrylicSpec.PaintsPlainVeil(backend))
+                    {
+                        // Native Translucency over KWin's blur: the plain material, the blur under a flat tint.
+                        TesseraGlassDrawOperation.DrawPlainTint(lc, round);
+                    }
 
-                TesseraGlassDrawOperation.DrawGlassChrome(lc, round);
+                    // Windows shows its acrylic bare: no veil and no edge over it.
+                    if (NativeTranslucencyAcrylicSpec.PaintsPlainVeil(backend)
+                        || !NativeTranslucencyAcrylicSpec.AppPaintsAcrylicLayers(backend))
+                    {
+                        TesseraGlassDrawOperation.DrawGlassChrome(lc, round);
+                    }
+                }
             }
             else
             {
@@ -691,7 +700,7 @@ namespace MosaicShell.Host.Tiles.Tessera
         }
 
         /// <summary>
-        /// Tint, highlight and grain over a blur-only backdrop (KWin), so it reads as acrylic as it does on Windows.
+        /// Shade, frost, highlight and grain over the OS blur (KWin, Windows), which carries none of them.
         /// Values from <see cref="NativeTranslucencyAcrylicSpec"/>.
         /// </summary>
         internal static void DrawAcrylicLayers(SKCanvas canvas, SKRoundRect round, int w, int h)
@@ -706,6 +715,13 @@ namespace MosaicShell.Host.Tiles.Tessera
                 IsAntialias = true
             };
             canvas.DrawRoundRect(round, tint);
+
+            using SKPaint frost = new()
+            {
+                Color = new SKColor(255, 255, 255, NativeTranslucencyAcrylicSpec.FrostAlpha),
+                IsAntialias = true
+            };
+            canvas.DrawRoundRect(round, frost);
 
             using SKPaint highlight = new()
             {
@@ -734,6 +750,36 @@ namespace MosaicShell.Host.Tiles.Tessera
             canvas.ClipRoundRect(round, antialias: true);
             canvas.DrawRect(0, 0, w, h, grain);
             canvas.Restore();
+        }
+
+        /// <summary>Native Translucency's flat veil over a blur-only backdrop.</summary>
+        internal static void DrawPlainTint(SKCanvas canvas, SKRoundRect round)
+        {
+            using SKPaint tint = new()
+            {
+                Color = new SKColor(
+                    NativeTranslucencyAcrylicSpec.PlainTintR,
+                    NativeTranslucencyAcrylicSpec.PlainTintG,
+                    NativeTranslucencyAcrylicSpec.PlainTintB,
+                    NativeTranslucencyAcrylicSpec.PlainTintAlpha),
+                IsAntialias = true
+            };
+            canvas.DrawRoundRect(round, tint);
+        }
+
+        /// <summary>The glass pane's edge: a crisp light line, inset half a pixel so it stays one pixel wide.</summary>
+        internal static void DrawAcrylicEdge(SKCanvas canvas, SKRoundRect round)
+        {
+            using SKPaint edge = new()
+            {
+                Color = new SKColor(255, 255, 255, NativeTranslucencyAcrylicSpec.EdgeAlpha),
+                IsAntialias = true,
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 1
+            };
+            using SKRoundRect inset = new(round);
+            inset.Inflate(-0.5f, -0.5f);
+            canvas.DrawRoundRect(inset, edge);
         }
 
         internal static void DrawGlassChrome(SKCanvas canvas, SKRoundRect round)

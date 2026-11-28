@@ -37,7 +37,7 @@ namespace MosaicShell.Core.Capabilities.Platform
     public sealed class CapabilityFlyoutPlatform : IDisposable
     {
         private readonly IFlyoutPresenter _presenter;
-        private readonly Dictionary<string, CapabilityFlyoutSession> _sessions = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, CapabilityFlyoutSession> _sessions = [with(StringComparer.OrdinalIgnoreCase)];
         private readonly Lock _gate = new();
         private bool _disposed;
 

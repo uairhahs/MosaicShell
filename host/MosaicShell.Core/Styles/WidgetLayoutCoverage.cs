@@ -2,11 +2,11 @@ namespace MosaicShell.Core.Styles
 {
     public static class ChronoLayoutCoverage
     {
-        private static readonly HashSet<string> Flagship = new(StringComparer.OrdinalIgnoreCase) { StyleIds.Square };
-        private static readonly HashSet<string> ChromeOnly = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "Text", "Minimal", "Tech", "CircTech", "Light", "16", "Arc", "Graph", "Measure", "Smart"
-        };
+        private static readonly HashSet<string> Flagship = [with(StringComparer.OrdinalIgnoreCase), StyleIds.Square];
+        private static readonly HashSet<string> ChromeOnly =
+        [
+with(StringComparer.OrdinalIgnoreCase),             "Text", "Minimal", "Tech", "CircTech", "Light", "16", "Arc", "Graph", "Measure", "Smart"
+        ];
 
         public static bool IsFlagship(string styleId)
         {
@@ -26,15 +26,15 @@ namespace MosaicShell.Core.Styles
 
     public static class PhonoLayoutCoverage
     {
-        private static readonly HashSet<string> Flagship = new(StringComparer.OrdinalIgnoreCase) { StyleIds.Compact };
-        private static readonly HashSet<string> Distinct = new(StringComparer.OrdinalIgnoreCase)
-        {
-            StyleIds.Square, StyleIds.Windows11, "Card", "BigCirc", "DoubleCirc", "Side"
-        };
-        private static readonly HashSet<string> ChromeOnly = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "16", "Blur", "Fortnite", "MIUI", StyleIds.ModernFlyouts, "Neumorphism"
-        };
+        private static readonly HashSet<string> Flagship = [with(StringComparer.OrdinalIgnoreCase), StyleIds.Compact];
+        private static readonly HashSet<string> Distinct =
+        [
+with(StringComparer.OrdinalIgnoreCase),             StyleIds.Square, StyleIds.Windows11, "Card", "BigCirc", "DoubleCirc", "Side"
+        ];
+        private static readonly HashSet<string> ChromeOnly =
+        [
+with(StringComparer.OrdinalIgnoreCase),             "16", "Blur", "Fortnite", "MIUI", StyleIds.ModernFlyouts, "Neumorphism"
+        ];
 
         public static bool IsFlagship(string styleId)
         {
@@ -49,11 +49,11 @@ namespace MosaicShell.Core.Styles
 
     public static class PulseLayoutCoverage
     {
-        private static readonly HashSet<string> Flagship = new(StringComparer.OrdinalIgnoreCase) { "Regular" };
-        private static readonly HashSet<string> Variant = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "Circ", "Gradient", "Chroma", "Boxes", "DEFAULT", "Layered", "Screen", "Smooth", "Subtle", "Tech"
-        };
+        private static readonly HashSet<string> Flagship = [with(StringComparer.OrdinalIgnoreCase), "Regular"];
+        private static readonly HashSet<string> Variant =
+        [
+with(StringComparer.OrdinalIgnoreCase),             "Circ", "Gradient", "Chroma", "Boxes", "DEFAULT", "Layered", "Screen", "Smooth", "Subtle", "Tech"
+        ];
 
         public static bool IsFlagship(string styleId)
         {
@@ -68,8 +68,8 @@ namespace MosaicShell.Core.Styles
 
     public static class CanvasLayoutCoverage
     {
-        private static readonly HashSet<string> Flagship = new(StringComparer.OrdinalIgnoreCase) { "DEFAULT" };
-        private static readonly HashSet<string> Variant = new(StringComparer.OrdinalIgnoreCase) { StyleIds.Compact };
+        private static readonly HashSet<string> Flagship = [with(StringComparer.OrdinalIgnoreCase), "DEFAULT"];
+        private static readonly HashSet<string> Variant = [with(StringComparer.OrdinalIgnoreCase), StyleIds.Compact];
 
         public static bool IsFlagship(string styleId)
         {
@@ -84,11 +84,11 @@ namespace MosaicShell.Core.Styles
 
     public static class MixdeckLayoutCoverage
     {
-        private static readonly HashSet<string> Flagship = new(StringComparer.OrdinalIgnoreCase) { StyleIds.Fluent };
-        private static readonly HashSet<string> Chrome = new(StringComparer.OrdinalIgnoreCase)
-        {
-            StyleIds.Square, "Fluent10", "Fluent11", "Rounded", "Solid"
-        };
+        private static readonly HashSet<string> Flagship = [with(StringComparer.OrdinalIgnoreCase), StyleIds.Fluent];
+        private static readonly HashSet<string> Chrome =
+        [
+with(StringComparer.OrdinalIgnoreCase),             StyleIds.Square, "Fluent10", "Fluent11", "Rounded", "Solid"
+        ];
 
         public static bool IsFlagship(string styleId)
         {
@@ -103,11 +103,11 @@ namespace MosaicShell.Core.Styles
 
     public static class InlayLayoutCoverage
     {
-        private static readonly HashSet<string> Flagship = new(StringComparer.OrdinalIgnoreCase) { StyleIds.Windows11 };
-        private static readonly HashSet<string> Chrome = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "ClassicWavy", "Flat", "SideBar"
-        };
+        private static readonly HashSet<string> Flagship = [with(StringComparer.OrdinalIgnoreCase), StyleIds.Windows11];
+        private static readonly HashSet<string> Chrome =
+        [
+with(StringComparer.OrdinalIgnoreCase),             "ClassicWavy", "Flat", "SideBar"
+        ];
 
         public static bool IsFlagship(string styleId)
         {
@@ -122,10 +122,10 @@ namespace MosaicShell.Core.Styles
 
     public static class ChordLayoutCoverage
     {
-        private static readonly HashSet<string> Distinct = new(StringComparer.OrdinalIgnoreCase)
-        {
-            StyleIds.Square, "Bottom", "Expand", "VectorSlide", "Spin"
-        };
+        private static readonly HashSet<string> Distinct =
+        [
+with(StringComparer.OrdinalIgnoreCase),             StyleIds.Square, "Bottom", "Expand", "VectorSlide", "Spin"
+        ];
 
         public static bool CoversCatalog()
         {
@@ -143,14 +143,14 @@ namespace MosaicShell.Core.Styles
 
     public static class SlateLayoutCoverage
     {
-        private static readonly HashSet<string> Implemented = new(StringComparer.OrdinalIgnoreCase)
-        {
-            StyleIds.Square, "Ninety", "String"
-        };
-        private static readonly HashSet<string> Deferred = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "CustomGroup", "CustomPaper", "CustomVideo", "JD", StyleIds.CoreUI
-        };
+        private static readonly HashSet<string> Implemented =
+        [
+with(StringComparer.OrdinalIgnoreCase),             StyleIds.Square, "Ninety", "String"
+        ];
+        private static readonly HashSet<string> Deferred =
+        [
+with(StringComparer.OrdinalIgnoreCase),             "CustomGroup", "CustomPaper", "CustomVideo", "JD", StyleIds.CoreUI
+        ];
 
         public static bool CoversCatalog()
         {

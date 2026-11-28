@@ -1,0 +1,60 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        xmlns:vm="using:MosaicShell.Host.ViewModels"
+        x:Class="MosaicShell.Host.Views.TrayPanel"
+        x:DataType="vm:MainViewModel"
+        x:Name="Root"
+        Title="MosaicShell"
+        Width="300"
+        SizeToContent="Height"
+        WindowDecorations="None"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Topmost="True"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent">
+  <Window.Resources>
+    <!-- Fluent keeps room for an On/Off label even when it is empty, which pushed the switches mid-panel. -->
+    <x:Double x:Key="ToggleSwitchThemeMinWidth">0</x:Double>
+  </Window.Resources>
+  <!--
+      The tray's quick panel (U24): a switch per installed module, then Open and Quit. Unlike the native tray menu it
+      stays open while switches are flipped, until a click elsewhere or Esc. The rows are the Hub's own.
+  -->
+  <Border CornerRadius="8" Padding="12" BorderThickness="1"
+          Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
+          BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+    <StackPanel Spacing="6">
+      <TextBlock Text="MosaicShell" FontSize="14" FontWeight="SemiBold" Margin="4,0,0,4"
+                 Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+      <TextBlock IsVisible="{Binding !HasInstalledModules}" Text="No modules added yet." FontSize="12" Margin="4,0"
+                 Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+      <ItemsControl ItemsSource="{Binding InstalledModules}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Spacing="2" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:LibraryItemViewModel">
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="4,0">
+              <icons:MaterialIcon Kind="{Binding GlyphKind}" Width="18" Height="18" Foreground="{Binding GlyphBrush}"
+                                  VerticalAlignment="Center" Margin="0,0,10,0" />
+              <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="13" VerticalAlignment="Center"
+                         Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+              <ToggleSwitch Grid.Column="2" OnContent="" OffContent="" MinWidth="0" VerticalAlignment="Center"
+                            IsChecked="{Binding IsOn, Mode=OneWay}" AutomationProperties.Name="{Binding Name}"
+                            Command="{Binding #Root.((vm:MainViewModel)DataContext).ToggleModuleOnCommand}" CommandParameter="{Binding}" />
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <Border Height="1" Margin="0,4" Background="{DynamicResource DividerStrokeColorDefaultBrush}" />
+      <Button x:Name="OpenButton" Content="Open MosaicShell" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+              Background="Transparent" BorderThickness="0" Click="OnOpenClicked" />
+      <Button x:Name="QuitButton" Content="Quit MosaicShell" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+              Background="Transparent" BorderThickness="0" Click="OnQuitClicked" />
+    </StackPanel>
+  </Border>
+</Window>

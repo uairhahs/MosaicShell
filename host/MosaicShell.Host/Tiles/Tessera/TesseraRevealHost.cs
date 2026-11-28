@@ -13,164 +13,62 @@ namespace MosaicShell.Host.Tiles.Tessera
     /// Host binding for Fancy phase-2 (TweenNode1) layout reveal per style.
     /// Applies YourFlyouts Animated meter formulas to individual controls.
     /// </summary>
-    internal sealed class TesseraRevealHost : ContentControl
+    internal sealed partial class TesseraRevealHost : ContentControl
     {
-        public static readonly StyledProperty<double> RevealProgressProperty =
-            AvaloniaProperty.Register<TesseraRevealHost, double>(nameof(RevealProgress), 0);
-
-        public static readonly StyledProperty<string?> StyleIdProperty =
-            AvaloniaProperty.Register<TesseraRevealHost, string?>(nameof(StyleId));
-
-        public static readonly StyledProperty<bool> MusicVisibleProperty =
-            AvaloniaProperty.Register<TesseraRevealHost, bool>(nameof(MusicVisible), true);
-
-        public static readonly StyledProperty<double> FullMediaWidthProperty =
-            AvaloniaProperty.Register<TesseraRevealHost, double>(nameof(FullMediaWidth), double.NaN);
-
-        public static readonly StyledProperty<double> FullMediaHeightProperty =
-            AvaloniaProperty.Register<TesseraRevealHost, double>(nameof(FullMediaHeight), double.NaN);
-
-        public static readonly StyledProperty<double> FullDividerHeightProperty =
-            AvaloniaProperty.Register<TesseraRevealHost, double>(nameof(FullDividerHeight), double.NaN);
-
-        public static readonly StyledProperty<double> FullVolumeHeightProperty =
-            AvaloniaProperty.Register<TesseraRevealHost, double>(nameof(FullVolumeHeight), double.NaN);
-
-        public static readonly StyledProperty<double> FullVolumeWidthProperty =
-            AvaloniaProperty.Register<TesseraRevealHost, double>(nameof(FullVolumeWidth), double.NaN);
-
-        public static readonly StyledProperty<double> FullShellWidthProperty =
-            AvaloniaProperty.Register<TesseraRevealHost, double>(nameof(FullShellWidth), double.NaN);
-
-        public static readonly StyledProperty<double> ShellCornerRadiusProperty =
-            AvaloniaProperty.Register<TesseraRevealHost, double>(nameof(ShellCornerRadius), double.NaN);
-
-        public static readonly StyledProperty<double> BaseTrackThicknessProperty =
-            AvaloniaProperty.Register<TesseraRevealHost, double>(nameof(BaseTrackThickness), double.NaN);
-
-        public static readonly StyledProperty<Control?> DividerProperty =
-            AvaloniaProperty.Register<TesseraRevealHost, Control?>(nameof(Divider));
-
-        public static readonly StyledProperty<Control?> VolumeRowProperty =
-            AvaloniaProperty.Register<TesseraRevealHost, Control?>(nameof(VolumeRow));
-
-        public static readonly StyledProperty<TesseraTrack?> VolumeTrackProperty =
-            AvaloniaProperty.Register<TesseraRevealHost, TesseraTrack?>(nameof(VolumeTrack));
-
-        public static readonly StyledProperty<TesseraRingVolume?> RingVolumeProperty =
-            AvaloniaProperty.Register<TesseraRevealHost, TesseraRingVolume?>(nameof(RingVolume));
-
-        public static readonly StyledProperty<bool> Phase2EngagedProperty =
-            AvaloniaProperty.Register<TesseraRevealHost, bool>(nameof(Phase2Engaged));
-
-        public static readonly StyledProperty<bool> GnomeVolumeFillOnlyProperty =
-            AvaloniaProperty.Register<TesseraRevealHost, bool>(nameof(GnomeVolumeFillOnly));
-
         private Border? _mediaClipHost;
         private Border? _mediaOverlay;
         private Control? _mediaLeaf;
 
-        public double RevealProgress
-        {
-            get => GetValue(RevealProgressProperty);
-            set => SetValue(RevealProgressProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial double RevealProgress { get; set; }
 
-        public string? StyleId
-        {
-            get => GetValue(StyleIdProperty);
-            set => SetValue(StyleIdProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial string? StyleId { get; set; }
 
-        public bool MusicVisible
-        {
-            get => GetValue(MusicVisibleProperty);
-            set => SetValue(MusicVisibleProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = true)]
+        public partial bool MusicVisible { get; set; }
 
-        public double FullMediaWidth
-        {
-            get => GetValue(FullMediaWidthProperty);
-            set => SetValue(FullMediaWidthProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = double.NaN)]
+        public partial double FullMediaWidth { get; set; }
 
-        public double FullMediaHeight
-        {
-            get => GetValue(FullMediaHeightProperty);
-            set => SetValue(FullMediaHeightProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = double.NaN)]
+        public partial double FullMediaHeight { get; set; }
 
-        public double FullDividerHeight
-        {
-            get => GetValue(FullDividerHeightProperty);
-            set => SetValue(FullDividerHeightProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = double.NaN)]
+        public partial double FullDividerHeight { get; set; }
 
-        public double FullVolumeHeight
-        {
-            get => GetValue(FullVolumeHeightProperty);
-            set => SetValue(FullVolumeHeightProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = double.NaN)]
+        public partial double FullVolumeHeight { get; set; }
 
-        public double FullVolumeWidth
-        {
-            get => GetValue(FullVolumeWidthProperty);
-            set => SetValue(FullVolumeWidthProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = double.NaN)]
+        public partial double FullVolumeWidth { get; set; }
 
-        public double FullShellWidth
-        {
-            get => GetValue(FullShellWidthProperty);
-            set => SetValue(FullShellWidthProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = double.NaN)]
+        public partial double FullShellWidth { get; set; }
 
-        public double ShellCornerRadius
-        {
-            get => GetValue(ShellCornerRadiusProperty);
-            set => SetValue(ShellCornerRadiusProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = double.NaN)]
+        public partial double ShellCornerRadius { get; set; }
 
-        public double BaseTrackThickness
-        {
-            get => GetValue(BaseTrackThicknessProperty);
-            set => SetValue(BaseTrackThicknessProperty, value);
-        }
+        [GeneratedStyledProperty(DefaultValue = double.NaN)]
+        public partial double BaseTrackThickness { get; set; }
 
-        public Control? Divider
-        {
-            get => GetValue(DividerProperty);
-            set => SetValue(DividerProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial Control? Divider { get; set; }
 
-        public Control? VolumeRow
-        {
-            get => GetValue(VolumeRowProperty);
-            set => SetValue(VolumeRowProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial Control? VolumeRow { get; set; }
 
-        public TesseraTrack? VolumeTrack
-        {
-            get => GetValue(VolumeTrackProperty);
-            set => SetValue(VolumeTrackProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial TesseraTrack? VolumeTrack { get; set; }
 
-        public TesseraRingVolume? RingVolume
-        {
-            get => GetValue(RingVolumeProperty);
-            set => SetValue(RingVolumeProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial TesseraRingVolume? RingVolume { get; set; }
 
-        public bool Phase2Engaged
-        {
-            get => GetValue(Phase2EngagedProperty);
-            set => SetValue(Phase2EngagedProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial bool Phase2Engaged { get; set; }
 
-        public bool GnomeVolumeFillOnly
-        {
-            get => GetValue(GnomeVolumeFillOnlyProperty);
-            set => SetValue(GnomeVolumeFillOnlyProperty, value);
-        }
+        [GeneratedStyledProperty]
+        public partial bool GnomeVolumeFillOnly { get; set; }
 
         static TesseraRevealHost()
         {

@@ -22,7 +22,7 @@ namespace MosaicShell.Core.Install
         public static string StartupDirectory =>
             Environment.GetFolderPath(Environment.SpecialFolder.Startup);
 
-        /// <summary>Module ids installed by default from Inno Setup / Mosaicist post-install.</summary>
+        /// <summary>Module ids the Host installs on its first run (<see cref="DefaultModulesPolicy"/>).</summary>
         public static IReadOnlyList<string> DefaultModuleIds { get; } = ["Tessera", "Mixdeck"];
     }
 }

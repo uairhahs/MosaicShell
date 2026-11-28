@@ -1,6 +1,6 @@
 # Testing the native host
 
-MosaicShell is **Host-only** (Avalonia + .NET 10, Windows). Contracts live in Core; Host reads them.
+MosaicShell is **Host-only** (Avalonia + .NET 11, Windows). Contracts live in Core; Host reads them.
 
 ```powershell
 cd host
@@ -29,7 +29,7 @@ Parity flag rules: [parity.md](parity.md).
 
 - Prefer failing Core tests before Avalonia UI patches.
 - No Rainmeter bridge, `.rmskin`, or `.ini` interpreter.
-- Capabilities arm through **CapabilityDaemon** (Tessera is not opened like a normal Library window).
+- Capabilities arm through **CapabilityDaemon** (Tessera is not opened like a widget).
 
 ## Run the Host locally
 

@@ -266,7 +266,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
                     _apps.SetMuted(id, !s.IsMuted);
                     Refresh(sessionCount);
                 };
-                Grid row = new() { ColumnDefinitions = new ColumnDefinitions("110,*,68") };
+                Grid row = new() { ColumnDefinitions = [with("110,*,68")] };
                 Grid.SetColumn(slider, 1);
                 Grid.SetColumn(mute, 2);
                 row.Children.Add(label);
@@ -348,7 +348,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
                 _appsColumn = new StackPanel { Spacing = 6 };
                 appArea = new Grid
                 {
-                    ColumnDefinitions = new ColumnDefinitions("*,*"),
+                    ColumnDefinitions = [with("*,*")],
                     Margin = new Thickness(0, 4, 0, 0),
                     Children =
                     {
@@ -688,7 +688,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
                 Margin = new Thickness(0, 0, 0, 10),
                 Child = new Grid
                 {
-                    ColumnDefinitions = new ColumnDefinitions("44,*"),
+                    ColumnDefinitions = [with("44,*")],
                     Children = { playBtn, smtcText }
                 }
             };

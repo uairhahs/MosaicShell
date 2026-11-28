@@ -61,9 +61,9 @@ publish Mosaicist/Mosaicist.csproj Mosaicist
 # The runtime the SDK in use ships: the newest Microsoft.NETCore.App of the
 # major version the projects target, with its matching host resolver.
 echo "==> Copying the .NET runtime"
-runtime_line="$(dotnet --list-runtimes | grep '^Microsoft.NETCore.App 10\.' | sort -V | tail -n1)"
+runtime_line="$(dotnet --list-runtimes | grep '^Microsoft.NETCore.App 11\.' | sort -V | tail -n1)"
 [[ -n ${runtime_line} ]] || {
-	echo "error: no Microsoft.NETCore.App 10.x runtime next to this SDK" >&2
+	echo "error: no Microsoft.NETCore.App 11.x runtime next to this SDK" >&2
 	exit 1
 }
 runtime_version="$(awk '{print $2}' <<<"${runtime_line}")"

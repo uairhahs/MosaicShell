@@ -165,12 +165,20 @@ namespace MosaicShell.Core.Services
 
     public sealed class FakeHotkeyService : IHotkeyService
     {
-        private readonly Dictionary<string, Action> _callbacks = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, Action> _callbacks = [with(StringComparer.OrdinalIgnoreCase)];
 
         public IReadOnlyCollection<string> RegisteredIds => [.. _callbacks.Keys];
 
+        /// <summary>When true, every registration fails, as when another app holds the gesture.</summary>
+        public bool FailRegistrations { get; set; }
+
         public bool Register(string id, ModifierKeys modifiers, int virtualKey, Action callback)
         {
+            if (FailRegistrations)
+            {
+                return false;
+            }
+
             _callbacks[id] = callback;
             return true;
         }
@@ -239,12 +247,22 @@ namespace MosaicShell.Core.Services
         }
     }
 
+    /// <summary>Test double for the desktop's transparency switch.</summary>
+    public sealed class FakeTransparencyEffects : ITransparencyEffects
+    {
+        public bool Enabled { get; set; } = true;
+    }
+
     public static class HostServicesFakes
     {
-        public static HostServices Create()
+        /// <param name="features">What the pretend desktop can do; every feature when omitted.</param>
+        /// <param name="transparencyEffects">The desktop's transparency switch; on when omitted.</param>
+        public static HostServices Create(HostPlatform.DesktopFeatures? features = null, bool transparencyEffects = true)
         {
             return new()
             {
+                Features = features ?? HostPlatform.DesktopFeatures.All,
+                TransparencyEffects = new FakeTransparencyEffects { Enabled = transparencyEffects },
                 Audio = new FakeAudioService(),
                 AppAudio = new FakeAppAudioService(),
                 Brightness = new FakeBrightnessService(),

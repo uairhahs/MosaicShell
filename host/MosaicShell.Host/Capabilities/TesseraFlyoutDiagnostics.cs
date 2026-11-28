@@ -4,7 +4,7 @@ using MosaicShell.Core.Services;
 namespace MosaicShell.Host.Capabilities
 {
     /// <summary>
-    /// Tessera flyout log under %LocalAppData%/MosaicShell/Cache/flyout.log. Every call only queues
+    /// Tessera flyout log at <see cref="Core.AppPaths.FlyoutLogPath"/>. Every call only queues
     /// (see <see cref="DiagnosticLog"/>), so it is safe on the UI thread.
     /// </summary>
     internal static class TesseraFlyoutDiagnostics

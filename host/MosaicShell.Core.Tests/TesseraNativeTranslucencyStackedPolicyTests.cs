@@ -84,6 +84,7 @@ namespace MosaicShell.Core.Tests
         public void Stacked_acrylic_requires_trial_opt_in_and_acrylic_setting()
         {
             Dictionary<string, string> stacked = new() { ["showMediaStrip"] = "1", ["acrylic"] = "1" };
+            ModuleSettingsStore.Save("Tessera", new TesseraSettings { UseAcrylicBackdrop = false });
 
             _ = TesseraNativeTranslucencyStackedPolicy.UseMultiWindowFromPayload(stacked, StyleIds.Meter).Should().BeFalse();
 

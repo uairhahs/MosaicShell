@@ -8,10 +8,13 @@ namespace MosaicShell.Core.Modules.Tessera
         /// <summary>A dense, nearly opaque panel.</summary>
         Solid,
 
-        /// <summary>Tessera's own frost: a translucent crust drawn by the app, no OS blur.</summary>
+        /// <summary>
+        /// Tessera's frosted glass. Where the OS blurs behind the card (KWin, Windows), the app paints the frosted layers over
+        /// the blur; without one the app draws its own translucent frost.
+        /// </summary>
         Frosted,
 
-        /// <summary>The OS blurs the desktop behind the card (Windows acrylic, KWin blur on KDE Plasma).</summary>
+        /// <summary>The OS blurs the desktop behind the card (Windows, KWin on KDE Plasma) under a plain veil.</summary>
         NativeTranslucency,
     }
 
@@ -55,6 +58,25 @@ namespace MosaicShell.Core.Modules.Tessera
         public static bool IsSelectable(string? styleId)
         {
             return !TesseraFlyoutTweenTargetCatalog.ResolveProfile(styleId).RequiresMatteChrome;
+        }
+
+        /// <summary>
+        /// The choices the Hub lists: Native Translucency wherever this platform is signed off, drawable or not, so a
+        /// system without a backend sees it greyed out with <see cref="NativeUnavailableText"/> instead of not at all.
+        /// </summary>
+        public static IReadOnlyList<TesseraMaterialChoice> Listed(bool nativeSignedOff)
+        {
+            return Offered(nativeSignedOff);
+        }
+
+        /// <summary>Why Native Translucency cannot be drawn here: what is missing, in the words of the system.</summary>
+        public static string NativeUnavailableText(bool isWindows, string? xdgCurrentDesktop)
+        {
+            return isWindows
+                ? "Native Translucency needs Windows 11."
+                : Services.Xdg.XdgCurrentDesktop.IsPlasma(xdgCurrentDesktop)
+                    ? "Native Translucency needs Plasma's Blur desktop effect."
+                    : $"Native Translucency is not available on {HostPlatform.DesktopFeatures.Resolve(false, xdgCurrentDesktop).DesktopName} yet.";
         }
 
         public static IReadOnlyList<TesseraMaterialChoice> Offered(bool nativeOffered)

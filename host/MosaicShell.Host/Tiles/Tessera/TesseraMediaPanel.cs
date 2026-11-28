@@ -112,7 +112,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             StackPanel textCol = new() { Spacing = 4, Margin = new Thickness(0, 4, 0, 0), Children = { header, TesseraMarqueeText.Wrap(title, titleWidth, vm.AutoDismissMs), artist } };
             Grid top = new()
             {
-                ColumnDefinitions = new ColumnDefinitions("*,80"),
+                ColumnDefinitions = [with("*,80")],
                 Margin = new Thickness(pad, 8, pad, 0)
             };
             Grid.SetColumn(textCol, 0);
@@ -136,7 +136,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             List<Control> transportKids = [];
             dislikeIcon = AppendRatingButtons(vm, transportKids, likeIcon, 28);
             transportKids.Add(GlyphBtn(MaterialIconKind.SkipPrevious, () => _ = vm.PreviousAsync(), size: 28));
-            transportKids.Add(GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: 28, playStyle: true));
+            transportKids.Add(GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(playIcon), size: 28, playStyle: true));
             transportKids.Add(GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: 28));
             transportKids.Add(GlyphBtn(shuffleIcon, () => _ = vm.ToggleShuffleAsync(shuffleIcon), size: 28));
             StackPanel transport = new()
@@ -187,7 +187,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             List<Control> transportKids = [];
             dislikeIcon = AppendRatingButtons(vm, transportKids, likeIcon, 28);
             transportKids.Add(GlyphBtn(MaterialIconKind.SkipPrevious, () => _ = vm.PreviousAsync(), size: 28));
-            transportKids.Add(GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: 28, playStyle: true));
+            transportKids.Add(GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(playIcon), size: 28, playStyle: true));
             transportKids.Add(GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: 28));
             transportKids.Add(GlyphBtn(shuffleIcon, () => _ = vm.ToggleShuffleAsync(shuffleIcon), size: 28));
             StackPanel transport = new()
@@ -205,7 +205,7 @@ namespace MosaicShell.Host.Tiles.Tessera
 
             (StackPanel? scrub, TesseraTrack? track, TextBlock? pos, TextBlock? dur) = ScrubberStacked(vm, 260);
             TesseraLiveAmbient.RegisterMedia(art, title, artist, track, pos, dur, playIcon, likeIcon, dislikeIcon);
-            Grid top = new() { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+            Grid top = new() { ColumnDefinitions = [with("*,Auto")] };
             StackPanel left = new()
             {
                 Margin = new Thickness(0, 0, 8, 0),
@@ -218,16 +218,18 @@ namespace MosaicShell.Host.Tiles.Tessera
             StackPanel body = new() { Spacing = 4, Children = { top, scrub, transport } };
 
             return TesseraStackedBuildContext.IsActive && TesseraGlass.UseNativeTranslucencyChrome
-                ? new Border
-                {
-                    Width = TesseraStackedPlacementSpec.ModernFlyoutsMediaWidthDip,
-                    Height = TesseraStackedPlacementSpec.ModernFlyoutsMediaHeightDip,
-                    CornerRadius = new CornerRadius(12),
-                    Background = Brushes.Transparent,
-                    Padding = new Thickness(12),
-                    ClipToBounds = true,
-                    Child = body
-                }
+                ? TesseraGlassFinish.Over(
+                    new Border
+                    {
+                        Width = TesseraStackedPlacementSpec.ModernFlyoutsMediaWidthDip,
+                        Height = TesseraStackedPlacementSpec.ModernFlyoutsMediaHeightDip,
+                        CornerRadius = new CornerRadius(12),
+                        Background = Brushes.Transparent,
+                        Padding = new Thickness(12),
+                        ClipToBounds = true,
+                        Child = body
+                    },
+                    12)
                 : TesseraChrome.Glass(body, 12, new Thickness(12), w: 320, h: 190);
         }
 
@@ -254,16 +256,18 @@ namespace MosaicShell.Host.Tiles.Tessera
             };
 
             return stackedNativeTranslucency
-                ? new Border
-                {
-                    Width = TesseraStackedPlacementSpec.CompactMediaWidthDip,
-                    Height = TesseraStackedPlacementSpec.CompactMediaHeightDip,
-                    CornerRadius = new CornerRadius(14),
-                    Background = Brushes.Transparent,
-                    Padding = new Thickness(12),
-                    ClipToBounds = true,
-                    Child = body
-                }
+                ? TesseraGlassFinish.Over(
+                    new Border
+                    {
+                        Width = TesseraStackedPlacementSpec.CompactMediaWidthDip,
+                        Height = TesseraStackedPlacementSpec.CompactMediaHeightDip,
+                        CornerRadius = new CornerRadius(14),
+                        Background = Brushes.Transparent,
+                        Padding = new Thickness(12),
+                        ClipToBounds = true,
+                        Child = body
+                    },
+                    14)
                 : TesseraChrome.Glass(body, 14, new Thickness(12), w: 320);
         }
 
@@ -276,7 +280,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             TextBlock artist = Text(vm.MediaArtist, 11, FontWeight.Normal, 140, muted: true);
             MaterialIcon playIcon = PlayIcon(vm, 16);
             Control prev = GlyphBtn(MaterialIconKind.SkipPrevious, () => _ = vm.PreviousAsync(), size: 32);
-            Control play = GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: 32, playStyle: true);
+            Control play = GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(playIcon), size: 32, playStyle: true);
             Control next = GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: 32);
             TesseraLiveAmbient.RegisterMedia(art, title, artist, null, null, null, playIcon);
             StackPanel body = new()
@@ -295,16 +299,18 @@ namespace MosaicShell.Host.Tiles.Tessera
             };
 
             return stackedNativeTranslucency
-                ? new Border
-                {
-                    Width = TesseraStackedPlacementSpec.GnomeMediaWidthDip,
-                    Height = TesseraStackedPlacementSpec.GnomeMediaHeightDip,
-                    CornerRadius = new CornerRadius(TesseraStackedPlacementSpec.GnomePillCornerRadiusDip),
-                    Background = Brushes.Transparent,
-                    Padding = new Thickness(10, 8),
-                    ClipToBounds = true,
-                    Child = body
-                }
+                ? TesseraGlassFinish.Over(
+                    new Border
+                    {
+                        Width = TesseraStackedPlacementSpec.GnomeMediaWidthDip,
+                        Height = TesseraStackedPlacementSpec.GnomeMediaHeightDip,
+                        CornerRadius = new CornerRadius(TesseraStackedPlacementSpec.GnomePillCornerRadiusDip),
+                        Background = Brushes.Transparent,
+                        Padding = new Thickness(10, 8),
+                        ClipToBounds = true,
+                        Child = body
+                    },
+                    TesseraStackedPlacementSpec.GnomePillCornerRadiusDip)
                 : TesseraChrome.Glass(body, 28, new Thickness(10, 8), w: 340);
         }
 
@@ -396,7 +402,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                     border.Height = TesseraStackedPlacementSpec.MeterMediaHeightDip;
                 }
 
-                return border;
+                return stackedNativeTranslucency ? TesseraGlassFinish.Over(border, 16) : border;
             }
 
             return TesseraChrome.Glass(body, 16, new Thickness(14, 10));
@@ -427,7 +433,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             Grid row = new()
             {
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                ColumnDefinitions = new ColumnDefinitions($"{artSize},*")
+                ColumnDefinitions = [with($"{artSize},*")]
             };
             Grid.SetColumn(art, 0);
             Grid.SetColumn(textCol, 1);
@@ -513,7 +519,7 @@ namespace MosaicShell.Host.Tiles.Tessera
 
             Grid timeRow = new()
             {
-                ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
+                ColumnDefinitions = [with("Auto,*,Auto")],
                 Margin = new Thickness(0, 6, 0, 6)
             };
             Grid.SetColumn(pos, 0);
@@ -539,7 +545,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                     Spacing = 6,
                     Children =
                     {
-                        GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: 26, playStyle: true),
+                        GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(playIcon), size: 26, playStyle: true),
                         GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: 26)
                     }
                 }
@@ -569,7 +575,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                     _ = vm.SeekAsync(v * d);
                 }
             };
-            Grid times = new() { Width = width, ColumnDefinitions = new ColumnDefinitions("*,*") };
+            Grid times = new() { Width = width, ColumnDefinitions = [with("*,*")] };
             pos.HorizontalAlignment = HorizontalAlignment.Left;
             dur.HorizontalAlignment = HorizontalAlignment.Right;
             Grid.SetColumn(dur, 1);
@@ -597,7 +603,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 kids.Add(GlyphBtn(shuffleIcon, () => _ = vm.ToggleShuffleAsync(shuffleIcon), btnSize));
             }
             kids.Add(GlyphBtn(MaterialIconKind.SkipPrevious, () => _ = vm.PreviousAsync(), size: btnSize));
-            kids.Add(GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(), size: btnSize, playStyle: true));
+            kids.Add(GlyphBtn(playIcon, () => _ = vm.PlayPauseAsync(playIcon), size: btnSize, playStyle: true));
             kids.Add(GlyphBtn(MaterialIconKind.SkipNext, () => _ = vm.NextAsync(), size: btnSize));
             if (shuffleRepeat)
             {

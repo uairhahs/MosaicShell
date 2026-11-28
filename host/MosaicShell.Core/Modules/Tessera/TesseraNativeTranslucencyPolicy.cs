@@ -1,4 +1,5 @@
 using MosaicShell.Core.Capabilities.Platform;
+using MosaicShell.Core.Settings;
 
 namespace MosaicShell.Core.Modules.Tessera
 {
@@ -62,10 +63,38 @@ namespace MosaicShell.Core.Modules.Tessera
         /// <summary>Effective trial opt-in for this process (CLI flag or saved Tessera setting).</summary>
         public static bool IsTrialRequested()
         {
+            TesseraSettings settings = TesseraFlyoutRequestBuilder.LoadSettings();
             return ResolveTrialRequested(
                 HostLaunchOptions.TesseraNativeTranslucencyTrial,
-                TesseraFlyoutRequestBuilder.LoadSettings().UseNativeTranslucency,
+                WantsOsBlur(settings.UseNativeTranslucency, settings.UseAcrylicBackdrop, NativeTranslucencyPlatform.Backend),
                 TesseraNativeTranslucencySignOffPolicy.EvalCompleteForThisPlatform);
+        }
+
+        /// <summary>
+        /// Whether the saved material wants the OS blur behind the card: Native Translucency always, and Frosted wherever
+        /// there is a blur (KWin, Windows), since the frosted glass is painted over it. Without one Frosted keeps the app's
+        /// own frost.
+        /// </summary>
+        public static bool WantsOsBlur(bool useNativeTranslucency, bool useAcrylicBackdrop, NativeTranslucencyBackend backend)
+        {
+            return useNativeTranslucency
+                || (useAcrylicBackdrop && NativeTranslucencyAcrylicSpec.AppPaintsAcrylicLayers(backend));
+        }
+
+        /// <summary>
+        /// Whether a change of material needs MosaicShell restarted: on Windows the rounded blur's corner radius is a
+        /// process-wide option read at start, so only a change in whether the OS blur is wanted needs one. Frosted to
+        /// Native and back keep the blur. Elsewhere the material applies at the next flyout.
+        /// </summary>
+        public static bool MaterialChangeNeedsRestart(
+            bool isWindows,
+            bool wasNative,
+            bool wasGlass,
+            bool isNative,
+            bool isGlass,
+            NativeTranslucencyBackend backend)
+        {
+            return isWindows && WantsOsBlur(wasNative, wasGlass, backend) != WantsOsBlur(isNative, isGlass, backend);
         }
 
         public static bool IsEligibleFromPayload(

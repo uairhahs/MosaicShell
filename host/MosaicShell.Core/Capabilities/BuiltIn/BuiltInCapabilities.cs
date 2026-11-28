@@ -68,6 +68,14 @@ namespace MosaicShell.Core.Capabilities.BuiltIn
                 _persistGesture?.Invoke(gesture);
             }
 
+            if (_services.Features.MissingText(HostPlatform.DesktopFeature.GlobalHotkeys) is string noRoute)
+            {
+                HotkeyError = noRoute;
+                DiagnosticLog.Append("hotkeys.log", $"{ModuleId} {gesture} not registered: {HotkeyError}");
+                IsArmed = true;
+                return Task.CompletedTask;
+            }
+
             if (!HotkeyGestureParser.TryParse(gesture, out ModifierKeys mods, out int vk))
             {
                 HotkeyError = $"Could not parse hotkey '{raw}'.";

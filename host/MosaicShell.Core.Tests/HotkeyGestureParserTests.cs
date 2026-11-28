@@ -1,6 +1,7 @@
 using FluentAssertions;
 using MosaicShell.Core.Capabilities.BuiltIn;
 using MosaicShell.Core.Services;
+using MosaicShell.Core.Settings;
 
 namespace MosaicShell.Core.Tests
 {
@@ -127,11 +128,17 @@ namespace MosaicShell.Core.Tests
         [InlineData("inlay", "Ctrl+Alt+I")]
         [InlineData("Chord", "Ctrl+Alt+K")]
         [InlineData("SUBSTRATE", "Ctrl+Alt+Q")]
-        [InlineData("mixdeck", "Ctrl+Alt+M")]
+        [InlineData("mixdeck", "Ctrl+Alt+X")]
         [InlineData("anything-else", "Ctrl+Alt+O")]
         public void Each_module_has_a_safe_default_gesture(string moduleId, string expected)
         {
             _ = HotkeyGestureParser.SafeDefault(moduleId).Should().Be(expected);
+        }
+
+        [Fact]
+        public void Mixdeck_settings_start_on_its_safe_default()
+        {
+            _ = new MixdeckSettings().HotkeyGesture.Should().Be(HotkeyGestureParser.SafeDefault("Mixdeck"));
         }
 
         [Theory]

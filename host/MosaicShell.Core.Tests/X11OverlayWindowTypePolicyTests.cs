@@ -4,7 +4,7 @@ using MosaicShell.Core.HostPlatform;
 namespace MosaicShell.Core.Tests
 {
     /// <summary>
-    /// The EWMH window type the overlays (flyout, focus dim layer, click glint) declare. GNOME Shell plays its own open
+    /// The EWMH window type the overlays (flyout, focus dim layer) declare. GNOME Shell plays its own open
     /// and close animations on NORMAL, DIALOG and MODAL_DIALOG windows (windowManager.js, GNOME 51), so on GNOME the
     /// layer shrank and faded on top of MosaicShell's own fade.
     /// </summary>

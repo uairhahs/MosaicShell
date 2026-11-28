@@ -29,7 +29,7 @@ namespace MosaicShell.Core.Runtime
     public sealed class TileRuntime(ITileSurfaceHost host) : ITileRuntime
     {
         private readonly ITileSurfaceHost _host = host ?? throw new ArgumentNullException(nameof(host));
-        private readonly Dictionary<string, TileSession> _sessions = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, TileSession> _sessions = [with(StringComparer.OrdinalIgnoreCase)];
         private readonly Lock _gate = new();
 
         public IReadOnlyList<TileSession> Running

@@ -149,7 +149,11 @@ namespace MosaicShell.Core.Tests.Linux
         {
             using HostServices hub = HostServices.CreatePlatformDefaults();
 
-            _ = hub.ShellFlyoutTriggers.Should().BeOfType<KGlobalAccelShellFlyoutTriggers>();
+            // KGlobalAccel on Plasma only (LinuxDesktopRoutesTests); this checks the defaults take the desktop's route,
+            // whatever session the tests run in (CI's runner has none).
+            bool plasma = Services.Xdg.XdgCurrentDesktop.IsPlasma(Services.Xdg.XdgCurrentDesktop.Current);
+            _ = hub.ShellFlyoutTriggers.Should().BeOfType(
+                plasma ? typeof(KGlobalAccelShellFlyoutTriggers) : typeof(NullShellFlyoutTriggerSource));
             bool gnome = Services.Xdg.XdgCurrentDesktop.IsGnome(Services.Xdg.XdgCurrentDesktop.Current);
             _ = hub.OsdSuppressor.Should().BeOfType(
                 gnome ? typeof(GnomeOsdSuppressor) : typeof(PlasmaOsdSuppressor),

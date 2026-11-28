@@ -4,9 +4,9 @@ using Avalonia.VisualTree;
 using Material.Icons;
 using Material.Icons.Avalonia;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
-using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {
@@ -204,7 +204,10 @@ namespace MosaicShell.Host.Tiles.Tessera
                 TesseraMediaPanel.ApplyArtToBorder(b.MediaArt, thumb, fillHost);
             }
 
-            b.PlayPauseIcon?.Kind = media?.IsPlaying == true ? MaterialIconKind.Pause : MaterialIconKind.Play;
+            if (b.PlayPauseIcon is { } playIcon)
+            {
+                TesseraPlayPauseIcon.Apply(playIcon, media?.IsPlaying == true);
+            }
 
             if (b.LikeIcon is not null)
             {

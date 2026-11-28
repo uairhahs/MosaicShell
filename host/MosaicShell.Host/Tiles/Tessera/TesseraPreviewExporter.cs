@@ -1,10 +1,10 @@
 using Avalonia.Controls;
 using Avalonia.Platform;
 using MosaicShell.Core.Capabilities;
+using MosaicShell.Core.Capabilities.Platform;
+using MosaicShell.Core.Modules;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Services;
-using MosaicShell.Core.Modules;
-using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {

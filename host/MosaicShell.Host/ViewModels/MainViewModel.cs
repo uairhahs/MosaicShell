@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using Avalonia;
-using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Threading;
@@ -9,8 +8,9 @@ using CommunityToolkit.Mvvm.Input;
 using Material.Icons;
 using MosaicShell.Core;
 using MosaicShell.Core.Capabilities;
-using MosaicShell.Core.Capabilities.BuiltIn;
+using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.HostPlatform;
+using MosaicShell.Core.HubShell;
 using MosaicShell.Core.Install;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Modules.Tessera;
@@ -20,11 +20,8 @@ using MosaicShell.Core.Settings;
 using MosaicShell.Core.Shp;
 using MosaicShell.Core.Styles;
 using MosaicShell.Core.Update;
-using MosaicShell.Host.Capabilities;
-using MosaicShell.Host.Input;
 using MosaicShell.Host.Tiles;
 using MosaicShell.Host.Tiles.Tessera;
-using MosaicShell.Core.Capabilities.Platform;
 
 namespace MosaicShell.Host.ViewModels
 {
@@ -56,13 +53,6 @@ namespace MosaicShell.Host.ViewModels
             AppPaths.EnsureLayout();
             Hub = ModuleSettingsStore.Load("Hub", () => new HubSettings());
 
-            HomeCards =
-            [
-                HomeCard("Welcome", "First run: install tiles, then finish to open Home.", "Welcome"),
-                HomeCard("Tiles", "Install widgets or set tiles (Tessera flyouts, launchers).", "Tiles"),
-                HomeCard("About", "What MosaicShell is, where it came from, and how to follow the project.", "About"),
-            ];
-
             TesseraAccentSwatches = [];
             foreach (TesseraAccentPreset preset in TesseraAccentColor.Presets)
             {
@@ -70,12 +60,13 @@ namespace MosaicShell.Host.ViewModels
             }
 
             SyncTesseraAccentSwatches();
+            PropertyChanged += OnTesseraSlotPropertyChanged;
 
             ModuleStyleOptions = [];
 
             RefreshLibrary();
             HostBuildLabel = HostBuildVersion.ReadCurrent();
-            Navigate(Hub.WelcomeCompleted ? "Home" : "Welcome");
+            Navigate("Home");
         }
 
         public MainViewModel() : this(
@@ -85,7 +76,6 @@ namespace MosaicShell.Host.ViewModels
         {
         }
 
-        public ObservableCollection<DiscoverCard> HomeCards { get; }
         public ObservableCollection<TesseraAccentSwatchVm> TesseraAccentSwatches { get; }
         public ObservableCollection<LibraryItemViewModel> Modules { get; } = [];
         public ObservableCollection<LibraryItemViewModel> Widgets { get; } = [];
@@ -103,19 +93,16 @@ namespace MosaicShell.Host.ViewModels
             new("BR", "Bottom right"),
         ];
         public ObservableCollection<string> TesseraEaseFamilies { get; } =
-            new(TesseraFlyoutAnimationPolicy.EaseFamilies);
+            [with(TesseraFlyoutAnimationPolicy.EaseFamilies)];
         public ObservableCollection<string> TesseraEaseVariants { get; } =
-            new(TesseraFlyoutAnimationPolicy.EaseVariants);
+            [with(TesseraFlyoutAnimationPolicy.EaseVariants)];
         public HubSettings Hub { get; }
 
         [ObservableProperty] private string _selectedPage = "Home";
         [ObservableProperty] private bool _isHome = true;
-        [ObservableProperty] private bool _isTiles;
         [ObservableProperty] private bool _isSettings;
         [ObservableProperty] private bool _isAbout;
-        [ObservableProperty] private bool _isWelcome;
         [ObservableProperty] private bool _isModuleConfig;
-        [ObservableProperty] private bool _showBackButton;
         [ObservableProperty] private string _statusMessage = "Ready";
         [ObservableProperty] private bool _isBusy;
         [ObservableProperty] private string _serviceProbe = "";
@@ -126,40 +113,17 @@ namespace MosaicShell.Host.ViewModels
         [NotifyPropertyChangedFor(nameof(TesseraMaterialFixedNote))]
         private string _moduleStyle = "DEFAULT";
         [ObservableProperty] private StyleDescriptor? _selectedModuleStyle;
-        [ObservableProperty] private bool _chronoSeconds = true;
-        [ObservableProperty] private bool _showChronoExtras;
         [ObservableProperty] private bool _tesseraLegacyVol = true;
         [ObservableProperty] private bool _showTesseraExtras;
-        [ObservableProperty] private bool _showHotkeyCapExtras;
-        [ObservableProperty] private bool _showSlateExtras;
-        [ObservableProperty] private bool _showInlayPins;
-        [ObservableProperty] private bool _showChordActions;
-        [ObservableProperty] private bool _showSubstrateMute;
         [ObservableProperty] private string _configUsageSummary = "";
         [ObservableProperty] private string _configHowToTrigger = "";
-        [ObservableProperty] private string _configHotkeyGesture = "";
-        [ObservableProperty] private bool _isCapturingHotkey;
-        [ObservableProperty] private string _hotkeyCaptureHint = "Click Capture, then press the shortcut";
-        [ObservableProperty] private string _launchTargetQuery = "";
-        [ObservableProperty] private string _chordActionName = "";
-        [ObservableProperty] private string _configPinsText = "";
-        [ObservableProperty] private string _configActionsText = "";
-        [ObservableProperty] private bool _configShowMute = true;
-        [ObservableProperty] private decimal _configIdleSeconds = 300;
-        [ObservableProperty] private bool _configHideOnFullscreen = true;
-        [ObservableProperty] private bool _configCanTryOverlay;
         [ObservableProperty] private bool _tesseraConfigPreviewReady;
 
-        public ObservableCollection<string> ConfigPins { get; } = [];
-        public ObservableCollection<ChordActionRow> ConfigChordActions { get; } = [];
         public ObservableCollection<string> LaunchTargetChoices { get; } = [];
 
         [ObservableProperty] private TesseraNamedChoice? _selectedTesseraPosition;
         [ObservableProperty] private string _tesseraPosition = "TL";
         [ObservableProperty] private decimal _tesseraMonitorIndex = 1;
-        [ObservableProperty] private decimal _tesseraXPad = 20;
-        [ObservableProperty] private decimal _tesseraYPad = 20;
-        [ObservableProperty] private decimal _tesseraAutoDismissSeconds = 2.00m;
         [ObservableProperty] private int _tesseraAni = 2;
         [ObservableProperty] private string _tesseraAniDir = "Left";
         [ObservableProperty] private string _tesseraAniEase = TesseraFlyoutAnimationPolicy.DefaultEase;
@@ -169,18 +133,31 @@ namespace MosaicShell.Host.ViewModels
         [ObservableProperty] private int _tesseraAniSteps = TesseraFlyoutAnimationPolicy.DefaultAniSteps;
         [ObservableProperty] private int _tesseraAnimationDisplacement = TesseraFlyoutAnimationPolicy.DefaultDisplacementPx;
         private bool _syncingEaseParts;
-        [ObservableProperty] private bool _tesseraMediaFlyouts = true;
-        [ObservableProperty] private bool _tesseraLockFlyouts = true;
-        [ObservableProperty] private bool _tesseraFlightFlyouts = true;
         [ObservableProperty] private bool _tesseraMediaStrip = true;
-        [ObservableProperty] private bool _tesseraFocusDim = true;
-        [ObservableProperty] private decimal _tesseraFlyoutScalePercent = 100;
         [ObservableProperty] private string _tesseraAccentHex = "";
         [ObservableProperty] private decimal _tesseraLegacyStepPercent = 2;
+
+        /// <summary>Who owns the volume key step on this desktop (<see cref="VolumeKeyStepPolicy"/>).</summary>
+        public VolumeKeyStepSource VolumeStepSource => _services.VolumeKeyStep.Source;
+
+        /// <summary>The key hook switch exists only where Tessera steps the volume itself (Windows).</summary>
+        public bool ShowLegacyHookSwitch => VolumeKeyStepPolicy.HasHookSwitch(VolumeStepSource);
+
+        public bool VolumeStepEditable =>
+            VolumeStepSource != VolumeKeyStepSource.None && (!ShowLegacyHookSwitch || TesseraLegacyVol);
+
+        public int VolumeStepMax => VolumeKeyStepPolicy.Range(VolumeStepSource).Max;
+
+        public string VolumeStepHint => VolumeKeyStepPolicy.Hint(VolumeStepSource);
+
+        partial void OnTesseraLegacyVolChanged(bool value) => OnPropertyChanged(nameof(VolumeStepEditable));
         [ObservableProperty] private bool _autostartEnabled;
         [ObservableProperty] private bool _closeMinimizesToTray = true;
         [ObservableProperty] private string _updateStatus = "";
         [ObservableProperty] private string _hostBuildLabel = HostBuildVersionPolicy.LocalDevLabel;
+
+        /// <summary>The real data root (honours <c>MOSAICSHELL_HOME</c> and the platform's local app data).</summary>
+        public string DataFolderPath => AppPaths.RootDirectory;
 
         public void RestoreSessions()
         {
@@ -217,42 +194,40 @@ namespace MosaicShell.Host.ViewModels
                 page = "Home";
             }
 
-            if (page == "Library")
+            // The Tiles library became two lists: Modules (capabilities) and Widgets.
+            if (page is "Library" or "Tiles" or "AddModules")
             {
-                page = "Tiles";
+                page = "Modules";
             }
 
             SelectedPage = page;
             IsHome = page == "Home";
-            IsTiles = page == "Tiles";
+            IsModulesList = page == "Modules";
+            IsWidgetsList = page == "Widgets";
             IsSettings = page == "Settings";
             IsAbout = page == "About";
-            IsWelcome = page == "Welcome";
             IsModuleConfig = page == "ModuleConfig";
-            ShowBackButton = IsTiles || IsWelcome || IsAbout || IsModuleConfig;
+            IsFirstRunPage = page == "FirstRun";
             if (!IsModuleConfig)
             {
                 TesseraConfigPreviewReady = false;
+                CloseModulePage();
             }
 
-            if (IsTiles)
+            if (IsHome || IsModulesList || IsWidgetsList)
             {
                 RefreshLibrary();
+            }
+            else
+            {
+                RefreshShell();
             }
 
             if (IsSettings)
             {
+                RefreshSettingsPage();
                 SyncServiceProbe();
                 AutostartEnabled = _services.Autostart.IsEnabled;
-            }
-        }
-
-        [RelayCommand]
-        private void OpenCard(DiscoverCard? card)
-        {
-            if (card is not null)
-            {
-                Navigate(card.TargetPage);
             }
         }
 
@@ -269,25 +244,6 @@ namespace MosaicShell.Host.ViewModels
             foreach (TesseraAccentSwatchVm swatch in TesseraAccentSwatches)
             {
                 swatch.IsSelected = TesseraAccentColor.MatchesPreset(TesseraAccentHex, new TesseraAccentPreset(swatch.Name, swatch.Hex));
-            }
-        }
-
-        private static DiscoverCard HomeCard(string title, string body, string page)
-        {
-            HubGlyph glyph = HubGlyphCatalog.ForHomeCard(page);
-            return new(title, body, page, HubGlyphUi.Kind(glyph), HubGlyphUi.Brush(glyph));
-        }
-
-        [RelayCommand]
-        private void GoBack()
-        {
-            if (IsModuleConfig)
-            {
-                Navigate("Tiles");
-            }
-            else
-            {
-                Navigate("Home");
             }
         }
 
@@ -324,42 +280,28 @@ namespace MosaicShell.Host.ViewModels
             TesseraConfigPreviewReady = false;
             try
             {
+                CloseModulePage();
                 ConfigModuleId = info.Id;
                 ConfigModuleTitle = info.DisplayName;
+                ModulePage = CreateModulePage(info);
                 ModuleStyleOptions.Clear();
                 foreach (StyleDescriptor style in StyleCatalog.For(info.Id))
                 {
                     ModuleStyleOptions.Add(style);
                 }
 
-                ShowChronoExtras = info.Id.Equals("Chrono", StringComparison.OrdinalIgnoreCase);
                 ShowTesseraExtras = ModuleIds.IsTessera(info.Id);
-                ShowHotkeyCapExtras = info.Id is "Inlay" or "Chord" or "Substrate" or "Mixdeck";
-                ShowSlateExtras = info.Id.Equals("Slate", StringComparison.OrdinalIgnoreCase);
-                ShowInlayPins = info.Id.Equals("Inlay", StringComparison.OrdinalIgnoreCase);
-                ShowChordActions = info.Id.Equals("Chord", StringComparison.OrdinalIgnoreCase);
-                ShowSubstrateMute = info.Id.Equals("Substrate", StringComparison.OrdinalIgnoreCase);
-                ConfigCanTryOverlay = ShowHotkeyCapExtras || ShowSlateExtras || ShowTesseraExtras;
                 ConfigUsageSummary = ModuleUsageGuide.Summary(info.Id);
-                ConfigHowToTrigger = ModuleUsageGuide.HowToTrigger(info.Id);
-                ConfigHotkeyGesture = ModuleUsageGuide.CurrentHotkey(info.Id);
-                IsCapturingHotkey = false;
-                HotkeyCaptureHint = "Click Capture, then press the shortcut";
-                LaunchTargetQuery = "";
-                ChordActionName = "";
-                ConfigPins.Clear();
-                ConfigChordActions.Clear();
-                EnsureLaunchTargetsLoaded();
-                ConfigPinsText = "";
-                ConfigActionsText = "";
-                ConfigShowMute = true;
-                ConfigIdleSeconds = 300;
-                ConfigHideOnFullscreen = true;
+                ConfigHowToTrigger = ModuleUsageGuide.HowToTrigger(info.Id, _services.Features);
 
                 using (TesseraStylePreview.EnterSuspendRebuild())
                 {
                     Navigate("ModuleConfig");
                     LoadModuleConfigFields(info);
+                    if (ShowTesseraExtras && HasModulePage)
+                    {
+                        StartTesseraSlots();
+                    }
                 }
             }
             finally
@@ -376,13 +318,7 @@ namespace MosaicShell.Host.ViewModels
 
         private void LoadModuleConfigFields(ModuleInfo info)
         {
-            if (ShowChronoExtras)
-            {
-                ChronoSettings s = ModuleSettingsStore.Load("Chrono", () => new ChronoSettings());
-                ModuleStyle = StyleIds.Normalize(s.Style);
-                ChronoSeconds = s.ShowSeconds;
-            }
-            else if (ShowTesseraExtras)
+            if (ShowTesseraExtras)
             {
                 TesseraSettings s = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
                 ModuleStyle = StyleIds.Normalize(s.Style);
@@ -391,9 +327,6 @@ namespace MosaicShell.Host.ViewModels
                 SelectedTesseraPosition = TesseraPositionChoices.FirstOrDefault(c => c.Code == TesseraPosition)
                                           ?? TesseraPositionChoices[0];
                 TesseraMonitorIndex = Math.Clamp(s.MonitorIndex, 1, 8);
-                TesseraXPad = Math.Clamp(s.XPad, 0, 200);
-                TesseraYPad = Math.Clamp(s.YPad, 0, 200);
-                TesseraAutoDismissSeconds = Math.Clamp(s.AutoDismissMs / 1000m, 0.5m, 20m);
                 TesseraAni = s.Ani;
                 TesseraAniDir = s.AniDir;
                 TesseraAniEase = TesseraFlyoutAnimationPolicy.NormalizeEase(s.AniEase);
@@ -402,63 +335,21 @@ namespace MosaicShell.Host.ViewModels
                 TesseraAnimationDisplacement =
                     TesseraFlyoutAnimationPolicy.NormalizeDisplacementPx(s.AnimationDisplacement);
                 RefreshTesseraMotion();
-                TesseraMediaFlyouts = s.EnableMediaFlyouts;
-                TesseraLockFlyouts = s.EnableLockFlyouts;
-                TesseraFlightFlyouts = s.EnableFlightFlyouts;
                 TesseraMediaStrip = s.ShowMediaStripOnVolume;
                 LoadTesseraMaterial(s);
-                TesseraFocusDim = s.UseFocusDim;
-                TesseraFlyoutScalePercent = Math.Clamp(s.FlyoutScalePercent, 50, 150);
                 TesseraAccentHex = s.AccentColor ?? "";
                 decimal stepPct = s.LegacyVolumeStep <= 1.0
                     ? (decimal)Math.Round(s.LegacyVolumeStep * 100)
                     : (decimal)Math.Round(s.LegacyVolumeStep);
                 TesseraLegacyStepPercent = Math.Clamp(stepPct < 1 ? 2 : stepPct, 1, 25);
-            }
-            else if (info.Id.Equals("Inlay", StringComparison.OrdinalIgnoreCase))
-            {
-                InlaySettings s = ModuleSettingsStore.Load("Inlay", () => new InlaySettings());
-                ModuleStyle = StyleIds.Normalize(s.Style);
-                ConfigHotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Inlay", s.HotkeyGesture);
-                foreach (string pin in s.Pins)
+                if (!VolumeKeyStepPolicy.HasHookSwitch(VolumeStepSource) && _services.VolumeKeyStep.Read() is int desktopStep)
                 {
-                    ConfigPins.Add(pin);
+                    TesseraLegacyStepPercent = VolumeKeyStepPolicy.Clamp(VolumeStepSource, desktopStep);
                 }
-            }
-            else if (info.Id.Equals("Chord", StringComparison.OrdinalIgnoreCase))
-            {
-                ChordSettings s = ModuleSettingsStore.Load("Chord", () => new ChordSettings());
-                ModuleStyle = StyleIds.Normalize(s.Style);
-                ConfigHotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Chord", s.HotkeyGesture);
-                foreach (ChordAction a in s.Actions)
-                {
-                    ConfigChordActions.Add(new ChordActionRow(a.Name, a.Target));
-                }
-            }
-            else if (info.Id.Equals("Substrate", StringComparison.OrdinalIgnoreCase))
-            {
-                SubstrateSettings s = ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings());
-                ModuleStyle = StyleIds.Normalize(s.Style);
-                ConfigHotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Substrate", s.HotkeyGesture);
-                ConfigShowMute = s.ShowMute;
-            }
-            else if (info.Id.Equals("Mixdeck", StringComparison.OrdinalIgnoreCase))
-            {
-                MixdeckSettings s = ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings());
-                ModuleStyle = StyleIds.Normalize(s.Style);
-                ConfigHotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Mixdeck", s.HotkeyGesture);
-            }
-            else if (ShowSlateExtras)
-            {
-                SlateSettings s = ModuleSettingsStore.Load("Slate", () => new SlateSettings());
-                ModuleStyle = StyleIds.Normalize(s.Style);
-                ConfigIdleSeconds = Math.Clamp(s.IdleSeconds, 30, 3600);
-                ConfigHideOnFullscreen = s.HideOnFullscreen;
             }
             else
             {
-                ModuleStyle = StyleIds.Normalize(
-                    LoadStylePreference(info.Id, ModuleStyleOptions.FirstOrDefault()?.StyleId ?? StyleCatalog.DefaultFor(info.Id)));
+                ModuleStyle = StyleIds.Normalize(StyleCatalog.DefaultFor(info.Id));
             }
 
             if (ModuleStyleOptions.Count > 0
@@ -503,32 +394,13 @@ namespace MosaicShell.Host.ViewModels
                 SelectedModuleStyle = match;
         }
 
-        private static string LoadStylePreference(string moduleId, string fallback)
-        {
-            try
-            {
-                return StyleIds.Normalize(moduleId.ToLowerInvariant() switch
-                {
-                    "phono" => ModuleSettingsStore.Load("Phono", () => new PhonoSettings()).Style,
-                    "pulse" => ModuleSettingsStore.Load("Pulse", () => new PulseSettings()).Style,
-                    "canvas" => ModuleSettingsStore.Load("Canvas", () => new CanvasSettings()).Style,
-                    "mixdeck" => ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings()).Style,
-                    "inlay" => ModuleSettingsStore.Load("Inlay", () => new InlaySettings()).Style,
-                    "chord" => ModuleSettingsStore.Load("Chord", () => new ChordSettings()).Style,
-                    "slate" => ModuleSettingsStore.Load("Slate", () => new SlateSettings()).Style,
-                    "substrate" => ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings()).Style,
-                    _ => fallback
-                });
-            }
-            catch { return fallback; }
-        }
-
         [RelayCommand]
         private void PreviewTesseraFlyout()
         {
-            if (ShowTesseraExtras)
+            // Every change is already saved; write any that is still waiting out its pause.
+            if (ModulePage is not null)
             {
-                PersistTesseraFromUi();
+                _ = ModulePage.FlushAsync();
             }
 
             TesseraSettings settings = TesseraFlyoutRequestBuilder.LoadSettings();
@@ -538,7 +410,7 @@ namespace MosaicShell.Host.ViewModels
             request = request with { MonitorIndex = ResolveHostMonitorIndex(settings.MonitorIndex) };
             _hostUi.PreviewFlyout(request);
             StatusMessage =
-                $"Tessera preview → monitor {request.MonitorIndex}. If blank, check %LocalAppData%\\MosaicShell\\Cache\\flyout.log";
+                $"Tessera preview → monitor {request.MonitorIndex}. If blank, check {AppPaths.FlyoutLogPath}";
         }
 
         private static int ResolveHostMonitorIndex(int fallback)
@@ -568,52 +440,10 @@ namespace MosaicShell.Host.ViewModels
             }
         }
 
-        private void PersistTesseraFromUi()
-        {
-            TesseraSettings s = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
-            string priorStyle = s.Style;
-            s.Style = StyleIds.Normalize(ModuleStyle);
-            s.Position = SelectedTesseraPosition?.Code ?? TesseraPosition;
-            s.MonitorIndex = Math.Clamp((int)TesseraMonitorIndex, 1, 8);
-            s.XPad = Math.Clamp((int)TesseraXPad, 0, 200);
-            s.YPad = Math.Clamp((int)TesseraYPad, 0, 200);
-            TesseraMonitorIndex = s.MonitorIndex;
-            TesseraXPad = s.XPad;
-            TesseraYPad = s.YPad;
-            s.AutoDismissMs = (int)Math.Round(Math.Clamp((double)TesseraAutoDismissSeconds, 0.5, 20) * 1000);
-            s.Ani = TesseraAni;
-            s.AniDir = TesseraAniDir;
-            s.AniEase = TesseraFlyoutAnimationPolicy.NormalizeEase(TesseraAniEase);
-            s.AniSteps = TesseraFlyoutAnimationPolicy.NormalizeAniSteps(TesseraAniSteps);
-            s.AnimationDisplacement =
-                TesseraFlyoutAnimationPolicy.NormalizeDisplacementPx(TesseraAnimationDisplacement);
-            s.EnableMediaFlyouts = TesseraMediaFlyouts;
-            s.EnableLockFlyouts = TesseraLockFlyouts;
-            s.EnableFlightFlyouts = TesseraFlightFlyouts;
-            s.ShowMediaStripOnVolume = TesseraMediaStrip;
-            PersistTesseraMaterial(s);
-            s.UseFocusDim = TesseraFocusDim;
-            s.FlyoutScalePercent = (int)Math.Clamp(TesseraFlyoutScalePercent, 50, 150);
-            s.AccentColor = TesseraAccentColor.NormalizeOrEmpty(TesseraAccentHex);
-            TesseraAccentHex = s.AccentColor;
-            s.UseLegacyVolumeHooks = TesseraLegacyVol;
-            s.LegacyVolumeStep = Math.Clamp((double)TesseraLegacyStepPercent, 1, 25) / 100.0;
-            ModuleSettingsStore.Save(ModuleIds.Tessera, s);
-            string path = ModuleSettingsStore.PathFor(ModuleIds.Tessera);
-            DateTime mtime = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
-            TesseraFlyoutDiagnostics.Log(
-                $"[Hub] PersistTesseraFromUi: style {priorStyle} -> {s.Style} "
-                + $"(UI ModuleStyle={ModuleStyle}), autoDismissMs={s.AutoDismissMs}, "
-                + $"wroteMtimeUtc={mtime:O}");
-            TesseraPosition = s.Position;
-            TesseraAni = s.Ani;
-        }
-
         partial void OnSelectedTesseraPositionChanged(TesseraNamedChoice? value)
         {
             if (value is not null) TesseraPosition = value.Code;
         }
-
 
         partial void OnTesseraEaseFamilyChanged(string value)
         {
@@ -649,191 +479,6 @@ namespace MosaicShell.Host.ViewModels
             TesseraAniEase = TesseraFlyoutAnimationPolicy.ComposeEase(TesseraEaseFamily, TesseraEaseVariant);
         }
 
-        [RelayCommand]
-        private async Task SaveModuleConfigAsync()
-        {
-            TesseraFlyoutDiagnostics.Log(
-                $"[Hub] SaveModuleConfigCommand invoked: ConfigModuleId='{ConfigModuleId}', "
-                + $"IsRunning={SaveModuleConfigCommand.IsRunning}");
-            if (string.IsNullOrWhiteSpace(ConfigModuleId))
-            {
-                TesseraFlyoutDiagnostics.Log("[Hub] SaveModuleConfigCommand: ConfigModuleId empty, returning early.");
-                return;
-            }
-
-            string id = ConfigModuleId;
-            IsCapturingHotkey = false;
-            // Case-insensitive by construction (ModuleIds.Is), not by convention - ids arrive from
-            // user-authored manifests/settings, and hand-lowercasing each case label independently
-            // (the previous pattern) silently breaks the moment one case is written differently,
-            // which is exactly what happened to Tessera when it was swapped for the ModuleIds
-            // constant but the case label kept its canonical capitalization.
-            switch (id)
-            {
-                case string when ModuleIds.Is(id, ModuleIds.Chrono):
-                    {
-                        ChronoSettings s = ModuleSettingsStore.Load("Chrono", () => new ChronoSettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        s.ShowSeconds = ChronoSeconds;
-                        ModuleSettingsStore.Save("Chrono", s);
-                        StatusMessage = "Chrono settings saved! Relaunch widget to apply.";
-                        break;
-                    }
-                case string when ModuleIds.IsTessera(id):
-                    {
-                        TesseraSettings prior = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
-                        bool priorNativeTranslucency = prior.UseNativeTranslucency;
-                        PersistTesseraFromUi();
-                        TesseraSettings saved = ModuleSettingsStore.Load(ModuleIds.Tessera, () => new TesseraSettings());
-                        bool wasArmed = _capabilityHost?.IsArmed(ModuleIds.Tessera) == true;
-                        TesseraFlyoutDiagnostics.Log(
-                            $"[Hub] Save clicked: style={saved.Style}, armed={wasArmed}");
-                        if (wasArmed)
-                        {
-                            bool ok = await _capabilityHost!.ReArmAsync(ModuleIds.Tessera);
-                            StatusMessage = ok
-                                ? "Tessera settings saved and re-armed."
-                                : "Tessera settings saved but re-arm failed.";
-                            TesseraFlyoutDiagnostics.Log($"[Hub] ReArmAsync(Tessera) -> {ok}");
-                        }
-                        else
-                        {
-                            StatusMessage = "Tessera settings saved. Arm from Tiles to apply flyout hooks.";
-                        }
-
-                        if (saved.UseNativeTranslucency != priorNativeTranslucency)
-                        {
-                            StatusMessage += " Restart Host after changing native translucency (process-wide corner radius).";
-                        }
-
-                        break;
-                    }
-                case string when ModuleIds.Is(id, ModuleIds.Phono):
-                    {
-                        PhonoSettings s = ModuleSettingsStore.Load("Phono", () => new PhonoSettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        ModuleSettingsStore.Save("Phono", s);
-                        StatusMessage = "Phono style saved.";
-                        break;
-                    }
-                case string when ModuleIds.Is(id, ModuleIds.Pulse):
-                    {
-                        PulseSettings s = ModuleSettingsStore.Load("Pulse", () => new PulseSettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        ModuleSettingsStore.Save("Pulse", s);
-                        StatusMessage = "Pulse style saved.";
-                        break;
-                    }
-                case string when ModuleIds.Is(id, ModuleIds.Canvas):
-                    {
-                        CanvasSettings s = ModuleSettingsStore.Load("Canvas", () => new CanvasSettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        ModuleSettingsStore.Save("Canvas", s);
-                        StatusMessage = "Canvas style saved.";
-                        break;
-                    }
-                case string when ModuleIds.Is(id, ModuleIds.Mixdeck):
-                    {
-                        MixdeckSettings s = ModuleSettingsStore.Load("Mixdeck", () => new MixdeckSettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        s.HotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Mixdeck", ConfigHotkeyGesture);
-                        ConfigHotkeyGesture = s.HotkeyGesture;
-                        ModuleSettingsStore.Save("Mixdeck", s);
-                        StatusMessage = await PersistHotkeyArmAsync(id);
-                        break;
-                    }
-                case string when ModuleIds.Is(id, ModuleIds.Inlay):
-                    {
-                        InlaySettings s = ModuleSettingsStore.Load("Inlay", () => new InlaySettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        s.HotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Inlay", ConfigHotkeyGesture);
-                        ConfigHotkeyGesture = s.HotkeyGesture;
-                        s.Pins = [.. ConfigPins.Where(p => !string.IsNullOrWhiteSpace(p)).Distinct(StringComparer.OrdinalIgnoreCase)];
-                        if (s.Pins.Count == 0)
-                        {
-                            s.Pins = ["notepad", "calc"];
-                        }
-
-                        ModuleSettingsStore.Save("Inlay", s);
-                        StatusMessage = await PersistHotkeyArmAsync(id);
-                        break;
-                    }
-                case string when ModuleIds.Is(id, ModuleIds.Chord):
-                    {
-                        ChordSettings s = ModuleSettingsStore.Load("Chord", () => new ChordSettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        s.HotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Chord", ConfigHotkeyGesture);
-                        ConfigHotkeyGesture = s.HotkeyGesture;
-                        s.Actions = [.. ConfigChordActions
-                            .Where(a => !string.IsNullOrWhiteSpace(a.Target))
-                            .Select(a => new ChordAction
-                            {
-                                Name = string.IsNullOrWhiteSpace(a.Name) ? a.Target : a.Name,
-                                Target = a.Target
-                            })];
-                        ModuleSettingsStore.Save("Chord", s);
-                        StatusMessage = await PersistHotkeyArmAsync(id);
-                        break;
-                    }
-                case string when ModuleIds.Is(id, ModuleIds.Slate):
-                    {
-                        SlateSettings s = ModuleSettingsStore.Load("Slate", () => new SlateSettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        s.IdleSeconds = Math.Clamp((int)ConfigIdleSeconds, 30, 3600);
-                        s.HideOnFullscreen = ConfigHideOnFullscreen;
-                        ModuleSettingsStore.Save("Slate", s);
-                        if (_capabilityHost?.IsArmed(id) == true)
-                        {
-                            _ = await _capabilityHost.ReArmAsync(id);
-                        }
-
-                        StatusMessage = "Slate saved" + (_capabilityHost?.IsArmed(id) == true ? " and re-armed." : ".");
-                        break;
-                    }
-                case string when ModuleIds.Is(id, ModuleIds.Substrate):
-                    {
-                        SubstrateSettings s = ModuleSettingsStore.Load("Substrate", () => new SubstrateSettings());
-                        s.Style = StyleIds.Normalize(ModuleStyle);
-                        s.HotkeyGesture = HotkeyGestureParser.EnsureRegisterable("Substrate", ConfigHotkeyGesture);
-                        ConfigHotkeyGesture = s.HotkeyGesture;
-                        s.ShowMute = ConfigShowMute;
-                        ModuleSettingsStore.Save("Substrate", s);
-                        StatusMessage = await PersistHotkeyArmAsync(id);
-                        break;
-                    }
-                default:
-                    StatusMessage = $"No settings store for {id}.";
-                    return;
-            }
-
-            ConfigHowToTrigger = ModuleUsageGuide.HowToTrigger(id);
-            RefreshLibrary();
-        }
-
-        private async Task<string> PersistHotkeyArmAsync(string id)
-        {
-            if (_capabilityHost is null)
-            {
-                return $"{id} saved.";
-            }
-
-            if (!_capabilityHost.IsArmed(id))
-            {
-                return $"{id} saved. Arm from Tiles, then press {ConfigHotkeyGesture}.";
-            }
-
-            bool ok = await _capabilityHost.ReArmAsync(id);
-            if (!ok)
-            {
-                return $"{id} saved but could not re-arm.";
-            }
-
-            string? err = _capabilityHost.GetHotkeyError(id);
-            return string.IsNullOrWhiteSpace(err)
-                ? $"{id} saved. Hotkey active: {ConfigHotkeyGesture}."
-                : $"{id} saved but hotkey failed: {err}";
-        }
-
         private void EnsureLaunchTargetsLoaded()
         {
             if (LaunchTargetChoices.Count > 0)
@@ -847,128 +492,23 @@ namespace MosaicShell.Host.ViewModels
             }
         }
 
-        [RelayCommand]
-        private void BeginHotkeyCapture()
+        /// <summary>Arms the capability if needed and opens its overlay so its effect can be seen.</summary>
+        private async Task OpenOverlayPreviewAsync(string id)
         {
-            IsCapturingHotkey = true;
-            HotkeyCaptureHint = "Press the shortcut now (Esc cancels)…";
-            StatusMessage = "Listening for hotkey…";
-        }
-
-        [RelayCommand]
-        private void CancelHotkeyCapture()
-        {
-            IsCapturingHotkey = false;
-            HotkeyCaptureHint = "Click Capture, then press the shortcut";
-        }
-
-        /// <summary>Called from MainWindow while capturing.</summary>
-        public bool TryCaptureHotkey(KeyEventArgs e)
-        {
-            if (!IsCapturingHotkey)
-            {
-                return false;
-            }
-
-            if (e.Key == Key.Escape)
-            {
-                CancelHotkeyCapture();
-                e.Handled = true;
-                return true;
-            }
-
-            if (!HotkeyCapture.TryFormat(e, out string? gesture))
-            {
-                return false;
-            }
-
-            if (HotkeyGestureParser.IsLikelyOsReserved(gesture))
-            {
-                StatusMessage = HostPlatformText.Current.ReservedShortcut(gesture);
-                e.Handled = true;
-                return true;
-            }
-
-            ConfigHotkeyGesture = gesture;
-            IsCapturingHotkey = false;
-            HotkeyCaptureHint = "Click Capture, then press the shortcut";
-            StatusMessage = $"Hotkey set to {gesture}. Save to apply.";
-            e.Handled = true;
-            return true;
-        }
-
-        [RelayCommand]
-        private void AddLaunchTargetPin()
-        {
-            if (!LaunchTargetCatalog.TryResolveLabel(LaunchTargetQuery, out string? target, out _))
+            if (_capabilityHost is null)
             {
                 return;
             }
 
-            if (ConfigPins.Any(p => p.Equals(target, StringComparison.OrdinalIgnoreCase)))
-            {
-                StatusMessage = "Already pinned.";
-                return;
-            }
-            ConfigPins.Add(target);
-            LaunchTargetQuery = "";
-        }
-
-        [RelayCommand]
-        private void RemoveConfigPin(string? pin)
-        {
-            if (pin is null)
-            {
-                return;
-            }
-
-            _ = ConfigPins.Remove(pin);
-        }
-
-        [RelayCommand]
-        private void AddChordActionFromPicker()
-        {
-            if (!LaunchTargetCatalog.TryResolveLabel(LaunchTargetQuery, out string? target, out string? display))
-            {
-                return;
-            }
-
-            string name = string.IsNullOrWhiteSpace(ChordActionName) ? display : ChordActionName.Trim();
-            ConfigChordActions.Add(new ChordActionRow(name, target));
-            LaunchTargetQuery = "";
-            ChordActionName = "";
-        }
-
-        [RelayCommand]
-        private void RemoveChordAction(ChordActionRow? row)
-        {
-            if (row is null)
-            {
-                return;
-            }
-
-            _ = ConfigChordActions.Remove(row);
-        }
-
-        [RelayCommand]
-        private async Task TryCapabilityOverlayAsync()
-        {
-            if (string.IsNullOrWhiteSpace(ConfigModuleId) || _capabilityHost is null)
-            {
-                return;
-            }
-
-            string id = ConfigModuleId;
-            await SaveModuleConfigAsync();
             bool ok = _capabilityHost.IsArmed(id) || await _capabilityHost.ArmAsync(id);
             if (!ok)
             {
-                StatusMessage = $"Could not arm {id}. Install it from Tiles first.";
+                StatusMessage = $"Could not turn on {id} to show it. If it is not added yet, add it from Modules first.";
                 return;
             }
 
             string? err = _capabilityHost.GetHotkeyError(id);
-            if (!string.IsNullOrWhiteSpace(err) && ShowHotkeyCapExtras)
+            if (!string.IsNullOrWhiteSpace(err))
             {
                 StatusMessage = err;
             }
@@ -996,7 +536,6 @@ namespace MosaicShell.Host.ViewModels
             RefreshLibrary();
         }
 
-
         [RelayCommand]
         private void OpenGitHub()
         {
@@ -1018,7 +557,9 @@ namespace MosaicShell.Host.ViewModels
             _services.Autostart.SetEnabled(AutostartEnabled);
             Hub.AutostartHost = AutostartEnabled;
             ModuleSettingsStore.Save("Hub", Hub);
-            StatusMessage = AutostartEnabled ? "Host will start at logon." : "Autostart disabled.";
+            StatusMessage = AutostartEnabled
+                ? "MosaicShell will start when you sign in."
+                : "MosaicShell will not start when you sign in.";
         }
 
         [RelayCommand]
@@ -1033,8 +574,43 @@ namespace MosaicShell.Host.ViewModels
                 : "Close button exits the app.";
         }
 
+        /// <summary>The Settings toggle: whether the OS reduce-motion setting turns flyout slides into fades.</summary>
+        public bool FollowSystemReducedMotion
+        {
+            get => Hub.FollowSystemReducedMotion;
+            set
+            {
+                if (Hub.FollowSystemReducedMotion == value)
+                {
+                    return;
+                }
+
+                Hub.FollowSystemReducedMotion = value;
+                Theming.ReducedMotion.FollowSystem = value;
+                ModuleSettingsStore.Save("Hub", Hub);
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsReducedMotionInEffect));
+                OnPropertyChanged(nameof(TesseraMotionSettingsOpacity));
+            }
+        }
+
+        /// <summary>Reduced motion is on and the system asks for it, so Tessera's motion settings change nothing.</summary>
+        public bool IsReducedMotionInEffect => Theming.ReducedMotion.IsOn;
+
+        public string ReducedMotionNotice => Core.HostPlatform.ReducedMotionPolicy.MotionSettingsNotice;
+
+        public double TesseraMotionSettingsOpacity =>
+            IsReducedMotionInEffect ? Core.HostPlatform.ReducedMotionPolicy.MotionSettingsDimmedOpacity : 1;
+
+        /// <summary>What the OS says now, so the Settings row can tell whether turning it on changes anything.</summary>
+        public string ReducedMotionStatus => Theming.ReducedMotion.SystemReduced
+            ? "Your system's animation effects are off, so this is in effect while it is on."
+            : "Your system's animation effects are on, so this changes nothing right now.";
+
         partial void OnCloseMinimizesToTrayChanged(bool value)
         {
+            OnPropertyChanged(nameof(CloseHint));
+
             // Keep Hub in sync when bound ToggleButton/CheckBox flips the property
             if (Hub.CloseMinimizesToTray == value) return;
             Hub.CloseMinimizesToTray = value;
@@ -1059,6 +635,7 @@ namespace MosaicShell.Host.ViewModels
 
                 UpdateStatus = $"Update available: {result.LatestVersion} (you have {result.CurrentVersion})";
                 StatusMessage = UpdateStatus;
+                UpdateBanner = HubBanner.UpdateReady(result.LatestVersion ?? "");
 
                 if (string.IsNullOrWhiteSpace(result.SetupDownloadUrl))
                 {
@@ -1134,152 +711,6 @@ namespace MosaicShell.Host.ViewModels
         private static extern int NativeMessageBox(IntPtr hWnd, string text, string caption, uint type);
 
         [RelayCommand]
-        private async Task CompleteWelcomeAsync()
-        {
-            Hub.WelcomeCompleted = true;
-            ModuleSettingsStore.Save("Hub", Hub);
-            List<string> selected = [.. Modules.Concat(Widgets).Where(m => m.IsSelectedForBatch).Select(m => m.Id)];
-            foreach (string id in selected)
-            {
-                if (!ModuleCatalog.IsInstalled(id))
-                {
-                    await _installer.InstallAsync(id);
-                }
-            }
-            RefreshLibrary();
-            Navigate("Home");
-            StatusMessage = selected.Count == 0 ? "Welcome completed." : $"Installed {selected.Count} module(s).";
-        }
-
-        [RelayCommand]
-        private async Task BatchInstallAsync()
-        {
-            List<LibraryItemViewModel> selected = [.. Modules.Concat(Widgets).Where(m => m.IsSelectedForBatch && !m.IsInstalled)];
-            if (selected.Count == 0)
-            {
-                StatusMessage = "Select modules in Tiles (checkbox) first.";
-                return;
-            }
-            IsBusy = true;
-            try
-            {
-                foreach (LibraryItemViewModel item in selected)
-                {
-                    StatusMessage = $"Installing {item.Name}…";
-                    await _installer.InstallAsync(item.Id);
-                    item.ApplyInstalled(_capabilityHost?.IsArmed(item.Id) == true);
-                }
-                StatusMessage = $"Batch installed {selected.Count} module(s).";
-            }
-            catch (Exception ex) { StatusMessage = ex.Message; }
-            finally { IsBusy = false; RefreshLibrary(); }
-        }
-
-        [RelayCommand]
-        private async Task InstallModuleAsync(LibraryItemViewModel? item)
-        {
-            if (item is null || IsBusy)
-            {
-                return;
-            }
-
-            if (item.IsInstalled)
-            {
-                if (item.IsCapability)
-                {
-                    if (_capabilityHost is null)
-                    {
-                        StatusMessage = "Capability daemon not available.";
-                        return;
-                    }
-                    if (_capabilityHost.IsArmed(item.Id))
-                    {
-                        _ = await _capabilityHost.DisarmAsync(item.Id);
-                        item.ApplyArmed(false);
-                        StatusMessage = $"Disarmed {item.Name}.";
-                    }
-                    else
-                    {
-                        bool ok = await _capabilityHost.ArmAsync(item.Id);
-                        item.ApplyArmed(ok);
-                        if (!ok)
-                        {
-                            StatusMessage = $"Could not arm {item.Name}.";
-                        }
-                        else
-                        {
-                            string? err = _capabilityHost.GetHotkeyError(item.Id);
-                            StatusMessage = string.IsNullOrWhiteSpace(err)
-                                ? $"{ModuleUsageGuide.ArmedStatus(item.Id)}. {ModuleUsageGuide.HowToTrigger(item.Id)}"
-                                : err;
-                        }
-                    }
-                    return;
-                }
-
-                if (_runtime.IsRunning(item.Id))
-                {
-                    _ = _runtime.Stop(item.Id);
-                    item.ApplyRunning(false);
-                    StatusMessage = $"Stopped {item.Name}.";
-                    return;
-                }
-                ModuleLaunchResult launch = _launcher.TryLaunch(item.Id);
-                item.ApplyRunning(launch.Started);
-                StatusMessage = launch.Message;
-                return;
-            }
-
-            IsBusy = true;
-            item.IsInstalling = true;
-            try
-            {
-                await _installer.InstallAsync(item.Id);
-                ModuleManifest? manifest = ModuleManifest.TryLoad(item.Id);
-                item.ApplyInstalled(false);
-                StatusMessage = item.IsCapability
-                    ? $"Installed {item.Name}. Use the play button to arm the capability host."
-                    : $"Installed {item.Name}. Use play to launch the overlay.";
-
-                if (manifest?.DefaultArmed == true && _capabilityHost is not null)
-                {
-                    bool ok = await _capabilityHost.ArmAsync(item.Id);
-                    item.ApplyArmed(ok);
-                    if (ok)
-                    {
-                        StatusMessage = $"Installed and armed {item.Name}.";
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                item.ApplyNotInstalled();
-                StatusMessage = $"Install failed: {ex.Message}";
-            }
-            finally
-            {
-                item.IsInstalling = false;
-                IsBusy = false;
-            }
-        }
-
-        [RelayCommand]
-        private async Task UninstallModule(LibraryItemViewModel? item)
-        {
-            if (item is null || !item.IsInstalled)
-            {
-                return;
-            }
-
-            if (ModuleUninstaller.Uninstall(item.Id, _runtime, _capabilityHost))
-            {
-                StatusMessage = $"Uninstalled {item.Name}.";
-                RefreshLibrary();
-            }
-            await Task.CompletedTask;
-        }
-
-        [RelayCommand]
         private void ImportShp()
         {
             string? path = Environment.GetEnvironmentVariable("MOSAICSHELL_SHP");
@@ -1312,15 +743,24 @@ namespace MosaicShell.Host.ViewModels
         {
             Modules.Clear();
             Widgets.Clear();
-            foreach (ModuleInfo m in ModuleCatalog.Modules)
+            List<LibraryItemViewModel> modules = [.. ModuleCatalog.Modules.Select(m =>
+                LibraryItemViewModel.From(m, running: false, armed: _capabilityHost?.IsArmed(m.Id) == true))];
+            List<LibraryItemViewModel> widgets = [.. ModuleCatalog.Widgets.Select(w =>
+                LibraryItemViewModel.From(w, running: _runtime.IsRunning(w.Id), armed: false))];
+
+            // Every one of the kind, sorted by state: on, then installed and off, then not added.
+            foreach (LibraryItemViewModel item in ModuleListOrder.Sort(modules, static i => i.ListState, static i => i.Id))
             {
-                bool armed = _capabilityHost?.IsArmed(m.Id) == true;
-                Modules.Add(LibraryItemViewModel.From(m, running: false, armed: armed));
+                Modules.Add(item);
             }
-            foreach (ModuleInfo w in ModuleCatalog.Widgets)
+
+            foreach (LibraryItemViewModel item in ModuleListOrder.Sort(widgets, static i => i.ListState, static i => i.Id))
             {
-                Widgets.Add(LibraryItemViewModel.From(w, running: _runtime.IsRunning(w.Id), armed: false));
+                Widgets.Add(item);
             }
+
+            ApplyLibrarySearch();
+            RefreshShell();
         }
 
         private sealed class NullTileHost : ITileSurfaceHost
@@ -1331,36 +771,28 @@ namespace MosaicShell.Host.ViewModels
         }
     }
 
-    public sealed record DiscoverCard(string Title, string Body, string TargetPage, MaterialIconKind GlyphKind, IBrush GlyphBrush);
-
     public partial class LibraryItemViewModel : ObservableObject
     {
         public required string Id { get; init; }
         public required string Name { get; init; }
         public required string Description { get; init; }
-        public required string IconPath { get; init; }
         public required MaterialIconKind GlyphKind { get; init; }
         public required IBrush GlyphBrush { get; init; }
         public bool IsCapability { get; init; }
+
+        public string SettingsAutomationName => $"{Name} settings";
 
         [ObservableProperty] private bool _isInstalled;
         [ObservableProperty] private bool _isInstalling;
         [ObservableProperty] private bool _isRunning;
         [ObservableProperty] private bool _isArmed;
-        [ObservableProperty] private bool _isSelectedForBatch;
-        [ObservableProperty] private string _statusText = "(Not Installed)";
-        [ObservableProperty] private IBrush _statusBrush = HubGlyphUi.StatusBrush(HubTileStatusKind.NotInstalled);
-        [ObservableProperty] private MaterialIconKind _actionIcon = MaterialIconKind.Download;
-        [ObservableProperty] private string _actionToolTip = "Install";
+        [ObservableProperty] private bool _isShownBySearch = true;
 
         public void ApplyNotInstalled()
         {
             IsInstalled = false;
             IsRunning = false;
             IsArmed = false;
-            StatusText = "(Not Installed)";
-            SyncStatusChrome();
-            RefreshActionState();
         }
 
         public void ApplyInstalled(bool armed = false)
@@ -1368,98 +800,36 @@ namespace MosaicShell.Host.ViewModels
             IsInstalled = true;
             IsRunning = false;
             IsArmed = armed;
-            StatusText = IsCapability ? armed ? ModuleUsageGuide.ArmedStatus(Id) : "Ready to arm" : "Ready";
-
-            SyncStatusChrome();
-            RefreshActionState();
         }
 
         public void ApplyRunning(bool running)
         {
             IsRunning = running;
-            if (!IsInstalled || IsCapability)
-            {
-                return;
-            }
-
-            StatusText = running ? "Running" : "Ready";
-            SyncStatusChrome();
-            RefreshActionState();
         }
 
         public void ApplyArmed(bool armed)
         {
             IsArmed = armed;
-            if (!IsInstalled || !IsCapability)
-            {
-                return;
-            }
-
-            StatusText = armed ? ModuleUsageGuide.ArmedStatus(Id) : "Ready to arm";
-            SyncStatusChrome();
-            RefreshActionState();
-        }
-
-        private void SyncStatusChrome()
-        {
-            HubTileStatusKind kind = HubTileStatusChromeSpec.Resolve(IsInstalled, IsCapability, IsArmed, IsRunning);
-            StatusBrush = HubGlyphUi.StatusBrush(kind);
-        }
-
-        private void RefreshActionState()
-        {
-            if (!IsInstalled)
-            {
-                ActionIcon = MaterialIconKind.Download;
-                ActionToolTip = "Install";
-                return;
-            }
-
-            if (IsCapability)
-            {
-                ActionIcon = IsArmed ? MaterialIconKind.StopCircle : MaterialIconKind.Play;
-                ActionToolTip = IsArmed ? "Disarm" : "Arm";
-                return;
-            }
-
-            ActionIcon = IsRunning ? MaterialIconKind.Stop : MaterialIconKind.Play;
-            ActionToolTip = IsRunning ? "Stop" : "Launch";
         }
 
         public static LibraryItemViewModel From(ModuleInfo info, bool running = false, bool armed = false)
         {
             bool installed = ModuleCatalog.IsInstalled(info.Id);
             bool isCap = info.Kind is ModuleKind.Capability or ModuleKind.Hybrid;
-            string status = !installed
-                ? "(Not Installed)"
-                : isCap ? armed ? ModuleUsageGuide.ArmedStatus(info.Id) : "Ready to arm" : running ? "Running" : "Ready";
             HubGlyph glyph = HubGlyphCatalog.ForModule(info.Id);
             LibraryItemViewModel item = new()
             {
                 Id = info.Id,
                 Name = info.DisplayName,
                 Description = info.Description,
-                IconPath = $"/Assets/Modules/{info.Id}.png",
                 GlyphKind = HubGlyphUi.Kind(glyph),
                 GlyphBrush = HubGlyphUi.Brush(glyph),
                 IsCapability = isCap,
                 IsInstalled = installed,
                 IsRunning = running && installed && !isCap,
                 IsArmed = armed && installed && isCap,
-                StatusText = status,
             };
-            item.SyncStatusChrome();
-            item.RefreshActionState();
             return item;
-        }
-    }
-
-    public sealed record ChordActionRow(string Name, string Target)
-    {
-        public string Label => string.IsNullOrWhiteSpace(Name) ? Target : $"{Name} → {Target}";
-        public override string ToString()
-        {
-            return Label;
         }
     }
 

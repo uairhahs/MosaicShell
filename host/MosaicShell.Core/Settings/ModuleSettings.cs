@@ -102,7 +102,7 @@ namespace MosaicShell.Core.Settings
         public string Style { get; set; } = "Fluent";
         /// <summary>YourMixer-inspired palette (Default, Dark, Light, Accent, Frost, Midnight, Sunset).</summary>
         public string ColorScheme { get; set; } = "Default";
-        public string HotkeyGesture { get; set; } = "Ctrl+Alt+M";
+        public string HotkeyGesture { get; set; } = "Ctrl+Alt+X";
         public bool CloseOnEscape { get; set; } = true;
     }
 
@@ -150,10 +150,17 @@ namespace MosaicShell.Core.Settings
 
     public sealed class HubSettings
     {
-        public bool WelcomeCompleted { get; set; }
         public bool AutostartHost { get; set; }
         /// <summary>When true, window close hides to tray; when false, close exits the host.</summary>
         public bool CloseMinimizesToTray { get; set; } = true;
-        public List<string> BatchInstallSelection { get; set; } = [];
+
+        /// <summary>
+        /// When true, the OS reduce-motion setting turns flyout slides into fades (<see cref="HostPlatform.ReducedMotionPolicy"/>).
+        /// Off by default: many people turn Windows animations off for speed, and the flyout look is their own choice.
+        /// </summary>
+        public bool FollowSystemReducedMotion { get; set; }
+
+        /// <summary>Whether the Host has offered the default modules (<see cref="Install.DefaultModulesPolicy"/>).</summary>
+        public bool DefaultModulesOffered { get; set; }
     }
 }

@@ -35,14 +35,26 @@ namespace MosaicShell.Core.Install
 
         /// <summary>
         /// Install from a directory or .zip that contains <c>module.manifest.json</c>
-        /// (and optionally module.dll / capability.dll / tile.dll).
+        /// (and optionally module.dll / capability.dll / tile.dll). Returns the id it installed under.
         /// </summary>
-        public Task InstallFromPackageAsync(
+        /// <exception cref="InvalidOperationException">
+        /// No manifest, an unsafe id, or the id of a module MosaicShell ships (installing replaces the folder).
+        /// </exception>
+        public Task<string> InstallFromPackageAsync(
             string packagePath,
             IProgress<ModuleInstallProgress>? progress = null,
             CancellationToken ct = default)
         {
             ct.ThrowIfCancellationRequested();
+            return Task.FromResult(InstallFromPackage(packagePath, progress));
+        }
+
+        /// <summary>
+        /// <see cref="InstallFromPackageAsync"/> without the task, for a caller with nothing to await on (the Host's
+        /// <c>--install-package</c>, before any window exists).
+        /// </summary>
+        public string InstallFromPackage(string packagePath, IProgress<ModuleInstallProgress>? progress = null)
+        {
             AppPaths.EnsureLayout();
 
             if (string.IsNullOrWhiteSpace(packagePath))
@@ -84,6 +96,12 @@ namespace MosaicShell.Core.Install
                     throw new InvalidOperationException("module.manifest.json must set Id.");
                 }
 
+                if (Modules.ModuleCatalog.IsBundled(moduleId))
+                {
+                    throw new InvalidOperationException(
+                        $"'{moduleId}' is a built-in module, so a package cannot replace it. Give the package its own Id.");
+                }
+
                 // The id came from the package, so it is untrusted until the policy clears it.
                 string dest = ModulePackagePolicy.ResolveModuleDirectory(AppPaths.ModulesDirectory, moduleId);
                 if (Directory.Exists(dest))
@@ -112,7 +130,7 @@ namespace MosaicShell.Core.Install
                     JsonSerializer.Serialize(marker, new JsonSerializerOptions { WriteIndented = true }));
 
                 progress?.Report(new ModuleInstallProgress { Stage = "done", Detail = dest });
-                return Task.CompletedTask;
+                return moduleId;
             }
             finally
             {

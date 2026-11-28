@@ -13,6 +13,9 @@ namespace MosaicShell.Core.Capabilities.Platform
         private readonly Lock _settleGate = new();
         private int _consumers;
         private MediaSessionInfo? _lastIdentity;
+
+        /// <summary>Whether the session was playing at the last change; null while there was none.</summary>
+        private bool? _lastPlaying;
         private Timer? _settleTimer;
         private bool _disposed;
 
@@ -32,6 +35,7 @@ namespace MosaicShell.Core.Capabilities.Platform
             _media.Changed += OnChanged;
             _media.ProgressChanged += OnProgress;
             _lastIdentity = _media.Current;
+            _lastPlaying = _media.Current?.IsPlaying;
         }
 
         /// <summary>Call from capability Disarm.</summary>
@@ -63,6 +67,7 @@ namespace MosaicShell.Core.Capabilities.Platform
             _media.ProgressChanged -= OnProgress;
             CancelSettleTimer();
             _lastIdentity = null;
+            _lastPlaying = null;
         }
 
         public void PumpTimeline()
@@ -75,6 +80,8 @@ namespace MosaicShell.Core.Capabilities.Platform
         {
             MediaSessionInfo? current = _media.Current;
             bool trackBoundary = MediaFlyoutRouter.IsTrackBoundary(_lastIdentity, current);
+            bool playbackToggle = _lastPlaying is bool wasPlaying && current is not null && current.IsPlaying != wasPlaying;
+            _lastPlaying = current?.IsPlaying;
 
             // A skip arrives as a settling sequence, not a single event: placeholder title, then
             // tab title, then real metadata. Announcing a boundary for each stage rebinds the
@@ -88,7 +95,7 @@ namespace MosaicShell.Core.Capabilities.Platform
 
                 // Still surface the change as a non-boundary so an already-visible flyout keeps
                 // soft-refreshing; only the "present a new track" classification is withheld.
-                Raise(new MediaSessionSignal(current, MediaSessionSignalKind.SessionChanged, false));
+                Raise(new MediaSessionSignal(current, MediaSessionSignalKind.SessionChanged, false, playbackToggle));
                 return;
             }
 
@@ -98,7 +105,7 @@ namespace MosaicShell.Core.Capabilities.Platform
                 _lastIdentity = current;
             }
 
-            Raise(new MediaSessionSignal(current, MediaSessionSignalKind.SessionChanged, trackBoundary));
+            Raise(new MediaSessionSignal(current, MediaSessionSignalKind.SessionChanged, trackBoundary, playbackToggle));
         }
 
         /// <summary>
@@ -188,8 +195,13 @@ namespace MosaicShell.Core.Capabilities.Platform
         Progress,
     }
 
+    /// <summary>
+    /// One media change for capabilities. <c>IsPlaybackToggle</c> is true when the session switched between playing and
+    /// paused (see <see cref="MediaKeyStandInPolicy"/>).
+    /// </summary>
     public sealed record MediaSessionSignal(
         MediaSessionInfo? Current,
         MediaSessionSignalKind Kind,
-        bool IsTrackBoundary);
+        bool IsTrackBoundary,
+        bool IsPlaybackToggle = false);
 }

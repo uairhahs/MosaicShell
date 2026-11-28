@@ -17,6 +17,7 @@ using MosaicShell.Core.Capabilities.Ipc;
 using MosaicShell.Core.Capabilities.Platform;
 
 using MosaicShell.Core.HostPlatform;
+using MosaicShell.Core.HubShell;
 
 using MosaicShell.Core.Runtime;
 
@@ -57,6 +58,20 @@ namespace MosaicShell.Host
         private CapabilityDaemonCoordinator? _daemonCoordinator;
 
         private CapabilityIpcFlyoutServer? _ipcFlyoutServer;
+        private IDisposable? _hubPresence;
+
+        /// <summary>
+        /// The module switches as of the last change, written on the UI thread and read by GNOME's bus thread without
+        /// blocking on the UI thread.
+        /// </summary>
+        private IReadOnlyList<TrayModule> _trayModules = [];
+
+        private TrayPanel? _trayPanel;
+
+        /// <summary>The tray's one menu, and its module items by id in menu order.</summary>
+        private NativeMenu? _trayMenu;
+
+        private readonly OrderedDictionary<string, NativeMenuItem> _trayItems = [with(StringComparer.OrdinalIgnoreCase)];
 
         private MainViewModel? _vm;
 
@@ -83,18 +98,6 @@ namespace MosaicShell.Host
             {
 
                 desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
-
-                if (HostLaunchOptions.Mode == HostLaunchMode.GlintCapture && HostLaunchOptions.GlintCaptureDirectory is string captureDir)
-                {
-                    // Reference images only: nothing else starts (no tray, Hub, services or capability daemon).
-                    Dispatcher.UIThread.Post(async () =>
-                    {
-                        try { await Diagnostics.GlintReferenceCapture.RunAsync(captureDir); }
-                        finally { desktop.Shutdown(); }
-                    });
-                    base.OnFrameworkInitializationCompleted();
-                    return;
-                }
 
                 _services = HostServices.CreatePlatformDefaults(browserSources: true);
 
@@ -178,6 +181,9 @@ namespace MosaicShell.Host
 
                 _vm = new MainViewModel(_tileRuntime, _services, _tileHost, _capabilityHost, _hostUi);
 
+                // Posted, so the menu is never changed from inside the click that changed a module.
+                _vm.ModuleStatesChanged += (_, _) => Dispatcher.UIThread.Post(RebuildTrayMenu);
+                RebuildTrayMenu();
                 _mainWindow = new MainWindow { DataContext = _vm, ShowActivated = false };
 
                 _mainWindow.Closing += OnMainWindowClosing;
@@ -198,8 +204,10 @@ namespace MosaicShell.Host
                     _vm.RestoreSessions();
 
                     _vm.RefreshArmedState();
+                    await _vm.RunFirstRunIfDueAsync(Program.SettingsSavedAtStart);
 
-                    if (HostLaunchOptions.IsTrayOnly)
+                    // The first run screen shows even when started for the tray: it is how a new install says it is ready.
+                    if (HostLaunchOptions.IsTrayOnly && !_vm.IsFirstRunPage)
                     {
                         _mainWindow.Hide();
                     }
@@ -207,10 +215,26 @@ namespace MosaicShell.Host
 
 
 
+                // GNOME has no tray: MosaicShell's icon in its top bar opens the Hub, switches modules or quits instead.
+                // The bus calls come on a bus thread: the module list is the snapshot RebuildTrayMenu keeps, and a switch is
+                // posted to the UI thread, where the Hub's rows live.
+                _hubPresence = HostServices.StartHubPresence(
+                    () => Dispatcher.UIThread.Post(ShowHubOnRequest),
+                    () => Dispatcher.UIThread.Post(() => _ = ExitApplicationAsync()),
+                    () => Volatile.Read(ref _trayModules),
+                    (id, on) => Dispatcher.UIThread.Post(async () =>
+                    {
+                        if (_vm is not null)
+                        {
+                            await _vm.SetModuleOnAsync(id, on);
+                        }
+                    }));
+
                 desktop.Exit += async (_, _) =>
 
                 {
 
+                    _hubPresence?.Dispose();
                     await TeardownCapabilitiesAsync();
 
                 };
@@ -333,19 +357,87 @@ namespace MosaicShell.Host
 
 
 
-        private void TrayOpen_OnClick(object? sender, EventArgs e)
-        {
-            ShowMainWindow();
-        }
-
+        /// <summary>Left-click: the quick panel, which stays open while modules are switched. Right-click: the menu.</summary>
         private void TrayIcon_OnClicked(object? sender, EventArgs e)
         {
-            ShowMainWindow();
+            if (_vm is null)
+            {
+                ShowMainWindow();
+                return;
+            }
+
+            if (_trayPanel is null)
+            {
+                _trayPanel = new TrayPanel { DataContext = _vm };
+                _trayPanel.OpenRequested += (_, _) => ShowMainWindow();
+                _trayPanel.QuitRequested += async (_, _) => await ExitApplicationAsync();
+            }
+
+            _trayPanel.ShowByPointer();
         }
 
-        private async void TrayExit_OnClick(object? sender, EventArgs e)
+        /// <summary>
+        /// The tray menu (U24): a switch per installed module, so it turns on and off without the Hub, then Open and
+        /// Quit; GNOME's top bar menu reads the same list. One menu for the Host's life: a change ticks its items in
+        /// place, and only a change in which modules are installed lists them again. Replacing the whole menu on every
+        /// toggle, from inside the click that caused it, made it disappear.
+        /// </summary>
+        private void RebuildTrayMenu()
         {
-            await ExitApplicationAsync();
+            if (_vm is null)
+            {
+                return;
+            }
+
+            IReadOnlyList<TrayModule> modules = _vm.TrayModules();
+            Volatile.Write(ref _trayModules, modules);
+
+            if (_trayMenu is null)
+            {
+                _trayMenu = [];
+                if (TrayIcon.GetIcons(this) is { Count: > 0 } icons)
+                {
+                    icons[0].Menu = _trayMenu;
+                }
+            }
+
+            if (modules.Select(m => m.Id).SequenceEqual(_trayItems.Keys))
+            {
+                foreach (TrayModule module in modules)
+                {
+                    _trayItems[module.Id].IsChecked = module.IsOn;
+                }
+
+                return;
+            }
+
+            _trayMenu.Items.Clear();
+            _trayItems.Clear();
+            foreach (TrayModule module in modules)
+            {
+                string id = module.Id;
+                NativeMenuItem item = new(module.Label) { ToggleType = MenuItemToggleType.CheckBox, IsChecked = module.IsOn };
+                // The module's state when clicked, not when the menu was built.
+                item.Click += (_, _) => Dispatcher.UIThread.Post(async () =>
+                {
+                    bool on = Volatile.Read(ref _trayModules).FirstOrDefault(m => m.Id == id)?.IsOn ?? false;
+                    await _vm.SetModuleOnAsync(id, !on);
+                });
+                _trayItems.Add(id, item);
+                _trayMenu.Add(item);
+            }
+
+            if (modules.Count > 0)
+            {
+                _trayMenu.Add(new NativeMenuItemSeparator());
+            }
+
+            NativeMenuItem open = new(TrayMenu.OpenLabel);
+            open.Click += (_, _) => ShowMainWindow();
+            _trayMenu.Add(open);
+            NativeMenuItem quit = new(TrayMenu.QuitLabel);
+            quit.Click += async (_, _) => await ExitApplicationAsync();
+            _trayMenu.Add(quit);
         }
 
         /// <summary>A second launch asked this Host to show itself (<see cref="HostSingleInstance"/>).</summary>

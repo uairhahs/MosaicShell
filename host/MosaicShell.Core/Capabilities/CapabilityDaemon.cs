@@ -11,7 +11,7 @@ namespace MosaicShell.Core.Capabilities
         private readonly HostServices _services;
         private readonly ICapabilityUiBridge _ui;
         private readonly CapabilityFlyoutPlatform _flyoutPlatform;
-        private readonly Dictionary<string, IModuleCapability> _instances = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, IModuleCapability> _instances = [with(StringComparer.OrdinalIgnoreCase)];
         private readonly Lock _gate = new();
         private bool _disposed;
 

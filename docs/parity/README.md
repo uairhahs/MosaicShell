@@ -53,7 +53,7 @@ Screenshot proof checklist and process: [`screenshots/README.md`](screenshots/RE
 - Live clock + date from system time
 - `TwentyFourHour` / `ShowSeconds` from `ChronoSettings`
 - StyleCatalog style changes chrome (e.g. Center vs Text vs Minimal sizing)
-- Library Start opens overlay via TileRuntime
+- Turning it on in the Hub opens the overlay via TileRuntime
 
 ### Phono (`tile_phono_mvp`)
 
@@ -66,14 +66,14 @@ Screenshot proof checklist and process: [`screenshots/README.md`](screenshots/RE
 
 - Bars (or round) driven by `IAudioLevelService` bands and peak, not RNG
 - `PulseSettings.VisualizerType` / style affects layout (Bar vs Round minimum)
-- Library Start opens overlay via TileRuntime
+- Turning it on in the Hub opens the overlay via TileRuntime
 
 ### Canvas (`tile_canvas_mvp`)
 
 - Live CPU / RAM / disk / host from `ISystemMetricsService`
 - Section toggles from `CanvasSettings`
 - Compact vs DEFAULT chrome from StyleCatalog
-- Library Start opens overlay via TileRuntime
+- Turning it on in the Hub opens the overlay via TileRuntime
 
 ## Desktop widget chrome
 

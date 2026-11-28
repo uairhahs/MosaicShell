@@ -124,16 +124,13 @@ namespace MosaicShell.Host.Tiles.Tessera
             Border volPill = TesseraChrome.SolidPill(volBody, TesseraStylePalette.MaterialYou.ShellBrush, pillR, colW, volH,
                 new Thickness(0));
 
-            Border eq = MaterialYouIconTile(MaterialIconKind.TuneVertical, TesseraStyleMetrics.MaterialYouIconSize, colW);
-            eq.PointerPressed += (_, e) =>
+            Border eq = MaterialYouIconTile(MaterialIconKind.TuneVertical, TesseraStyleMetrics.MaterialYouIconSize, colW, () =>
             {
                 if (vm.HostUi is not null)
                 {
                     _ = vm.HostUi.OpenOverlayAsync("mixdeck");
                 }
-
-                e.Handled = true;
-            };
+            });
 
             Control left = new StackPanel { Spacing = gap, Children = { transport, extras } };
             if (vm.HasMediaSession)

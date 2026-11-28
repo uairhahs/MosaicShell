@@ -23,6 +23,16 @@ namespace MosaicShell.Core.Services
         double Brightness { get; set; }
     }
 
+    /// <summary>The media session a flyout shows: what is playing, where it is, and what can be done to it.</summary>
+    /// <param name="Title">The track title, when the player gives one.</param>
+    /// <param name="Artist">The artist, when the player gives one.</param>
+    /// <param name="AppId">The app playing it, as the OS names it.</param>
+    /// <param name="IsPlaying">Playing, not paused or stopped.</param>
+    /// <param name="ThumbnailPng">The cover as PNG bytes, when there is one.</param>
+    /// <param name="PositionSeconds">Where playback is, in seconds.</param>
+    /// <param name="DurationSeconds">The track's length in seconds; 0 when unknown.</param>
+    /// <param name="LikeRating">Browser like rating when known (0 unrated, 1 disliked, 5 liked); null for native SMTC-only.</param>
+    /// <param name="Capabilities">What the browser player behind this session can be asked to do; none for native SMTC-only.</param>
     public sealed record MediaSessionInfo(
         string? Title,
         string? Artist,
@@ -31,9 +41,7 @@ namespace MosaicShell.Core.Services
         byte[]? ThumbnailPng = null,
         double PositionSeconds = 0,
         double DurationSeconds = 0,
-        /// <summary>Browser like rating when known (0 unrated, 1 disliked, 5 liked); null for native SMTC-only.</summary>
         int? LikeRating = null,
-        /// <summary>What the browser player behind this session can be asked to do; none for native SMTC-only.</summary>
         BrowserMediaCapabilities Capabilities = BrowserMediaCapabilities.None);
 
     public interface IMediaSessionService : IDisposable
@@ -138,6 +146,15 @@ namespace MosaicShell.Core.Services
         public required IAudioDeviceService AudioDevices { get; init; }
         public required IShellFlyoutTriggerSource ShellFlyoutTriggers { get; init; }
 
+        /// <summary>Where the volume key step lives; none unless a platform factory says otherwise.</summary>
+        public IVolumeKeyStep VolumeKeyStep { get; init; } = new NullVolumeKeyStep();
+
+        /// <summary>What this desktop lets MosaicShell do; every feature unless a platform factory says otherwise.</summary>
+        public HostPlatform.DesktopFeatures Features { get; init; } = HostPlatform.DesktopFeatures.All;
+
+        /// <summary>The desktop's switch for see-through surfaces; always on unless a platform factory says otherwise.</summary>
+        public ITransparencyEffects TransparencyEffects { get; init; } = new AlwaysTransparencyEffects();
+
         /// <summary>Platform parts that serve no interface of their own but live as long as the services (Linux: the MPRIS export).</summary>
         public IReadOnlyList<IDisposable> Companions { get; init; } = [];
 
@@ -208,6 +225,34 @@ namespace MosaicShell.Core.Services
         }
 
         /// <summary>
+        /// On GNOME, starts the Host's presence (<see cref="Gnome.GnomeHubPresencePolicy"/>): MosaicShell's icon in the
+        /// top bar, whose menu opens the Hub or quits. Null everywhere else, where the system tray does that.
+        /// </summary>
+        /// <param name="showHub">Brings the Hub forward; called on a bus thread.</param>
+        /// <param name="quit">Quits MosaicShell; called on a bus thread.</param>
+        /// <param name="modules">The top bar menu's module switches; called on a bus thread.</param>
+        /// <param name="setModuleOn">Turns a module on or off from the top bar menu; called on a bus thread.</param>
+        public static IDisposable? StartHubPresence(
+            Action showHub,
+            Action quit,
+            Func<IReadOnlyList<HubShell.TrayModule>>? modules = null,
+            Action<string, bool>? setModuleOn = null)
+        {
+#if WINDOWS
+            return null;
+#else
+            if (!OperatingSystem.IsLinux() || !Xdg.XdgCurrentDesktop.IsGnome(Xdg.XdgCurrentDesktop.Current))
+            {
+                return null;
+            }
+
+            Linux.GnomeHubPresence presence = new(showHub, quit, modules: modules, setModuleOn: setModuleOn);
+            presence.Start();
+            return presence;
+#endif
+        }
+
+        /// <summary>
         /// Every service present and inert: features report themselves unavailable rather than showing invented data.
         /// For a platform with no implementations yet, so the Host can start and draw.
         /// </summary>
@@ -260,13 +305,13 @@ namespace MosaicShell.Core.Services
 
             return CreateInert(
                 media,
-                new Linux.KGlobalAccelShellFlyoutTriggers(),
+                CreateLinuxShellFlyoutTriggers(desktop),
                 CreateLinuxOsdSuppressor(desktop),
                 new Linux.PulseAudioService(),
                 brightness,
                 brightness,
                 companions,
-                new Linux.KGlobalAccelHotkeyService(),
+                CreateLinuxHotkeys(desktop),
                 CreateLinuxLockKeys(desktop),
                 streams,
                 new Linux.ParecAudioLevelService(),
@@ -274,8 +319,43 @@ namespace MosaicShell.Core.Services
                 new Linux.ProcSystemMetricsService(),
                 Linux.XdgAutostartService.ForCurrentProcess(),
                 CreateLinuxIdle(desktop),
-                new Linux.KWinFullscreenProbe(),
-                CreateLinuxAirplane(desktop));
+                CreateLinuxFullscreenProbe(desktop),
+                CreateLinuxAirplane(desktop),
+                HostPlatform.DesktopFeatures.Resolve(isWindows: false, desktop),
+                CreateLinuxVolumeKeyStep(desktop));
+        }
+
+        /// <summary>Capability shortcuts through KDE's KGlobalAccel on Plasma; elsewhere none (GNOME has no route yet).</summary>
+        public static IHotkeyService CreateLinuxHotkeys(string? xdgCurrentDesktop)
+        {
+            return Xdg.XdgCurrentDesktop.IsPlasma(xdgCurrentDesktop) ? new Linux.KGlobalAccelHotkeyService() : new NullHotkeyService();
+        }
+
+        /// <summary>Media and volume key triggers through KGlobalAccel on Plasma; elsewhere none.</summary>
+        public static IShellFlyoutTriggerSource CreateLinuxShellFlyoutTriggers(string? xdgCurrentDesktop)
+        {
+            return Xdg.XdgCurrentDesktop.IsPlasma(xdgCurrentDesktop)
+                ? new Linux.KGlobalAccelShellFlyoutTriggers()
+                : new NullShellFlyoutTriggerSource();
+        }
+
+        /// <summary>The full-screen check through a KWin script on Plasma; elsewhere none.</summary>
+        public static IFullscreenProbe CreateLinuxFullscreenProbe(string? xdgCurrentDesktop)
+        {
+            return Xdg.XdgCurrentDesktop.IsPlasma(xdgCurrentDesktop) ? new Linux.KWinFullscreenProbe() : new NullFullscreenProbe();
+        }
+
+        /// <summary>
+        /// The desktop's own volume key step: GNOME's media-keys setting, Plasma's plasmaparc, else none.
+        /// </summary>
+        private static IVolumeKeyStep CreateLinuxVolumeKeyStep(string? xdgCurrentDesktop)
+        {
+            return HostPlatform.VolumeKeyStepPolicy.Resolve(isWindows: false, xdgCurrentDesktop) switch
+            {
+                HostPlatform.VolumeKeyStepSource.Gnome => new Linux.GnomeVolumeKeyStep(),
+                HostPlatform.VolumeKeyStepSource.Plasma => new Linux.PlasmaVolumeKeyStep(),
+                _ => new NullVolumeKeyStep(),
+            };
         }
 
         /// <summary>
@@ -364,10 +444,14 @@ namespace MosaicShell.Core.Services
             IAutostartService? autostart = null,
             IIdleService? idle = null,
             IFullscreenProbe? fullscreen = null,
-            IAirplaneModeService? airplane = null)
+            IAirplaneModeService? airplane = null,
+            HostPlatform.DesktopFeatures? features = null,
+            IVolumeKeyStep? volumeKeyStep = null)
         {
             return new HostServices
             {
+                VolumeKeyStep = volumeKeyStep ?? new NullVolumeKeyStep(),
+                Features = features ?? HostPlatform.DesktopFeatures.None,
                 Audio = audio ?? new NullAudioService(),
                 AppAudio = appAudio ?? new NullAppAudioService(),
                 Brightness = brightness ?? new NullBrightnessService(),
@@ -411,12 +495,14 @@ namespace MosaicShell.Core.Services
                 BrightnessChanges = new WindowsBrightnessChangeSource(brightness),
                 OsdSuppressor = new WindowsNativeOsdSuppressor(),
                 LegacyVolumeKeys = new WindowsLegacyMediaKeyHook(),
+                VolumeKeyStep = new OwnHookVolumeKeyStep(),
                 Idle = new WindowsIdleService(),
                 Fullscreen = new WindowsFullscreenProbe(),
                 LockKeys = new WindowsLockKeysService(),
                 Airplane = new WindowsAirplaneModeService(),
                 AudioDevices = new WindowsAudioDeviceService(),
                 ShellFlyoutTriggers = new WindowsShellFlyoutHook(),
+                TransparencyEffects = new WindowsTransparencyEffects(),
             };
         }
 

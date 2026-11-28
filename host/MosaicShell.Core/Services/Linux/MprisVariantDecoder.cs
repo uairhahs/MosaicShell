@@ -73,7 +73,7 @@ namespace MosaicShell.Core.Services.Linux
                 return new Dictionary<string, VariantValue>();
             }
 
-            Dictionary<string, VariantValue> result = new(StringComparer.Ordinal);
+            Dictionary<string, VariantValue> result = [with(StringComparer.Ordinal)];
             for (int i = 0; i < dict.Count; i++)
             {
                 KeyValuePair<VariantValue, VariantValue> entry = dict.GetDictionaryEntry(i);

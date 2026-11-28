@@ -8,12 +8,6 @@ namespace MosaicShell.Core.Capabilities.Platform
 
         /// <summary>Tray icon only; armed capabilities restore without showing Hub.</summary>
         TrayOnly,
-
-        /// <summary>
-        /// Writes the glint's reference images to <see cref="HostLaunchOptions.GlintCaptureDirectory"/> and exits, so
-        /// each OS's set can be compared for visual parity. Nothing else starts.
-        /// </summary>
-        GlintCapture,
     }
 
     /// <summary>Parsed CLI flags for MosaicShell.Host.</summary>
@@ -30,13 +24,19 @@ namespace MosaicShell.Core.Capabilities.Platform
         /// <summary>H2 eval: force Software-only rendering (NativeTranslucency ineligible; frost fallback).</summary>
         public const string TesseraForceSoftwareRenderFlag = "--tessera-software-render";
 
-        /// <summary>Followed by a folder: write the glint's reference images there and exit (<see cref="HostLaunchMode.GlintCapture"/>).</summary>
-        public const string GlintCaptureFlag = "--capture-glint";
+        /// <summary>
+        /// Installs a third-party module from a folder or .zip and exits, without starting the Hub (developers, scripts,
+        /// CI). Takes the path after it.
+        /// </summary>
+        public const string InstallPackageFlag = "--install-package";
 
         public static HostLaunchMode Mode { get; private set; } = HostLaunchMode.FullHub;
 
-        /// <summary>Where <see cref="HostLaunchMode.GlintCapture"/> writes; null otherwise.</summary>
-        public static string? GlintCaptureDirectory { get; private set; }
+        /// <summary>The package <see cref="InstallPackageFlag"/> names, or null.</summary>
+        public static string? InstallPackagePath { get; private set; }
+
+        /// <summary>True when <see cref="InstallPackageFlag"/> came with no path after it.</summary>
+        public static bool InstallPackageMissingPath { get; private set; }
 
         public static bool IsTrayOnly => Mode == HostLaunchMode.TrayOnly;
 
@@ -49,23 +49,27 @@ namespace MosaicShell.Core.Capabilities.Platform
         public static void Apply(IReadOnlyList<string> args)
         {
             Mode = HostLaunchMode.FullHub;
-            GlintCaptureDirectory = null;
             TesseraNativeTranslucencyTrial = false;
             TesseraForceSoftwareRender = false;
+            InstallPackagePath = null;
+            InstallPackageMissingPath = false;
             for (int i = 0; i < args.Count; i++)
             {
                 string arg = args[i];
-                if (arg.Equals(TrayOnlyFlag, StringComparison.OrdinalIgnoreCase))
-                {
-                    Mode = HostLaunchMode.TrayOnly;
-                }
-                else if (arg.Equals(GlintCaptureFlag, StringComparison.OrdinalIgnoreCase))
+                if (arg.Equals(InstallPackageFlag, StringComparison.OrdinalIgnoreCase))
                 {
                     if (i + 1 < args.Count && !args[i + 1].StartsWith("--", StringComparison.Ordinal))
                     {
-                        Mode = HostLaunchMode.GlintCapture;
-                        GlintCaptureDirectory = args[++i];
+                        InstallPackagePath = args[++i];
                     }
+                    else
+                    {
+                        InstallPackageMissingPath = true;
+                    }
+                }
+                else if (arg.Equals(TrayOnlyFlag, StringComparison.OrdinalIgnoreCase))
+                {
+                    Mode = HostLaunchMode.TrayOnly;
                 }
                 else if (arg.Equals(TesseraNativeTranslucencyTrialFlag, StringComparison.OrdinalIgnoreCase)
                     || arg.Equals(LegacyTesseraOsAcrylicTrialFlag, StringComparison.OrdinalIgnoreCase))
@@ -82,7 +86,8 @@ namespace MosaicShell.Core.Capabilities.Platform
         internal static void ResetForTests()
         {
             Mode = HostLaunchMode.FullHub;
-            GlintCaptureDirectory = null;
+            InstallPackagePath = null;
+            InstallPackageMissingPath = false;
             TesseraNativeTranslucencyTrial = false;
             TesseraForceSoftwareRender = false;
         }

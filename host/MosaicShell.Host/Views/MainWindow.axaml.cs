@@ -1,7 +1,10 @@
+using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Platform;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using MosaicShell.Core.HostPlatform;
@@ -11,57 +14,219 @@ using MosaicShell.Host.ViewModels;
 namespace MosaicShell.Host.Views
 {
     /// <summary>
-    /// Keep the Host at a stable fraction of the current screen working area when moving
-    /// between monitors (Avalonia Screens: WorkingArea=pixels, Width/Height=DIPs, Scaling=DPI).
-    ///
-    /// Important: only <see cref="WindowResizeReason.User"/> updates the stored fraction.
-    /// DPI / layout / application resizes must not, that was poisoning frac≈0.97 and making
-    /// the window fill the destination display (see host-size.log).
+    /// The Hub window keeps the size the user gives it when it moves to another monitor (<see cref="HostWindowFitPolicy"/>):
+    /// sizes are in device-independent pixels, so the OS handles a scaling change, and the window is only shrunk when it no
+    /// longer fits the work area, once a move has settled. It is never resized during a drag.
     /// </summary>
     public partial class MainWindow : Window
     {
-        private const double DefaultFracW = 0.55;
-        private const double DefaultFracH = 0.65;
-        private const double MaxRememberedFrac = 0.90;
-        private const double MinW = 780;
-        private const double MinH = 560;
-
-        private double _fracW = DefaultFracW;
-        private double _fracH = DefaultFracH;
-        private PixelRect _lastSeenWorkArea;
-        private double _lastSeenScaling = double.NaN;
-        private bool _applying;
-        private bool _suppressCapture;
+        private DispatcherTimer? _fitTimer;
         private EventHandler? _screensChanged;
-        private int _applyGeneration;
+        private MainViewModel? _watched;
+
+        /// <summary>A page opened since a control last had focus: Tab starts on that page, not back at the rail.</summary>
+        private bool _pageChangedSinceFocus;
+
+        /// <summary>The last input was a key, not the pointer: a page opened by Enter takes focus onto itself.</summary>
+        private bool _lastInputWasKeyboard;
+
+        /// <summary>Where focus last was on the page, so Right from the rail returns there.</summary>
+        private InputElement? _lastPageFocus;
 
         public MainWindow()
         {
             InitializeComponent();
+            // The rail folds to icons on a narrow window (HubRail.CollapseBelowDip).
+            SizeChanged += (_, e) => (DataContext as MainViewModel)?.SetWindowWidth(e.NewSize.Width);
+            AddHandler(KeyDownEvent, OnKeyDownTunnel, RoutingStrategies.Tunnel);
+            AddHandler(PointerPressedEvent, (_, _) => _lastInputWasKeyboard = false, RoutingStrategies.Tunnel, handledEventsToo: true);
+            AddHandler(GotFocusEvent, OnGotFocus, RoutingStrategies.Bubble, handledEventsToo: true);
+            // After the page's own arrow handling (XY focus): a Left nothing on the page took goes to the rail.
+            AddHandler(KeyDownEvent, OnKeyDownBubble, RoutingStrategies.Bubble);
+            DataContextChanged += (_, _) => WatchPages();
+        }
+
+        private void OnGotFocus(object? sender, FocusChangedEventArgs e)
+        {
+            _pageChangedSinceFocus = false;
+            if (e.Source is InputElement focused && Pages.IsVisualAncestorOf(focused))
+            {
+                _lastPageFocus = focused;
+            }
+        }
+
+        private void OnKeyDownBubble(object? sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Left && FocusManager?.GetFocusedElement() is Visual focused && Pages.IsVisualAncestorOf(focused)
+                && OpenRailItem() is { } rail)
+            {
+                _ = rail.Focus(NavigationMethod.Directional);
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>
+        /// The other control in a card row: from the card (<c>Button.listRow</c>) going right, its action; from the action
+        /// going left, the card. Rows are a Grid holding the card button and one action on top of it.
+        /// </summary>
+        private static Control? RowPartner(Control focused, bool right)
+        {
+            if (focused.GetVisualParent() is not Grid row)
+            {
+                return null;
+            }
+
+            Control? card = row.Children.OfType<Button>().FirstOrDefault(b => b.Classes.Contains("listRow"));
+            Control? action = row.Children.FirstOrDefault(c => c != card && c is Button or ToggleSwitch && IsReachable(c));
+            return card is null || action is null ? null
+                : right && focused == card ? action
+                : !right && focused == action ? card
+                : null;
+        }
+
+        /// <summary>The rail item of the page that is open (a module's page belongs to Modules or Widgets).</summary>
+        private Button? OpenRailItem()
+        {
+            return Rail.GetVisualDescendants().OfType<Button>().FirstOrDefault(b => b.Classes.Contains("rail") && b.Classes.Contains("selected") && IsReachable(b));
+        }
+
+        private void WatchPages()
+        {
+            _watched?.PropertyChanged -= OnViewModelChanged;
+            _watched = DataContext as MainViewModel;
+            _watched?.PropertyChanged += OnViewModelChanged;
+        }
+
+        private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is nameof(MainViewModel.SelectedPage) or nameof(MainViewModel.ModulePage))
+            {
+                _pageChangedSinceFocus = true;
+                if (_lastInputWasKeyboard)
+                {
+                    // Enter on a card: the card goes away with its list, so focus would be left nowhere. Once the page
+                    // is laid out, start on it, as Tab would.
+                    Dispatcher.UIThread.Post(FocusOpenedPage, DispatcherPriority.Loaded);
+                }
+            }
+        }
+
+        private void FocusOpenedPage()
+        {
+            if (!HasUsableFocus() && FirstOnPage() is { } start)
+            {
+                _ = start.Focus(NavigationMethod.Tab);
+            }
+        }
+
+        /// <summary>
+        /// Tab with no usable focus starts somewhere: on the page that just opened, else at the rail. A control that
+        /// went away with its page (the list row that opened a module) keeps focus in Avalonia, and Tab cannot move
+        /// on from it, so Tab did nothing (keyboard pass, 2026-11-28). Up and Down move along the rail; Right enters the page.
+        /// </summary>
+        private void OnKeyDownTunnel(object? sender, KeyEventArgs e)
+        {
+            _lastInputWasKeyboard = true;
+            if (e.Key == Key.Tab && !HasUsableFocus())
+            {
+                InputElement? start = (_pageChangedSinceFocus ? FirstOnPage() : null) ?? FirstFocusable(Rail);
+                if (start is not null)
+                {
+                    _ = start.Focus(NavigationMethod.Tab);
+                    e.Handled = true;
+                }
+
+                return;
+            }
+
+            // A card row: its Turn on, Turn off or Add button (or Home's switch) sits inside the card's bounds, where
+            // XY focus never looks. Right goes to it, Left comes back to the card.
+            if (e.Key is Key.Right or Key.Left && FocusManager?.GetFocusedElement() is Control inRow
+                && RowPartner(inRow, e.Key == Key.Right) is { } partner)
+            {
+                _ = partner.Focus(NavigationMethod.Directional);
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Right && FocusManager?.GetFocusedElement() is Button { Classes: var railClasses } && railClasses.Contains("rail"))
+            {
+                InputElement? target = _lastPageFocus is { } last && IsReachable(last) ? last : FirstOnPage();
+                if (target is not null)
+                {
+                    _ = target.Focus(NavigationMethod.Directional);
+                }
+
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key is Key.Up or Key.Down && FocusManager?.GetFocusedElement() is Button { Classes: var classes } current
+                && classes.Contains("rail"))
+            {
+                List<Button> rail = [.. Rail.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("rail") && IsReachable(b))];
+                int at = rail.IndexOf(current);
+                int next = at + (e.Key == Key.Down ? 1 : -1);
+                if (at >= 0 && next >= 0 && next < rail.Count)
+                {
+                    _ = rail[next].Focus(NavigationMethod.Directional);
+                }
+
+                e.Handled = true;
+            }
+        }
+
+        private bool HasUsableFocus()
+        {
+            return FocusManager?.GetFocusedElement() is Visual focused && focused != this && IsReachable(focused);
+        }
+
+        private static bool IsReachable(Visual visual)
+        {
+            return visual.IsAttachedToVisualTree() && visual.IsEffectivelyVisible
+                && (visual is not InputElement input || input.IsEffectivelyEnabled);
+        }
+
+        /// <summary>The page's first control in Tab's own order, else the first in the visual tree.</summary>
+        private InputElement? FirstOnPage()
+        {
+            return Avalonia.Input.FocusManager.FindFirstFocusableElement(Pages) is InputElement element && IsReachable(element)
+                ? element
+                : FirstFocusable(Pages);
+        }
+
+        private static InputElement? FirstFocusable(Visual root)
+        {
+            return root.GetVisualDescendants().OfType<InputElement>().FirstOrDefault(e =>
+                e.Focusable && KeyboardNavigation.GetIsTabStop(e) && IsReachable(e));
         }
 
         protected override void OnOpened(EventArgs e)
         {
             base.OnOpened(e);
+            _fitTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(HostWindowFitPolicy.SettleMs) };
+            _fitTimer.Tick += (_, _) =>
+            {
+                _fitTimer.Stop();
+                FitToScreen();
+            };
 
-            // Seed fraction from the designed startup size once, never from a DPI-bloated size.
-            CaptureFractionFromCurrentSize(userInitiated: false);
-            SanitizeFraction();
-            SyncLastSeenScreen(ResolveScreen());
-
-            ScalingChanged += OnScalingChanged;
-            PositionChanged += OnPositionChanged;
+            ScalingChanged += OnMovedOrRescaled;
+            PositionChanged += OnMovedOrRescaled;
             if (Screens is not null)
             {
-                _screensChanged = (_, _) => RequestFractionApply("screens", force: true, deferPasses: 2);
+                _screensChanged = OnMovedOrRescaled;
                 Screens.Changed += _screensChanged;
             }
+
+            FitToScreen();
         }
 
         protected override void OnClosed(EventArgs e)
         {
-            ScalingChanged -= OnScalingChanged;
-            PositionChanged -= OnPositionChanged;
+            _fitTimer?.Stop();
+            ScalingChanged -= OnMovedOrRescaled;
+            PositionChanged -= OnMovedOrRescaled;
             if (Screens is not null && _screensChanged is not null)
             {
                 Screens.Changed -= _screensChanged;
@@ -70,232 +235,76 @@ namespace MosaicShell.Host.Views
             base.OnClosed(e);
         }
 
-        private void OnScalingChanged(object? sender, EventArgs e)
+        /// <summary>Restarts the settle timer, so the fit runs once, after the last move of a drag.</summary>
+        private void OnMovedOrRescaled(object? sender, EventArgs e)
         {
-            RequestFractionApply("scaling", force: true, deferPasses: 3);
+            _fitTimer?.Stop();
+            _fitTimer?.Start();
         }
 
-        private void OnPositionChanged(object? sender, PixelPointEventArgs e)
+        private void FitToScreen()
         {
-            RequestFractionApply("position", force: false, deferPasses: 2);
-        }
-
-        protected override void OnResized(WindowResizedEventArgs e)
-        {
-            base.OnResized(e);
-            if (_applying || _suppressCapture)
-            {
-                return;
-            }
-
-            // Only an explicit user drag of the resize border/corner may change the remembered ratio.
-            // DpiChange / Layout / Application / Unspecified during monitor moves must not.
-            if (e.Reason == WindowResizeReason.User)
-            {
-                CaptureFractionFromCurrentSize(userInitiated: true);
-                SanitizeFraction();
-                Log($"capture-user frac={_fracW:0.###}x{_fracH:0.###} client={ClientSize.Width:0}x{ClientSize.Height:0}");
-                return;
-            }
-
-            if (e.Reason == WindowResizeReason.DpiChange)
-            {
-                RequestFractionApply("dpi-resize", force: true, deferPasses: 3);
-            }
-        }
-
-        private void RequestFractionApply(string reason, bool force, int deferPasses, int settleRetries = 0)
-        {
-            int gen = ++_applyGeneration;
-            _suppressCapture = true;
-
-            for (int i = 0; i < Math.Max(1, deferPasses); i++)
-            {
-                int pass = i;
-                Dispatcher.UIThread.Post(
-                    () =>
-                    {
-                        if (gen != _applyGeneration)
-                        {
-                            return;
-                        }
-
-                        ApplyFractionToCurrentScreen(force || pass > 0, reason, pass, settleRetries);
-                        if (pass == deferPasses - 1)
-                        {
-                            // One more tick later, allow user captures again.
-                            Dispatcher.UIThread.Post(
-                                () =>
-                                {
-                                    if (gen == _applyGeneration)
-                                    {
-                                        _suppressCapture = false;
-                                    }
-                                },
-                                DispatcherPriority.Background);
-                        }
-                    },
-                    pass == 0 ? DispatcherPriority.Background : DispatcherPriority.Render);
-            }
-        }
-
-        private void ApplyFractionToCurrentScreen(bool force, string reason, int pass, int settleRetries)
-        {
-            if (_applying)
-            {
-                return;
-            }
-
-            Screen? screen = ResolveScreen();
-            if (screen is null)
-            {
-                return;
-            }
-
-            SanitizeFraction();
-
-            double scaling = screen.Scaling > 0.1 ? screen.Scaling : 1.0;
-            PixelRect work = screen.WorkingArea;
-            double workDipW = Math.Max(1.0, work.Width / scaling);
-            double workDipH = Math.Max(1.0, work.Height / scaling);
-            double targetW = workDipW * _fracW;
-            double targetH = workDipH * _fracH;
-
-            bool screenChanged = work != _lastSeenWorkArea
-                                || double.IsNaN(_lastSeenScaling)
-                                || Math.Abs(scaling - _lastSeenScaling) >= 0.001;
-            bool sizeOff = Math.Abs(Width - targetW) > 4 || Math.Abs(Height - targetH) > 4;
-            double desktopScale = DesktopScaling > 0.1 ? DesktopScaling : RenderScaling;
-            bool scalingSettled = Math.Abs(desktopScale - scaling) < 0.05;
-
-            if (!force && !screenChanged && !sizeOff)
-            {
-                return;
-            }
-
-            // Capped: mixed-DPI straddling can keep the scalings apart forever (runaway loop once
-            // filled host-size.log to 160 GB).
-            if (HostWindowFractionPolicy.ShouldWaitForScaleSettle(scalingSettled, pass, settleRetries))
-            {
-                RequestFractionApply(reason, force: true, deferPasses: 2, settleRetries + 1);
-                return;
-            }
-
-            _applying = true;
-            _suppressCapture = true;
-            try
-            {
-                MinWidth = 1;
-                MinHeight = 1;
-
-                double w = Math.Clamp(targetW, Math.Min(MinW, workDipW - 4), Math.Max(1, workDipW - 4));
-                double h = Math.Clamp(targetH, Math.Min(MinH, workDipH - 4), Math.Max(1, workDipH - 4));
-                Width = w;
-                Height = h;
-
-                // Always restore design mins, never pin Min* to the applied size.
-                MinWidth = MinW;
-                MinHeight = MinH;
-
-                SyncLastSeenScreen(screen);
-                Log(
-                    $"{reason} pass={pass} retries={settleRetries} force={force} settled={scalingSettled} " +
-                    $"frac={_fracW:0.###}x{_fracH:0.###} " +
-                    $"workPx={work.Width}x{work.Height} scale={scaling:0.##} desk={desktopScale:0.##} " +
-                    $"→ {Width:0}x{Height:0}dip");
-            }
-            finally
-            {
-                _applying = false;
-            }
-        }
-
-        private void CaptureFractionFromCurrentSize(bool userInitiated)
-        {
-            Screen? screen = ResolveScreen();
+            Screen? screen = Screens?.ScreenFromWindow(this) ?? Screens?.Primary;
             if (screen is null)
             {
                 return;
             }
 
             double scaling = screen.Scaling > 0.1 ? screen.Scaling : 1.0;
-            PixelRect work = screen.WorkingArea;
-            double workDipW = Math.Max(1.0, work.Width / scaling);
-            double workDipH = Math.Max(1.0, work.Height / scaling);
-
-            double w = ClientSize.Width > 1 ? ClientSize.Width : Width;
-            double h = ClientSize.Height > 1 ? ClientSize.Height : Height;
-            if (double.IsNaN(w) || double.IsNaN(h) || w < 80 || h < 60)
+            double workW = screen.WorkingArea.Width / scaling;
+            double workH = screen.WorkingArea.Height / scaling;
+            double w = double.IsNaN(Width) ? ClientSize.Width : Width;
+            double h = double.IsNaN(Height) ? ClientSize.Height : Height;
+            if (!HostWindowFitPolicy.NeedsFit(w, h, workW, workH, MinWidth, MinHeight))
             {
                 return;
             }
 
-            double nextW = Math.Clamp(w / workDipW, 0.15, MaxRememberedFrac);
-            double nextH = Math.Clamp(h / workDipH, 0.15, MaxRememberedFrac);
-
-            // Startup / non-user: only accept a sane mid-range fraction; otherwise keep defaults.
-            if (!userInitiated && (nextW > 0.85 || nextH > 0.85))
+            (double fitW, double fitH) = HostWindowFitPolicy.Fit(w, h, workW, workH, MinWidth, MinHeight);
+            if (fitW < MinWidth || fitH < MinHeight)
             {
-                return;
+                // A work area smaller than the design minimum: let the window follow it down.
+                MinWidth = Math.Min(MinWidth, fitW);
+                MinHeight = Math.Min(MinHeight, fitH);
             }
 
-            _fracW = nextW;
-            _fracH = nextH;
+            Width = fitW;
+            Height = fitH;
+            DiagnosticLog.Append(
+                "host-size.log",
+                $"fit {w:0}x{h:0} -> {fitW:0}x{fitH:0}dip work={workW:0}x{workH:0}dip scale={scaling:0.##}");
         }
 
-        private void SanitizeFraction()
+        private async void OnAddPackageZipClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            if (_fracW is < 0.15 or > MaxRememberedFrac)
+            IReadOnlyList<Avalonia.Platform.Storage.IStorageFile> files = await StorageProvider.OpenFilePickerAsync(new()
             {
-                _fracW = DefaultFracW;
-            }
-
-            if (_fracH is < 0.15 or > MaxRememberedFrac)
+                Title = "Add a module from a .zip package",
+                AllowMultiple = false,
+                FileTypeFilter = [new("Module package") { Patterns = ["*.zip"] }],
+            });
+            if (files.Count == 1 && files[0].TryGetLocalPath() is string path && DataContext is MainViewModel vm)
             {
-                _fracH = DefaultFracH;
+                await vm.AddFromPackageAsync(path);
             }
         }
 
-        private Screen? ResolveScreen()
+        private async void OnAddPackageFolderClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            try
+            IReadOnlyList<Avalonia.Platform.Storage.IStorageFolder> folders = await StorageProvider.OpenFolderPickerAsync(new()
             {
-                double scale = RenderScaling > 0.1 ? RenderScaling : 1.0;
-                int cx = Position.X + (int)Math.Round(Math.Max(ClientSize.Width, Width) * scale / 2.0);
-                int cy = Position.Y + (int)Math.Round(Math.Max(ClientSize.Height, Height) * scale / 2.0);
-                Screen? fromPoint = Screens?.ScreenFromPoint(new PixelPoint(cx, cy));
-                if (fromPoint is not null)
-                {
-                    return fromPoint;
-                }
-            }
-            catch
+                Title = "Add a module from a folder with module.manifest.json",
+                AllowMultiple = false,
+            });
+            if (folders.Count == 1 && folders[0].TryGetLocalPath() is string path && DataContext is MainViewModel vm)
             {
-                // fall through
+                await vm.AddFromPackageAsync(path);
             }
-
-            return Screens?.ScreenFromWindow(this) ?? Screens?.Primary;
-        }
-
-        private void SyncLastSeenScreen(Screen? screen)
-        {
-            if (screen is null)
-            {
-                return;
-            }
-
-            _lastSeenWorkArea = screen.WorkingArea;
-            _lastSeenScaling = screen.Scaling > 0.1 ? screen.Scaling : 1.0;
-        }
-
-        private static void Log(string message)
-        {
-            DiagnosticLog.Append("host-size.log", message);
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            if (DataContext is MainViewModel vm && vm.IsCapturingHotkey && vm.TryCaptureHotkey(e))
+            if (DataContext is MainViewModel { ModulePage.CapturingHotkey: { } row } && row.TryCapture(e))
             {
                 return;
             }
@@ -303,37 +312,39 @@ namespace MosaicShell.Host.Views
             base.OnKeyDown(e);
         }
 
-        private void OnDiscoverCardPressed(object? sender, PointerPressedEventArgs e)
+        /// <summary>Opens the data folder in the OS file manager (Explorer, Dolphin, Files) through Avalonia's launcher.</summary>
+        private async void OnOpenDataFolderClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            if (sender is not Border border || border.DataContext is not DiscoverCard card)
-            {
-                return;
-            }
-
             if (DataContext is MainViewModel vm)
             {
-                vm.OpenCardCommand.Execute(card);
+                await OpenFolderAsync(vm, vm.DataFolderPath, "the data folder");
             }
         }
 
-        private void OnLibraryTileBodyPressed(object? sender, PointerPressedEventArgs e)
+        private async void OnOpenLogFolderClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            if (e.Source is Control source && source.FindAncestorOfType<Button>(includeSelf: true) is not null)
-            {
-                return;
-            }
-
-            if (sender is not Border border || border.DataContext is not LibraryItemViewModel item)
-            {
-                return;
-            }
-
             if (DataContext is MainViewModel vm)
             {
-                vm.OpenModuleConfigCommand.Execute(item);
+                await OpenFolderAsync(vm, vm.LogFolderPath, "the log folder");
             }
+        }
 
-            e.Handled = true;
+        private async Task OpenFolderAsync(MainViewModel vm, string path, string what)
+        {
+            try
+            {
+                DirectoryInfo folder = new(path);
+                folder.Create();
+                bool opened = await Launcher.LaunchDirectoryInfoAsync(folder);
+                if (!opened)
+                {
+                    vm.StatusMessage = $"Could not open {folder.FullName}.";
+                }
+            }
+            catch (Exception ex)
+            {
+                vm.StatusMessage = $"Could not open {what}: {ex.Message}";
+            }
         }
     }
 }

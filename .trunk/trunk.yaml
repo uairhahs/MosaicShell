@@ -23,7 +23,7 @@ lint:
     - isort
     - pinact
     # trunk's dotnet-format plugin hardcodes dotnet SDK 7.0.400 (with roll-forward disabled) and
-    # has no way to pin a different version. This repo targets net10.0, so dotnet-format's bundled
+    # has no way to pin a different version. This repo targets net11.0, so dotnet-format's bundled
     # Roslyn can never load this project's analyzers (Microsoft.CodeAnalysis version mismatch) -
     # it is not a shell/PATH issue and cannot be fixed via trunk.yaml config.
     - dotnet-format

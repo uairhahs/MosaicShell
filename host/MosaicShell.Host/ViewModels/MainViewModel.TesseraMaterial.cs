@@ -5,6 +5,7 @@ using MosaicShell.Core.Capabilities.Platform;
 using MosaicShell.Core.Modules;
 using MosaicShell.Core.Modules.Tessera;
 using MosaicShell.Core.Runtime;
+using MosaicShell.Core.Services.Xdg;
 using MosaicShell.Core.Settings;
 using MosaicShell.Core.Styles;
 
@@ -12,8 +13,8 @@ namespace MosaicShell.Host.ViewModels
 {
     /// <summary>
     /// The flyout material as one Hub choice (Solid, Frosted, Native Translucency), mapped to the saved settings by
-    /// <see cref="TesseraMaterialChoicePolicy"/>. Native Translucency is listed only where this system can draw it; on
-    /// Linux that is known shortly after start, so the list is rebuilt when the backend is found.
+    /// <see cref="TesseraMaterialChoicePolicy"/>. Where this system cannot draw Native Translucency it is listed greyed
+    /// out with the reason; on Linux the backend is known shortly after start, so the list is rebuilt when it is found.
     /// </summary>
     public partial class MainViewModel
     {
@@ -49,17 +50,25 @@ namespace MosaicShell.Host.ViewModels
             TesseraMaterialChoicePolicy.Apply(settings, SelectedTesseraMaterialChoice);
         }
 
+        /// <summary>Why Native Translucency is greyed out; empty when it can be picked or is not listed.</summary>
+        public string TesseraNativeUnavailableNote =>
+            TesseraMaterialOptions.Any(static o => !o.IsAvailable)
+                ? TesseraMaterialChoicePolicy.NativeUnavailableText(OperatingSystem.IsWindows(), XdgCurrentDesktop.Current)
+                : "";
+
         private void SyncTesseraMaterialOptions(TesseraMaterialChoice wanted)
         {
+            bool nativeDrawable = TesseraNativeTranslucencySignOffPolicy.HubOffersNativeTranslucency;
             TesseraMaterialOptions.Clear();
-            foreach (TesseraMaterialChoice choice in TesseraMaterialChoicePolicy.Offered(
-                         TesseraNativeTranslucencySignOffPolicy.HubOffersNativeTranslucency))
+            foreach (TesseraMaterialChoice choice in TesseraMaterialChoicePolicy.Listed(
+                         TesseraNativeTranslucencySignOffPolicy.EvalCompleteForThisPlatform))
             {
-                TesseraMaterialOptions.Add(TesseraMaterialOption.For(choice));
+                TesseraMaterialOptions.Add(TesseraMaterialOption.For(choice, choice != TesseraMaterialChoice.NativeTranslucency || nativeDrawable));
             }
 
-            SelectedTesseraMaterial = TesseraMaterialOptions.FirstOrDefault(o => o.Choice == wanted)
+            SelectedTesseraMaterial = TesseraMaterialOptions.FirstOrDefault(o => o.Choice == wanted && o.IsAvailable)
                 ?? TesseraMaterialOptions.First(static o => o.Choice == TesseraMaterialChoice.Frosted);
+            OnPropertyChanged(nameof(TesseraNativeUnavailableNote));
         }
 
         private void WatchNativeTranslucency()
@@ -104,16 +113,17 @@ namespace MosaicShell.Host.ViewModels
         }
     }
 
-    public sealed record TesseraMaterialOption(TesseraMaterialChoice Choice, string Label)
+    /// <summary>One material choice; <c>IsAvailable</c> is false for one this system cannot draw (listed, not pickable).</summary>
+    public sealed record TesseraMaterialOption(TesseraMaterialChoice Choice, string Label, bool IsAvailable = true)
     {
-        public static TesseraMaterialOption For(TesseraMaterialChoice choice)
+        public static TesseraMaterialOption For(TesseraMaterialChoice choice, bool isAvailable = true)
         {
             return new TesseraMaterialOption(choice, choice switch
             {
                 TesseraMaterialChoice.Solid => "Solid",
                 TesseraMaterialChoice.NativeTranslucency => "Native Translucency",
                 _ => "Frosted",
-            });
+            }, isAvailable);
         }
 
         public override string ToString()

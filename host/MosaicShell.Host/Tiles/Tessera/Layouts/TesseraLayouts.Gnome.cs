@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Material.Icons.Avalonia;
+using MosaicShell.Core.Modules.Tessera;
 
 namespace MosaicShell.Host.Tiles.Tessera
 {
@@ -72,10 +73,10 @@ namespace MosaicShell.Host.Tiles.Tessera
 
         private static Control GnomeVolumeWrap(Control inner)
         {
-            // When using native translucency, the stacked window itself provides the background
-            // Don't add extra border wrapper that could leave artifacts
+            // When using native translucency, the stacked window itself provides the blur; the finish is drawn with
+            // plain brushes over it (no Skia layer, which could leave artifacts).
             return TesseraStackedBuildContext.IsActive && TesseraGlass.UseNativeTranslucencyChrome
-                ? inner
+                ? TesseraGlassFinish.Over(inner, TesseraStackedPlacementSpec.GnomePillCornerRadiusDip)
                 : TesseraChrome.Glass(inner, 28, new Thickness(14, 10), w: 240);
         }
     }

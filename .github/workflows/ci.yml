@@ -32,7 +32,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: 11.0.x
 
       - name: Test (Core)
         working-directory: host
@@ -43,7 +43,7 @@ jobs:
         working-directory: host
         run: dotnet test MosaicShell.Host.Tests --configuration Release --nologo
 
-  # The same suites on Linux, where the portable build (net10.0) and the Linux services compile. Tests that need a
+  # The same suites on Linux, where the portable build (net11.0) and the Linux services compile. Tests that need a
   # session bus start their own dbus-daemon, so it must be installed; without it they report as skipped.
   test-linux:
     name: test (linux)
@@ -56,7 +56,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: 11.0.x
 
       - name: Install dbus-daemon
         run: command -v dbus-daemon || (sudo apt-get update && sudo apt-get install -y --no-install-recommends dbus-daemon)
@@ -81,7 +81,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: 11.0.x
 
       - name: Build tarball
         run: packaging/linux/build-tarball.sh 0.0.0-ci "$RUNNER_TEMP/dist"

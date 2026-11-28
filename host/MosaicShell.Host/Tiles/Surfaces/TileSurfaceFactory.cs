@@ -21,7 +21,7 @@ namespace MosaicShell.Host.Tiles.Surfaces
     public sealed class TileViewRegistry
     {
         private readonly Dictionary<string, ITileViewFactory> _factories =
-            new(StringComparer.OrdinalIgnoreCase);
+            [with(StringComparer.OrdinalIgnoreCase)];
 
         public void Register(ITileViewFactory factory)
         {

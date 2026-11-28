@@ -12,27 +12,29 @@ namespace MosaicShell.Core.Modules.Tessera
         /// <summary>In-repo Host proofs: <c>.github/res/Tessera/{StyleId}.png</c>.</summary>
         public const string LayoutFidelityProofRelativeDirectory = ".github/res/Tessera";
 
-        private static readonly HashSet<string> Polished = new(StringComparer.OrdinalIgnoreCase)
-        {
+        private static readonly HashSet<string> Polished =
+        [
+            with(StringComparer.OrdinalIgnoreCase),
             StyleIds.Fluent, StyleIds.Windows11, StyleIds.Square, StyleIds.MaterialYou,
             StyleIds.Compact, StyleIds.ModernFlyouts, StyleIds.Meter, StyleIds.Gnome, StyleIds.CoreUI
-        };
+        ];
 
-        private static readonly HashSet<string> Approximate = new(StringComparer.OrdinalIgnoreCase)
-        {
-            StyleIds.Radial, StyleIds.PlainText
-        };
+        private static readonly HashSet<string> Approximate =
+        [
+with(StringComparer.OrdinalIgnoreCase),             StyleIds.Radial, StyleIds.PlainText
+        ];
 
         /// <summary>Signed off manually; Host proofs under <see cref="LayoutFidelityProofRelativeDirectory"/>.</summary>
-        private static readonly HashSet<string> LayoutFidelitySignedOff = new(StringComparer.OrdinalIgnoreCase)
-        {
+        private static readonly HashSet<string> LayoutFidelitySignedOff =
+        [
+            with(StringComparer.OrdinalIgnoreCase),
             StyleIds.Meter, StyleIds.Square, StyleIds.CoreUI, StyleIds.Fluent, StyleIds.Gnome,
             StyleIds.ModernFlyouts, StyleIds.MaterialYou, StyleIds.PlainText, StyleIds.Compact,
             StyleIds.Windows11, StyleIds.Radial
-        };
+        ];
 
         /// <summary>Still deviate from refs. Empty when every catalog id is signed off.</summary>
-        private static readonly HashSet<string> LayoutFidelityDeviated = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly HashSet<string> LayoutFidelityDeviated = [with(StringComparer.OrdinalIgnoreCase)];
 
         public static bool IsPolished(string styleId)
         {

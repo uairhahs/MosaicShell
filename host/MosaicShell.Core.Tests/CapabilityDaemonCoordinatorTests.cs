@@ -88,7 +88,9 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void An_invalid_mutex_name_is_not_an_owner_and_does_not_throw()
         {
-            using CapabilityDaemonCoordinator coordinator = new(@"Local\MosaicShell\Test\Bad");
+            // Too long on every OS. A backslash after the prefix stopped being enough (.NET 11 on Linux accepts it), and
+            // 300 characters did too (Windows 11 build 26300 accepts it); Windows refuses past 32,767, Linux past 255.
+            using CapabilityDaemonCoordinator coordinator = new(@"Local\" + new string('x', 40_000));
 
             _ = coordinator.TryAcquireOwner().Should().BeFalse();
             _ = coordinator.OwnsDaemon.Should().BeFalse();

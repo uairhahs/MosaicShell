@@ -62,7 +62,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             TesseraLiveAmbient.RegisterVolume(track, percent, glyph as MaterialIcon);
             Grid volInner = new()
             {
-                ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*"),
+                ColumnDefinitions = [with("Auto,Auto,*")],
                 VerticalAlignment = VerticalAlignment.Center
             };
             Grid.SetColumn(glyph, 0);
@@ -96,9 +96,8 @@ namespace MosaicShell.Host.Tiles.Tessera
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Child = playIcon
             };
-            TesseraChrome.ApplyHoverHighlight(playBtn, Brushes.White,
-                new SolidColorBrush(Color.FromRgb(245, 245, 250)));
-            playBtn.PointerPressed += (_, e) => { _ = vm.PlayPauseAsync(); e.Handled = true; };
+            TesseraChrome.WirePress(playBtn, Brushes.White,
+                new SolidColorBrush(Color.FromRgb(245, 245, 250)), () => _ = vm.PlayPauseAsync(playIcon));
 
             const double transportBtn = 22;
             Control media = TesseraMediaPanel.Create(vm, TesseraMediaMode.CoreUiBlock, mediaH);
@@ -122,7 +121,7 @@ namespace MosaicShell.Host.Tiles.Tessera
             Grid top = new()
             {
                 Width = w - (gap * 2),
-                ColumnDefinitions = new ColumnDefinitions($"{TesseraStyleMetrics.CoreUiDevice},{gap},*"),
+                ColumnDefinitions = [with($"{TesseraStyleMetrics.CoreUiDevice},{gap},*")],
                 Height = TesseraStyleMetrics.CoreUiVolumeH
             };
             Grid.SetColumn(device, 0);
@@ -136,7 +135,7 @@ namespace MosaicShell.Host.Tiles.Tessera
                 Grid bottom = new()
                 {
                     Width = w - (gap * 2),
-                    ColumnDefinitions = new ColumnDefinitions($"*,{gap},{TesseraStyleMetrics.CoreUiTransportW}"),
+                    ColumnDefinitions = [with($"*,{gap},{TesseraStyleMetrics.CoreUiTransportW}")],
                     Height = mediaH
                 };
                 media.HorizontalAlignment = HorizontalAlignment.Stretch;

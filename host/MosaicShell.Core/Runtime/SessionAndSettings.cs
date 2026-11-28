@@ -99,22 +99,41 @@ namespace MosaicShell.Core.Runtime
         }
     }
 
+    /// <summary>What a removal took away, so the Hub can offer Undo for a bundled module.</summary>
+    /// <param name="ModuleId">The removed module.</param>
+    /// <param name="IsBundled">True when MosaicShell ships it, so adding it again restores the files.</param>
+    /// <param name="WasArmed">True when it was in the armed list, so Undo should arm it again.</param>
+    public sealed record ModuleRemoval(string ModuleId, bool IsBundled, bool WasArmed);
+
     public static class ModuleUninstaller
     {
+        /// <inheritdoc cref="Remove"/>
         public static bool Uninstall(string moduleId, ITileRuntime? runtime = null, ICapabilityHost? capabilityHost = null)
         {
-            if (!ModuleCatalog.TryGet(moduleId, out _))
+            return Remove(moduleId, runtime, capabilityHost) is not null;
+        }
+
+        /// <summary>
+        /// Stops and disarms an installed module, deletes its folder under <c>Modules</c> and drops it
+        /// from saved sessions and the armed list. Its settings file is kept, so adding the module back
+        /// restores it as it was. Works for bundled and third-party modules alike.
+        /// </summary>
+        /// <returns>What was removed, or <see langword="null"/> when nothing was installed under that id.</returns>
+        public static ModuleRemoval? Remove(string moduleId, ITileRuntime? runtime = null, ICapabilityHost? capabilityHost = null)
+        {
+            if (!IsSingleFolderName(moduleId) || !ModuleCatalog.IsInstalled(moduleId))
             {
-                return false;
+                return null;
             }
+
+            bool wasArmed = CapabilityStore.Load().Armed
+                .Any(id => id.Equals(moduleId, StringComparison.OrdinalIgnoreCase));
 
             _ = (runtime?.Stop(moduleId));
             if (capabilityHost is not null)
             {
                 _ = capabilityHost.DisarmAsync(moduleId).GetAwaiter().GetResult();
             }
-
-            ModuleSettingsStore.Delete(moduleId);
 
             string dir = Path.Combine(AppPaths.ModulesDirectory, moduleId);
             if (Directory.Exists(dir))
@@ -129,7 +148,15 @@ namespace MosaicShell.Core.Runtime
             IEnumerable<string> armed = CapabilityStore.Load().Armed
                 .Where(id => !id.Equals(moduleId, StringComparison.OrdinalIgnoreCase));
             CapabilityStore.SaveArmed(armed);
-            return true;
+            return new ModuleRemoval(moduleId, ModuleCatalog.IsBundled(moduleId), wasArmed);
+        }
+
+        private static bool IsSingleFolderName(string moduleId)
+        {
+            return !string.IsNullOrWhiteSpace(moduleId)
+                && moduleId is not ("." or "..")
+                && moduleId.IndexOfAny(['/', '\\']) < 0
+                && moduleId.IndexOfAny(Path.GetInvalidFileNameChars()) < 0;
         }
     }
 
@@ -151,6 +178,9 @@ namespace MosaicShell.Core.Runtime
         public bool DefaultArmed { get; set; }
         public List<string> Styles { get; set; } = [];
         public string? DefaultStyle { get; set; }
+
+        /// <summary>The module's settings page, as sections of rows (<see cref="Modules.Settings.ManifestSettingsSchema"/>).</summary>
+        public List<Modules.Settings.ManifestSettingSection>? Settings { get; set; }
 
         public static string PathInModule(string moduleId)
         {

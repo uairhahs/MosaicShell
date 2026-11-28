@@ -19,9 +19,9 @@ namespace MosaicShell.Core.Services.Mpris
         private readonly Lock _gate = new();
 
         // Url to the file's stamp when it was read, and its bytes (null when refused at that stamp).
-        private readonly Dictionary<string, (FileStamp Stamp, byte[]? Bytes)> _files = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, (FileStamp Stamp, byte[]? Bytes)> _files = [with(StringComparer.Ordinal)];
         private readonly Queue<string> _insertion = new();
-        private readonly Dictionary<string, Task> _reading = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, Task> _reading = [with(StringComparer.Ordinal)];
         private int _fileReads;
         private bool _disposed;
 
