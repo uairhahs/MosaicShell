@@ -238,7 +238,7 @@
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
-        <TextBox Width="200" HorizontalAlignment="Left" Text="{Binding TesseraAccentHex}"
+        <TextBox Width="260" HorizontalAlignment="Left" Text="{Binding TesseraAccentHex}"
                  PlaceholderText="{x:Static vm:PlatformTexts.AccentPlaceholder}" AutomationProperties.Name="Custom accent colour" />
       </StackPanel>
     </DataTemplate>
@@ -371,7 +371,10 @@
         <Border Width="240" Height="150" CornerRadius="8" BorderThickness="2" Padding="8"
                 BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
                 Background="{DynamicResource SolidBackgroundFillColorBaseBrush}">
+          <!-- AutoScrollToSelectedItem off: scrolling the selected cell into view bubbled up to the page's ScrollViewer and
+               opened Tessera's page part way down, at the picker. Nine fixed cells never need scrolling. -->
           <ListBox ItemsSource="{Binding TesseraPositionChoices}" SelectedItem="{Binding SelectedTesseraPosition}"
+                   AutoScrollToSelectedItem="False"
                    Background="Transparent" AutomationProperties.Name="Where it shows">
             <ListBox.ItemsPanel>
               <ItemsPanelTemplate>

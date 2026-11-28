@@ -42,9 +42,9 @@ namespace MosaicShell.Core.HostPlatform
             string os = NameFor(isWindows, xdgCurrentDesktop);
             return new HostPlatformText(
                 os,
-                $"MosaicShell is a native {os} desktop shell. Install tiles for flyouts, launchers, clocks, and overlays; arm capabilities in the tray Host so they stay available without keeping the hub window open.",
-                $"Launch MosaicShell Host when you sign in to {os}.",
-                $"#0273CD or leave blank for the {os} accent",
+                $"MosaicShell is a native {os} desktop shell. Add modules for pop-ups, launchers, clocks and overlays, and turn them on: they keep working in the background while MosaicShell runs, with this window closed.",
+                $"Opens in the background when you sign in to {os}.",
+                "Blank uses the system accent",
                 isWindows
                     ? "Capture a shortcut (Ctrl/Alt/Shift/Win + key). Win+S / Win+A / Win+Q are reserved by Windows and will be replaced automatically."
                     : $"Capture a shortcut (Ctrl/Alt/Shift/Win + key; Win is the Super key). Win+S / Win+A / Win+Q are reserved by {os} and will be replaced automatically.",

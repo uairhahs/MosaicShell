@@ -74,10 +74,10 @@ namespace MosaicShell.Host.ViewModels
             switch (step)
             {
                 case ModuleSwitchStep.Install:
-                    StatusMessage = $"Installing {moduleId}...";
+                    StatusMessage = $"Adding {moduleId}...";
                     await _installer.InstallAsync(moduleId);
                     ok = ModuleCatalog.IsInstalled(moduleId);
-                    StatusMessage = ok ? $"Installed {moduleId}." : $"Could not install {moduleId}.";
+                    StatusMessage = ok ? $"Added {moduleId}." : $"Could not add {moduleId}.";
                     break;
                 case ModuleSwitchStep.Arm:
                     ok = _capabilityHost is not null && await _capabilityHost.ArmAsync(moduleId);

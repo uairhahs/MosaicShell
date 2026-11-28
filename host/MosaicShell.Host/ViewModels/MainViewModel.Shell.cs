@@ -197,6 +197,7 @@ namespace MosaicShell.Host.ViewModels
             }
 
             IsBusy = true;
+            item.IsInstalling = true;
             try
             {
                 if (await ((IModulePageHost)this).RunStepAsync(item.Id, ModuleSwitchStep.Install))
@@ -207,6 +208,7 @@ namespace MosaicShell.Host.ViewModels
             }
             finally
             {
+                item.IsInstalling = false;
                 IsBusy = false;
             }
         }
@@ -296,6 +298,9 @@ namespace MosaicShell.Host.ViewModels
 
         public string RowActionLabel => ModuleListOrder.ActionLabel(ListState);
 
+        /// <summary>The row's action as a screen reader says it: "Add Mixdeck", not "Add" on every row.</summary>
+        public string RowActionAutomationName => $"{RowActionLabel} {Name}";
+
         public bool IsStateOn => ListState == ModuleListState.On;
 
         /// <summary>The line under the name on a list: what it is doing when on, what it is otherwise.</summary>
@@ -328,6 +333,7 @@ namespace MosaicShell.Host.ViewModels
             OnPropertyChanged(nameof(ListState));
             OnPropertyChanged(nameof(StateLabel));
             OnPropertyChanged(nameof(RowActionLabel));
+            OnPropertyChanged(nameof(RowActionAutomationName));
             OnPropertyChanged(nameof(IsStateOn));
             OnPropertyChanged(nameof(ListLine));
         }

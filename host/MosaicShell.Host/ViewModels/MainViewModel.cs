@@ -53,12 +53,6 @@ namespace MosaicShell.Host.ViewModels
             AppPaths.EnsureLayout();
             Hub = ModuleSettingsStore.Load("Hub", () => new HubSettings());
 
-            HomeCards =
-            [
-                HomeCard("Tiles", "Install widgets or set tiles (Tessera flyouts, launchers).", "Tiles"),
-                HomeCard("About", "What MosaicShell is, where it came from, and how to follow the project.", "About"),
-            ];
-
             TesseraAccentSwatches = [];
             foreach (TesseraAccentPreset preset in TesseraAccentColor.Presets)
             {
@@ -82,7 +76,6 @@ namespace MosaicShell.Host.ViewModels
         {
         }
 
-        public ObservableCollection<DiscoverCard> HomeCards { get; }
         public ObservableCollection<TesseraAccentSwatchVm> TesseraAccentSwatches { get; }
         public ObservableCollection<LibraryItemViewModel> Modules { get; } = [];
         public ObservableCollection<LibraryItemViewModel> Widgets { get; } = [];
@@ -238,15 +231,6 @@ namespace MosaicShell.Host.ViewModels
         }
 
         [RelayCommand]
-        private void OpenCard(DiscoverCard? card)
-        {
-            if (card is not null)
-            {
-                Navigate(card.TargetPage);
-            }
-        }
-
-        [RelayCommand]
         private void SelectTesseraAccent(string? hex)
         {
             TesseraAccentHex = TesseraAccentColor.NormalizeOrEmpty(hex);
@@ -259,25 +243,6 @@ namespace MosaicShell.Host.ViewModels
             foreach (TesseraAccentSwatchVm swatch in TesseraAccentSwatches)
             {
                 swatch.IsSelected = TesseraAccentColor.MatchesPreset(TesseraAccentHex, new TesseraAccentPreset(swatch.Name, swatch.Hex));
-            }
-        }
-
-        private static DiscoverCard HomeCard(string title, string body, string page)
-        {
-            HubGlyph glyph = HubGlyphCatalog.ForHomeCard(page);
-            return new(title, body, page, HubGlyphUi.Kind(glyph), HubGlyphUi.Brush(glyph));
-        }
-
-        [RelayCommand]
-        private void GoBack()
-        {
-            if (IsModuleConfig)
-            {
-                Navigate("Tiles");
-            }
-            else
-            {
-                Navigate("Home");
             }
         }
 
@@ -428,7 +393,6 @@ namespace MosaicShell.Host.ViewModels
                 SelectedModuleStyle = match;
         }
 
-
         [RelayCommand]
         private void PreviewTesseraFlyout()
         {
@@ -479,7 +443,6 @@ namespace MosaicShell.Host.ViewModels
         {
             if (value is not null) TesseraPosition = value.Code;
         }
-
 
         partial void OnTesseraEaseFamilyChanged(string value)
         {
@@ -539,7 +502,7 @@ namespace MosaicShell.Host.ViewModels
             bool ok = _capabilityHost.IsArmed(id) || await _capabilityHost.ArmAsync(id);
             if (!ok)
             {
-                StatusMessage = $"Could not arm {id}. Install it from Tiles first.";
+                StatusMessage = $"Could not turn on {id} to show it. If it is not added yet, add it from Modules first.";
                 return;
             }
 
@@ -571,7 +534,6 @@ namespace MosaicShell.Host.ViewModels
                     : err;
             RefreshLibrary();
         }
-
 
         [RelayCommand]
         private void OpenGitHub()
@@ -748,118 +710,6 @@ namespace MosaicShell.Host.ViewModels
         private static extern int NativeMessageBox(IntPtr hWnd, string text, string caption, uint type);
 
         [RelayCommand]
-        private async Task BatchInstallAsync()
-        {
-            List<LibraryItemViewModel> selected = [.. Modules.Concat(Widgets).Where(m => m.IsSelectedForBatch && !m.IsInstalled)];
-            if (selected.Count == 0)
-            {
-                StatusMessage = "Select modules in Tiles (checkbox) first.";
-                return;
-            }
-            IsBusy = true;
-            try
-            {
-                foreach (LibraryItemViewModel item in selected)
-                {
-                    StatusMessage = $"Installing {item.Name}…";
-                    await _installer.InstallAsync(item.Id);
-                    item.ApplyInstalled(_capabilityHost?.IsArmed(item.Id) == true);
-                }
-                StatusMessage = $"Batch installed {selected.Count} module(s).";
-            }
-            catch (Exception ex) { StatusMessage = ex.Message; }
-            finally { IsBusy = false; RefreshLibrary(); }
-        }
-
-        [RelayCommand]
-        private async Task InstallModuleAsync(LibraryItemViewModel? item)
-        {
-            if (item is null || IsBusy)
-            {
-                return;
-            }
-
-            if (item.IsInstalled)
-            {
-                if (item.IsCapability)
-                {
-                    if (_capabilityHost is null)
-                    {
-                        StatusMessage = "Capability daemon not available.";
-                        return;
-                    }
-                    if (_capabilityHost.IsArmed(item.Id))
-                    {
-                        _ = await _capabilityHost.DisarmAsync(item.Id);
-                        item.ApplyArmed(false);
-                        StatusMessage = $"Disarmed {item.Name}.";
-                    }
-                    else
-                    {
-                        bool ok = await _capabilityHost.ArmAsync(item.Id);
-                        item.ApplyArmed(ok);
-                        if (!ok)
-                        {
-                            StatusMessage = $"Could not arm {item.Name}.";
-                        }
-                        else
-                        {
-                            string? err = _capabilityHost.GetHotkeyError(item.Id);
-                            StatusMessage = string.IsNullOrWhiteSpace(err)
-                                ? $"{ModuleUsageGuide.ArmedStatus(item.Id)}. {ModuleUsageGuide.HowToTrigger(item.Id, _services.Features)}"
-                                : err;
-                        }
-                    }
-                    return;
-                }
-
-                if (_runtime.IsRunning(item.Id))
-                {
-                    _ = _runtime.Stop(item.Id);
-                    item.ApplyRunning(false);
-                    StatusMessage = $"Stopped {item.Name}.";
-                    return;
-                }
-                ModuleLaunchResult launch = _launcher.TryLaunch(item.Id);
-                item.ApplyRunning(launch.Started);
-                StatusMessage = launch.Message;
-                return;
-            }
-
-            IsBusy = true;
-            item.IsInstalling = true;
-            try
-            {
-                await _installer.InstallAsync(item.Id);
-                ModuleManifest? manifest = ModuleManifest.TryLoad(item.Id);
-                item.ApplyInstalled(false);
-                StatusMessage = item.IsCapability
-                    ? $"Installed {item.Name}. Use the play button to arm the capability host."
-                    : $"Installed {item.Name}. Use play to launch the overlay.";
-
-                if (manifest?.DefaultArmed == true && _capabilityHost is not null)
-                {
-                    bool ok = await _capabilityHost.ArmAsync(item.Id);
-                    item.ApplyArmed(ok);
-                    if (ok)
-                    {
-                        StatusMessage = $"Installed and armed {item.Name}.";
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                item.ApplyNotInstalled();
-                StatusMessage = $"Install failed: {ex.Message}";
-            }
-            finally
-            {
-                item.IsInstalling = false;
-                IsBusy = false;
-            }
-        }
-
-        [RelayCommand]
         private void ImportShp()
         {
             string? path = Environment.GetEnvironmentVariable("MOSAICSHELL_SHP");
@@ -920,40 +770,28 @@ namespace MosaicShell.Host.ViewModels
         }
     }
 
-    public sealed record DiscoverCard(string Title, string Body, string TargetPage, MaterialIconKind GlyphKind, IBrush GlyphBrush);
-
     public partial class LibraryItemViewModel : ObservableObject
     {
         public required string Id { get; init; }
         public required string Name { get; init; }
         public required string Description { get; init; }
-        public required string IconPath { get; init; }
         public required MaterialIconKind GlyphKind { get; init; }
         public required IBrush GlyphBrush { get; init; }
         public bool IsCapability { get; init; }
 
         public string SettingsAutomationName => $"{Name} settings";
-        public string RemoveAutomationName => $"Remove {Name}";
 
         [ObservableProperty] private bool _isInstalled;
         [ObservableProperty] private bool _isInstalling;
         [ObservableProperty] private bool _isRunning;
         [ObservableProperty] private bool _isArmed;
-        [ObservableProperty] private bool _isSelectedForBatch;
         [ObservableProperty] private bool _isShownBySearch = true;
-        [ObservableProperty] private string _statusText = "(Not Installed)";
-        [ObservableProperty] private IBrush _statusBrush = HubGlyphUi.StatusBrush(HubTileStatusKind.NotInstalled);
-        [ObservableProperty] private MaterialIconKind _actionIcon = MaterialIconKind.Download;
-        [ObservableProperty] private string _actionToolTip = "Install";
 
         public void ApplyNotInstalled()
         {
             IsInstalled = false;
             IsRunning = false;
             IsArmed = false;
-            StatusText = "(Not Installed)";
-            SyncStatusChrome();
-            RefreshActionState();
         }
 
         public void ApplyInstalled(bool armed = false)
@@ -961,92 +799,38 @@ namespace MosaicShell.Host.ViewModels
             IsInstalled = true;
             IsRunning = false;
             IsArmed = armed;
-            StatusText = IsCapability ? armed ? ModuleUsageGuide.ArmedStatus(Id) : "Ready to arm" : "Ready";
-
-            SyncStatusChrome();
-            RefreshActionState();
         }
 
         public void ApplyRunning(bool running)
         {
             IsRunning = running;
-            if (!IsInstalled || IsCapability)
-            {
-                return;
-            }
-
-            StatusText = running ? "Running" : "Ready";
-            SyncStatusChrome();
-            RefreshActionState();
         }
 
         public void ApplyArmed(bool armed)
         {
             IsArmed = armed;
-            if (!IsInstalled || !IsCapability)
-            {
-                return;
-            }
-
-            StatusText = armed ? ModuleUsageGuide.ArmedStatus(Id) : "Ready to arm";
-            SyncStatusChrome();
-            RefreshActionState();
-        }
-
-        private void SyncStatusChrome()
-        {
-            HubTileStatusKind kind = HubTileStatusChromeSpec.Resolve(IsInstalled, IsCapability, IsArmed, IsRunning);
-            StatusBrush = HubGlyphUi.StatusBrush(kind);
-        }
-
-        private void RefreshActionState()
-        {
-            if (!IsInstalled)
-            {
-                ActionIcon = MaterialIconKind.Download;
-                ActionToolTip = "Install";
-                return;
-            }
-
-            if (IsCapability)
-            {
-                ActionIcon = IsArmed ? MaterialIconKind.StopCircle : MaterialIconKind.Play;
-                ActionToolTip = IsArmed ? "Disarm" : "Arm";
-                return;
-            }
-
-            ActionIcon = IsRunning ? MaterialIconKind.Stop : MaterialIconKind.Play;
-            ActionToolTip = IsRunning ? "Stop" : "Launch";
         }
 
         public static LibraryItemViewModel From(ModuleInfo info, bool running = false, bool armed = false)
         {
             bool installed = ModuleCatalog.IsInstalled(info.Id);
             bool isCap = info.Kind is ModuleKind.Capability or ModuleKind.Hybrid;
-            string status = !installed
-                ? "(Not Installed)"
-                : isCap ? armed ? ModuleUsageGuide.ArmedStatus(info.Id) : "Ready to arm" : running ? "Running" : "Ready";
             HubGlyph glyph = HubGlyphCatalog.ForModule(info.Id);
             LibraryItemViewModel item = new()
             {
                 Id = info.Id,
                 Name = info.DisplayName,
                 Description = info.Description,
-                IconPath = $"/Assets/Modules/{info.Id}.png",
                 GlyphKind = HubGlyphUi.Kind(glyph),
                 GlyphBrush = HubGlyphUi.Brush(glyph),
                 IsCapability = isCap,
                 IsInstalled = installed,
                 IsRunning = running && installed && !isCap,
                 IsArmed = armed && installed && isCap,
-                StatusText = status,
             };
-            item.SyncStatusChrome();
-            item.RefreshActionState();
             return item;
         }
     }
-
 
     public sealed record TesseraNamedChoice(string Code, string Label)
     {

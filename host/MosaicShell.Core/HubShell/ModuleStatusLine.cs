@@ -1,9 +1,6 @@
-using System.Globalization;
 using MosaicShell.Core.Capabilities.BuiltIn;
 using MosaicShell.Core.HostPlatform;
 using MosaicShell.Core.Modules;
-using MosaicShell.Core.Runtime;
-using MosaicShell.Core.Settings;
 
 namespace MosaicShell.Core.HubShell
 {
@@ -34,14 +31,7 @@ namespace MosaicShell.Core.HubShell
                 return new ModuleStatus("On the desktop", false);
             }
 
-            string? opens = info.Id.ToLowerInvariant() switch
-            {
-                "mixdeck" => "the mixer",
-                "inlay" => "the launcher",
-                "chord" => "your actions",
-                "substrate" => "the quick settings",
-                _ => null,
-            };
+            string? opens = ModuleUsageGuide.Opens(info.Id);
             return opens is not null
                 ? features.MissingText(DesktopFeature.GlobalHotkeys) is string missing
                     ? new ModuleStatus(missing, false)
@@ -49,17 +39,10 @@ namespace MosaicShell.Core.HubShell
                 : info.Id.ToLowerInvariant() switch
                 {
                     "tessera" => new ModuleStatus("Replacing the volume, brightness and media pop-ups", false),
-                    "slate" => new ModuleStatus($"Shows after {Idle()} without input", false),
+                    "slate" => new ModuleStatus($"Shows after {ModuleUsageGuide.IdleText()} without input", false),
                     _ => new ModuleStatus("On", false),
                 };
         }
 
-        private static string Idle()
-        {
-            int seconds = Math.Max(30, ModuleSettingsStore.Load("Slate", () => new SlateSettings()).IdleSeconds);
-            return seconds % 60 == 0 && seconds >= 120
-                ? (seconds / 60).ToString(CultureInfo.InvariantCulture) + " min"
-                : seconds.ToString(CultureInfo.InvariantCulture) + " s";
-        }
     }
 }

@@ -16,6 +16,27 @@ namespace MosaicShell.Core.Tests
             Path.Combine(SourceTree.HostRoot, "MosaicShell.Host", "Views", "ModulePageView.axaml"));
 
         [Fact]
+        public void The_tray_menu_says_Quit_as_Settings_does()
+        {
+            // It said "Exit (stop tiles)", the old Hub's words; Settings' close choice is "Quit MosaicShell".
+            string app = File.ReadAllText(Path.Combine(SourceTree.HostRoot, "MosaicShell.Host", "App.axaml"));
+            _ = app.Should().Contain("Header=\"Quit MosaicShell\"").And.NotContainAny("tiles", "Exit (");
+        }
+
+        [Fact]
+        public void No_list_on_a_scrolled_page_scrolls_its_selection_into_view()
+        {
+            // Tessera's position picker did, and the request bubbled up to the page: the page opened 42% down (2026-11-28).
+            foreach (string xaml in new[] { MainWindowXaml, ModulePageXaml })
+            {
+                foreach (Match list in Regex.Matches(xaml, "<ListBox\\s[^>]*>"))
+                {
+                    _ = list.Value.Should().Contain("AutoScrollToSelectedItem=\"False\"");
+                }
+            }
+        }
+
+        [Fact]
         public void Data_location_is_read_from_AppPaths_not_written_as_a_Windows_literal()
         {
             _ = MainWindowXaml.Should().NotContain("%LocalAppData%");

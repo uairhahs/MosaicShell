@@ -18,9 +18,5 @@ namespace MosaicShell.Host
             return new SolidColorBrush(Color.Parse(glyph.TintHex));
         }
 
-        public static IBrush StatusBrush(HubTileStatusKind kind)
-        {
-            return new SolidColorBrush(Color.Parse(HubTileStatusChromeSpec.HexFor(kind)));
-        }
     }
 }

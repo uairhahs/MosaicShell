@@ -89,6 +89,7 @@ namespace MosaicShell.Host.ViewModels
             {
                 IsBusy = false;
                 RefreshLibrary();
+                ModulePage?.RefreshSwitch();
             }
         }
 
@@ -109,6 +110,9 @@ namespace MosaicShell.Host.ViewModels
             CanUndoRemove = _lastRemoval is not null;
             ShowToast(StatusMessage);
             RefreshLibrary();
+
+            // The module's page stays open after Remove: its switch must say Off now, not when the page is next opened.
+            ModulePage?.RefreshSwitch();
         }
 
         private void ClearUndo()

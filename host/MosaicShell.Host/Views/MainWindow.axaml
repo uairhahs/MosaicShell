@@ -350,7 +350,7 @@
                       <ToggleSwitch HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"
                                     OnContent="" OffContent="" IsChecked="{Binding IsOn, Mode=OneWay}"
                                     Command="{Binding #Root.((vm:MainViewModel)DataContext).ToggleOnHomeCommand}" CommandParameter="{Binding}"
-                                    AutomationProperties.Name="{Binding Name, StringFormat=Turn on {0}}" />
+                                    AutomationProperties.Name="{Binding Name}" />
                     </Grid>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -385,7 +385,7 @@
                       <ToggleSwitch HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"
                                     OnContent="" OffContent="" IsChecked="{Binding IsOn, Mode=OneWay}"
                                     Command="{Binding #Root.((vm:MainViewModel)DataContext).ToggleOnHomeCommand}" CommandParameter="{Binding}"
-                                    AutomationProperties.Name="{Binding Name, StringFormat=Turn on {0}}" />
+                                    AutomationProperties.Name="{Binding Name}" />
                     </Grid>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -463,7 +463,7 @@
                       <Button HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0" MinWidth="110"
                               HorizontalContentAlignment="Center"
                               Classes.accent="{Binding !IsInstalled}" IsEnabled="{Binding !IsInstalling}"
-                              Content="{Binding RowActionLabel}"
+                              Content="{Binding RowActionLabel}" AutomationProperties.Name="{Binding RowActionAutomationName}"
                               Command="{Binding #Root.((vm:MainViewModel)DataContext).RowActionCommand}" CommandParameter="{Binding}" />
                     </Grid>
                   </DataTemplate>
@@ -542,7 +542,7 @@
                       <Button HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0" MinWidth="110"
                               HorizontalContentAlignment="Center"
                               Classes.accent="{Binding !IsInstalled}" IsEnabled="{Binding !IsInstalling}"
-                              Content="{Binding RowActionLabel}"
+                              Content="{Binding RowActionLabel}" AutomationProperties.Name="{Binding RowActionAutomationName}"
                               Command="{Binding #Root.((vm:MainViewModel)DataContext).RowActionCommand}" CommandParameter="{Binding}" />
                     </Grid>
                   </DataTemplate>
@@ -602,7 +602,7 @@
           <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14" LineHeight="22"
                      Text="{x:Static vm:PlatformTexts.About}" />
           <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14" LineHeight="22"
-                     Text="Built as an Avalonia rewrite of the JaxCore / Rainmeter era, with the same idea of composable surfaces, without Rainmeter or .rmskin installs. Tessera and Mixdeck are first-party capabilities; widgets run as native overlays." />
+                     Text="Built as an Avalonia rewrite of the JaxCore / Rainmeter era, with the same idea of composable surfaces, without Rainmeter or .rmskin installs. The built-in modules ship with MosaicShell, and others can be added from a file; widgets are native windows on your desktop." />
           <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="13" LineHeight="20"
                      Text="Honest about fidelity: flagship layouts work; pixel-perfect Jax-Core parity is still iterative. Issues and modules welcome on GitHub." />
           <Button Content="View on GitHub" HorizontalAlignment="Left"

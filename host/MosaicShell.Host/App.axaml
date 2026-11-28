@@ -18,7 +18,7 @@
                     <NativeMenu>
                         <NativeMenuItem Header="Open MosaicShell" Click="TrayOpen_OnClick" />
                         <NativeMenuItemSeparator />
-                        <NativeMenuItem Header="Exit (stop tiles)" Click="TrayExit_OnClick" />
+                        <NativeMenuItem Header="Quit MosaicShell" Click="TrayExit_OnClick" />
                     </NativeMenu>
                 </TrayIcon.Menu>
             </TrayIcon>

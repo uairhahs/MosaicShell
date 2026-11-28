@@ -29,12 +29,12 @@ namespace MosaicShell.Core.Modules
         /// <summary>Built-in first-party modules (install stubs / Hub seed).</summary>
         public static IReadOnlyList<ModuleInfo> BuiltIns { get; } =
         [
-            new("Tessera", "Tessera", "Volume / brightness / media flyouts. Arm, then use system keys (replaces OS OSD while Host runs).", ModuleKind.Capability),
-            new("Mixdeck", "Mixdeck", "Per-app audio mixer. Arm, then press Ctrl+Alt+X (default) or Tessera Material You.", ModuleKind.Capability),
-            new("Inlay", "Inlay", "Start-menu launcher. Arm, then press Ctrl+Alt+I (default) for pins + search.", ModuleKind.Capability),
-            new("Slate", "Slate", "Idle clock overlay. Arm, then wait for the idle timeout (default 5 min).", ModuleKind.Capability),
-            new("Chord", "Chord", "Macro app launcher. Arm, then press Ctrl+Alt+K (default) for named actions.", ModuleKind.Capability),
-            new("Substrate", "Substrate", "Quick-settings shade. Arm, then press Ctrl+Alt+Q (default) for mute / volume / brightness.", ModuleKind.Capability),
+            new("Tessera", "Tessera", "Volume, brightness and media pop-ups in place of the system's own.", ModuleKind.Capability),
+            new("Mixdeck", "Mixdeck", "A volume mixer with a slider for each app.", ModuleKind.Capability),
+            new("Inlay", "Inlay", "A start-menu launcher with pinned apps and search.", ModuleKind.Capability),
+            new("Slate", "Slate", "A clock that covers the screen when you step away.", ModuleKind.Capability),
+            new("Chord", "Chord", "A launcher for named actions and apps.", ModuleKind.Capability),
+            new("Substrate", "Substrate", "Quick settings for mute, volume and brightness.", ModuleKind.Capability),
             new("Chrono", "Chrono", "Clock collection with multiple styles.", ModuleKind.Widget),
             new("Phono", "Phono", "Media player widget.", ModuleKind.Widget),
             new("Pulse", "Pulse", "Audio visualizer.", ModuleKind.Widget),

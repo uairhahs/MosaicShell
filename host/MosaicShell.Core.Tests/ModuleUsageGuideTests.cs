@@ -6,7 +6,10 @@ using MosaicShell.Core.Settings;
 
 namespace MosaicShell.Core.Tests
 {
-    /// <summary>The how-to text the Hub shows for an armed module, against a private settings root.</summary>
+    /// <summary>
+    /// The how-to text a module's page and its turn-on toast show, against a private settings root. U07: none of it says
+    /// "arm", "Tiles", "capability" or "OSD", which name the old Hub, not anything the user can see.
+    /// </summary>
     public class ModuleUsageGuideTests : IDisposable
     {
         private readonly string _root;
@@ -32,12 +35,12 @@ namespace MosaicShell.Core.Tests
         }
 
         [Theory]
-        [InlineData("inlay", "Start-menu")]
-        [InlineData("Chord", "Macro launcher")]
-        [InlineData("SUBSTRATE", "Quick-settings")]
-        [InlineData("slate", "Idle")]
-        [InlineData("mixdeck", "Per-app volume mixer")]
-        [InlineData("Tessera", "System flyouts")]
+        [InlineData("inlay", "start-menu")]
+        [InlineData("Chord", "macro launcher")]
+        [InlineData("SUBSTRATE", "quick-settings")]
+        [InlineData("slate", "clock")]
+        [InlineData("mixdeck", "volume mixer")]
+        [InlineData("Tessera", "pop-ups")]
         public void Each_built_in_capability_has_its_own_summary_whatever_the_casing(string moduleId, string expectedFragment)
         {
             _ = ModuleUsageGuide.Summary(moduleId).Should().Contain(expectedFragment);
@@ -70,7 +73,7 @@ namespace MosaicShell.Core.Tests
         public void A_widget_built_in_is_described_but_has_no_trigger()
         {
             _ = ModuleUsageGuide.Summary("Pulse").Should().Be("Audio visualizer.");
-            _ = ModuleUsageGuide.HowToTrigger("Pulse").Should().BeEmpty("a widget is not armed from Tiles");
+            _ = ModuleUsageGuide.HowToTrigger("Pulse").Should().BeEmpty("a widget has nothing to press");
         }
 
         [Fact]
@@ -78,7 +81,7 @@ namespace MosaicShell.Core.Tests
         {
             ModuleSettingsStore.Save("Inlay", new InlaySettings { HotkeyGesture = "Ctrl+Alt+J" });
 
-            _ = ModuleUsageGuide.HowToTrigger("Inlay").Should().Be("Arm from Tiles, then press Ctrl+Alt+J.");
+            _ = ModuleUsageGuide.HowToTrigger("Inlay").Should().Be("Press Ctrl+Alt+J to open the launcher.");
         }
 
         [Fact]
@@ -103,7 +106,7 @@ namespace MosaicShell.Core.Tests
             ModuleSettingsStore.Save("Substrate", new SubstrateSettings { HotkeyGesture = "" });
 
             _ = ModuleUsageGuide.CurrentHotkey("Substrate").Should().BeEmpty();
-            _ = ModuleUsageGuide.HowToTrigger("Substrate").Should().Be("Arm from Tiles, then use the configured hotkey.");
+            _ = ModuleUsageGuide.HowToTrigger("Substrate").Should().Be("Set a shortcut below to open the quick settings.");
         }
 
         [Theory]
@@ -117,40 +120,51 @@ namespace MosaicShell.Core.Tests
         }
 
         [Theory]
-        [InlineData(0, 30)]
-        [InlineData(10, 30)]
-        [InlineData(45, 45)]
-        [InlineData(600, 600)]
-        public void Slate_idle_time_is_never_shorter_than_thirty_seconds(int configured, int shown)
+        [InlineData(0, "30 s")]
+        [InlineData(10, "30 s")]
+        [InlineData(45, "45 s")]
+        [InlineData(600, "10 min")]
+        public void Slate_idle_time_is_never_shorter_than_thirty_seconds(int configured, string shown)
         {
             ModuleSettingsStore.Save("Slate", new SlateSettings { IdleSeconds = configured });
 
-            _ = ModuleUsageGuide.HowToTrigger("Slate").Should().Be($"Arm from Tiles, then leave the PC idle for {shown} seconds.");
-            _ = ModuleUsageGuide.ArmedStatus("Slate").Should().Be($"Armed - idle {shown}s");
+            _ = ModuleUsageGuide.HowToTrigger("Slate").Should().Be($"Shows after {shown} without input.");
+            _ = ModuleUsageGuide.IdleText().Should().Be(shown, "Home's status line says it the same way");
         }
 
         [Fact]
         public void Tessera_is_triggered_by_system_events_not_a_hotkey()
         {
-            _ = ModuleUsageGuide.HowToTrigger("Tessera").Should().Contain("volume").And.Contain("Try now");
-            _ = ModuleUsageGuide.ArmedStatus("tessera").Should().Be("Armed - volume / media");
+            _ = ModuleUsageGuide.HowToTrigger("Tessera").Should().Contain("volume").And.NotContain("Try now", "step 4 retired it");
         }
 
         [Fact]
-        public void The_armed_status_of_a_hotkey_module_names_its_gesture()
-        {
-            ModuleSettingsStore.Save("Inlay", new InlaySettings { HotkeyGesture = "Ctrl+Alt+J" });
-
-            _ = ModuleUsageGuide.ArmedStatus("Inlay").Should().Be("Armed - Ctrl+Alt+J");
-        }
-
-        [Fact]
-        public void An_installed_capability_without_a_manifest_trigger_gets_the_generic_one()
+        public void An_installed_module_without_a_manifest_trigger_says_nothing_rather_than_guess()
         {
             InstallManifest("Acme", new ModuleManifest { Id = "Acme", Kind = "Capability" });
 
-            _ = ModuleUsageGuide.HowToTrigger("Acme").Should().Be("Arm from Tiles, then use the module's configured trigger.");
-            _ = ModuleUsageGuide.ArmedStatus("Acme").Should().Be("Armed");
+            _ = ModuleUsageGuide.HowToTrigger("Acme").Should().BeEmpty();
+        }
+
+        [Theory]
+        [InlineData("Tessera")]
+        [InlineData("Mixdeck")]
+        [InlineData("Inlay")]
+        [InlineData("Slate")]
+        [InlineData("Chord")]
+        [InlineData("Substrate")]
+        [InlineData("Chrono")]
+        [InlineData("Phono")]
+        [InlineData("Pulse")]
+        [InlineData("Canvas")]
+        public void No_built_in_text_uses_the_old_Hub_words(string moduleId)
+        {
+            _ = ModuleCatalog.TryGet(moduleId, out ModuleInfo? info).Should().BeTrue();
+            string[] texts = [info!.Description, ModuleUsageGuide.Summary(moduleId), ModuleUsageGuide.HowToTrigger(moduleId)];
+            foreach (string text in texts)
+            {
+                _ = text.Should().NotMatchRegex(@"(?i)\barm(ed)?\b|\btiles?\b|capabilit|\bOSD\b|Try now|Material You", moduleId);
+            }
         }
 
         [Fact]
