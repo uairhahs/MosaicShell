@@ -84,7 +84,9 @@ namespace MosaicShell.Core.Modules.Tessera
                                       && TesseraFlyoutTweenTargetCatalog.StyleRequestsVolumeMediaChrome(settings.Style))
                 ? "1"
                 : "0";
-            p["acrylic"] = settings.UseAcrylicBackdrop ? "1" : "0";
+            // The desktop's transparency switch outranks the choice: off, Frosted and Native draw as Solid, as the
+            // desktop's own pop-ups turn opaque.
+            p["acrylic"] = settings.UseAcrylicBackdrop && services.TransparencyEffects.Enabled ? "1" : "0";
             p["glass"] = settings.UseNativeTranslucency ? "native" : "frosted";
             p["focusDim"] = settings.UseFocusDim ? "1" : "0";
             p["flyoutScale"] = Math.Clamp(settings.FlyoutScalePercent, 50, 150).ToString();

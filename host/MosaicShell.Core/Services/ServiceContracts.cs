@@ -23,6 +23,16 @@ namespace MosaicShell.Core.Services
         double Brightness { get; set; }
     }
 
+    /// <summary>The media session a flyout shows: what is playing, where it is, and what can be done to it.</summary>
+    /// <param name="Title">The track title, when the player gives one.</param>
+    /// <param name="Artist">The artist, when the player gives one.</param>
+    /// <param name="AppId">The app playing it, as the OS names it.</param>
+    /// <param name="IsPlaying">Playing, not paused or stopped.</param>
+    /// <param name="ThumbnailPng">The cover as PNG bytes, when there is one.</param>
+    /// <param name="PositionSeconds">Where playback is, in seconds.</param>
+    /// <param name="DurationSeconds">The track's length in seconds; 0 when unknown.</param>
+    /// <param name="LikeRating">Browser like rating when known (0 unrated, 1 disliked, 5 liked); null for native SMTC-only.</param>
+    /// <param name="Capabilities">What the browser player behind this session can be asked to do; none for native SMTC-only.</param>
     public sealed record MediaSessionInfo(
         string? Title,
         string? Artist,
@@ -31,9 +41,7 @@ namespace MosaicShell.Core.Services
         byte[]? ThumbnailPng = null,
         double PositionSeconds = 0,
         double DurationSeconds = 0,
-        /// <summary>Browser like rating when known (0 unrated, 1 disliked, 5 liked); null for native SMTC-only.</summary>
         int? LikeRating = null,
-        /// <summary>What the browser player behind this session can be asked to do; none for native SMTC-only.</summary>
         BrowserMediaCapabilities Capabilities = BrowserMediaCapabilities.None);
 
     public interface IMediaSessionService : IDisposable
@@ -143,6 +151,9 @@ namespace MosaicShell.Core.Services
 
         /// <summary>What this desktop lets MosaicShell do; every feature unless a platform factory says otherwise.</summary>
         public HostPlatform.DesktopFeatures Features { get; init; } = HostPlatform.DesktopFeatures.All;
+
+        /// <summary>The desktop's switch for see-through surfaces; always on unless a platform factory says otherwise.</summary>
+        public ITransparencyEffects TransparencyEffects { get; init; } = new AlwaysTransparencyEffects();
 
         /// <summary>Platform parts that serve no interface of their own but live as long as the services (Linux: the MPRIS export).</summary>
         public IReadOnlyList<IDisposable> Companions { get; init; } = [];
@@ -485,6 +496,7 @@ namespace MosaicShell.Core.Services
                 Airplane = new WindowsAirplaneModeService(),
                 AudioDevices = new WindowsAudioDeviceService(),
                 ShellFlyoutTriggers = new WindowsShellFlyoutHook(),
+                TransparencyEffects = new WindowsTransparencyEffects(),
             };
         }
 

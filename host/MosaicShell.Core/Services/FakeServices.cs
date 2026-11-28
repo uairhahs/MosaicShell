@@ -247,14 +247,22 @@ namespace MosaicShell.Core.Services
         }
     }
 
+    /// <summary>Test double for the desktop's transparency switch.</summary>
+    public sealed class FakeTransparencyEffects : ITransparencyEffects
+    {
+        public bool Enabled { get; set; } = true;
+    }
+
     public static class HostServicesFakes
     {
         /// <param name="features">What the pretend desktop can do; every feature when omitted.</param>
-        public static HostServices Create(HostPlatform.DesktopFeatures? features = null)
+        /// <param name="transparencyEffects">The desktop's transparency switch; on when omitted.</param>
+        public static HostServices Create(HostPlatform.DesktopFeatures? features = null, bool transparencyEffects = true)
         {
             return new()
             {
                 Features = features ?? HostPlatform.DesktopFeatures.All,
+                TransparencyEffects = new FakeTransparencyEffects { Enabled = transparencyEffects },
                 Audio = new FakeAudioService(),
                 AppAudio = new FakeAppAudioService(),
                 Brightness = new FakeBrightnessService(),
