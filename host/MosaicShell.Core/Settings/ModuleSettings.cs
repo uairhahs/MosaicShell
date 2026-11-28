@@ -159,6 +159,8 @@ namespace MosaicShell.Core.Settings
         /// Off by default: many people turn Windows animations off for speed, and the flyout look is their own choice.
         /// </summary>
         public bool FollowSystemReducedMotion { get; set; }
-        public List<string> BatchInstallSelection { get; set; } = [];
+
+        /// <summary>Whether the Host has offered the default modules (<see cref="Install.DefaultModulesPolicy"/>).</summary>
+        public bool DefaultModulesOffered { get; set; }
     }
 }

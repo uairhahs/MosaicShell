@@ -1,13 +1,13 @@
 namespace MosaicShell.Core.Install
 {
     /// <summary>
-    /// Detects a release zip / install bundle root (Host + Mosaicist + Tiles, no repo .sln required).
+    /// Detects a release zip / install bundle root (Host + Tiles, no repo .sln required).
     /// </summary>
     public static class ReleaseBundleLayout
     {
         /// <summary>
-        /// True when <paramref name="root"/> contains the Host and Mosaicist executables, under their Windows or Linux
-        /// names, and a Tiles folder.
+        /// True when <paramref name="root"/> contains the Host executable, under its Windows or Linux name, and a Tiles
+        /// folder.
         /// </summary>
         public static bool IsBundleRoot(string root)
         {
@@ -17,10 +17,8 @@ namespace MosaicShell.Core.Install
             }
 
             string host = Path.Combine(root, HostInstallLayoutSpec.HostFolder);
-            string mosaicist = Path.Combine(root, HostInstallLayoutSpec.MosaicistFolder);
             string tiles = Path.Combine(root, HostInstallLayoutSpec.TilesFolder);
             return AnyExists(host, HostInstallLayoutSpec.HostExeName, HostInstallLayoutSpec.HostLinuxExeName)
-                && AnyExists(mosaicist, HostInstallLayoutSpec.MosaicistExeName, HostInstallLayoutSpec.MosaicistLinuxExeName)
                 && Directory.Exists(tiles);
         }
 
