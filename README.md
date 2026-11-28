@@ -27,12 +27,12 @@ The Hub is MosaicShell's window. A rail on the left holds Home, Modules and Widg
 from the keyboard too: Tab moves through a page, the arrow keys move between cards, and Left and Right cross between
 the rail and the page.
 
-| | |
-| --- | --- |
-| ![Home: the welcome, what closing the window does, and the modules running now, each with a quick switch.](.github/res/hub/home.png) | ![Modules: every module, the ones on first, each with its state and one action: Turn on, Turn off or Add.](.github/res/hub/modules.png) |
-| **Home** shows what is running now, each with a quick switch. | **Modules** and **Widgets** list everything, on first, with one action per row. |
-| ![Tessera's page: a live preview of the flyout, its on switch, then its look, colours, material and size.](.github/res/hub/tessera.png) | ![Settings: what closing the window does, start at sign-in, reduce motion, updates and browser media.](.github/res/hub/settings.png) |
-| **A module's page**: its on switch, then settings that apply as you change them. Tessera's shows its flyout as you pick. | **Settings**: what closing the window does, start at sign-in, updates and Grout's connection. |
+|                                                                                                                                         |                                                                                                                                         |
+| --------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| ![Home: the welcome, what closing the window does, and the modules running now, each with a quick switch.](.github/res/hub/home.png)    | ![Modules: every module, the ones on first, each with its state and one action: Turn on, Turn off or Add.](.github/res/hub/modules.png) |
+| **Home** shows what is running now, each with a quick switch.                                                                           | **Modules** and **Widgets** list everything, on first, with one action per row.                                                         |
+| ![Tessera's page: a live preview of the flyout, its on switch, then its look, colours, material and size.](.github/res/hub/tessera.png) | ![Settings: what closing the window does, start at sign-in, reduce motion, updates and browser media.](.github/res/hub/settings.png)    |
+| **A module's page**: its on switch, then settings that apply as you change them. Tessera's shows its flyout as you pick.                | **Settings**: what closing the window does, start at sign-in, updates and Grout's connection.                                           |
 
 On its first start MosaicShell turns on the default modules, Tessera and Mixdeck, and shows them on one screen, with
 Show it on screen to try each. Done takes you to Home.
