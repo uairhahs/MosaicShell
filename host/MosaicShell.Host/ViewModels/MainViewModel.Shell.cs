@@ -136,6 +136,7 @@ namespace MosaicShell.Host.ViewModels
             OnPropertyChanged(nameof(IsWidgetsRailSelected));
             OnPropertyChanged(nameof(CloseHint));
             NotifyInstalledModules();
+            RaiseModuleStatesChanged();
         }
 
         [RelayCommand]

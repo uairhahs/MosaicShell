@@ -18,9 +18,12 @@ namespace MosaicShell.Core.Tests
         [Fact]
         public void The_tray_menu_says_Quit_as_Settings_does()
         {
-            // It said "Exit (stop tiles)", the old Hub's words; Settings' close choice is "Quit MosaicShell".
+            // It said "Exit (stop tiles)", the old Hub's words; Settings' close choice is "Quit MosaicShell". The menu is
+            // built in code from TrayMenu since step 6.
             string app = File.ReadAllText(Path.Combine(SourceTree.HostRoot, "MosaicShell.Host", "App.axaml"));
-            _ = app.Should().Contain("Header=\"Quit MosaicShell\"").And.NotContainAny("tiles", "Exit (");
+            string code = File.ReadAllText(Path.Combine(SourceTree.HostRoot, "MosaicShell.Host", "App.axaml.cs"));
+            _ = app.Should().NotContainAny("tiles", "Exit (");
+            _ = code.Should().Contain("new(TrayMenu.QuitLabel)").And.Contain("new(TrayMenu.OpenLabel)");
         }
 
         [Fact]
