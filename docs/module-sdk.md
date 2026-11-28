@@ -77,7 +77,7 @@ use: an on switch at the top, then your sections, then Remove. Every change is s
   global shortcuts (GNOME today), with a line saying so.
 - **What is skipped.** A row with an unknown `Kind`, no `Key`, a `Key` already used (or `Style` on a row that is not
   the style), a `Choice` without `Options` or a `Number` without a range is left out rather than failing the page.
-  A manifest whose rows are all left out gets the plain page (what it does, style, Save).
+  A manifest whose rows are all left out gets the plain page (what it does and its style).
 - **Ids.** A built-in module id keeps the built-in page whatever the manifest says.
 
 ## Contracts

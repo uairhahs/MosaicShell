@@ -29,7 +29,7 @@ Parity flag rules: [parity.md](parity.md).
 
 - Prefer failing Core tests before Avalonia UI patches.
 - No Rainmeter bridge, `.rmskin`, or `.ini` interpreter.
-- Capabilities arm through **CapabilityDaemon** (Tessera is not opened like a normal Library window).
+- Capabilities arm through **CapabilityDaemon** (Tessera is not opened like a widget).
 
 ## Run the Host locally
 

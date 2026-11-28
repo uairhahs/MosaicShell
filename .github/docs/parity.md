@@ -23,7 +23,7 @@ Run: `dotnet test host/MosaicShell.Core.Tests --filter HubParity`
 | `*_layout_fidelity` | Screenshot-level layout sign-off vs reference art.                            |
 | `tessera_*`         | Tessera capability / flyout contracts.                                        |
 | `service_*`         | Core Windows service adapters.                                                |
-| `library_*`         | Mosaicist install + Hub Library.                                              |
+| `library_*`         | Module install + the Hub's Modules and Widgets lists.                         |
 
 **MVP is not “done”.** It means the tile or capability does its flagship job in native Host, with Core tests backing honesty.
 

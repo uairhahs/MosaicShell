@@ -70,6 +70,27 @@ Every behavior change that affects chrome, policy, parity, or capability shape i
 
 All ten catalog modules (Tessera, Mixdeck, Chrono, Phono, Pulse, Canvas, Inlay, Chord, Substrate, Slate) use a `Tiles/{Id}/` stub: `module.native.json` and a README, nothing else. `ModuleInstaller` copies that stub (or an external package) into `%LocalAppData%\MosaicShell\Modules\{Id}`; `ModuleCatalog.IsInstalled` is just "does that directory exist." Arming a capability adds its id to `CapabilityStore`'s persisted list.
 
+## The Hub
+
+The Hub is the Host's window (`MainWindow`, `ModulePageView`). A left rail (`HubShell/HubRail`) holds Home, Modules,
+Widgets, then Settings and About, and folds to icons on a narrow window. There is no Back and no bottom bar.
+
+- **Home**: the welcome, what closing the window does on this desktop (`HubSettingsLayout`), and "Running now": a row
+  per module that is on, with its status line (`HubShell/ModuleStatusLine`) and a quick switch. A row turned off there
+  stays, faded, while the Hub is open.
+- **Modules** and **Widgets**: every capability, or every widget, in one list sorted On, Off, Not added
+  (`HubShell/ModuleListOrder`), with a search box, a state chip and one action per row (Turn on, Turn off, Add). The
+  row opens the module's page. Add from file installs a third-party package (see `docs/module-sdk.md`).
+- **A module's page**: its on switch (`ModuleOnSwitch`: arm or disarm a capability, open or close a widget), then its
+  settings, which apply as they change; there is no Save. Remove sits at the foot of the page
+  (`ModuleRemovalPolicy`).
+- **Settings**: General (what closing the window does, as a radio group; start at sign-in; reduce motion), Updates,
+  Browser media (Grout's status light, `GroutLight`) and Diagnostics, folded.
+- **Feedback** (`HubShell/HubFeedback`): inline for a control, a toast at the bottom for a finished action (with Undo
+  where it applies, `HubToast`), and Home's banner for a problem that lasts (`HubBanner`).
+
+User-facing text says "module", "widget", "on" and "off". The code keeps its names: capability, arm, tile.
+
 ## Event flow (Tessera example)
 
 ```text
